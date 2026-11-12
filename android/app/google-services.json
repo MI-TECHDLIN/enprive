@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "71373777460",
+    "project_id": "enprive-hybrid-ai",
+    "storage_bucket": "enprive-hybrid-ai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:71373777460:android:c4ff80f43ed8bf893d7861",
+        "android_client_info": {
+          "package_name": "com.example.enprive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArjdR7nqQYiMB2f55Et6tAx8OtS24pnsE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
