@@ -35,7 +35,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Enprive'), findsOneWidget);
-    expect(find.text('NANO 4'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Receipts'), findsWidgets);
     expect(find.textContaining('Deni'), findsWidgets);
     expect(find.text('Thinking'), findsOneWidget);
 

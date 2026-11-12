@@ -6,7 +6,6 @@ import '../core/theme/enprive_theme.dart';
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
 import '../widgets/deni_animated_mascot.dart';
-import '../widgets/enprive_provenance_chip.dart';
 import '../widgets/enprive_tactile_button.dart';
 import 'review_result_screen.dart';
 
@@ -14,12 +13,12 @@ enum _ReceiptFilter {
   all,
   reviewRecommended,
   noConcern,
-  insufficient,
 }
 
-/// Receipts Archive Screen (*MyNote inspiration pattern*).
-/// Displays locally stored [PolicyReviewReceipt] records with filter chips,
-/// search bar, cryptographic snapshot digest badges, and Open / Delete actions.
+/// Receipts Archive Screen crafted from the MyNote (`x-mynote.jpeg`) pattern:
+/// - Clean header with toggleable search bar
+/// - Soft flat filter pills (`All · Review · No concern`)
+/// - Quiet, tactile paper-note receipt cards without hash/badge clutter
 class ReceiptsScreen extends StatefulWidget {
   final List<PolicyReviewReceipt> receipts;
   final ReviewCoordinator coordinator;
@@ -45,6 +44,7 @@ class ReceiptsScreen extends StatefulWidget {
 class _ReceiptsScreenState extends State<ReceiptsScreen> {
   final TextEditingController _searchController = TextEditingController();
   _ReceiptFilter _activeFilter = _ReceiptFilter.all;
+  bool _isSearching = false;
   String _searchQuery = '';
 
   @override
@@ -62,15 +62,11 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           r.overallState == ReviewOverallState.reviewRecommended,
         _ReceiptFilter.noConcern =>
           r.overallState == ReviewOverallState.noConcern,
-        _ReceiptFilter.insufficient =>
-          r.overallState == ReviewOverallState.insufficientEvidence,
       };
       if (!matchesFilter) return false;
       if (query.isEmpty) return true;
 
       return r.subjectTitle.toLowerCase().contains(query) ||
-          r.sourceLabel.toLowerCase().contains(query) ||
-          r.snapshotDigest.toLowerCase().contains(query) ||
           r.summary.toLowerCase().contains(query);
     }).toList(growable: false);
   }
@@ -78,10 +74,9 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
   String _filterLabel(_ReceiptFilter filter) {
     final ko = widget.isKorean;
     return switch (filter) {
-      _ReceiptFilter.all => ko ? '전체 (${widget.receipts.length})' : 'All (${widget.receipts.length})',
-      _ReceiptFilter.reviewRecommended => ko ? '검토 권장' : 'Review recommended',
-      _ReceiptFilter.noConcern => ko ? '우려 사항 없음' : 'No concern',
-      _ReceiptFilter.insufficient => ko ? '근거 부족' : 'Insufficient',
+      _ReceiptFilter.all => ko ? '전체' : 'All',
+      _ReceiptFilter.reviewRecommended => ko ? '검토 권장' : 'Review',
+      _ReceiptFilter.noConcern => ko ? '우려 없음' : 'No concern',
     };
   }
 
@@ -97,119 +92,109 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 12),
-            Text(
-              ko ? '저장된 근거 영수증' : 'Evidence Receipts',
-              style: Theme.of(context).textTheme.headlineLarge,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              ko
-                  ? '이 기기에 로컬로 보관된 약관 스냅샷 해시와 원문 인용 기록입니다.'
-                  : 'Local snapshots stored strictly on this phone with cryptographic digests and verified clauses.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: EnpriveColors.inkSecondary,
-                  ),
-            ),
-            const SizedBox(height: 16),
 
-            // Search Bar (B20 thick 2dp focus border style)
-            TextField(
-              controller: _searchController,
-              onChanged: (v) => setState(() => _searchQuery = v),
-              decoration: InputDecoration(
-                hintText: ko
-                    ? '앱 이름, 해시(#), 또는 키워드 검색...'
-                    : 'Search by app name, digest (#), or clause...',
-                prefixIcon: const Icon(Symbols.search_rounded, size: 20),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Symbols.close_rounded, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: EnpriveColors.surface,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+            // MyNote Top Header Row: Title on left, Search icon on right
+            Row(
+              children: [
+                Text(
+                  ko ? '영수증 보관함' : 'Receipts',
+                  style: Theme.of(context).textTheme.headlineLarge,
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(
-                    color: EnpriveColors.ink.withValues(alpha: 0.12),
+                const Spacer(),
+                IconButton(
+                  tooltip: ko ? '검색' : 'Search',
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = !_isSearching;
+                      if (!_isSearching) {
+                        _searchController.clear();
+                        _searchQuery = '';
+                      }
+                    });
+                  },
+                  icon: Icon(
+                    _isSearching
+                        ? Symbols.close_rounded
+                        : Symbols.search_rounded,
+                    color: EnpriveColors.ink,
                   ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(
-                    color: EnpriveColors.teal,
-                    width: 2.0,
+              ],
+            ),
+
+            if (_isSearching) ...[
+              const SizedBox(height: 8),
+              TextField(
+                controller: _searchController,
+                autofocus: true,
+                onChanged: (v) => setState(() => _searchQuery = v),
+                decoration: InputDecoration(
+                  hintText: ko ? '앱 이름 또는 내용 검색...' : 'Search saved reviews...',
+                  prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                  filled: true,
+                  fillColor: EnpriveColors.surfaceMuted,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
                   ),
                 ),
               ),
-            ),
+            ],
             const SizedBox(height: 12),
 
-            // Filter Chips Row (MyNote inspiration pattern)
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _ReceiptFilter.values.map((filter) {
-                  final isSelected = _activeFilter == filter;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(999),
-                      onTap: () => setState(() => _activeFilter = filter),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 160),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
+            // MyNote Soft Filter Pills Row (Date / Time / Title style)
+            Row(
+              children: _ReceiptFilter.values.map((filter) {
+                final isSelected = _activeFilter == filter;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => setState(() => _activeFilter = filter),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 160),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? EnpriveColors.ink.withValues(alpha: 0.12)
+                            : EnpriveColors.surfaceMuted,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _filterLabel(filter),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight:
+                              isSelected ? FontWeight.w800 : FontWeight.w600,
                           color: isSelected
-                              ? EnpriveColors.ctaInk
-                              : EnpriveColors.surface,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: isSelected
-                                ? EnpriveColors.ctaInk
-                                : EnpriveColors.ink.withValues(alpha: 0.12),
-                          ),
-                        ),
-                        child: Text(
-                          _filterLabel(filter),
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: isSelected
-                                ? Colors.white
-                                : EnpriveColors.inkSecondary,
-                          ),
+                              ? EnpriveColors.ink
+                              : EnpriveColors.inkSecondary,
                         ),
                       ),
                     ),
-                  );
-                }).toList(),
-              ),
+                  ),
+                );
+              }).toList(),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-            // Receipts List or Empty State
             Expanded(
               child: filtered.isEmpty
                   ? _buildEmptyState(context, ko)
                   : ListView.separated(
-                      padding: const EdgeInsets.only(bottom: 24),
+                      padding: const EdgeInsets.only(bottom: 100),
                       itemCount: filtered.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 14),
+                      separatorBuilder: (_, _) => const SizedBox(height: 16),
                       itemBuilder: (context, index) {
                         final receipt = filtered[index];
-                        return _ReceiptArchiveCard(
+                        return _MyNoteReceiptCard(
                           receipt: receipt,
                           isKorean: ko,
                           onOpen: () {
@@ -237,70 +222,45 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
     final isFilteredEmpty = widget.receipts.isNotEmpty;
     return Center(
       child: SingleChildScrollView(
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: EnpriveColors.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: EnpriveColors.ink.withValues(alpha: 0.08),
-            ),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (widget.showDeni) ...[
                 const DeniAnimatedMascot(
-                  size: 84,
+                  size: 96,
                   pose: DeniPose.idle,
                 ),
-                const SizedBox(height: 14),
-              ] else ...[
-                const Icon(
-                  Symbols.receipt_long_rounded,
-                  size: 44,
-                  color: EnpriveColors.tealStrong,
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 20),
               ],
               Text(
                 isFilteredEmpty
-                    ? (ko ? '조건에 맞는 영수증이 없습니다.' : 'No matching receipts found.')
-                    : (ko ? '아직 저장된 영수증이 없습니다.' : 'No saved receipts yet.'),
+                    ? (ko ? '일치하는 영수증이 없어요' : 'No matching receipts')
+                    : (ko ? '아직 저장된 영수증이 없어요' : 'No saved receipts yet'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: EnpriveTheme.primaryDisplayFontFamily,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w700,
-                  color: EnpriveColors.ink,
-                ),
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 8),
               Text(
                 isFilteredEmpty
                     ? (ko
-                        ? '다른 필터를 선택하거나 검색어를 지워보세요.'
-                        : 'Try switching filter chips or clearing your search query.')
+                        ? '다른 필터를 선택해 보세요.'
+                        : 'Try selecting another filter above.')
                     : (ko
-                        ? '앱 권한이나 약관을 검토한 뒤 [영수증에 저장]을 누르면 스냅샷 해시와 함께 이곳에 보관됩니다.'
-                        : 'After checking an app or privacy policy, tap "Save to Receipts" to keep a timestamped local record here.'),
+                        ? '앱이나 약관을 검토한 뒤 북마크 아이콘을 누르면 이곳에 보관됩니다.'
+                        : 'Bookmark any app review to keep a private copy on your phone.'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 13.5,
+                  fontSize: 14.5,
                   height: 1.45,
                   color: EnpriveColors.inkSecondary,
                 ),
               ),
               if (!isFilteredEmpty) ...[
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 EnpriveTactileButton(
-                  label: ko ? '첫 약관 검토 시작하기' : 'Start Your First Review',
-                  leading: const Icon(
-                    Symbols.play_arrow_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  label: ko ? '첫 검토 시작하기' : 'Start a review',
                   onPressed: widget.onStartReviewRequested,
                 ),
               ],
@@ -312,210 +272,173 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
   }
 }
 
-class _ReceiptArchiveCard extends StatelessWidget {
+class _MyNoteReceiptCard extends StatelessWidget {
   final PolicyReviewReceipt receipt;
   final bool isKorean;
   final VoidCallback onOpen;
   final VoidCallback onDelete;
 
-  const _ReceiptArchiveCard({
+  const _MyNoteReceiptCard({
     required this.receipt,
     required this.isKorean,
     required this.onOpen,
     required this.onDelete,
   });
 
-  ({
-    Color bg,
-    Color fg,
-    IconData icon,
-    String label,
-  }) _stateStyle() {
-    return switch (receipt.overallState) {
-      ReviewOverallState.reviewRecommended => (
-          bg: EnpriveColors.stateReviewRecommendedBg,
-          fg: EnpriveColors.stateReviewRecommendedFg,
-          icon: Symbols.warning_amber_rounded,
-          label: isKorean ? '검토 권장' : 'Review recommended',
-        ),
-      ReviewOverallState.noConcern => (
-          bg: EnpriveColors.stateNoConcernBg,
-          fg: EnpriveColors.stateNoConcernFg,
-          icon: Symbols.verified_rounded,
-          label: isKorean ? '우려 사항 없음' : 'No concern identified',
-        ),
-      ReviewOverallState.insufficientEvidence => (
-          bg: EnpriveColors.stateInsufficientEvidenceBg,
-          fg: EnpriveColors.stateInsufficientEvidenceFg,
-          icon: Symbols.help_outline_rounded,
-          label: isKorean ? '근거 부족' : 'Insufficient evidence',
-        ),
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
-    final style = _stateStyle();
-    final formattedDate =
-        DateFormat('MMM d, HH:mm').format(receipt.createdAt);
+    final isConcern =
+        receipt.overallState == ReviewOverallState.reviewRecommended;
+    final stateColor = isConcern
+        ? EnpriveColors.stateReviewRecommendedFg
+        : EnpriveColors.stateNoConcernFg;
+    final stateLabel = isConcern
+        ? (isKorean ? '검토 권장' : 'Review recommended')
+        : (isKorean ? '우려 사항 없음' : 'No concern identified');
+    final formattedDate = DateFormat('MMM d, h:mm a').format(receipt.createdAt);
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: EnpriveColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: EnpriveColors.ink.withValues(alpha: 0.10),
+    return Column(
+      children: [
+        // Main Note Card (x-mynote.jpeg clean elevated paper card)
+        Material(
+          color: EnpriveColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: onOpen,
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: stateColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        stateLabel,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: stateColor,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        formattedDate,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: EnpriveColors.inkSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    receipt.subjectTitle,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: EnpriveColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    receipt.summary,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: EnpriveTheme.secondaryFontBaseFamily,
+                      fontSize: 14,
+                      height: 1.45,
+                      color: EnpriveColors.inkSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Top row: State badge + Provenance chip
-          Row(
-            children: [
-              Container(
+        const SizedBox(height: 8),
+
+        // Soft Pastel Action Strip below note (x-mynote.jpeg Edit / Delete pill bars)
+        Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: onOpen,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF2FC),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        isKorean ? '열기' : 'Open receipt',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: EnpriveColors.chipInCloudFg,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(
+                        Symbols.open_in_new_rounded,
+                        size: 15,
+                        color: EnpriveColors.chipInCloudFg,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: onDelete,
+              child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
+                  horizontal: 18,
+                  vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: style.bg,
-                  borderRadius: BorderRadius.circular(999),
+                  color: const Color(0xFFFCEEEE),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(style.icon, size: 15, color: style.fg),
-                    const SizedBox(width: 5),
                     Text(
-                      style.label,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                        color: style.fg,
+                      isKorean ? '삭제' : 'Delete',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF9E2A2B),
                       ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Symbols.delete_outline_rounded,
+                      size: 16,
+                      color: Color(0xFF9E2A2B),
                     ),
                   ],
                 ),
               ),
-              const Spacer(),
-              EnpriveProvenanceChip(source: receipt.inferenceSource),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Title & Source
-          Text(
-            receipt.subjectTitle,
-            style: const TextStyle(
-              fontFamily: EnpriveTheme.primaryDisplayFontFamily,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: EnpriveColors.ink,
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${receipt.sourceLabel} · Last checked $formattedDate · #${receipt.snapshotDigest}',
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: EnpriveColors.inkSecondary,
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Summary preview
-          Text(
-            receipt.summary,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 13.5,
-              height: 1.4,
-              color: EnpriveColors.ink,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Stat pills + Actions row (MyNote pattern)
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: EnpriveColors.surfaceMuted,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${receipt.sourceMatchedCount} verified · ${receipt.findings.length} total',
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: EnpriveColors.inkSecondary,
-                  ),
-                ),
-              ),
-              if (receipt.permissionReport != null) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: receipt.permissionReport!.mismatchCount > 0
-                        ? EnpriveColors.stateReviewRecommendedBg
-                        : EnpriveColors.chipOnDeviceBg,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    receipt.permissionReport!.mismatchCount > 0
-                        ? '${receipt.permissionReport!.mismatchCount} OS mismatch'
-                        : 'OS aligned',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                      color: receipt.permissionReport!.mismatchCount > 0
-                          ? EnpriveColors.stateReviewRecommendedFg
-                          : EnpriveColors.chipOnDeviceFg,
-                    ),
-                  ),
-                ),
-              ],
-              const Spacer(),
-              IconButton(
-                tooltip: isKorean ? '영수증 삭제' : 'Delete receipt',
-                onPressed: onDelete,
-                icon: const Icon(
-                  Symbols.delete_outline_rounded,
-                  size: 20,
-                  color: EnpriveColors.inkSecondary,
-                ),
-              ),
-              TextButton.icon(
-                onPressed: onOpen,
-                icon: const Icon(
-                  Symbols.open_in_new_rounded,
-                  size: 16,
-                  color: EnpriveColors.tealStrong,
-                ),
-                label: Text(
-                  isKorean ? '열기' : 'Open',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: EnpriveColors.tealStrong,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 }

@@ -11,8 +11,12 @@ import '../widgets/enprive_provenance_chip.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/why_this_finding_sheet.dart';
 
-/// Evidence Result Screen combining the Interactive Learning App header/stat-tile
-/// grammar with Brilliant B30's segmented progress bar and docked bottom actions.
+/// Evidence Result Screen crafted directly from the Interactive Learning App
+/// (`x-learning-app.jpeg`) and Brilliant Lesson (`b30-lesson-check.png`) patterns:
+/// - Full-bleed state-tinted hero header with centered Deni + state pill + serif title
+/// - Curved white sheet with 3 pastel stat tiles
+/// - Scannable quote-first finding cards without nested box noise
+/// - Docked bottom bar with bookmark button + primary CTA
 class ReviewResultScreen extends StatefulWidget {
   final PolicyReviewReceipt receipt;
   final ReviewCoordinator coordinator;
@@ -80,6 +84,18 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     );
   }
 
+  void _handleSave(PolicyReviewReceipt receipt) {
+    if (_isSaved) return;
+    setState(() => _isSaved = true);
+    widget.onSaveReceipt?.call(receipt);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Saved to your local receipts.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -88,344 +104,301 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         _stateConfig(l10n);
 
     return Scaffold(
-      backgroundColor: EnpriveColors.paper,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        titleSpacing: 16,
-        title: Row(
-          children: [
-            IconButton(
-              tooltip: 'Close review',
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Symbols.close_rounded, size: 24),
-            ),
-            const SizedBox(width: 8),
-            // Brilliant B30 4-segment verification progress bar
-            Expanded(
-              child: Semantics(
-                label: 'Verification complete: 4 of 4 evidence checks finished',
-                child: Row(
-                  children: List.generate(4, (index) {
-                    return Expanded(
-                      child: Container(
-                        height: 6,
-                        margin: EdgeInsets.only(right: index < 3 ? 6 : 0),
-                        decoration: BoxDecoration(
-                          color: EnpriveColors.teal,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            EnpriveProvenanceChip(source: receipt.inferenceSource),
-          ],
-        ),
-      ),
+      backgroundColor: stateBg,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+            // Top Navigation Row inside tinted header (x-learning-app.jpeg pattern)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
                 children: [
-                  // 1. Calibrated State Header Card (Learning App Pattern)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: stateBg,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: stateFg.withValues(alpha: 0.22),
-                        width: 1.2,
+                  Material(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      tooltip: 'Close',
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(
+                        Symbols.close_rounded,
+                        size: 20,
+                        color: EnpriveColors.ink,
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.85),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(stateIcon, size: 18, color: stateFg),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    stateTitle,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w800,
-                                      color: stateFg,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '#${receipt.snapshotDigest.substring(0, 8)}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: stateFg.withValues(alpha: 0.85),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          receipt.subjectTitle,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineLarge
-                              ?.copyWith(color: EnpriveColors.ink),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          receipt.summary,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyLarge
-                              ?.copyWith(color: EnpriveColors.ink),
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.72),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Symbols.info_rounded,
-                                size: 16,
-                                color: stateFg,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  stateSubtitle,
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: EnpriveColors.ink,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // 2. Three Pastel Stat Tiles (Interactive Learning App Pattern)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _EvidenceMetricTile(
-                          value: '${receipt.findings.length}',
-                          label: 'Findings',
-                          bg: EnpriveColors.surface,
-                          fg: EnpriveColors.ink,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _EvidenceMetricTile(
-                          value: '${receipt.sourceMatchedCount}',
-                          label: l10n.statusSourceMatched,
-                          bg: EnpriveColors.stateNoConcernBg,
-                          fg: EnpriveColors.stateNoConcernFg,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _EvidenceMetricTile(
-                          value: '${receipt.unverifiedCount}',
-                          label: l10n.statusUnverified,
-                          bg: EnpriveColors.stateInsufficientEvidenceBg,
-                          fg: EnpriveColors.stateInsufficientEvidenceFg,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 3. Deni Reactive Companion Banner
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: EnpriveColors.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: EnpriveColors.teal.withValues(alpha: 0.16),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        DeniAnimatedMascot(
-                          size: 64,
-                          pose: _statePose,
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Deni’s Evidence Check',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w800,
-                                  color: EnpriveColors.ink,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                receipt.findings.isNotEmpty
-                                    ? 'Tap any finding below to see the exact policy quote in context and what Enprive could not verify.'
-                                    : receipt.calibratedDisclaimer,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: EnpriveColors.inkSecondary,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // 3b. Local Android OS Permission Comparison Section (when an app was inspected)
-                  if (receipt.permissionReport != null) ...[
-                    _PermissionComparisonSection(
-                      report: receipt.permissionReport!,
-                      l10n: l10n,
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // 4. Findings List Header
-                  Text(
-                    receipt.findings.isNotEmpty
-                        ? 'VERIFIED POLICY & DEVICE EVIDENCE (${receipt.findings.length})'
-                        : 'CAPTURED POLICY SNAPSHOT',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: EnpriveColors.inkSecondary,
-                        ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  if (receipt.findings.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: EnpriveColors.quoteSurface,
-                        borderRadius: BorderRadius.circular(20),
-                        border: const Border(
-                          left: BorderSide(color: EnpriveColors.teal, width: 4),
-                        ),
-                      ),
-                      child: Text(
-                        receipt.snapshotText,
-                        style: const TextStyle(
-                          fontFamily: EnpriveTheme.primaryDisplayFontFamily,
-                          fontSize: 15,
-                          height: 1.55,
-                          color: EnpriveColors.ink,
-                        ),
-                      ),
-                    )
-                  else
-                    ...receipt.findings.map(
-                      (finding) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: _FindingEvidenceCard(
-                          finding: finding,
-                          l10n: l10n,
-                          onInspect: () => _openFindingDetails(finding),
-                        ),
-                      ),
-                    ),
+                  const Spacer(),
+                  EnpriveProvenanceChip(source: receipt.inferenceSource),
                 ],
               ),
             ),
 
-            // 5. Sticky Bottom Bar (Brilliant B30 Pattern: [Ask Deni] + [Save to Receipts])
-            Container(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-              decoration: BoxDecoration(
-                color: EnpriveColors.paper,
-                border: Border(
-                  top: BorderSide(
-                    color: EnpriveColors.ink.withValues(alpha: 0.08),
-                  ),
+            // Scrollable Hero + Curved Sheet Body
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // Centered Tinted Hero Stage (x-learning-app.jpeg)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 104,
+                            height: 104,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.65),
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: DeniAnimatedMascot(
+                              size: 84,
+                              pose: _statePose,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.82),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(stateIcon, size: 15, color: stateFg),
+                                const SizedBox(width: 6),
+                                Text(
+                                  stateTitle,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: stateFg,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            receipt.subjectTitle,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineLarge
+                                ?.copyWith(
+                                  fontSize: 26,
+                                  color: EnpriveColors.ink,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Curved White Content Sheet (x-learning-app.jpeg)
+                    Container(
+                      width: double.infinity,
+                      constraints: BoxConstraints(
+                        minHeight: MediaQuery.of(context).size.height * 0.58,
+                      ),
+                      padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+                      decoration: const BoxDecoration(
+                        color: EnpriveColors.paper,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(32),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 3 Pastel Stat Tiles (x-learning-app.jpeg exact layout)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _PastelStatTile(
+                                  icon: Symbols.article_rounded,
+                                  iconColor: EnpriveColors.chipInCloudFg,
+                                  bg: const Color(0xFFEAF2FC),
+                                  value: '${receipt.findings.length}',
+                                  label: 'Findings',
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _PastelStatTile(
+                                  icon: Symbols.format_quote_rounded,
+                                  iconColor: EnpriveColors.stateNoConcernFg,
+                                  bg: EnpriveColors.stateNoConcernBg,
+                                  value: '${receipt.sourceMatchedCount}',
+                                  label: 'Verified',
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _PastelStatTile(
+                                  icon: receipt.permissionReport != null
+                                      ? Symbols.phone_android_rounded
+                                      : Symbols.help_outline_rounded,
+                                  iconColor:
+                                      EnpriveColors.stateReviewRecommendedFg,
+                                  bg: EnpriveColors.stateReviewRecommendedBg,
+                                  value: receipt.permissionReport != null
+                                      ? '${receipt.permissionReport!.grantedSensitiveCount}'
+                                      : '${receipt.unverifiedCount}',
+                                  label: receipt.permissionReport != null
+                                      ? 'OS Granted'
+                                      : 'Unverified',
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Summary & Calibrated Note (no heavy boxes)
+                          Text(
+                            receipt.summary,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              height: 1.5,
+                              color: EnpriveColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            stateSubtitle,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              height: 1.4,
+                              color: EnpriveColors.inkSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+
+                          // Findings List ("Lessons" list rhythm from x-learning-app.jpeg)
+                          Text(
+                            receipt.findings.isNotEmpty
+                                ? 'Key Findings'
+                                : 'Reviewed Excerpt',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: EnpriveColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          if (receipt.findings.isEmpty)
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: EnpriveColors.quoteSurface,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                receipt.snapshotText,
+                                style: const TextStyle(
+                                  fontFamily: EnpriveTheme.quoteFontFamily,
+                                  fontSize: 15,
+                                  height: 1.55,
+                                  color: EnpriveColors.ink,
+                                ),
+                              ),
+                            )
+                          else
+                            ...receipt.findings.map(
+                              (finding) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12.0),
+                                child: _CleanFindingCard(
+                                  finding: finding,
+                                  onTap: () => _openFindingDetails(finding),
+                                ),
+                              ),
+                            ),
+
+                          // Optional Permission Check Section (clean single list card)
+                          if (receipt.permissionReport != null &&
+                              receipt.permissionReport!.items.isNotEmpty) ...[
+                            const SizedBox(height: 20),
+                            const Text(
+                              'Permissions on this phone',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: EnpriveColors.ink,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _CleanPermissionListCard(
+                              report: receipt.permissionReport!,
+                              l10n: l10n,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+            ),
+
+            // Sticky Bottom Bar (x-learning-app.jpeg: square bookmark + dark pill CTA)
+            Container(
+              color: EnpriveColors.paper,
+              padding: EdgeInsets.fromLTRB(
+                24,
+                12,
+                24,
+                MediaQuery.of(context).padding.bottom + 16,
               ),
               child: Row(
                 children: [
-                  if (receipt.findings.isNotEmpty) ...[
-                    Expanded(
-                      flex: 5,
-                      child: EnpriveTactileButton(
-                        label: l10n.btnAskDeni,
-                        isSecondary: true,
-                        leading: const Icon(
-                          Symbols.chat_bubble_rounded,
-                          size: 18,
-                          color: EnpriveColors.tealStrong,
+                  if (widget.onSaveReceipt != null) ...[
+                    InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () => _handleSave(receipt),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: _isSaved
+                              ? EnpriveColors.stateNoConcernBg
+                              : EnpriveColors.surface,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: _isSaved
+                                ? EnpriveColors.stateNoConcernFg
+                                : EnpriveColors.ink.withValues(alpha: 0.12),
+                          ),
                         ),
-                        onPressed: () =>
-                            _openFindingDetails(receipt.findings.first),
+                        child: Icon(
+                          _isSaved
+                              ? Symbols.bookmark_added_rounded
+                              : Symbols.bookmark_add_rounded,
+                          color: _isSaved
+                              ? EnpriveColors.stateNoConcernFg
+                              : EnpriveColors.ink,
+                          size: 22,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                   ],
                   Expanded(
-                    flex: 6,
                     child: EnpriveTactileButton(
-                      label: _isSaved ? 'Saved to Receipts' : l10n.btnSaveToReceipts,
-                      leading: Icon(
-                        _isSaved
-                            ? Symbols.bookmark_added_rounded
-                            : Symbols.bookmark_add_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+                      label: receipt.findings.isNotEmpty
+                          ? l10n.btnAskDeni
+                          : (_isSaved
+                              ? 'Saved to Receipts'
+                              : l10n.btnSaveToReceipts),
                       onPressed: () {
-                        if (!_isSaved) {
-                          setState(() => _isSaved = true);
-                          widget.onSaveReceipt?.call(receipt);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Evidence receipt saved locally on this phone.',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
+                        if (receipt.findings.isNotEmpty) {
+                          _openFindingDetails(receipt.findings.first);
+                        } else {
+                          _handleSave(receipt);
                         }
                       },
                     ),
@@ -440,48 +413,51 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
   }
 }
 
-class _EvidenceMetricTile extends StatelessWidget {
+class _PastelStatTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final Color bg;
   final String value;
   final String label;
-  final Color bg;
-  final Color fg;
 
-  const _EvidenceMetricTile({
+  const _PastelStatTile({
+    required this.icon,
+    required this.iconColor,
+    required this.bg,
     required this.value,
     required this.label,
-    required this.bg,
-    required this.fg,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: fg.withValues(alpha: 0.14)),
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Icon(icon, size: 20, color: iconColor),
+          const SizedBox(height: 12),
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: fg,
+              color: EnpriveColors.ink,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             label,
-            textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 11.5,
+            style: const TextStyle(
+              fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: fg.withValues(alpha: 0.9),
+              color: EnpriveColors.inkSecondary,
             ),
           ),
         ],
@@ -490,400 +466,213 @@ class _EvidenceMetricTile extends StatelessWidget {
   }
 }
 
-class _FindingEvidenceCard extends StatelessWidget {
+class _CleanFindingCard extends StatelessWidget {
   final VerifiedFinding finding;
-  final AppLocalizations l10n;
-  final VoidCallback onInspect;
+  final VoidCallback onTap;
 
-  const _FindingEvidenceCard({
+  const _CleanFindingCard({
     required this.finding,
-    required this.l10n,
-    required this.onInspect,
+    required this.onTap,
   });
 
-  String _categoryLabel(FindingCategory category) {
+  IconData _categoryIcon(FindingCategory category) {
     return switch (category) {
-      FindingCategory.dataCollection => 'Data Collection',
-      FindingCategory.sharing => 'Third-Party Sharing',
-      FindingCategory.tracking => 'Location / Tracking',
-      FindingCategory.retention => 'Retention & Training',
-      FindingCategory.parentalConsent => 'Parental Controls',
+      FindingCategory.dataCollection => Symbols.folder_shared_rounded,
+      FindingCategory.sharing => Symbols.share_rounded,
+      FindingCategory.tracking => Symbols.location_on_rounded,
+      FindingCategory.retention => Symbols.history_rounded,
+      FindingCategory.parentalConsent => Symbols.family_restroom_rounded,
     };
   }
 
   @override
   Widget build(BuildContext context) {
-    final isMatched = finding.status == EvidenceStatus.sourceMatched;
-    final isDeviceObserved = finding.status == EvidenceStatus.deviceObserved;
-    final isVerified = isMatched || isDeviceObserved;
+    final isVerified = finding.isVerified;
 
-    final String statusLabel = isDeviceObserved
-        ? l10n.statusDeviceObserved
-        : (isMatched ? l10n.statusSourceMatched : l10n.statusUnverified);
-    final Color statusBg = isDeviceObserved
-        ? EnpriveColors.chipOnDeviceBg
-        : (isMatched
-            ? EnpriveColors.stateNoConcernBg
-            : EnpriveColors.stateInsufficientEvidenceBg);
-    final Color statusFg = isDeviceObserved
-        ? EnpriveColors.chipOnDeviceFg
-        : (isMatched
-            ? EnpriveColors.stateNoConcernFg
-            : EnpriveColors.stateInsufficientEvidenceFg);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: EnpriveColors.surface,
+    return Material(
+      color: EnpriveColors.surface,
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: EnpriveColors.ink.withValues(alpha: 0.08),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0E4A43).withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Top badges row
-          Row(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: EnpriveColors.surfaceMuted,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  _categoryLabel(finding.category),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: EnpriveColors.inkSecondary,
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: EnpriveColors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      _categoryIcon(finding.category),
+                      size: 20,
+                      color: EnpriveColors.tealStrong,
+                    ),
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          finding.title,
+                          style: const TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: EnpriveColors.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          finding.status == EvidenceStatus.deviceObserved
+                              ? 'Observed on this phone'
+                              : (isVerified
+                                  ? 'Quote verified in policy'
+                                  : 'Unverified claim'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isVerified
+                                ? EnpriveColors.tealStrong
+                                : EnpriveColors.inkSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    isVerified
+                        ? Symbols.check_circle_rounded
+                        : Symbols.help_outline_rounded,
+                    size: 20,
+                    color: isVerified
+                        ? EnpriveColors.stateNoConcernFg
+                        : EnpriveColors.inkSecondary,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                finding.explanation,
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.45,
+                  color: EnpriveColors.inkSecondary,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 12),
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
+                  horizontal: 14,
+                  vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: statusBg,
-                  borderRadius: BorderRadius.circular(999),
+                  color: EnpriveColors.quoteSurface,
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isDeviceObserved
-                          ? Symbols.phone_android_rounded
-                          : (isVerified
-                              ? Symbols.verified_rounded
-                              : Symbols.help_outline_rounded),
-                      size: 14,
-                      color: statusFg,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      statusLabel,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: statusFg,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  '“${finding.exactExcerpt}”',
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: EnpriveTheme.quoteFontFamily,
+                    fontSize: 14,
+                    height: 1.45,
+                    color: EnpriveColors.ink,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-
-          // Finding title
-          Text(
-            finding.title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 12),
-
-          // Verbatim Policy Excerpt (Source Serif 4 on quoteSurface)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: EnpriveColors.quoteSurface,
-              borderRadius: BorderRadius.circular(14),
-              border: const Border(
-                left: BorderSide(color: EnpriveColors.teal, width: 3.5),
-              ),
-            ),
-            child: Text(
-              '“${finding.exactExcerpt}”',
-              style: const TextStyle(
-                fontFamily: EnpriveTheme.primaryDisplayFontFamily,
-                fontSize: 15,
-                height: 1.5,
-                color: EnpriveColors.ink,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Plain-language explanation
-          Text(
-            finding.explanation,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: EnpriveColors.ink,
-                ),
-          ),
-          const SizedBox(height: 14),
-
-          // Action: "Why this finding?"
-          InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: onInspect,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Symbols.manage_search_rounded,
-                    size: 18,
-                    color: EnpriveColors.tealStrong,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    l10n.btnWhyThisFinding,
-                    style: const TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                      color: EnpriveColors.tealStrong,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Symbols.arrow_forward_rounded,
-                    size: 15,
-                    color: EnpriveColors.tealStrong,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _PermissionComparisonSection extends StatelessWidget {
+class _CleanPermissionListCard extends StatelessWidget {
   final AppPermissionComparisonReport report;
   final AppLocalizations l10n;
 
-  const _PermissionComparisonSection({
+  const _CleanPermissionListCard({
     required this.report,
     required this.l10n,
   });
 
-  (Color bg, Color fg, String label, IconData icon) _alignmentStyle(
-    PermissionAlignmentState state,
-  ) {
-    return switch (state) {
-      PermissionAlignmentState.undisclosedInPolicy => (
-          EnpriveColors.stateReviewRecommendedBg,
-          EnpriveColors.stateReviewRecommendedFg,
-          'Undisclosed in Policy',
-          Symbols.warning_amber_rounded,
-        ),
-      PermissionAlignmentState.grantedAndDisclosed => (
-          EnpriveColors.chipOnDeviceBg,
-          EnpriveColors.chipOnDeviceFg,
-          'Granted & Disclosed',
-          Symbols.check_circle_rounded,
-        ),
-      PermissionAlignmentState.disclosedNotGranted => (
-          EnpriveColors.stateInsufficientEvidenceBg,
-          EnpriveColors.stateInsufficientEvidenceFg,
-          'Denied on Phone',
-          Symbols.block_rounded,
-        ),
-      PermissionAlignmentState.notRequested => (
-          EnpriveColors.stateNoConcernBg,
-          EnpriveColors.stateNoConcernFg,
-          'Not Requested',
-          Symbols.verified_user_rounded,
-        ),
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: EnpriveColors.surface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: EnpriveColors.teal.withValues(alpha: 0.22),
-          width: 1.2,
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(
-                Symbols.phone_android_rounded,
-                size: 18,
-                color: EnpriveColors.tealStrong,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'ANDROID OS PERMISSION CHECK (${report.snapshot.packageName})',
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                    color: EnpriveColors.tealStrong,
-                    letterSpacing: 0.3,
+          ...report.items.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final item = entry.value;
+            final isMismatch = item.alignmentState ==
+                PermissionAlignmentState.undisclosedInPolicy;
+            return Column(
+              children: [
+                if (idx > 0)
+                  Divider(
+                    height: 20,
+                    color: EnpriveColors.ink.withValues(alpha: 0.06),
                   ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          if (report.items.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: EnpriveColors.stateNoConcernBg,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Symbols.verified_user_rounded,
-                    color: EnpriveColors.stateNoConcernFg,
-                    size: 18,
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'No sensitive permissions (Location, Microphone, Camera, Contacts, or Ad ID) are requested by this APK on Android.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: EnpriveColors.stateNoConcernFg,
-                      ),
+                Row(
+                  children: [
+                    Icon(
+                      isMismatch
+                          ? Symbols.warning_amber_rounded
+                          : (item.isGranted
+                              ? Symbols.check_circle_rounded
+                              : Symbols.remove_circle_outline_rounded),
+                      size: 18,
+                      color: isMismatch
+                          ? EnpriveColors.stateReviewRecommendedFg
+                          : (item.isGranted
+                              ? EnpriveColors.tealStrong
+                              : EnpriveColors.inkSecondary),
                     ),
-                  ),
-                ],
-              ),
-            )
-          else
-            ...report.items.map((item) {
-              final (bg, fg, label, icon) = _alignmentStyle(item.alignmentState);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10.0),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: EnpriveColors.paper,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: EnpriveColors.ink.withValues(alpha: 0.08),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Text(
-                              item.friendlyName,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: EnpriveColors.ink,
-                              ),
+                          Text(
+                            item.friendlyName,
+                            style: const TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: EnpriveColors.ink,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: bg,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(icon, size: 13, color: fg),
-                                const SizedBox(width: 4),
-                                Text(
-                                  label,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: fg,
-                                  ),
-                                ),
-                              ],
+                          Text(
+                            item.parentExplanation,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              height: 1.35,
+                              color: EnpriveColors.inkSecondary,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        item.parentExplanation,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: EnpriveColors.ink,
-                          height: 1.4,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.osStatusSummary,
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          color: EnpriveColors.inkSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              );
-            }),
-
-          const SizedBox(height: 6),
-          Text(
-            l10n.permissionLimitationNotice,
-            style: const TextStyle(
-              fontSize: 12,
-              color: EnpriveColors.inkSecondary,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
+              ],
+            );
+          }),
         ],
       ),
     );

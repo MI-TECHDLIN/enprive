@@ -15,13 +15,12 @@ import 'services/platform/hybrid_ai_bridge.dart';
 import 'services/storage/receipt_repository.dart';
 import 'widgets/cloud_consent_sheet.dart';
 import 'widgets/deni_animated_mascot.dart';
-import 'widgets/enprive_provenance_chip.dart';
 import 'widgets/enprive_tactile_button.dart';
 import 'widgets/installed_app_picker_sheet.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // Enforce 100% offline bundled font rendering (Source Serif 4 + FontBase Inter)
+  // Enforce 100% offline bundled font rendering (Nunito + FontBase Inter + Source Serif 4)
   GoogleFonts.config.allowRuntimeFetching = false;
   runApp(const EnpriveApp());
 }
@@ -98,7 +97,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
   final ReceiptRepository _receiptRepo = ReceiptRepository();
   final UserPreferencesRepository _prefsRepo = UserPreferencesRepository();
   DeviceCapability? _deviceCapability;
-  bool _isLoadingCapability = true;
   bool _isRunningReview = false;
   DeniPose _activePose = DeniPose.idle;
   int _selectedTabIndex = 0;
@@ -146,7 +144,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
     if (mounted) {
       setState(() {
         _deviceCapability = cap;
-        _isLoadingCapability = false;
       });
     }
     if (cap.isSupported && cap.modelStatus == ModelDownloadStatus.available) {
@@ -315,17 +312,17 @@ We do not collect personal identifiers, precise location data, microphone audio,
     return switch (pose) {
       DeniPose.idle => l10n.deniIntro,
       DeniPose.thinking => isKorean
-          ? '기기 내 Gemini Nano로 약관 문장을 대조하고 있어요. 외부로 전송되지 않습니다.'
-          : 'Matching policy clauses on-device with Gemini Nano. Nothing leaves your phone.',
+          ? '기기 내 Gemini Nano로 약관 문장을 대조하고 있어요.'
+          : 'Matching policy clauses on-device with Gemini Nano.',
       DeniPose.explaining => isKorean
           ? '발견된 모든 항목은 원문 약관의 정확한 인용구와 함께 표시됩니다.'
-          : 'Every finding is anchored to a verbatim quote from the captured policy snapshot.',
+          : 'Every finding is anchored to a verbatim quote from the policy.',
       DeniPose.listening => isKorean
           ? '결과 요약을 한국어 또는 영어로 차분하게 읽어드릴 수 있어요.'
-          : 'I can read the evidence summary aloud in English or Korean whenever you are ready.',
+          : 'I can read the evidence summary aloud whenever you are ready.',
       DeniPose.support => isKorean
-          ? '원문에서 확인할 수 없는 내용은 추측하지 않고 미확인으로 투명하게 안내해 드려요.'
-          : 'If a claim cannot be matched to the source text, I mark it unverified rather than guessing.',
+          ? '원문에서 확인할 수 없는 내용은 추측하지 않고 미확인으로 안내해 드려요.'
+          : 'If a claim cannot be matched to the text, I mark it unverified.',
       DeniPose.celebrating => l10n.stateNoConcernSubtitle,
     };
   }
@@ -336,9 +333,25 @@ We do not collect personal identifiers, precise location data, microphone audio,
     final isKorean = widget.currentLocale.languageCode == 'ko';
 
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
+        titleSpacing: 24,
         title: Row(
           children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: EnpriveColors.teal,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Symbols.shield_moon_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 10),
             Text(
               l10n.appTitle,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -346,47 +359,41 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     fontWeight: FontWeight.w800,
                   ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: EnpriveColors.teal.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: EnpriveColors.teal.withValues(alpha: 0.24),
-                ),
-              ),
-              child: const Text(
-                'NANO 4',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: EnpriveColors.tealStrong,
-                ),
-              ),
-            ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              final nextLocale =
-                  isKorean ? const Locale('en') : const Locale('ko');
-              widget.onLocaleChange(nextLocale);
-              unawaited(_prefsRepo.update(languageCode: nextLocale.languageCode));
-            },
-            child: Row(
-              children: [
-                const Icon(Symbols.translate_rounded, size: 18),
-                const SizedBox(width: 4),
-                Text(
-                  isKorean ? 'English' : '한국어',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+          Padding(
+            padding: const EdgeInsets.only(right: 20.0),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: () {
+                final nextLocale =
+                    isKorean ? const Locale('en') : const Locale('ko');
+                widget.onLocaleChange(nextLocale);
+                unawaited(
+                  _prefsRepo.update(languageCode: nextLocale.languageCode),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
                 ),
-              ],
+                decoration: BoxDecoration(
+                  color: EnpriveColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  isKorean ? 'EN' : '한국어',
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: EnpriveColors.ink,
+                  ),
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 8),
         ],
       ),
       body: IndexedStack(
@@ -427,59 +434,11 @@ We do not collect personal identifiers, precise location data, microphone audio,
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: EnpriveColors.surface,
-          border: Border(
-            top: BorderSide(
-              color: EnpriveColors.ink.withValues(alpha: 0.08),
-            ),
-          ),
-        ),
-        child: NavigationBar(
-          selectedIndex: _selectedTabIndex,
-          backgroundColor: EnpriveColors.surface,
-          indicatorColor: EnpriveColors.teal.withValues(alpha: 0.14),
-          onDestinationSelected: (index) {
-            setState(() => _selectedTabIndex = index);
-          },
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Symbols.home_rounded),
-              selectedIcon: const Icon(
-                Symbols.home_rounded,
-                color: EnpriveColors.tealStrong,
-              ),
-              label: isKorean ? '홈' : 'Home',
-            ),
-            NavigationDestination(
-              icon: Badge(
-                isLabelVisible: _savedReceipts.isNotEmpty,
-                label: Text('${_savedReceipts.length}'),
-                backgroundColor: EnpriveColors.tealStrong,
-                child: const Icon(Symbols.receipt_long_rounded),
-              ),
-              selectedIcon: Badge(
-                isLabelVisible: _savedReceipts.isNotEmpty,
-                label: Text('${_savedReceipts.length}'),
-                backgroundColor: EnpriveColors.tealStrong,
-                child: const Icon(
-                  Symbols.receipt_long_rounded,
-                  color: EnpriveColors.tealStrong,
-                ),
-              ),
-              label: isKorean ? '영수증' : 'Receipts',
-            ),
-            NavigationDestination(
-              icon: const Icon(Symbols.tune_rounded),
-              selectedIcon: const Icon(
-                Symbols.tune_rounded,
-                color: EnpriveColors.tealStrong,
-              ),
-              label: isKorean ? '설정' : 'Settings',
-            ),
-          ],
-        ),
+      bottomNavigationBar: _FloatingBottomNavDock(
+        selectedIndex: _selectedTabIndex,
+        receiptsCount: _savedReceipts.length,
+        isKorean: isKorean,
+        onSelect: (index) => setState(() => _selectedTabIndex = index),
       ),
     );
   }
@@ -490,291 +449,280 @@ We do not collect personal identifiers, precise location data, microphone audio,
     bool isKorean,
   ) {
     return SafeArea(
-      child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
+      bottom: false,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
+        child: Column(
+          children: [
+            // 1. Brilliant B1 + Family Splash Hero Stage Card
+            if (_showDeni) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 18),
+                decoration: BoxDecoration(
+                  color: EnpriveColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(28),
                 ),
-                child: IntrinsicHeight(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 8),
-                      // Provenance / Hardware Readiness Bar
-                      Row(
+                child: Column(
+                  children: [
+                    // Stage with subtle floating privacy artifacts (x-family-splash.jpeg)
+                    SizedBox(
+                      height: 124,
+                      child: Stack(
+                        alignment: Alignment.center,
                         children: [
-                          const EnpriveProvenanceChip(
-                            source: InferenceSource.onDevice,
-                            customLabel: 'Private by default',
-                          ),
-                          const Spacer(),
-                          if (_isLoadingCapability || _isRunningReview)
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          else
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: EnpriveColors.teal.withValues(alpha: 0.06),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                _deviceCapability?.isSupported == true
-                                    ? 'Device Ready'
-                                    : 'Hardware Scout',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: EnpriveColors.inkSecondary,
-                                ),
-                              ),
+                          Positioned(
+                            left: 24,
+                            top: 8,
+                            child: _FloatingStageBadge(
+                              icon: Symbols.format_quote_rounded,
+                              color: EnpriveColors.tealStrong,
                             ),
+                          ),
+                          Positioned(
+                            right: 28,
+                            top: 12,
+                            child: _FloatingStageBadge(
+                              icon: Symbols.lock_rounded,
+                              color: EnpriveColors.stateNoConcernFg,
+                            ),
+                          ),
+                          Positioned(
+                            left: 44,
+                            bottom: 8,
+                            child: _FloatingStageBadge(
+                              icon: Symbols.phone_android_rounded,
+                              color: EnpriveColors.chipInCloudFg,
+                            ),
+                          ),
+                          DeniAnimatedMascot(
+                            size: 108,
+                            pose: _activePose,
+                            onTap: _cyclePose,
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 24),
+                    ),
+                    const SizedBox(height: 12),
 
-                      // F-Pattern Hero Headline (100% Ink Hierarchy)
-                      Text(
-                        isKorean
-                            ? '아이들이 사용하는 앱의\n개인정보를 더 명확하게.'
-                            : 'A clearer look at the\napps children use.',
-                        style: Theme.of(context).textTheme.headlineLarge,
+                    // Floating White Speech Bubble Card (b01-welcome.png overlay card)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 14,
                       ),
-                      const SizedBox(height: 8),
-
-                      // Reassurance Subtitle (70% Ink Secondary Hierarchy)
-                      Text(
-                        l10n.homePrivacySubtitle,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: EnpriveColors.inkSecondary,
+                      decoration: BoxDecoration(
+                        color: EnpriveColors.surface,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Deni · ${_poseLabel(_activePose, isKorean)}',
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: EnpriveColors.tealStrong,
                             ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Elevated Deni Character Stage Card (respects showDeni preference)
-                      if (_showDeni)
-                        Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: EnpriveColors.surface,
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: EnpriveColors.teal.withValues(alpha: 0.14),
-                            width: 1.2,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0E4A43)
-                                  .withValues(alpha: 0.06),
-                              blurRadius: 24,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                DeniAnimatedMascot(
-                                  size: 88,
-                                  pose: _activePose,
-                                  onTap: _cyclePose,
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const Text(
-                                            'Deni (데니)',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w800,
-                                              color: EnpriveColors.ink,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: EnpriveColors.teal
-                                                  .withValues(alpha: 0.08),
-                                              borderRadius:
-                                                  BorderRadius.circular(999),
-                                            ),
-                                            child: Text(
-                                              _poseLabel(
-                                                  _activePose, isKorean),
-                                              style: const TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w700,
-                                                color: EnpriveColors.tealStrong,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      AnimatedSwitcher(
-                                        duration:
-                                            const Duration(milliseconds: 220),
-                                        child: Text(
-                                          _poseDialogue(
-                                              _activePose, l10n, isKorean),
-                                          key: ValueKey<String>(
-                                            '${_activePose.name}_$isKorean',
-                                          ),
-                                          style: const TextStyle(
-                                            fontSize: 13.5,
-                                            height: 1.45,
-                                            color: EnpriveColors.inkSecondary,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            // Interactive 6-Pose Expression Selector Pills
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: DeniPose.values.map((pose) {
-                                  final isSelected = pose == _activePose;
-                                  return Padding(
-                                    padding: const EdgeInsets.only(right: 8.0),
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(999),
-                                      onTap: () {
-                                        setState(() => _activePose = pose);
-                                      },
-                                      child: AnimatedContainer(
-                                        duration:
-                                            const Duration(milliseconds: 180),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isSelected
-                                              ? EnpriveColors.teal
-                                                  .withValues(alpha: 0.12)
-                                              : EnpriveColors.paper,
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                          border: Border.all(
-                                            color: isSelected
-                                                ? EnpriveColors.teal
-                                                : EnpriveColors.ink.withValues(
-                                                    alpha: 0.10,
-                                                  ),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          _poseLabel(pose, isKorean),
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: isSelected
-                                                ? FontWeight.w700
-                                                : FontWeight.w500,
-                                            color: isSelected
-                                                ? EnpriveColors.tealStrong
-                                                : EnpriveColors.inkSecondary,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
+                          const SizedBox(height: 4),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 200),
+                            child: Text(
+                              _poseDialogue(_activePose, l10n, isKorean),
+                              key: ValueKey<String>(
+                                '${_activePose.name}_$isKorean',
+                              ),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                height: 1.4,
+                                color: EnpriveColors.inkSecondary,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
+                    ),
+                    const SizedBox(height: 12),
 
-                      // Recent Evidence Receipts (Monday Home inspiration pattern)
-                      if (_savedReceipts.isNotEmpty) ...[
-                        const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            Text(
-                              'SAVED RECEIPTS (${_savedReceipts.length})',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: EnpriveColors.inkSecondary,
+                    // Quiet Pose Switcher Row
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: DeniPose.values.map((pose) {
+                          final isSelected = pose == _activePose;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 6.0),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(999),
+                              onTap: () => setState(() => _activePose = pose),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? EnpriveColors.ink
+                                      : Colors.white.withValues(alpha: 0.65),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  _poseLabel(pose, isKorean),
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : EnpriveColors.inkSecondary,
                                   ),
-                            ),
-                            const Spacer(),
-                            TextButton(
-                              onPressed: () {
-                                setState(() => _selectedTabIndex = 1);
-                              },
-                              child: Text(
-                                isKorean ? '전체 보기 →' : 'See all →',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: EnpriveColors.tealStrong,
                                 ),
                               ),
                             ),
-                          ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
+            ],
+
+            // 2. Centered Editorial Headline & Subtitle (Brilliant b01-welcome.png)
+            Text(
+              isKorean
+                  ? '아이들이 쓰는 앱,\n약관과 권한을 한눈에'
+                  : 'A clearer look at the\napps children use',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                    fontSize: 30,
+                  ),
+            ),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Text(
+                l10n.homePrivacySubtitle,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: EnpriveColors.inkSecondary,
+                    ),
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // 3. Two Tactile Pill CTAs (b01-welcome.png exact button stack)
+            if (_isRunningReview)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: CircularProgressIndicator(),
+              )
+            else ...[
+              EnpriveTactileButton(
+                label: l10n.btnCheckApp,
+                onPressed: () {
+                  setState(() => _activePose = DeniPose.explaining);
+                  _showCheckAppModal(context, l10n);
+                },
+              ),
+              const SizedBox(height: 12),
+              EnpriveTactileButton(
+                label: l10n.btnPasteTerms,
+                isSecondary: true,
+                onPressed: () {
+                  setState(() => _activePose = DeniPose.thinking);
+                  _showPasteModal(context, l10n);
+                },
+              ),
+            ],
+
+            // 4. Monday Home "Recently visited →" Card Group (x-monday-home.jpeg)
+            if (_savedReceipts.isNotEmpty) ...[
+              const SizedBox(height: 28),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: EnpriveColors.surface,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          isKorean ? '최근 검토한 영수증' : 'Recently reviewed',
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: EnpriveColors.ink,
+                          ),
                         ),
-                        const SizedBox(height: 6),
-                        ..._savedReceipts.take(2).map((receipt) {
-                          final isConcern = receipt.overallState ==
-                              ReviewOverallState.reviewRecommended;
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 10.0),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(18),
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => ReviewResultScreen(
-                                      receipt: receipt,
-                                      coordinator: _coordinator,
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: EnpriveColors.surface,
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(
-                                    color: EnpriveColors.ink
-                                        .withValues(alpha: 0.08),
+                        const Spacer(),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(999),
+                          onTap: () => setState(() => _selectedTabIndex = 1),
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: const BoxDecoration(
+                              color: EnpriveColors.surfaceMuted,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Symbols.arrow_forward_rounded,
+                              size: 16,
+                              color: EnpriveColors.ink,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ..._savedReceipts.take(2).toList().asMap().entries.map((e) {
+                      final idx = e.key;
+                      final receipt = e.value;
+                      final isConcern = receipt.overallState ==
+                          ReviewOverallState.reviewRecommended;
+                      return Column(
+                        children: [
+                          if (idx > 0)
+                            Divider(
+                              height: 20,
+                              color: EnpriveColors.ink.withValues(alpha: 0.06),
+                            ),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => ReviewResultScreen(
+                                    receipt: receipt,
+                                    coordinator: _coordinator,
                                   ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    Icon(
+                              );
+                            },
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 4.0),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: isConcern
+                                          ? EnpriveColors
+                                              .stateReviewRecommendedBg
+                                          : EnpriveColors.stateNoConcernBg,
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Icon(
                                       isConcern
                                           ? Symbols.warning_amber_rounded
                                           : Symbols.check_circle_rounded,
@@ -782,78 +730,52 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                           ? EnpriveColors
                                               .stateReviewRecommendedFg
                                           : EnpriveColors.stateNoConcernFg,
+                                      size: 20,
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            receipt.subjectTitle,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 14,
-                                              color: EnpriveColors.ink,
-                                            ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          receipt.subjectTitle,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 15,
+                                            color: EnpriveColors.ink,
                                           ),
-                                          Text(
-                                            '${receipt.sourceMatchedCount} source matched · #${receipt.snapshotDigest.substring(0, 6)}',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: EnpriveColors.inkSecondary,
-                                            ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${receipt.sourceMatchedCount} verified clauses',
+                                          style: const TextStyle(
+                                            fontSize: 12.5,
+                                            color: EnpriveColors.inkSecondary,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                    const Icon(
-                                      Symbols.chevron_right_rounded,
-                                      color: EnpriveColors.inkSecondary,
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                  const Icon(
+                                    Symbols.chevron_right_rounded,
+                                    color: EnpriveColors.inkSecondary,
+                                  ),
+                                ],
                               ),
                             ),
-                          );
-                        }),
-                      ],
-
-                      const Spacer(),
-                      const SizedBox(height: 24),
-
-                      // Primary Thumb-Zone Actions (bottom 1/3 of screen, 8-point grid)
-                      EnpriveTactileButton(
-                        label: l10n.btnCheckApp,
-                        leading: const Icon(
-                          Symbols.apps_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          setState(() => _activePose = DeniPose.explaining);
-                          _showCheckAppModal(context, l10n);
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      EnpriveTactileButton(
-                        label: l10n.btnPasteTerms,
-                        isSecondary: true,
-                        leading:
-                            const Icon(Symbols.content_paste_rounded, size: 20),
-                        onPressed: () {
-                          setState(() => _activePose = DeniPose.thinking);
-                          _showPasteModal(context, l10n);
-                        },
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+                          ),
+                        ],
+                      );
+                    }),
+                  ],
                 ),
               ),
-            );
-          },
+            ],
+          ],
         ),
+      ),
     );
   }
 
@@ -896,7 +818,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
     final titleController = TextEditingController(
       text: initialText != null && initialText.isNotEmpty
           ? 'Selected Policy Excerpt'
-          : 'Pasted Privacy Policy',
+          : 'Privacy Policy',
     );
 
     showModalBottomSheet<void>(
@@ -904,7 +826,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
       isScrollControlled: true,
       backgroundColor: EnpriveColors.paper,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       builder: (sheetContext) {
         return Padding(
@@ -912,12 +834,23 @@ We do not collect personal identifiers, precise location data, microphone audio,
             bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
             left: 24,
             right: 24,
-            top: 24,
+            top: 20,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: EnpriveColors.ink.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -926,7 +859,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                   ),
-                  TextButton.icon(
+                  TextButton(
                     onPressed: () async {
                       final sample = await _loadFixtureText(
                         'assets/fixtures/synthetic_policy_edutrack.txt',
@@ -935,20 +868,26 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       titleController.text = 'EduTrack Classroom Companion';
                       controller.text = sample;
                     },
-                    icon: const Icon(Symbols.science_rounded, size: 16),
-                    label: const Text('Load Sample'),
+                    child: const Text(
+                      'Try sample text',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: EnpriveColors.tealStrong,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               TextField(
                 controller: titleController,
-                decoration: const InputDecoration(
-                  labelText: 'App or Document Name',
+                decoration: InputDecoration(
+                  hintText: 'App name',
                   filled: true,
                   fillColor: EnpriveColors.surface,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(14)),
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
                   ),
                 ),
               ),
@@ -957,36 +896,32 @@ We do not collect personal identifiers, precise location data, microphone audio,
                 controller: controller,
                 maxLines: 5,
                 style: const TextStyle(
-                  fontFamily: EnpriveTheme.primaryDisplayFontFamily,
+                  fontFamily: EnpriveTheme.quoteFontFamily,
                   fontSize: 14.5,
                 ),
-                decoration: const InputDecoration(
-                  hintText: 'Paste terms text or policy excerpt to verify...',
+                decoration: InputDecoration(
+                  hintText: 'Paste privacy policy text here…',
                   filled: true,
                   fillColor: EnpriveColors.quoteSurface,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide.none,
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               EnpriveTactileButton(
                 label: l10n.btnContinue,
-                leading: const Icon(
-                  Symbols.fact_check_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
                 onPressed: () async {
                   final rawText = controller.text.trim();
                   final subject = titleController.text.trim().isEmpty
-                      ? 'Pasted Privacy Policy'
+                      ? 'Privacy Policy'
                       : titleController.text.trim();
                   Navigator.pop(sheetContext);
                   if (rawText.isEmpty) return;
                   await _executePolicyReview(
                     subjectTitle: subject,
-                    sourceLabel: 'User Pasted Snapshot',
+                    sourceLabel: 'Pasted Snapshot',
                     policyText: rawText,
                   );
                 },
@@ -995,6 +930,122 @@ We do not collect personal identifiers, precise location data, microphone audio,
           ),
         );
       },
+    );
+  }
+}
+
+class _FloatingStageBadge extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _FloatingStageBadge({
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, size: 18, color: color),
+    );
+  }
+}
+
+/// Floating Pill Bottom Navigation Dock (`x-monday-home.jpeg` pattern).
+class _FloatingBottomNavDock extends StatelessWidget {
+  final int selectedIndex;
+  final int receiptsCount;
+  final bool isKorean;
+  final ValueChanged<int> onSelect;
+
+  const _FloatingBottomNavDock({
+    required this.selectedIndex,
+    required this.receiptsCount,
+    required this.isKorean,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      (icon: Symbols.home_rounded, label: isKorean ? '홈' : 'Home'),
+      (
+        icon: Symbols.receipt_long_rounded,
+        label: isKorean ? '영수증' : 'Receipts',
+      ),
+      (icon: Symbols.tune_rounded, label: isKorean ? '설정' : 'Settings'),
+    ];
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 14),
+        child: Container(
+          height: 68,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: EnpriveColors.surface,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: EnpriveColors.ink.withValues(alpha: 0.08),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(items.length, (index) {
+              final item = items[index];
+              final isSelected = selectedIndex == index;
+              final showBadge = index == 1 && receiptsCount > 0;
+
+              return Expanded(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => onSelect(index),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Badge(
+                        isLabelVisible: showBadge,
+                        label: Text('$receiptsCount'),
+                        backgroundColor: EnpriveColors.tealStrong,
+                        child: Icon(
+                          item.icon,
+                          size: 24,
+                          color: isSelected
+                              ? EnpriveColors.tealStrong
+                              : EnpriveColors.inkSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight:
+                              isSelected ? FontWeight.w800 : FontWeight.w600,
+                          color: isSelected
+                              ? EnpriveColors.tealStrong
+                              : EnpriveColors.inkSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
     );
   }
 }

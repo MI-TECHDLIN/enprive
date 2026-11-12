@@ -229,6 +229,27 @@
 
 ---
 
+### Iteration 8.1 — Primary `Nunito` Typography & Inspiration-Driven UI/UX De-Noising (`feature/ui-ux-inspiration-polish`)
+- **Date**: 2026-11-12
+- **Branch / Commits**: `feature/ui-ux-inspiration-polish`
+- **Models Used**: Gemini 4 Argon
+- **What Was Built**:
+  - **Bundled Primary `Nunito` Font (`assets/fonts/Nunito-400.ttf`..`800.ttf`, `pubspec.yaml`, `lib/core/theme/enprive_theme.dart`)**:
+    - Downloaded and bundled Google Fonts `Nunito` (`400`, `600`, `700`, `800`) as the primary font (`EnpriveTheme.primaryDisplayFontFamily = 'Nunito'`), paired with FontBase `Inter` (`secondaryFontBaseFamily`) for secondary body copy and `SourceSerif4` (`quoteFontFamily`) exclusively for verbatim policy quotes.
+  - **Visual Audit & De-Noising Across All 6 Screens (referencing `.agents/skills/mobile-app-ui-design/SKILL.md` and `inspo-v2/`)**:
+    - **Home & Navigation (`lib/main.dart`)**: Matched Brilliant `b01-welcome.png` + `x-family-splash.jpeg` + Monday `x-monday-home.jpeg`. Removed developer badge clutter (`NANO 4`, status chip rows, raw hash strings); introduced a spacious rounded-3xl hero stage with floating privacy icons, centered `Nunito` display headline, two tactile thumb-zone CTAs, a clean *Recently reviewed* card group, and a floating rounded pill bottom navigation dock (`_FloatingBottomNavDock`).
+    - **Evidence Result Screen (`lib/screens/review_result_screen.dart`)**: Matched `x-learning-app.jpeg` (*Lesson Details*) + `b30-lesson-check.png`. Full-bleed state-tinted hero canvas with centered Deni in a soft translucent halo, curved white bottom sheet (`borderRadius: 32`), 3 pastel stat tiles (*Findings · Verified · OS Granted/Unverified*), clean finding cards, and a square bookmark button docked beside the primary CTA.
+    - **Why This Finding Sheet (`lib/widgets/why_this_finding_sheet.dart`)**: Matched `b30-lesson-check.png`. Replaced 4 stacked numbered boxes with a single unified Evidence Work Card (status dot header, apricot-highlighted quote canvas, and 3 compact icon rows) plus a docked Deni + primary pill bottom bar.
+    - **Receipts Screen (`lib/screens/receipts_screen.dart`)**: Matched `x-mynote.jpeg`. Toggleable search icon, soft flat filter pills (`All · Review · No concern`), and clean paper-note cards with pastel `Open receipt` / `Delete` action strips below each card.
+    - **Settings Screen (`lib/screens/settings_screen.dart`)**: Matched `b19-permission-prime.png` + `b03-question-cards.png`. Deni peeks over the *Private analysis on this phone* card, followed by 3 soft B3 choice cards (`Simple · Balanced · Detailed`) and a minimal preferences group without raw API/DB filenames.
+    - **Cloud Consent & Installed App Picker Sheets (`lib/widgets/cloud_consent_sheet.dart`, `lib/widgets/installed_app_picker_sheet.dart`)**: Applied B19 peeking-mascot layout and B3 sample app choice cards, removing developer benchmark/package-name clutter.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **13/13 tests passing**.
+  - Hot-restarted live onto `emulator-5554`.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Iteration 9 (Next) — `feature/tts-and-readiness-flow` [P0]**

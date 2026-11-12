@@ -4,7 +4,6 @@ import '../core/theme/enprive_colors.dart';
 import '../domain/permissions/permission_comparator.dart';
 import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
-import 'enprive_provenance_chip.dart';
 
 class SelectedAppInspectionChoice {
   final String subjectTitle;
@@ -20,7 +19,7 @@ class SelectedAppInspectionChoice {
   });
 }
 
-/// Local-only Installed App Picker & Permission Inspector Sheet.
+/// Clean, parent-friendly Installed App Picker Sheet.
 /// Queries Android `PackageManager` strictly on-device (`listLaunchableApps`
 /// and `inspectSelectedApp`). Installed app lists never leave the phone.
 class InstalledAppPickerSheet extends StatefulWidget {
@@ -46,7 +45,7 @@ class InstalledAppPickerSheet extends StatefulWidget {
       isScrollControlled: true,
       backgroundColor: EnpriveColors.paper,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       builder: (_) => DraggableScrollableSheet(
         expand: false,
@@ -107,7 +106,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
       context,
       SelectedAppInspectionChoice(
         subjectTitle: app.appName,
-        sourceLabel: 'Android OS Package (${app.packageName})',
+        sourceLabel: 'Installed on this phone',
         policyText: defaultPolicy,
         permissionSnapshot: snapshot,
       ),
@@ -137,7 +136,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: EnpriveColors.ink.withValues(alpha: 0.16),
+                      color: EnpriveColors.ink.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
@@ -145,11 +144,12 @@ We do not collect personal identifiers, precise location data, microphone audio,
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const EnpriveProvenanceChip(
-                      source: InferenceSource.onDevice,
-                      customLabel: 'Local OS Inspector',
+                    Expanded(
+                      child: Text(
+                        l10n.btnCheckApp,
+                        style: Theme.of(context).textTheme.headlineLarge,
+                      ),
                     ),
-                    const Spacer(),
                     IconButton(
                       tooltip: 'Close',
                       onPressed: () => Navigator.pop(context),
@@ -157,16 +157,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
                 Text(
-                  l10n.btnCheckApp,
-                  style: Theme.of(context).textTheme.headlineLarge,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.permissionLimitationNotice,
+                  'Checked locally on your phone. Your app list is never uploaded.',
                   style: const TextStyle(
-                    fontSize: 12.5,
+                    fontSize: 14,
                     color: EnpriveColors.inkSecondary,
                   ),
                 ),
@@ -176,113 +170,96 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
               children: [
-                // 1. Classroom Sandbox Profiles (Selection Over Manual Input)
-                Text(
-                  'CLASSROOM BENCHMARK PROFILES',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: EnpriveColors.tealStrong,
-                      ),
+                // 1. Sample Classroom Apps (B3 Soft Choice Card Grid)
+                const Text(
+                  'Try a sample kids app',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: EnpriveColors.ink,
+                  ),
                 ),
                 const SizedBox(height: 10),
-                _DemoAppTile(
-                  title: 'EduTrack Classroom Companion',
-                  subtitle:
-                      '4 granted OS permissions (GPS, Mic, Camera, Ad ID) · 1 undisclosed Camera mismatch',
-                  badgeLabel: 'Mismatch Demo',
-                  badgeBg: EnpriveColors.stateReviewRecommendedBg,
-                  badgeFg: EnpriveColors.stateReviewRecommendedFg,
-                  icon: Symbols.school_rounded,
-                  onTap: () {
-                    Navigator.pop(
-                      context,
-                      SelectedAppInspectionChoice(
-                        subjectTitle: 'EduTrack Classroom Companion',
-                        sourceLabel:
-                            'com.edutrack.classroom.demo + Policy v2026.11-R2',
-                        policyText: widget.eduTrackPolicyText,
-                        permissionSnapshot:
-                            PermissionComparator.demoEduTrackSnapshot,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                _DemoAppTile(
-                  title: 'CalmMath Abacus',
-                  subtitle:
-                      '0 sensitive OS permissions · Local storage only',
-                  badgeLabel: 'Aligned Demo',
-                  badgeBg: EnpriveColors.stateNoConcernBg,
-                  badgeFg: EnpriveColors.stateNoConcernFg,
-                  icon: Symbols.calculate_rounded,
-                  onTap: () {
-                    Navigator.pop(
-                      context,
-                      SelectedAppInspectionChoice(
-                        subjectTitle: 'CalmMath Abacus',
-                        sourceLabel:
-                            'com.calmmath.abacus.demo + Policy v2026.11-LOCAL',
-                        policyText: widget.calmMathPolicyText,
-                        permissionSnapshot:
-                            PermissionComparator.demoCalmMathSnapshot,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                // 2. Live Installed Apps on This Phone
                 Row(
                   children: [
-                    Text(
-                      'INSTALLED ON THIS PHONE (${_installedApps.length})',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: EnpriveColors.inkSecondary,
-                          ),
+                    Expanded(
+                      child: _SampleAppChoiceCard(
+                        title: 'EduTrack',
+                        subtitle: 'Location, mic & camera',
+                        icon: Symbols.school_rounded,
+                        iconBg: EnpriveColors.stateReviewRecommendedBg,
+                        iconFg: EnpriveColors.stateReviewRecommendedFg,
+                        onTap: () {
+                          Navigator.pop(
+                            context,
+                            SelectedAppInspectionChoice(
+                              subjectTitle: 'EduTrack Classroom Companion',
+                              sourceLabel: 'Classroom Sample',
+                              policyText: widget.eduTrackPolicyText,
+                              permissionSnapshot:
+                                  PermissionComparator.demoEduTrackSnapshot,
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                    const Spacer(),
-                    const Icon(
-                      Symbols.lock_rounded,
-                      size: 14,
-                      color: EnpriveColors.tealStrong,
-                    ),
-                    const SizedBox(width: 4),
-                    const Text(
-                      'Never sent to cloud',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: EnpriveColors.tealStrong,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _SampleAppChoiceCard(
+                        title: 'CalmMath',
+                        subtitle: 'Offline math practice',
+                        icon: Symbols.calculate_rounded,
+                        iconBg: EnpriveColors.stateNoConcernBg,
+                        iconFg: EnpriveColors.stateNoConcernFg,
+                        onTap: () {
+                          Navigator.pop(
+                            context,
+                            SelectedAppInspectionChoice(
+                              subjectTitle: 'CalmMath Abacus',
+                              sourceLabel: 'Classroom Sample',
+                              policyText: widget.calmMathPolicyText,
+                              permissionSnapshot:
+                                  PermissionComparator.demoCalmMathSnapshot,
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 28),
+
+                // 2. Installed Apps on This Phone
+                const Text(
+                  'Apps on this phone',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: EnpriveColors.ink,
+                  ),
                 ),
                 const SizedBox(height: 10),
 
                 TextField(
                   onChanged: (val) => setState(() => _searchQuery = val),
                   decoration: InputDecoration(
-                    hintText: 'Filter installed apps by name or package…',
+                    hintText: 'Search apps…',
                     prefixIcon: const Icon(Symbols.search_rounded, size: 20),
                     filled: true,
-                    fillColor: EnpriveColors.surface,
+                    fillColor: EnpriveColors.surfaceMuted,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(
-                        color: EnpriveColors.ink.withValues(alpha: 0.12),
-                      ),
+                      borderSide: BorderSide.none,
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
                 if (_isLoadingApps)
                   const Padding(
@@ -293,83 +270,73 @@ We do not collect personal identifiers, precise location data, microphone audio,
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: EnpriveColors.surfaceMuted,
-                      borderRadius: BorderRadius.circular(18),
+                      color: EnpriveColors.surface,
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
-                      'No matching launchable apps found on this device.',
+                      'No matching apps found on this phone.',
                       style: TextStyle(color: EnpriveColors.inkSecondary),
                     ),
                   )
                 else
-                  ...filteredApps.take(25).map((app) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () => _inspectRealInstalledApp(app),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: EnpriveColors.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: EnpriveColors.ink.withValues(alpha: 0.08),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 40,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: EnpriveColors.surface,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children:
+                          filteredApps.take(25).toList().asMap().entries.map((e) {
+                        final idx = e.key;
+                        final app = e.value;
+                        return Column(
+                          children: [
+                            if (idx > 0)
+                              Divider(
+                                height: 1,
+                                indent: 68,
+                                endIndent: 20,
+                                color:
+                                    EnpriveColors.ink.withValues(alpha: 0.06),
+                              ),
+                            ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
+                              ),
+                              onTap: () => _inspectRealInstalledApp(app),
+                              leading: Container(
+                                width: 42,
+                                height: 42,
                                 decoration: BoxDecoration(
-                                  color:
-                                      EnpriveColors.teal.withValues(alpha: 0.10),
+                                  color: EnpriveColors.surfaceMuted,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
-                                  Symbols.android_rounded,
+                                  Symbols.apps_rounded,
                                   color: EnpriveColors.tealStrong,
-                                  size: 22,
+                                  size: 20,
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      app.appName,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 14.5,
-                                        color: EnpriveColors.ink,
-                                      ),
-                                    ),
-                                    Text(
-                                      app.packageName,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: EnpriveColors.inkSecondary,
-                                      ),
-                                    ),
-                                  ],
+                              title: Text(
+                                app.appName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  color: EnpriveColors.ink,
                                 ),
                               ),
-                              const Icon(
-                                Symbols.manage_search_rounded,
-                                color: EnpriveColors.tealStrong,
-                                size: 20,
+                              trailing: const Icon(
+                                Symbols.chevron_right_rounded,
+                                color: EnpriveColors.inkSecondary,
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -379,101 +346,64 @@ We do not collect personal identifiers, precise location data, microphone audio,
   }
 }
 
-class _DemoAppTile extends StatelessWidget {
+class _SampleAppChoiceCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final String badgeLabel;
-  final Color badgeBg;
-  final Color badgeFg;
   final IconData icon;
+  final Color iconBg;
+  final Color iconFg;
   final VoidCallback onTap;
 
-  const _DemoAppTile({
+  const _SampleAppChoiceCard({
     required this.title,
     required this.subtitle,
-    required this.badgeLabel,
-    required this.badgeBg,
-    required this.badgeFg,
     required this.icon,
+    required this.iconBg,
+    required this.iconFg,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: EnpriveColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: EnpriveColors.teal.withValues(alpha: 0.18),
-            width: 1.2,
+    return Material(
+      color: EnpriveColors.surface,
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: iconFg, size: 22),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: EnpriveColors.ink,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: EnpriveColors.inkSecondary,
+                ),
+              ),
+            ],
           ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: badgeBg,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: badgeFg, size: 22),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: EnpriveColors.ink,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: badgeBg,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          badgeLabel,
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w800,
-                            color: badgeFg,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      color: EnpriveColors.inkSecondary,
-                      height: 1.35,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
