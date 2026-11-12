@@ -118,6 +118,13 @@ class HybridAiBridge {
         apiLevel: 0,
         userMessage: 'Capability check error: ${e.message}',
       );
+    } on MissingPluginException {
+      return const DeviceCapability(
+        isSupported: false,
+        modelStatus: ModelDownloadStatus.unavailable,
+        apiLevel: 0,
+        userMessage: 'Native Android bridge not attached.',
+      );
     }
   }
 
@@ -128,6 +135,20 @@ class HybridAiBridge {
       return DeviceCapability._parseDownloadStatus(res);
     } on PlatformException {
       return ModelDownloadStatus.failed;
+    } on MissingPluginException {
+      return ModelDownloadStatus.unavailable;
+    }
+  }
+
+  /// Warms up the on-device Gemini Nano 4 model in AICore before inference.
+  Future<bool> warmUpModel() async {
+    try {
+      final res = await _channel.invokeMethod<bool>('warmUpModel');
+      return res ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
     }
   }
 
@@ -184,6 +205,15 @@ class HybridAiBridge {
         errorCode: e.code,
         message: e.message,
       );
+    } on MissingPluginException {
+      return HybridAnalysisResult(
+        schemaVersion: 1,
+        requestId: requestId,
+        status: HybridStatus.unavailable,
+        inferenceSource: 'UNKNOWN',
+        errorCode: 'MISSING_PLUGIN',
+        message: 'On-device AI bridge unavailable in this environment.',
+      );
     }
   }
 
@@ -196,6 +226,8 @@ class HybridAiBridge {
       return res?.cast<String, dynamic>() ?? {};
     } on PlatformException catch (e) {
       return {'error': e.message};
+    } on MissingPluginException {
+      return {'error': 'Native package inspector unavailable.'};
     }
   }
 }

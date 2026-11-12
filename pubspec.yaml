@@ -64,6 +64,7 @@ flutter:
 
   assets:
     - assets/fonts/
+    - assets/fixtures/
 
   fonts:
     - family: SourceSerif4

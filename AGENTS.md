@@ -1,6 +1,24 @@
 # AGENTS.md — Enprive Agent Collaboration Guidelines
 
-This document governs model selection, workflow routing, and project-specific constraints for AI agents, subagents, and human collaborators working on the **Enprive** codebase.
+This document governs engineering journal tracking, model selection, workflow routing, and project-specific constraints for AI agents, subagents, and human collaborators working on the **Enprive** codebase.
+
+---
+
+## 0. Primary Protocol: Engineering Journal (`journal.md`)
+
+`journal.md` at the repository root is the **primary source of truth** for iteration history, architectural decisions, debugging root causes, and next steps.
+
+1. **Before Every Iteration (Mandatory Read)**:
+   - Always read [journal.md](journal.md) **before** starting any task, creating a branch, or writing code.
+   - Verify the current `main` HEAD, active feature branch, past challenges/fixes, and queued milestones.
+2. **After Every Iteration (Mandatory Update)**:
+   - Immediately **after** completing an iteration (and before opening a PR, merging, or switching models), record a new entry in [journal.md](journal.md) containing:
+     - Date, Iteration number, branch name, and commit hash(es).
+     - Active model(s) used.
+     - Summary of what was built or modified.
+     - Challenges encountered and their exact root-cause fixes.
+     - Verification status (`flutter analyze`, `flutter test`, Gradle build).
+     - Updated next-step queue and recommended model for the next turn.
 
 ---
 

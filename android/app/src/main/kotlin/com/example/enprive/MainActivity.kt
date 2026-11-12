@@ -11,6 +11,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.ai.InferenceMode
 import com.google.firebase.ai.InferenceSource
 import com.google.firebase.ai.OnDeviceConfig
+import com.google.firebase.ai.OnDeviceModelOption
 import com.google.firebase.ai.OnDeviceModelStatus
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
@@ -75,8 +76,16 @@ class MainActivity : FlutterActivity() {
         backend = GenerativeBackend.googleAI(),
         useLimitedUseAppCheckTokens = true
     ).generativeModel(
-        modelName = "gemini-2.5-flash",
-        onDeviceConfig = OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE)
+        modelName = "gemini-3.8-flash",
+        onDeviceConfig = OnDeviceConfig(
+            mode = InferenceMode.ONLY_ON_DEVICE,
+            maxOutputTokens = 1024,
+            temperature = 0.1f,
+            topK = 20,
+            seed = null,
+            candidateCount = 1,
+            modelOption = OnDeviceModelOption.PREVIEW
+        )
     )
 
     private fun mapModelStatus(status: OnDeviceModelStatus?): String {
@@ -152,6 +161,22 @@ class MainActivity : FlutterActivity() {
                         }
                         withContext(Dispatchers.Main) {
                             result.success(finalStatus)
+                        }
+                    }
+                }
+
+                "warmUpModel" -> {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val warmed = try {
+                            val ext = createOnDeviceModel().onDeviceExtension
+                            ext?.warmUp()
+                            true
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Model warmUp note: ${e.message}")
+                            false
+                        }
+                        withContext(Dispatchers.Main) {
+                            result.success(warmed)
                         }
                     }
                 }
@@ -242,15 +267,37 @@ class MainActivity : FlutterActivity() {
                             )
 
                             val model = ai.generativeModel(
-                                modelName = "gemini-2.5-flash",
+                                modelName = "gemini-3.8-flash",
                                 generationConfig = generationConfig {
                                     responseMimeType = "application/json"
                                     temperature = 0.1f
                                 },
-                                onDeviceConfig = OnDeviceConfig(mode = inferenceMode)
+                                onDeviceConfig = OnDeviceConfig(
+                                    mode = inferenceMode,
+                                    maxOutputTokens = 1024,
+                                    temperature = 0.1f,
+                                    topK = 20,
+                                    seed = null,
+                                    candidateCount = 1,
+                                    modelOption = OnDeviceModelOption.PREVIEW
+                                )
                             )
 
-                            val systemPrompt = """
+                            val systemPrompt = if (task == "explain_finding") {
+                                """
+                                You are Deni, Enprive's calm, evidence-first privacy guide for parents and teachers.
+                                Explain the cited privacy finding in plain, reassuring, non-alarmist language.
+
+                                You MUST return a JSON object with this exact structure:
+                                {
+                                  "answer": "2-3 sentence plain-language explanation directly answering the user's question based only on the quote",
+                                  "whatPolicySays": "1 sentence restating the verbatim policy claim",
+                                  "unknownBoundary": "1 sentence clearly stating what this excerpt does NOT prove or specify"
+                                }
+                                Never certify an app as safe. Never invent facts outside the provided excerpt.
+                                """.trimIndent()
+                            } else {
+                                """
                                 You are Enprive, an evidence-first privacy analyst for children's apps.
                                 Analyze the following privacy policy excerpt.
                                 
@@ -258,20 +305,25 @@ class MainActivity : FlutterActivity() {
                                 
                                 You MUST return a JSON object with this exact structure:
                                 {
+                                  "overall_state": "REVIEW_RECOMMENDED" | "NO_CONCERN" | "INSUFFICIENT_EVIDENCE",
                                   "summary": "Short 1-2 sentence calibrated summary",
                                   "concerns": [
                                     {
+                                      "id": "finding_1",
+                                      "title": "Short descriptive finding title",
                                       "category": "DATA_COLLECTION" | "SHARING" | "TRACKING" | "RETENTION" | "PARENTAL_CONSENT",
                                       "severity": "HIGH" | "MEDIUM" | "LOW",
                                       "quote": "EXACT substring quoted verbatim from the text",
-                                      "explanation": "Clear parent/teacher explanation"
+                                      "explanation": "Clear parent/teacher explanation of why this clause matters",
+                                      "unknowns": ["What the policy text leaves unspecified"]
                                     }
                                   ],
                                   "calibratedDisclaimer": "No concern identified in the reviewed evidence. This is not a safety certification."
                                 }
                                 
                                 Strictly quote verbatim substrings for quotes. Never fabricate facts.
-                            """.trimIndent()
+                                """.trimIndent()
+                            }
 
                             val prompt = "$systemPrompt\n\n--- POLICY TEXT ---\n$text"
                             val response = model.generateContent(prompt)

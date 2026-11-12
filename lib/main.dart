@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'core/theme/enprive_colors.dart';
 import 'core/theme/enprive_theme.dart';
+import 'domain/review/review_coordinator.dart';
+import 'domain/review/review_models.dart';
 import 'l10n/app_localizations.dart';
+import 'screens/review_result_screen.dart';
 import 'services/platform/hybrid_ai_bridge.dart';
+import 'widgets/cloud_consent_sheet.dart';
 import 'widgets/deni_animated_mascot.dart';
 import 'widgets/enprive_provenance_chip.dart';
 import 'widgets/enprive_tactile_button.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  // Enforce 100% offline bundled font rendering (Source Serif 4 + FontBase Inter)
+  GoogleFonts.config.allowRuntimeFetching = false;
   runApp(const EnpriveApp());
 }
 
@@ -68,10 +76,26 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+  static const String _fallbackEduTrackFixture = '''
+EDUTRACK KIDS & CLASSROOM COMPANION — PRIVACY POLICY
+When a student uses EduTrack on a mobile device, we collect device identifiers, operating system telemetry, and session duration logs. In addition, our mobile application collects precise GPS location coordinates even when the application is running in the background to verify school bus zone attendance and regional classroom routing.
+For reading-aloud exercises, EduTrack records student voice audio through the device microphone. Student voice recordings and derived speech-fluency transcripts are retained indefinitely on our cloud servers to train and improve our automated speech recognition models unless a verified school administrator submits a written deletion ticket.
+We may share persistent advertising identifiers and app usage events with third-party advertising partners to measure campaign performance and deliver contextual or behavioral promotions across partner educational services.
+''';
+
+  static const String _fallbackCalmMathFixture = '''
+CALMMATH ABACUS — PRIVACY & DATA HANDLING NOTICE
+CalmMath Abacus is designed for early elementary arithmetic practice. All math problem sets, practice scores, and learning progress are stored exclusively on this device inside local application storage.
+We do not collect personal identifiers, precise location data, microphone audio, or camera input. We do not integrate third-party advertising SDKs, and we never sell, rent, or transmit student usage data to external analytics brokers.
+''';
+
   final HybridAiBridge _bridge = HybridAiBridge();
+  late final ReviewCoordinator _coordinator = ReviewCoordinator(bridge: _bridge);
   DeviceCapability? _deviceCapability;
   bool _isLoadingCapability = true;
+  bool _isRunningReview = false;
   DeniPose _activePose = DeniPose.idle;
+  final List<PolicyReviewReceipt> _savedReceipts = [];
 
   @override
   void initState() {
@@ -101,6 +125,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _isLoadingCapability = false;
       });
     }
+    if (cap.isSupported && cap.modelStatus == ModelDownloadStatus.available) {
+      unawaited(_bridge.warmUpModel());
+    }
     await _checkIncomingTextIntent();
   }
 
@@ -116,6 +143,98 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (l10n != null) {
       _showPasteModal(context, l10n, initialText: incomingText);
     }
+  }
+
+  Future<String> _loadFixtureText(String assetPath, String fallback) async {
+    try {
+      final loaded = await rootBundle.loadString(assetPath);
+      if (loaded.trim().isNotEmpty) return loaded;
+    } catch (_) {
+      // Fallback to embedded string during unit tests if asset bundle unavailable
+    }
+    return fallback;
+  }
+
+  Future<void> _executePolicyReview({
+    required String subjectTitle,
+    required String sourceLabel,
+    required String policyText,
+    bool cloudConsent = false,
+    bool forceLocalManualScan = false,
+  }) async {
+    if (_isRunningReview) return;
+    setState(() {
+      _isRunningReview = true;
+      _activePose = DeniPose.thinking;
+    });
+
+    final outcome = await _coordinator.runPolicyReview(
+      subjectTitle: subjectTitle,
+      sourceLabel: sourceLabel,
+      policyText: policyText,
+      cloudConsent: cloudConsent,
+      forceLocalManualScan: forceLocalManualScan,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _isRunningReview = false;
+    });
+
+    if (outcome.needsCloudConsentOrManual) {
+      setState(() => _activePose = DeniPose.support);
+      final decision = await CloudConsentSheet.show(
+        context,
+        subjectTitle: subjectTitle,
+        policyText: policyText,
+        deviceReason: outcome.errorReason,
+      );
+      if (!mounted) return;
+      if (decision == CloudConsentDecision.useCloudOnce) {
+        await _executePolicyReview(
+          subjectTitle: subjectTitle,
+          sourceLabel: sourceLabel,
+          policyText: policyText,
+          cloudConsent: true,
+        );
+      } else if (decision == CloudConsentDecision.reviewLocally) {
+        await _executePolicyReview(
+          subjectTitle: subjectTitle,
+          sourceLabel: sourceLabel,
+          policyText: policyText,
+          forceLocalManualScan: true,
+        );
+      }
+      return;
+    }
+
+    final receipt = outcome.receipt;
+    if (receipt == null) return;
+
+    setState(() {
+      _activePose = switch (receipt.overallState) {
+        ReviewOverallState.reviewRecommended => DeniPose.explaining,
+        ReviewOverallState.noConcern => DeniPose.celebrating,
+        ReviewOverallState.insufficientEvidence => DeniPose.support,
+      };
+    });
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ReviewResultScreen(
+          receipt: receipt,
+          coordinator: _coordinator,
+          cloudConsentGrantedForSession: cloudConsent,
+          onSaveReceipt: (saved) {
+            if (!mounted) return;
+            setState(() {
+              _savedReceipts.removeWhere((r) => r.id == saved.id);
+              _savedReceipts.insert(0, saved);
+            });
+          },
+        ),
+      ),
+    );
   }
 
   void _cyclePose() {
@@ -236,7 +355,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             customLabel: 'Private by default',
                           ),
                           const Spacer(),
-                          if (_isLoadingCapability)
+                          if (_isLoadingCapability || _isRunningReview)
                             const SizedBox(
                               width: 16,
                               height: 16,
@@ -286,8 +405,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
                       const SizedBox(height: 24),
 
-                      // Elevated Deni Character Stage Card (mobile-app-ui-design:
-                      // 24dp card padding, 5% primary border, tinted soft shadow, interactive feedback)
+                      // Elevated Deni Character Stage Card
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(24),
@@ -313,7 +431,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                // Sculpted Concept C Animated Mascot with Ambient Glow
                                 DeniAnimatedMascot(
                                   size: 88,
                                   pose: _activePose,
@@ -439,6 +556,92 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ),
                       ),
 
+                      // Recent Evidence Receipts (Monday Home inspiration pattern)
+                      if (_savedReceipts.isNotEmpty) ...[
+                        const SizedBox(height: 24),
+                        Text(
+                          'SAVED RECEIPTS (${_savedReceipts.length})',
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: EnpriveColors.inkSecondary,
+                                  ),
+                        ),
+                        const SizedBox(height: 10),
+                        ..._savedReceipts.take(2).map((receipt) {
+                          final isConcern = receipt.overallState ==
+                              ReviewOverallState.reviewRecommended;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10.0),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(18),
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => ReviewResultScreen(
+                                      receipt: receipt,
+                                      coordinator: _coordinator,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: EnpriveColors.surface,
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: EnpriveColors.ink
+                                        .withValues(alpha: 0.08),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isConcern
+                                          ? Symbols.warning_amber_rounded
+                                          : Symbols.check_circle_rounded,
+                                      color: isConcern
+                                          ? EnpriveColors
+                                              .stateReviewRecommendedFg
+                                          : EnpriveColors.stateNoConcernFg,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            receipt.subjectTitle,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 14,
+                                              color: EnpriveColors.ink,
+                                            ),
+                                          ),
+                                          Text(
+                                            '${receipt.sourceMatchedCount} source matched · #${receipt.snapshotDigest.substring(0, 6)}',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: EnpriveColors.inkSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Symbols.chevron_right_rounded,
+                                      color: EnpriveColors.inkSecondary,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+
                       const Spacer(),
                       const SizedBox(height: 24),
 
@@ -479,39 +682,77 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _showCheckAppModal(BuildContext context, AppLocalizations l10n) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
+      backgroundColor: EnpriveColors.paper,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.btnCheckApp,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.permissionLimitationNotice,
-                style: const TextStyle(
-                  color: EnpriveColors.inkSecondary,
-                  fontSize: 13,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.btnCheckApp,
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
-              ),
-              const SizedBox(height: 24),
-              EnpriveTactileButton(
-                label: 'Inspect Demo App (EduTrack)',
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  l10n.permissionLimitationNotice,
+                  style: const TextStyle(
+                    color: EnpriveColors.inkSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                EnpriveTactileButton(
+                  label: 'Inspect Demo App (EduTrack)',
+                  leading: const Icon(
+                    Symbols.school_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(sheetContext);
+                    final text = await _loadFixtureText(
+                      'assets/fixtures/synthetic_policy_edutrack.txt',
+                      _fallbackEduTrackFixture,
+                    );
+                    await _executePolicyReview(
+                      subjectTitle: 'EduTrack Classroom Companion',
+                      sourceLabel: 'Synthetic Policy Fixture (v2026.11-R2)',
+                      policyText: text,
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                EnpriveTactileButton(
+                  label: 'Inspect Demo App (CalmMath Abacus)',
+                  isSecondary: true,
+                  leading: const Icon(
+                    Symbols.calculate_rounded,
+                    size: 20,
+                    color: EnpriveColors.ink,
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(sheetContext);
+                    final text = await _loadFixtureText(
+                      'assets/fixtures/synthetic_policy_calmmath.txt',
+                      _fallbackCalmMathFixture,
+                    );
+                    await _executePolicyReview(
+                      subjectTitle: 'CalmMath Abacus',
+                      sourceLabel: 'Synthetic Policy Fixture (v2026.11-LOCAL)',
+                      policyText: text,
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -524,16 +765,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     String? initialText,
   }) {
     final controller = TextEditingController(text: initialText ?? '');
-    showModalBottomSheet(
+    final titleController = TextEditingController(
+      text: initialText != null && initialText.isNotEmpty
+          ? 'Selected Policy Excerpt'
+          : 'Pasted Privacy Policy',
+    );
+
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: EnpriveColors.paper,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
             left: 24,
             right: 24,
             top: 24,
@@ -542,17 +790,52 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                l10n.btnPasteTerms,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.btnPasteTerms,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () async {
+                      final sample = await _loadFixtureText(
+                        'assets/fixtures/synthetic_policy_edutrack.txt',
+                        _fallbackEduTrackFixture,
+                      );
+                      titleController.text = 'EduTrack Classroom Companion';
+                      controller.text = sample;
+                    },
+                    icon: const Icon(Symbols.science_rounded, size: 16),
+                    label: const Text('Load Sample'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                  labelText: 'App or Document Name',
+                  filled: true,
+                  fillColor: EnpriveColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(14)),
+                  ),
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: controller,
-                maxLines: 4,
+                maxLines: 5,
+                style: const TextStyle(
+                  fontFamily: EnpriveTheme.primaryDisplayFontFamily,
+                  fontSize: 14.5,
+                ),
                 decoration: const InputDecoration(
-                  hintText: 'Paste terms text or policy URL...',
+                  hintText: 'Paste terms text or policy excerpt to verify...',
+                  filled: true,
+                  fillColor: EnpriveColors.quoteSurface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(16)),
                   ),
@@ -561,8 +844,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               const SizedBox(height: 16),
               EnpriveTactileButton(
                 label: l10n.btnContinue,
-                onPressed: () {
-                  Navigator.pop(context);
+                leading: const Icon(
+                  Symbols.fact_check_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                onPressed: () async {
+                  final rawText = controller.text.trim();
+                  final subject = titleController.text.trim().isEmpty
+                      ? 'Pasted Privacy Policy'
+                      : titleController.text.trim();
+                  Navigator.pop(sheetContext);
+                  if (rawText.isEmpty) return;
+                  await _executePolicyReview(
+                    subjectTitle: subject,
+                    sourceLabel: 'User Pasted Snapshot',
+                    policyText: rawText,
+                  );
                 },
               ),
             ],
@@ -572,3 +870,5 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 }
+
+void unawaited(Future<void> future) {}
