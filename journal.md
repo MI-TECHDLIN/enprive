@@ -175,7 +175,7 @@
 
 ### Iteration 7 — Local Installed App Inspector & Deterministic `PermissionComparator`
 - **Date**: 2026-11-12
-- **Branch / Commits**: `feature/app-permission-inspector`
+- **Branch / Commits**: `feature/app-permission-inspector` (`468d99b`)
 - **Models Used**: Gemini 4 Argon
 - **What Was Built**:
   - **Native Android `listLaunchableApps` (`MainActivity.kt` & `hybrid_ai_bridge.dart`)**:
@@ -200,11 +200,37 @@
 
 ---
 
+### Iteration 8 — Local SQLite Receipts Storage, Preferences & 3-Tab Shell
+- **Date**: 2026-11-12
+- **Branch / Commits**: `feature/local-receipts-storage`
+- **Models Used**: Gemini 4 Hydrogen
+- **What Was Built**:
+  - **JSON Serialization (`lib/domain/review/review_models.dart`, `lib/domain/permissions/permission_comparator.dart`, `lib/services/platform/hybrid_ai_bridge.dart`)**:
+    - Added deterministic `toJson()` / `fromJson()` serialization on `PolicyReviewReceipt`, `VerifiedFinding`, `AppPermissionComparisonReport`, `ComparedPermissionItem`, and `AppPermissionSnapshot` (preserving full policy quotes, context windows, and Android OS permission comparison states).
+  - **Local Persistence (`lib/services/storage/receipt_repository.dart`)**:
+    - Implemented `ReceiptRepository` backed by local `sqflite` (`enprive_receipts.db`, `policy_receipts` table) with newest-first queries, single delete, and clear-all, plus an automatic in-memory fallback for headless unit/widget tests.
+    - Implemented `UserPreferencesRepository` using `SharedPreferences` for Deni companion visibility (`showDeni`), explanation depth (`simple`, `balanced`, `detailed`), and locale (`en`/`ko`).
+  - **Receipts Archive & Settings Screens (`lib/screens/receipts_screen.dart`, `lib/screens/settings_screen.dart`)**:
+    - Built `ReceiptsScreen` (*MyNote inspiration pattern*) with live search, filter chips (`All · Review recommended · No concern · Insufficient`), snapshot digest badges, OS mismatch indicators, and Open/Delete actions.
+    - Built `SettingsScreen` (*B19 + B3 choice cards*) featuring a *Private Analysis on This Phone* AICore readiness & warm-up card, 3-tier explanation depth selector, Deni companion toggle, EN/KO switcher, and local storage reset with confirmation dialog.
+  - **3-Tab Bottom Navigation Shell (`lib/main.dart`)**:
+    - Upgraded `HomeScreen` to an `IndexedStack` + `NavigationBar` (`Home · Receipts · Settings`, *Monday Home inspiration pattern*) with a live receipt count badge and `"See all →"` shortcut.
+  - **Unit Tests (`test/receipt_repository_test.dart`)**:
+    - Added JSON round-trip and repository CRUD/sorting tests covering `PolicyReviewReceipt` with nested `AppPermissionComparisonReport`.
+- **Challenges & Fixes**:
+  - *Challenge 1*: Missing color getter names (`stateInsufficientBg` / `stateInsufficientFg`) in initial screen drafts.
+    - *Fix*: Updated to the exact WCAG tokens `EnpriveColors.stateInsufficientEvidenceBg` and `EnpriveColors.stateInsufficientEvidenceFg` in `enprive_colors.dart`.
+  - *Challenge 2*: Widget tests flagged `ListTile background color or ink splashes may be invisible` when `SettingsScreen` placed `ListTile` / `SwitchListTile.adaptive` inside a colored `Container` under `IndexedStack`.
+    - *Fix*: Replaced the outer `Container` in `SettingsScreen` with a `Material` surface wrapper (`RoundedRectangleBorder` + `Clip.antiAlias`) so ripple ink and accessibility checks pass cleanly.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **13/13 tests passing** (`evidence_validator_test.dart`, `permission_comparator_test.dart`, `receipt_repository_test.dart`, `widget_test.dart`).
+  - Restarted fresh native Android + Flutter build on `emulator-5554` (`flutter run -d emulator-5554`).
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
-1. **Iteration 8 (Next) — `feature/local-receipts-storage` [P0/P1]**
-   - **Assigned Model**: **Gemini 4 Argon** / **Claude Opus 5.5** (core) + **Devin CLI** (serialization/DB tests)
-   - **Scope**: `sqflite` `ReceiptRepository`, SHA-256 snapshot hashing, Receipts list with filter chips, Receipt detail view, and 3-tab bottom navigation (`Home · Receipts · Settings`).
-2. **Iteration 9 — `feature/tts-and-readiness-flow` [P0]**
+1. **Iteration 9 (Next) — `feature/tts-and-readiness-flow` [P0]**
    - **Assigned Model**: **Gemini Flash / Hydrogen / Claude Sonnet / Devin CLI**
    - **Scope**: Native Android `TextToSpeech` (`speakText`/`stopSpeaking`) synced with `DeniPose.listening`, private-analysis model readiness sheet, 200% text-scale & TalkBack audit, and `THIRD_PARTY_NOTICES.md`.

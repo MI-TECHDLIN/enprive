@@ -34,6 +34,46 @@ class ComparedPermissionItem {
     required this.osStatusSummary,
     required this.parentExplanation,
   });
+
+  Map<String, dynamic> toJson() => {
+        'androidPermission': androidPermission,
+        'friendlyName': friendlyName,
+        'category': category.name,
+        'severity': severity.name,
+        'isRequested': isRequested,
+        'isGranted': isGranted,
+        'isMentionedInPolicy': isMentionedInPolicy,
+        'isExplicitlyDisclaimedInPolicy': isExplicitlyDisclaimedInPolicy,
+        'alignmentState': alignmentState.name,
+        'osStatusSummary': osStatusSummary,
+        'parentExplanation': parentExplanation,
+      };
+
+  factory ComparedPermissionItem.fromJson(Map<String, dynamic> json) {
+    return ComparedPermissionItem(
+      androidPermission: json['androidPermission'] as String? ?? '',
+      friendlyName: json['friendlyName'] as String? ?? '',
+      category: FindingCategory.values.firstWhere(
+        (c) => c.name == json['category'],
+        orElse: () => FindingCategory.dataCollection,
+      ),
+      severity: FindingSeverity.values.firstWhere(
+        (s) => s.name == json['severity'],
+        orElse: () => FindingSeverity.medium,
+      ),
+      isRequested: json['isRequested'] as bool? ?? false,
+      isGranted: json['isGranted'] as bool? ?? false,
+      isMentionedInPolicy: json['isMentionedInPolicy'] as bool? ?? false,
+      isExplicitlyDisclaimedInPolicy:
+          json['isExplicitlyDisclaimedInPolicy'] as bool? ?? false,
+      alignmentState: PermissionAlignmentState.values.firstWhere(
+        (a) => a.name == json['alignmentState'],
+        orElse: () => PermissionAlignmentState.notRequested,
+      ),
+      osStatusSummary: json['osStatusSummary'] as String? ?? '',
+      parentExplanation: json['parentExplanation'] as String? ?? '',
+    );
+  }
 }
 
 class AppPermissionComparisonReport {
@@ -56,6 +96,27 @@ class AppPermissionComparisonReport {
   int get grantedSensitiveCount => items.where((i) => i.isGranted).length;
 
   int get requestedSensitiveCount => items.where((i) => i.isRequested).length;
+
+  Map<String, dynamic> toJson() => {
+        'snapshot': snapshot.toJson(),
+        'items': items.map((i) => i.toJson()).toList(),
+        'limitationNotice': limitationNotice,
+      };
+
+  factory AppPermissionComparisonReport.fromJson(Map<String, dynamic> json) {
+    final snapshotMap =
+        (json['snapshot'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final itemsList = (json['items'] as List?) ?? const [];
+    return AppPermissionComparisonReport(
+      snapshot: AppPermissionSnapshot.fromMap(snapshotMap),
+      items: itemsList
+          .whereType<Map>()
+          .map((m) => ComparedPermissionItem.fromJson(m.cast<String, dynamic>()))
+          .toList(growable: false),
+      limitationNotice: json['limitationNotice'] as String? ??
+          PermissionComparator.calibratedLimitationNotice,
+    );
+  }
 }
 
 class _SensitivePermissionSpec {

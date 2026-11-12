@@ -308,4 +308,11 @@ class AppPermissionSnapshot {
   bool isGranted(String permission) => grantedPermissions.contains(permission);
   bool isRequested(String permission) =>
       requestedPermissions.contains(permission);
+
+  Map<String, dynamic> toJson() => {
+        'packageName': packageName,
+        'appName': appName,
+        'requestedPermissions': requestedPermissions,
+        'grantedPermissions': grantedPermissions,
+      };
 }

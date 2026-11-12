@@ -8,8 +8,11 @@ import 'core/theme/enprive_theme.dart';
 import 'domain/review/review_coordinator.dart';
 import 'domain/review/review_models.dart';
 import 'l10n/app_localizations.dart';
+import 'screens/receipts_screen.dart';
 import 'screens/review_result_screen.dart';
+import 'screens/settings_screen.dart';
 import 'services/platform/hybrid_ai_bridge.dart';
+import 'services/storage/receipt_repository.dart';
 import 'widgets/cloud_consent_sheet.dart';
 import 'widgets/deni_animated_mascot.dart';
 import 'widgets/enprive_provenance_chip.dart';
@@ -92,10 +95,15 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
   final HybridAiBridge _bridge = HybridAiBridge();
   late final ReviewCoordinator _coordinator = ReviewCoordinator(bridge: _bridge);
+  final ReceiptRepository _receiptRepo = ReceiptRepository();
+  final UserPreferencesRepository _prefsRepo = UserPreferencesRepository();
   DeviceCapability? _deviceCapability;
   bool _isLoadingCapability = true;
   bool _isRunningReview = false;
   DeniPose _activePose = DeniPose.idle;
+  int _selectedTabIndex = 0;
+  bool _showDeni = true;
+  ExplanationDepth _explanationDepth = ExplanationDepth.balanced;
   final List<PolicyReviewReceipt> _savedReceipts = [];
 
   @override
@@ -119,6 +127,21 @@ We do not collect personal identifiers, precise location data, microphone audio,
   }
 
   Future<void> _initializeDeviceAndIntent() async {
+    final storedReceipts = await _receiptRepo.loadReceipts();
+    final prefs = await _prefsRepo.load();
+    if (mounted) {
+      setState(() {
+        _savedReceipts
+          ..clear()
+          ..addAll(storedReceipts);
+        _showDeni = prefs.showDeni;
+        _explanationDepth = prefs.explanationDepth;
+      });
+      if (prefs.languageCode != widget.currentLocale.languageCode) {
+        widget.onLocaleChange(Locale(prefs.languageCode));
+      }
+    }
+
     final cap = await _bridge.getDeviceCapability();
     if (mounted) {
       setState(() {
@@ -130,6 +153,39 @@ We do not collect personal identifiers, precise location data, microphone audio,
       unawaited(_bridge.warmUpModel());
     }
     await _checkIncomingTextIntent();
+  }
+
+  Future<void> _refreshCapability() async {
+    final cap = await _bridge.getDeviceCapability();
+    if (!mounted) return;
+    setState(() {
+      _deviceCapability = cap;
+    });
+  }
+
+  Future<void> _saveReceipt(PolicyReviewReceipt saved) async {
+    await _receiptRepo.saveReceipt(saved);
+    if (!mounted) return;
+    setState(() {
+      _savedReceipts.removeWhere((r) => r.id == saved.id);
+      _savedReceipts.insert(0, saved);
+    });
+  }
+
+  Future<void> _deleteReceipt(String id) async {
+    await _receiptRepo.deleteReceipt(id);
+    if (!mounted) return;
+    setState(() {
+      _savedReceipts.removeWhere((r) => r.id == id);
+    });
+  }
+
+  Future<void> _clearAllReceipts() async {
+    await _receiptRepo.clearAllReceipts();
+    if (!mounted) return;
+    setState(() {
+      _savedReceipts.clear();
+    });
   }
 
   Future<void> _checkIncomingTextIntent() async {
@@ -230,13 +286,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
           receipt: receipt,
           coordinator: _coordinator,
           cloudConsentGrantedForSession: cloudConsent,
-          onSaveReceipt: (saved) {
-            if (!mounted) return;
-            setState(() {
-              _savedReceipts.removeWhere((r) => r.id == saved.id);
-              _savedReceipts.insert(0, saved);
-            });
-          },
+          onSaveReceipt: _saveReceipt,
         ),
       ),
     );
@@ -320,9 +370,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
         actions: [
           TextButton(
             onPressed: () {
-              widget.onLocaleChange(
-                isKorean ? const Locale('en') : const Locale('ko'),
-              );
+              final nextLocale =
+                  isKorean ? const Locale('en') : const Locale('ko');
+              widget.onLocaleChange(nextLocale);
+              unawaited(_prefsRepo.update(languageCode: nextLocale.languageCode));
             },
             child: Row(
               children: [
@@ -338,8 +389,108 @@ We do not collect personal identifiers, precise location data, microphone audio,
           const SizedBox(width: 8),
         ],
       ),
-      body: SafeArea(
-        child: LayoutBuilder(
+      body: IndexedStack(
+        index: _selectedTabIndex,
+        children: [
+          _buildHomeTab(context, l10n, isKorean),
+          ReceiptsScreen(
+            receipts: _savedReceipts,
+            coordinator: _coordinator,
+            showDeni: _showDeni,
+            isKorean: isKorean,
+            onDeleteReceipt: _deleteReceipt,
+            onStartReviewRequested: () {
+              setState(() => _selectedTabIndex = 0);
+            },
+          ),
+          SettingsScreen(
+            bridge: _bridge,
+            capability: _deviceCapability,
+            showDeni: _showDeni,
+            explanationDepth: _explanationDepth,
+            currentLocale: widget.currentLocale,
+            savedReceiptsCount: _savedReceipts.length,
+            onShowDeniChanged: (val) {
+              setState(() => _showDeni = val);
+              unawaited(_prefsRepo.update(showDeni: val));
+            },
+            onExplanationDepthChanged: (depth) {
+              setState(() => _explanationDepth = depth);
+              unawaited(_prefsRepo.update(explanationDepth: depth));
+            },
+            onLocaleChanged: (locale) {
+              widget.onLocaleChange(locale);
+              unawaited(_prefsRepo.update(languageCode: locale.languageCode));
+            },
+            onRefreshCapability: _refreshCapability,
+            onClearAllReceipts: _clearAllReceipts,
+          ),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: EnpriveColors.surface,
+          border: Border(
+            top: BorderSide(
+              color: EnpriveColors.ink.withValues(alpha: 0.08),
+            ),
+          ),
+        ),
+        child: NavigationBar(
+          selectedIndex: _selectedTabIndex,
+          backgroundColor: EnpriveColors.surface,
+          indicatorColor: EnpriveColors.teal.withValues(alpha: 0.14),
+          onDestinationSelected: (index) {
+            setState(() => _selectedTabIndex = index);
+          },
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Symbols.home_rounded),
+              selectedIcon: const Icon(
+                Symbols.home_rounded,
+                color: EnpriveColors.tealStrong,
+              ),
+              label: isKorean ? '홈' : 'Home',
+            ),
+            NavigationDestination(
+              icon: Badge(
+                isLabelVisible: _savedReceipts.isNotEmpty,
+                label: Text('${_savedReceipts.length}'),
+                backgroundColor: EnpriveColors.tealStrong,
+                child: const Icon(Symbols.receipt_long_rounded),
+              ),
+              selectedIcon: Badge(
+                isLabelVisible: _savedReceipts.isNotEmpty,
+                label: Text('${_savedReceipts.length}'),
+                backgroundColor: EnpriveColors.tealStrong,
+                child: const Icon(
+                  Symbols.receipt_long_rounded,
+                  color: EnpriveColors.tealStrong,
+                ),
+              ),
+              label: isKorean ? '영수증' : 'Receipts',
+            ),
+            NavigationDestination(
+              icon: const Icon(Symbols.tune_rounded),
+              selectedIcon: const Icon(
+                Symbols.tune_rounded,
+                color: EnpriveColors.tealStrong,
+              ),
+              label: isKorean ? '설정' : 'Settings',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeTab(
+    BuildContext context,
+    AppLocalizations l10n,
+    bool isKorean,
+  ) {
+    return SafeArea(
+      child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -410,8 +561,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
                       const SizedBox(height: 24),
 
-                      // Elevated Deni Character Stage Card
-                      Container(
+                      // Elevated Deni Character Stage Card (respects showDeni preference)
+                      if (_showDeni)
+                        Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
@@ -564,15 +716,35 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       // Recent Evidence Receipts (Monday Home inspiration pattern)
                       if (_savedReceipts.isNotEmpty) ...[
                         const SizedBox(height: 24),
-                        Text(
-                          'SAVED RECEIPTS (${_savedReceipts.length})',
-                          style:
-                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                        Row(
+                          children: [
+                            Text(
+                              'SAVED RECEIPTS (${_savedReceipts.length})',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
                                     fontWeight: FontWeight.w800,
                                     color: EnpriveColors.inkSecondary,
                                   ),
+                            ),
+                            const Spacer(),
+                            TextButton(
+                              onPressed: () {
+                                setState(() => _selectedTabIndex = 1);
+                              },
+                              child: Text(
+                                isKorean ? '전체 보기 →' : 'See all →',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: EnpriveColors.tealStrong,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 6),
                         ..._savedReceipts.take(2).map((receipt) {
                           final isConcern = receipt.overallState ==
                               ReviewOverallState.reviewRecommended;
@@ -682,7 +854,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
             );
           },
         ),
-      ),
     );
   }
 
