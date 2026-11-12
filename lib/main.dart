@@ -5,6 +5,7 @@ import 'core/theme/enprive_colors.dart';
 import 'core/theme/enprive_theme.dart';
 import 'l10n/app_localizations.dart';
 import 'services/platform/hybrid_ai_bridge.dart';
+import 'widgets/deni_animated_mascot.dart';
 import 'widgets/enprive_provenance_chip.dart';
 import 'widgets/enprive_tactile_button.dart';
 
@@ -200,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // Deni Guide Card (Inspiration from Brilliant & Mascot Brief)
               Container(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                 decoration: BoxDecoration(
                   color: EnpriveColors.surface,
                   borderRadius: BorderRadius.circular(20),
@@ -214,23 +215,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Mascot Icon avatar representation
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: EnpriveColors.teal.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Symbols.bookmark_rounded,
-                          color: EnpriveColors.tealStrong,
-                          size: 28,
-                        ),
-                      ),
+                    // Animated Deni Mascot (Concept C: The Protective Pebble)
+                    const DeniAnimatedMascot(
+                      size: 54,
+                      pose: DeniPose.idle,
                     ),
                     const SizedBox(width: 14),
                     Expanded(
