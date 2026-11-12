@@ -151,6 +151,28 @@
 
 ---
 
+### Iteration 6.1 — Physically Articulated Mascot Hand-to-Prop Choreography (`thinking`, `explaining`, `listening`)
+- **Date**: 2026-11-12
+- **Branch / Commits**: `feature/review-flow-and-evidence-results`
+- **Models Used**: Gemini 4 Argon
+- **What Was Built**:
+  - Referenced `.agents/skills/svg-mascot-animator/references/creative-directions.md` and `references/rigging.md` to upgrade Deni's foreground hand-to-prop articulation in `lib/widgets/deni_animated_mascot.dart`:
+    - **`thinking` (`_drawThinkingScene`)**: Deni's foreground right arm and sculpted paw physically wrap around and grip the magnifying glass handle (`gripPoint` with overlapping thumb pad and brass ferrule collar), sweeping the lens across a 4-line policy document while magnifying the zoomed clauses inside the lens clip; Deni's left hand taps the chin thoughtfully.
+    - **`explaining` (`_drawExplainingScene`)**: Deni's foreground right arm grips a tactile Presentation Pointer Baton whose warm-apricot tip tracks across a larger Floating Evidence Board (`QUOTE VERIFIED` header + pulsing highlight box + target ring), while Deni's left hand gestures palm-up and a floating speech callout bubble bobs above the left shoulder.
+    - **`listening` (`_drawListeningScene`)**: Added a sculpted over-the-crown Acoustic Headset Arc with cushioned left/right studio earcups; Deni's right hand reaches up to physically hold/cup the right earcup while Deni's left hand presents a Floating 5-Bar Live Voice Equalizer Card alongside 3 concentric acoustic wave arcs.
+  - Fixed `lib/core/theme/enprive_theme.dart` to bind directly to the `pubspec.yaml` bundled font families (`SourceSerif4` and `Inter`) instead of `GoogleFonts.inter()` asset lookups, eliminating runtime `google_fonts` console exceptions on the Android 16 emulator when `allowRuntimeFetching = false`.
+- **Challenges & Fixes**:
+  - *Challenge 1*: In the initial `thinking` pose, the magnifying glass floated without Deni's hand gripping the handle, and `explaining` / `listening` lacked foreground limb connection to their visual props.
+    - *Fix*: Built `_drawArticulatedArm` with shared kinematic anchor points (`gripPoint`, `batonGrip`, `cupGrip`) and layered an overlapping thumb/paw pad over the tool shaft so arm, hand, and prop move as a single connected rig.
+  - *Challenge 2*: `GoogleFonts.config.allowRuntimeFetching = false` logged exceptions looking for `Inter-Regular.ttf` / `Inter-SemiBold.ttf` because our bundled files are named `Inter-400.ttf`..`Inter-800.ttf` and registered under `pubspec.yaml` `fonts:`.
+    - *Fix*: Bound `TextTheme` styles directly to `fontFamily: primaryDisplayFontFamily` (`SourceSerif4`) and `fontFamily: secondaryFontBaseFamily` (`Inter`).
+- **Verification**:
+  - Hot-reloaded live onto `emulator-5554` (Pixel 9, Android 16 API 36) in `1,431ms` with 0 runtime font warnings.
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **9/9 tests passing**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Iteration 7 (Next) — `feature/app-permission-inspector` [P0]**
