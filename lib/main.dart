@@ -1,122 +1,373 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'core/theme/enprive_colors.dart';
+import 'core/theme/enprive_theme.dart';
+import 'l10n/app_localizations.dart';
+import 'services/platform/hybrid_ai_bridge.dart';
+import 'widgets/enprive_provenance_chip.dart';
+import 'widgets/enprive_tactile_button.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const EnpriveApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class EnpriveApp extends StatefulWidget {
+  const EnpriveApp({super.key});
 
-  // This widget is the root of your application.
+  @override
+  State<EnpriveApp> createState() => _EnpriveAppState();
+}
+
+class _EnpriveAppState extends State<EnpriveApp> {
+  Locale _locale = const Locale('en');
+
+  void _setLocale(Locale newLocale) {
+    setState(() => _locale = newLocale);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+      title: 'Enprive',
+      debugShowCheckedModeBanner: false,
+      theme: EnpriveTheme.lightTheme,
+      locale: _locale,
+      supportedLocales: const [
+        Locale('en'),
+        Locale('ko'),
+      ],
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: HomeScreen(
+        currentLocale: _locale,
+        onLocaleChange: _setLocale,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class HomeScreen extends StatefulWidget {
+  final Locale currentLocale;
+  final ValueChanged<Locale> onLocaleChange;
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  const HomeScreen({
+    super.key,
+    required this.currentLocale,
+    required this.onLocaleChange,
+  });
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _HomeScreenState extends State<HomeScreen> {
+  final HybridAiBridge _bridge = HybridAiBridge();
+  DeviceCapability? _deviceCapability;
+  bool _isLoadingCapability = true;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _checkDevice();
+  }
+
+  Future<void> _checkDevice() async {
+    final cap = await _bridge.getDeviceCapability();
+    if (mounted) {
+      setState(() {
+        _deviceCapability = cap;
+        _isLoadingCapability = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final l10n = AppLocalizations.of(context)!;
+    final isKorean = widget.currentLocale.languageCode == 'ko';
+
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+        title: Row(
           children: [
-            const Text('You have pushed the button this many times:'),
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              l10n.appTitle,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: EnpriveColors.ink,
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: EnpriveColors.teal.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'NANO 4',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: EnpriveColors.tealStrong,
+                ),
+              ),
             ),
           ],
         ),
+        actions: [
+          // Locale toggle button (EN / 한국어)
+          TextButton(
+            onPressed: () {
+              widget.onLocaleChange(
+                isKorean ? const Locale('en') : const Locale('ko'),
+              );
+            },
+            child: Row(
+              children: [
+                const Icon(Symbols.translate_rounded, size: 18),
+                const SizedBox(width: 4),
+                Text(
+                  isKorean ? 'English' : '한국어',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 12),
+              // Provenance / Private status banner
+              Row(
+                children: [
+                  const EnpriveProvenanceChip(
+                    source: InferenceSource.onDevice,
+                    customLabel: 'Private by default',
+                  ),
+                  const Spacer(),
+                  if (_isLoadingCapability)
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Text(
+                      _deviceCapability?.isSupported == true
+                          ? 'Device Ready'
+                          : 'Hardware Scout',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: EnpriveColors.inkSecondary,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Hero headline
+              Text(
+                isKorean
+                    ? '아이들이 사용하는 앱의\n개인정보를 더 명확하게.'
+                    : 'A clearer look at the\napps children use.',
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+              const SizedBox(height: 10),
+
+              // Reassurance subtitle
+              Text(
+                l10n.homePrivacySubtitle,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: EnpriveColors.inkSecondary,
+                    ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Deni Guide Card (Inspiration from Brilliant & Mascot Brief)
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: EnpriveColors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFEAE7E1)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Mascot Icon avatar representation
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: EnpriveColors.teal.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Symbols.bookmark_rounded,
+                          color: EnpriveColors.tealStrong,
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Deni (데니)',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: EnpriveColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            l10n.deniIntro,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              height: 1.45,
+                              color: EnpriveColors.inkSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Spacer(),
+
+              // Primary Thumb-Zone Actions (8-point grid, Brilliant tactile feel)
+              EnpriveTactileButton(
+                label: l10n.btnCheckApp,
+                leading: const Icon(Symbols.apps_rounded, color: Colors.white, size: 20),
+                onPressed: () {
+                  _showCheckAppModal(context, l10n);
+                },
+              ),
+              const SizedBox(height: 12),
+              EnpriveTactileButton(
+                label: l10n.btnPasteTerms,
+                isSecondary: true,
+                leading: const Icon(Symbols.content_paste_rounded, size: 20),
+                onPressed: () {
+                  _showPasteModal(context, l10n);
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+
+  void _showCheckAppModal(BuildContext context, AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.btnCheckApp,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.permissionLimitationNotice,
+                style: const TextStyle(color: EnpriveColors.inkSecondary, fontSize: 13),
+              ),
+              const SizedBox(height: 24),
+              EnpriveTactileButton(
+                label: 'Inspect Demo App (EduTrack)',
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPasteModal(BuildContext context, AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            left: 20,
+            right: 20,
+            top: 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.btnPasteTerms,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 12),
+              const TextField(
+                maxLines: 4,
+                decoration: InputDecoration(
+                  hintText: 'Paste terms text or policy URL...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              EnpriveTactileButton(
+                label: l10n.btnContinue,
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

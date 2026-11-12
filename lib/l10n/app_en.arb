@@ -1,0 +1,39 @@
+{
+  "@@locale": "en",
+  "appTitle": "Enprive",
+  "appTagline": "Evidence-first app privacy reviews",
+  "homePrivacySubtitle": "Your reviews stay on this phone.",
+  
+  "stateNoConcern": "No concern identified",
+  "stateNoConcernSubtitle": "Nothing concerning in the reviewed evidence. This is not a safety certification.",
+  "stateReviewRecommended": "Review recommended",
+  "stateReviewRecommendedSubtitle": "One or more passages or permission mismatches deserve a human look.",
+  "stateInsufficientEvidence": "Insufficient evidence",
+  "stateInsufficientEvidenceSubtitle": "Evidence is missing, unavailable, or could not be verified on this device.",
+
+  "chipOnDevice": "On this device",
+  "chipInCloud": "In the cloud",
+  "chipLocationUnavailable": "Processing location unavailable",
+
+  "statusSourceMatched": "Source matched",
+  "statusDeviceObserved": "Device observed",
+  "statusInterpretation": "Interpretation",
+  "statusUnverified": "Unverified",
+  "statusStale": "Outdated / Stale",
+
+  "btnCheckApp": "Check an app",
+  "btnPasteTerms": "Paste terms or URL",
+  "btnWhyThisFinding": "Why this finding?",
+  "btnSaveToReceipts": "Save to Receipts",
+  "btnDiscard": "Discard",
+  "btnAskDeni": "Ask Deni",
+  "btnUseCloud": "Use cloud for this check",
+  "btnReviewManually": "Review manually",
+  "btnGetStarted": "Get started",
+  "btnContinue": "Continue",
+
+  "deniIntro": "Hi, I'm Deni. I can help you understand what this policy says, show you the evidence behind a concern, and explain what Enprive could not verify.",
+  "cloudConsentDisclosure": "To analyse this text in the cloud, Enprive will send only the text shown below to Firebase AI Logic. Your installed-app list and Android permission observations will never be sent.",
+  
+  "permissionLimitationNotice": "Android reports this permission state on this phone. It does not prove whether the app actually accessed or transmitted data."
+}

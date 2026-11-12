@@ -5,26 +5,43 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:flutter/services.dart';
 import 'package:enprive/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(const MethodChannel('com.enprive/hybrid_ai'), (call) async {
+      if (call.method == 'getDeviceCapability') {
+        return {
+          'isSupported': true,
+          'modelStatus': 'AVAILABLE',
+          'modelCategory': 'PREVIEW',
+          'apiLevel': 34,
+          'userMessage': 'Gemini Nano 4 is ready on this device.',
+        };
+      }
+      return null;
+    });
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(const MethodChannel('com.enprive/hybrid_ai'), null);
+  });
+
+  testWidgets('EnpriveApp renders title, tagline, and Deni greeting', (WidgetTester tester) async {
+    await tester.pumpWidget(const EnpriveApp());
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Enprive'), findsOneWidget);
+    expect(find.text('NANO 4'), findsOneWidget);
+    expect(find.textContaining('Deni'), findsWidgets);
   });
 }
+
+

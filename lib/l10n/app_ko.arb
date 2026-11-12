@@ -1,0 +1,39 @@
+{
+  "@@locale": "ko",
+  "appTitle": "Enprive",
+  "appTagline": "증거 중심 앱 개인정보 검토",
+  "homePrivacySubtitle": "검토 내용은 이 기기에만 안전하게 보관됩니다.",
+  
+  "stateNoConcern": "우려 사항 미발견",
+  "stateNoConcernSubtitle": "검토된 증거에서 우려 사항이 발견되지 않았습니다. 이는 안전성 보증이 아닙니다.",
+  "stateReviewRecommended": "검토 권장",
+  "stateReviewRecommendedSubtitle": "하나 이상의 방침 조항 또는 권한 불일치에 대한 확인이 필요합니다.",
+  "stateInsufficientEvidence": "증거 불충분",
+  "stateInsufficientEvidenceSubtitle": "증거가 누락되었거나 이 기기에서 안전하게 검토할 수 없습니다.",
+
+  "chipOnDevice": "기기 내 처리 (On-Device)",
+  "chipInCloud": "클라우드 처리 (In-Cloud)",
+  "chipLocationUnavailable": "처리 위치 확인 불가",
+
+  "statusSourceMatched": "출처 일치",
+  "statusDeviceObserved": "기기 확인됨",
+  "statusInterpretation": "해석",
+  "statusUnverified": "미확인",
+  "statusStale": "확인 필요 / 만료됨",
+
+  "btnCheckApp": "앱 검토하기",
+  "btnPasteTerms": "방침 또는 URL 붙여넣기",
+  "btnWhyThisFinding": "이 결과를 도출한 근거는?",
+  "btnSaveToReceipts": "영수증에 저장",
+  "btnDiscard": "삭제",
+  "btnAskDeni": "데니에게 질문하기",
+  "btnUseCloud": "이 검토에 클라우드 사용",
+  "btnReviewManually": "직접 검토하기",
+  "btnGetStarted": "시작하기",
+  "btnContinue": "계속",
+
+  "deniIntro": "안녕하세요, 데니입니다. 방침 내용을 이해하기 쉽게 설명해 드리고, 우려 사항의 근거를 확인해 드리며, 검증되지 않은 부분도 솔직하게 안내해 드립니다.",
+  "cloudConsentDisclosure": "이 텍스트를 클라우드에서 분석하기 위해, 아래에 표시된 내용만 Firebase AI Logic으로 전송합니다. 설치된 앱 목록과 Android 권한 상태는 절대 전송되지 않습니다.",
+  
+  "permissionLimitationNotice": "Android가 이 기기에서 보고한 권한 상태입니다. 앱이 실제로 데이터를 전송했는지는 증명하지 않습니다."
+}
