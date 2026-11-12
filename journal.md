@@ -120,7 +120,7 @@
 
 ### Iteration 6 — P0 Core Review Flow, Evidence Result Screen, "Why This Finding?" & Cloud Consent
 - **Date**: 2026-11-12
-- **Branch / Commits**: `feature/review-flow-and-evidence-results`
+- **Branch / Commits**: `feature/review-flow-and-evidence-results` (`f91be48`)
 - **Models Used**: Gemini 4 Argon
 - **What Was Built**:
   - **Journal Governance (`journal.md` & `AGENTS.md`)**: Established `journal.md` as Section 0 Primary Protocol in `AGENTS.md` and `.agents/AGENTS.md`.
