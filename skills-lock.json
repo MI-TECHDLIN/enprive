@@ -85,6 +85,12 @@
       "skillPath": "SKILL.md",
       "computedHash": "a7f5257845f24d24195d41dd2be378dc30843e5a50536ad0e96ebd2c65021341"
     },
+    "svg-mascot-animator": {
+      "source": "imMamdouhaboammar/linkedin-animated-infographics",
+      "sourceType": "github",
+      "skillPath": "skills/svg-mascot-animator/SKILL.md",
+      "computedHash": "46a761403e99533a1ee3dd1b823f6557c7e5cf2e5422e48805d5e691cdac1206"
+    },
     "xcode-project-setup": {
       "source": "firebase/agent-skills",
       "sourceType": "github",

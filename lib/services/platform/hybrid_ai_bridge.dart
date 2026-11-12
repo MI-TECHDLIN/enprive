@@ -131,6 +131,20 @@ class HybridAiBridge {
     }
   }
 
+  /// Retrieves any text passed into the app via Android ACTION_PROCESS_TEXT
+  /// or ACTION_SEND (system text selection or share sheet).
+  Future<String?> getInitialSelectedText() async {
+    try {
+      final res = await _channel.invokeMethod<String>('getInitialSelectedText');
+      if (res == null || res.trim().isEmpty) return null;
+      return res.trim();
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
   /// Sends text for hybrid evaluation.
   /// If [cloudConsent] is false, native code strictly enforces ONLY_ON_DEVICE.
   Future<HybridAnalysisResult> analyseText({

@@ -17,9 +17,10 @@ abstract final class EnpriveColors {
   static const Color ctaInk = Color(0xFF1F2A44);
   static const Color ctaLip = Color(0xFF10172A);
 
-  // Brand teal
+  // Brand teal & warm apricot accent
   static const Color teal = Color(0xFF1E9E8F);
   static const Color tealStrong = Color(0xFF137A6F);
+  static const Color apricot = Color(0xFFF4A261);
 
   // Review states (Foreground + Background)
   static const Color stateNoConcernFg = Color(0xFF1F6B45);

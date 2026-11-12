@@ -8,8 +8,13 @@ import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.Firebase
+import com.google.firebase.ai.InferenceMode
+import com.google.firebase.ai.InferenceSource
+import com.google.firebase.ai.OnDeviceConfig
+import com.google.firebase.ai.OnDeviceModelStatus
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.appcheck.appCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
@@ -17,10 +22,12 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
+@OptIn(PublicPreviewAPI::class)
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.enprive/hybrid_ai"
     private val TAG = "EnpriveHybridAi"
@@ -28,7 +35,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        handleProcessTextIntent(intent)
+        handleIncomingTextIntent(intent)
 
         // Install App Check Debug Provider for development & testing
         try {
@@ -43,13 +50,41 @@ class MainActivity : FlutterActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleProcessTextIntent(intent)
+        setIntent(intent)
+        handleIncomingTextIntent(intent)
     }
 
-    private fun handleProcessTextIntent(incomingIntent: Intent?) {
-        if (incomingIntent?.action == Intent.ACTION_PROCESS_TEXT) {
-            initialSelectedText = incomingIntent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString()
-            Log.d(TAG, "Received ACTION_PROCESS_TEXT with ${initialSelectedText?.length ?: 0} chars")
+    private fun handleIncomingTextIntent(incomingIntent: Intent?) {
+        when (incomingIntent?.action) {
+            Intent.ACTION_PROCESS_TEXT -> {
+                initialSelectedText = incomingIntent
+                    .getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)
+                    ?.toString()
+                Log.d(TAG, "Received ACTION_PROCESS_TEXT with ${initialSelectedText?.length ?: 0} chars")
+            }
+            Intent.ACTION_SEND -> {
+                if (incomingIntent.type == "text/plain") {
+                    initialSelectedText = incomingIntent.getStringExtra(Intent.EXTRA_TEXT)
+                    Log.d(TAG, "Received ACTION_SEND with ${initialSelectedText?.length ?: 0} chars")
+                }
+            }
+        }
+    }
+
+    private fun createOnDeviceModel() = Firebase.ai(
+        backend = GenerativeBackend.googleAI(),
+        useLimitedUseAppCheckTokens = true
+    ).generativeModel(
+        modelName = "gemini-2.5-flash",
+        onDeviceConfig = OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE)
+    )
+
+    private fun mapModelStatus(status: OnDeviceModelStatus?): String {
+        return when (status) {
+            OnDeviceModelStatus.AVAILABLE -> "AVAILABLE"
+            OnDeviceModelStatus.DOWNLOADABLE -> "DOWNLOADABLE"
+            OnDeviceModelStatus.DOWNLOADING -> "DOWNLOADING"
+            else -> "UNAVAILABLE"
         }
     }
 
@@ -60,25 +95,65 @@ class MainActivity : FlutterActivity() {
             when (call.method) {
                 "getDeviceCapability" -> {
                     val apiLevel = Build.VERSION.SDK_INT
-                    val isSupported = apiLevel >= 26
-                    val modelStatus = if (isSupported) "AVAILABLE" else "UNAVAILABLE"
-                    val res = mapOf(
-                        "isSupported" to isSupported,
-                        "modelStatus" to modelStatus,
-                        "modelCategory" to "PREVIEW",
-                        "apiLevel" to apiLevel,
-                        "userMessage" to if (isSupported) {
-                            "Android API $apiLevel meets on-device Gemini Nano requirements."
-                        } else {
-                            "Android API $apiLevel is below minimum required SDK 26."
+                    if (apiLevel < 26) {
+                        result.success(mapOf(
+                            "isSupported" to false,
+                            "modelStatus" to "UNAVAILABLE",
+                            "modelCategory" to "PREVIEW",
+                            "apiLevel" to apiLevel,
+                            "userMessage" to "Android API $apiLevel is below minimum required SDK 26."
+                        ))
+                        return@setMethodCallHandler
+                    }
+
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val mappedStatus = try {
+                            val ext = createOnDeviceModel().onDeviceExtension
+                            val status = ext?.checkStatus()
+                            mapModelStatus(status)
+                        } catch (e: Exception) {
+                            Log.w(TAG, "On-device checkStatus fallback: ${e.message}")
+                            "UNAVAILABLE"
                         }
-                    )
-                    result.success(res)
+                        val isSupported = mappedStatus == "AVAILABLE" ||
+                                mappedStatus == "DOWNLOADABLE" ||
+                                mappedStatus == "DOWNLOADING"
+
+                        withContext(Dispatchers.Main) {
+                            result.success(mapOf(
+                                "isSupported" to isSupported,
+                                "modelStatus" to mappedStatus,
+                                "modelCategory" to "PREVIEW",
+                                "apiLevel" to apiLevel,
+                                "userMessage" to if (isSupported) {
+                                    "Gemini Nano on-device status: $mappedStatus (API $apiLevel)."
+                                } else {
+                                    "Gemini Nano unavailable on this device ($mappedStatus). Consented cloud analysis available."
+                                }
+                            ))
+                        }
+                    }
                 }
 
                 "downloadOrCheckModel" -> {
-                    // On-device Gemini Nano is managed by Android AICore / Play Services
-                    result.success("AVAILABLE")
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val finalStatus = try {
+                            val ext = createOnDeviceModel().onDeviceExtension
+                            val current = ext?.checkStatus()
+                            if (current == OnDeviceModelStatus.DOWNLOADABLE) {
+                                ext.download().collect()
+                                mapModelStatus(ext.checkStatus())
+                            } else {
+                                mapModelStatus(current)
+                            }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Model download/check failed: ${e.message}")
+                            "FAILED"
+                        }
+                        withContext(Dispatchers.Main) {
+                            result.success(finalStatus)
+                        }
+                    }
                 }
 
                 "getInitialSelectedText" -> {
@@ -140,7 +215,7 @@ class MainActivity : FlutterActivity() {
                         return@setMethodCallHandler
                     }
 
-                    // Enforce privacy constraint: without cloud consent, strictly execute on-device
+                    // Enforce privacy constraint: without cloud consent, strictly block ONLY_IN_CLOUD requests
                     if (!cloudConsent && requestedMode == "ONLY_IN_CLOUD") {
                         result.success(mapOf(
                             "schemaVersion" to schemaVersion,
@@ -153,24 +228,26 @@ class MainActivity : FlutterActivity() {
                         return@setMethodCallHandler
                     }
 
-                    // Run inference in coroutine scope
                     lifecycleScope.launch(Dispatchers.IO) {
                         try {
-                            val inferenceSource = if (cloudConsent) "IN_CLOUD" else "ON_DEVICE"
-                            
-                            // Initialize Firebase AI with App Check replay protection
+                            val inferenceMode = when {
+                                !cloudConsent -> InferenceMode.ONLY_ON_DEVICE
+                                requestedMode == "ONLY_IN_CLOUD" -> InferenceMode.ONLY_IN_CLOUD
+                                else -> InferenceMode.PREFER_ON_DEVICE
+                            }
+
                             val ai = Firebase.ai(
                                 backend = GenerativeBackend.googleAI(),
                                 useLimitedUseAppCheckTokens = true
                             )
-                            
-                            // Use latest Gemini 2.5 Flash for high efficiency evaluation
+
                             val model = ai.generativeModel(
                                 modelName = "gemini-2.5-flash",
                                 generationConfig = generationConfig {
                                     responseMimeType = "application/json"
                                     temperature = 0.1f
-                                }
+                                },
+                                onDeviceConfig = OnDeviceConfig(mode = inferenceMode)
                             )
 
                             val systemPrompt = """
@@ -200,7 +277,12 @@ class MainActivity : FlutterActivity() {
                             val response = model.generateContent(prompt)
                             val responseText = response.text ?: "{}"
 
-                            // Parse structured JSON
+                            val actualSource = when (response.inferenceSource) {
+                                InferenceSource.ON_DEVICE -> "ON_DEVICE"
+                                InferenceSource.IN_CLOUD -> "IN_CLOUD"
+                                else -> if (cloudConsent) "IN_CLOUD" else "ON_DEVICE"
+                            }
+
                             val jsonOutput = try {
                                 val jsonObj = JSONObject(responseText)
                                 toMap(jsonObj)
@@ -213,7 +295,7 @@ class MainActivity : FlutterActivity() {
                                     "schemaVersion" to schemaVersion,
                                     "requestId" to requestId,
                                     "status" to "success",
-                                    "inferenceSource" to inferenceSource,
+                                    "inferenceSource" to actualSource,
                                     "structuredOutput" to jsonOutput
                                 ))
                             }
