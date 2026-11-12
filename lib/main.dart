@@ -14,6 +14,7 @@ import 'widgets/cloud_consent_sheet.dart';
 import 'widgets/deni_animated_mascot.dart';
 import 'widgets/enprive_provenance_chip.dart';
 import 'widgets/enprive_tactile_button.dart';
+import 'widgets/installed_app_picker_sheet.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -159,6 +160,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
     required String subjectTitle,
     required String sourceLabel,
     required String policyText,
+    AppPermissionSnapshot? appPermissions,
     bool cloudConsent = false,
     bool forceLocalManualScan = false,
   }) async {
@@ -172,6 +174,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
       subjectTitle: subjectTitle,
       sourceLabel: sourceLabel,
       policyText: policyText,
+      appPermissions: appPermissions,
       cloudConsent: cloudConsent,
       forceLocalManualScan: forceLocalManualScan,
     );
@@ -195,6 +198,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
           subjectTitle: subjectTitle,
           sourceLabel: sourceLabel,
           policyText: policyText,
+          appPermissions: appPermissions,
           cloudConsent: true,
         );
       } else if (decision == CloudConsentDecision.reviewLocally) {
@@ -202,6 +206,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
           subjectTitle: subjectTitle,
           sourceLabel: sourceLabel,
           policyText: policyText,
+          appPermissions: appPermissions,
           forceLocalManualScan: true,
         );
       }
@@ -681,81 +686,33 @@ We do not collect personal identifiers, precise location data, microphone audio,
     );
   }
 
-  void _showCheckAppModal(BuildContext context, AppLocalizations l10n) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: EnpriveColors.paper,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.btnCheckApp,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.permissionLimitationNotice,
-                  style: const TextStyle(
-                    color: EnpriveColors.inkSecondary,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                EnpriveTactileButton(
-                  label: 'Inspect Demo App (EduTrack)',
-                  leading: const Icon(
-                    Symbols.school_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  onPressed: () async {
-                    Navigator.pop(sheetContext);
-                    final text = await _loadFixtureText(
-                      'assets/fixtures/synthetic_policy_edutrack.txt',
-                      _fallbackEduTrackFixture,
-                    );
-                    await _executePolicyReview(
-                      subjectTitle: 'EduTrack Classroom Companion',
-                      sourceLabel: 'Synthetic Policy Fixture (v2026.11-R2)',
-                      policyText: text,
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                EnpriveTactileButton(
-                  label: 'Inspect Demo App (CalmMath Abacus)',
-                  isSecondary: true,
-                  leading: const Icon(
-                    Symbols.calculate_rounded,
-                    size: 20,
-                    color: EnpriveColors.ink,
-                  ),
-                  onPressed: () async {
-                    Navigator.pop(sheetContext);
-                    final text = await _loadFixtureText(
-                      'assets/fixtures/synthetic_policy_calmmath.txt',
-                      _fallbackCalmMathFixture,
-                    );
-                    await _executePolicyReview(
-                      subjectTitle: 'CalmMath Abacus',
-                      sourceLabel: 'Synthetic Policy Fixture (v2026.11-LOCAL)',
-                      policyText: text,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+  Future<void> _showCheckAppModal(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
+    final eduText = await _loadFixtureText(
+      'assets/fixtures/synthetic_policy_edutrack.txt',
+      _fallbackEduTrackFixture,
+    );
+    final calmText = await _loadFixtureText(
+      'assets/fixtures/synthetic_policy_calmmath.txt',
+      _fallbackCalmMathFixture,
+    );
+    if (!context.mounted) return;
+
+    final selected = await InstalledAppPickerSheet.show(
+      context,
+      bridge: _bridge,
+      eduTrackPolicyText: eduText,
+      calmMathPolicyText: calmText,
+    );
+    if (selected == null || !mounted) return;
+
+    await _executePolicyReview(
+      subjectTitle: selected.subjectTitle,
+      sourceLabel: selected.sourceLabel,
+      policyText: selected.policyText,
+      appPermissions: selected.permissionSnapshot,
     );
   }
 

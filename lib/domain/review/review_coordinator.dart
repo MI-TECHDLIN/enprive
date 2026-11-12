@@ -1,6 +1,7 @@
 import '../../services/platform/hybrid_ai_bridge.dart';
 import '../../widgets/enprive_provenance_chip.dart';
 import '../evidence/evidence_validator.dart';
+import '../permissions/permission_comparator.dart';
 import 'review_models.dart';
 
 class ReviewExecutionResult {
@@ -44,6 +45,7 @@ class ReviewCoordinator {
     required String subjectTitle,
     required String sourceLabel,
     required String policyText,
+    AppPermissionSnapshot? appPermissions,
     bool cloudConsent = false,
     bool forceLocalManualScan = false,
   }) async {
@@ -66,9 +68,13 @@ class ReviewCoordinator {
         policyText: trimmed,
         source: InferenceSource.onDevice,
       );
-      return ReviewExecutionResult.completed(receipt);
+      return ReviewExecutionResult.completed(
+        _attachPermissionComparison(receipt, appPermissions),
+      );
     }
 
+    // Privacy Guardrail (AGENTS.md §3.1): Only policy text is sent to the bridge.
+    // Installed app lists and permission observations NEVER leave this device.
     final reqId = 'rev_${DateTime.now().millisecondsSinceEpoch}';
     final bridgeResult = await _bridge.analyseText(
       requestId: reqId,
@@ -85,11 +91,11 @@ class ReviewCoordinator {
         snapshotText: trimmed,
         bridgeResult: bridgeResult,
       );
-      return ReviewExecutionResult.completed(receipt);
+      return ReviewExecutionResult.completed(
+        _attachPermissionComparison(receipt, appPermissions),
+      );
     }
 
-    // If on-device Nano 4 was unavailable and cloud consent has not been asked yet,
-    // prompt the user with the explicit per-check Cloud Consent / Manual Review modal.
     if (!cloudConsent) {
       return ReviewExecutionResult.requiresConsentChoice(
         reason: bridgeResult.message ??
@@ -97,16 +103,55 @@ class ReviewCoordinator {
       );
     }
 
-    // If cloud consent was granted but network / App Check failed (e.g. offline),
-    // fall back to deterministic local clause matching on-device so the parent
-    // or teacher still gets verified verbatim quotes.
     final fallbackReceipt = buildDeterministicLocalReceipt(
       subjectTitle: subjectTitle,
       sourceLabel: sourceLabel,
       policyText: trimmed,
       source: InferenceSource.onDevice,
     );
-    return ReviewExecutionResult.completed(fallbackReceipt);
+    return ReviewExecutionResult.completed(
+      _attachPermissionComparison(fallbackReceipt, appPermissions),
+    );
+  }
+
+  PolicyReviewReceipt _attachPermissionComparison(
+    PolicyReviewReceipt baseReceipt,
+    AppPermissionSnapshot? appPermissions,
+  ) {
+    if (appPermissions == null) return baseReceipt;
+
+    final report = PermissionComparator.compare(
+      snapshot: appPermissions,
+      policyText: baseReceipt.snapshotText,
+    );
+    final enrichedFindings =
+        PermissionComparator.enrichFindingsWithDeviceReport(
+      policyFindings: baseReceipt.findings,
+      report: report,
+    );
+
+    final hasConcerns = enrichedFindings.any((f) => f.isVerified) ||
+        report.mismatchCount > 0;
+    final updatedState = hasConcerns
+        ? ReviewOverallState.reviewRecommended
+        : baseReceipt.overallState;
+
+    return PolicyReviewReceipt(
+      id: baseReceipt.id,
+      subjectTitle: baseReceipt.subjectTitle,
+      sourceLabel: baseReceipt.sourceLabel,
+      snapshotText: baseReceipt.snapshotText,
+      snapshotDigest: baseReceipt.snapshotDigest,
+      createdAt: baseReceipt.createdAt,
+      overallState: updatedState,
+      inferenceSource: baseReceipt.inferenceSource,
+      summary: report.mismatchCount > 0
+          ? '${baseReceipt.summary} Local Android inspection also spotted ${report.mismatchCount} undisclosed permission ${report.mismatchCount == 1 ? 'request' : 'requests'}.'
+          : baseReceipt.summary,
+      calibratedDisclaimer: baseReceipt.calibratedDisclaimer,
+      findings: enrichedFindings,
+      permissionReport: report,
+    );
   }
 
   /// 1-turn grounded explanation from Deni for the "Why this finding?" sheet.

@@ -18,9 +18,9 @@
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
 - **Current `main` HEAD**: `a5c69d1`
-- **Active Feature Branch**: `feature/review-flow-and-evidence-results` (Iteration 6 complete, verified, ready to merge)
+- **Active Feature Branch**: `feature/app-permission-inspector` (Iteration 7 complete, verified, ready to merge)
 - **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 24 November 2026)
-- **Next Queued Branch**: `feature/app-permission-inspector` (Iteration 7 — Local Android App Inspector & `PermissionComparator`)
+- **Next Queued Branch**: `feature/local-receipts-storage` (Iteration 8 — Local SQLite `ReceiptRepository` & 3-Tab Shell)
 
 ---
 
@@ -173,14 +173,38 @@
 
 ---
 
+### Iteration 7 — Local Installed App Inspector & Deterministic `PermissionComparator`
+- **Date**: 2026-11-12
+- **Branch / Commits**: `feature/app-permission-inspector`
+- **Models Used**: Gemini 4 Argon
+- **What Was Built**:
+  - **Native Android `listLaunchableApps` (`MainActivity.kt` & `hybrid_ai_bridge.dart`)**:
+    - Added `"listLaunchableApps"` MethodChannel handler querying `PackageManager.queryIntentActivities` for `ACTION_MAIN` + `CATEGORY_LAUNCHER` (matching `<queries>` in `AndroidManifest.xml`, no `QUERY_ALL_PACKAGES`), sorting non-system apps first and returning `InstalledAppEntry` records strictly on-device.
+    - Added `AppPermissionSnapshot` and `inspectAppSnapshot(packageName)` wrapper on `HybridAiBridge`.
+  - **Deterministic `PermissionComparator` (`lib/domain/permissions/permission_comparator.dart`)**:
+    - Matches Android OS requested/granted permissions (`ACCESS_FINE_LOCATION`, `ACCESS_BACKGROUND_LOCATION`, `RECORD_AUDIO`, `CAMERA`, `READ_CONTACTS`, `com.google.android.gms.permission.AD_ID`, `READ_MEDIA_IMAGES`) against policy claims and disclaimers without calling any cloud or LLM endpoint.
+    - Classifies each capability into `undisclosedInPolicy`, `grantedAndDisclosed`, `disclosedNotGranted`, or `notRequested`.
+    - Enriches policy findings with live Android OS observations (`whatAndroidReports`) and emits `EvidenceStatus.deviceObserved` findings for undisclosed OS permissions, always attaching the calibrated limitation notice.
+  - **Installed App Picker Sheet & Result Screen Permission Cards (`lib/widgets/installed_app_picker_sheet.dart`, `lib/screens/review_result_screen.dart`)**:
+    - Built `InstalledAppPickerSheet` featuring Classroom Benchmark Profiles (*EduTrack* with 4 granted permissions + 1 undisclosed `CAMERA` mismatch; *CalmMath* with 0 sensitive permissions) plus live search/inspection of apps installed on the phone.
+    - Added `_PermissionComparisonSection` and `Device observed` status badges to `ReviewResultScreen`.
+  - **Unit Tests (`test/permission_comparator_test.dart`)**:
+    - Added deterministic test coverage verifying undisclosed `CAMERA` mismatch detection on EduTrack and zero-mismatch alignment on CalmMath.
+- **Challenges & Fixes**:
+  - *Challenge*: Kotlin compiler emitted `Unnecessary safe call on a non-null receiver of type 'CharSequence'` on `info.loadLabel(pm)?.toString()` in `MainActivity.kt`.
+  - *Fix*: Changed to `info.loadLabel(pm).toString().takeIf { it.isNotBlank() }` for 0 warnings.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **11/11 tests passing** (`test/evidence_validator_test.dart`, `test/permission_comparator_test.dart`, `test/review_coordinator_test.dart`, `test/widget_test.dart`).
+  - `cd android && ./gradlew compileDebugKotlin --no-daemon`: **BUILD SUCCESSFUL (0 warnings, 0 errors)**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
-1. **Iteration 7 (Next) — `feature/app-permission-inspector` [P0]**
-   - **Assigned Model**: **Gemini 4 Argon** / **Claude Opus 5.5** (core) + **Devin CLI / Flash** (tests)
-   - **Scope**: Local `listLaunchableApps` in `MainActivity.kt`, `PermissionComparator` in Dart, and Installed App Picker + Permission Comparison UI.
-2. **Iteration 8 — `feature/local-receipts-storage` [P0/P1]**
+1. **Iteration 8 (Next) — `feature/local-receipts-storage` [P0/P1]**
    - **Assigned Model**: **Gemini 4 Argon** / **Claude Opus 5.5** (core) + **Devin CLI** (serialization/DB tests)
    - **Scope**: `sqflite` `ReceiptRepository`, SHA-256 snapshot hashing, Receipts list with filter chips, Receipt detail view, and 3-tab bottom navigation (`Home · Receipts · Settings`).
-3. **Iteration 9 — `feature/tts-and-readiness-flow` [P0]**
+2. **Iteration 9 — `feature/tts-and-readiness-flow` [P0]**
    - **Assigned Model**: **Gemini Flash / Hydrogen / Claude Sonnet / Devin CLI**
    - **Scope**: Native Android `TextToSpeech` (`speakText`/`stopSpeaking`) synced with `DeniPose.listening`, private-analysis model readiness sheet, 200% text-scale & TalkBack audit, and `THIRD_PARTY_NOTICES.md`.

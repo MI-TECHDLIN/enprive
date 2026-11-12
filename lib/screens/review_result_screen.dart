@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_theme.dart';
+import '../domain/permissions/permission_comparator.dart';
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
@@ -316,10 +317,19 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                   ),
                   const SizedBox(height: 24),
 
+                  // 3b. Local Android OS Permission Comparison Section (when an app was inspected)
+                  if (receipt.permissionReport != null) ...[
+                    _PermissionComparisonSection(
+                      report: receipt.permissionReport!,
+                      l10n: l10n,
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
                   // 4. Findings List Header
                   Text(
                     receipt.findings.isNotEmpty
-                        ? 'VERIFIED POLICY EVIDENCE (${receipt.findings.length})'
+                        ? 'VERIFIED POLICY & DEVICE EVIDENCE (${receipt.findings.length})'
                         : 'CAPTURED POLICY SNAPSHOT',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           fontWeight: FontWeight.w800,
@@ -504,6 +514,22 @@ class _FindingEvidenceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMatched = finding.status == EvidenceStatus.sourceMatched;
+    final isDeviceObserved = finding.status == EvidenceStatus.deviceObserved;
+    final isVerified = isMatched || isDeviceObserved;
+
+    final String statusLabel = isDeviceObserved
+        ? l10n.statusDeviceObserved
+        : (isMatched ? l10n.statusSourceMatched : l10n.statusUnverified);
+    final Color statusBg = isDeviceObserved
+        ? EnpriveColors.chipOnDeviceBg
+        : (isMatched
+            ? EnpriveColors.stateNoConcernBg
+            : EnpriveColors.stateInsufficientEvidenceBg);
+    final Color statusFg = isDeviceObserved
+        ? EnpriveColors.chipOnDeviceFg
+        : (isMatched
+            ? EnpriveColors.stateNoConcernFg
+            : EnpriveColors.stateInsufficientEvidenceFg);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -552,34 +578,28 @@ class _FindingEvidenceCard extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: isMatched
-                      ? EnpriveColors.stateNoConcernBg
-                      : EnpriveColors.stateInsufficientEvidenceBg,
+                  color: statusBg,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      isMatched
-                          ? Symbols.verified_rounded
-                          : Symbols.help_outline_rounded,
+                      isDeviceObserved
+                          ? Symbols.phone_android_rounded
+                          : (isVerified
+                              ? Symbols.verified_rounded
+                              : Symbols.help_outline_rounded),
                       size: 14,
-                      color: isMatched
-                          ? EnpriveColors.stateNoConcernFg
-                          : EnpriveColors.stateInsufficientEvidenceFg,
+                      color: statusFg,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      isMatched
-                          ? l10n.statusSourceMatched
-                          : l10n.statusUnverified,
+                      statusLabel,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: isMatched
-                            ? EnpriveColors.stateNoConcernFg
-                            : EnpriveColors.stateInsufficientEvidenceFg,
+                        color: statusFg,
                       ),
                     ),
                   ],
@@ -661,6 +681,207 @@ class _FindingEvidenceCard extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PermissionComparisonSection extends StatelessWidget {
+  final AppPermissionComparisonReport report;
+  final AppLocalizations l10n;
+
+  const _PermissionComparisonSection({
+    required this.report,
+    required this.l10n,
+  });
+
+  (Color bg, Color fg, String label, IconData icon) _alignmentStyle(
+    PermissionAlignmentState state,
+  ) {
+    return switch (state) {
+      PermissionAlignmentState.undisclosedInPolicy => (
+          EnpriveColors.stateReviewRecommendedBg,
+          EnpriveColors.stateReviewRecommendedFg,
+          'Undisclosed in Policy',
+          Symbols.warning_amber_rounded,
+        ),
+      PermissionAlignmentState.grantedAndDisclosed => (
+          EnpriveColors.chipOnDeviceBg,
+          EnpriveColors.chipOnDeviceFg,
+          'Granted & Disclosed',
+          Symbols.check_circle_rounded,
+        ),
+      PermissionAlignmentState.disclosedNotGranted => (
+          EnpriveColors.stateInsufficientEvidenceBg,
+          EnpriveColors.stateInsufficientEvidenceFg,
+          'Denied on Phone',
+          Symbols.block_rounded,
+        ),
+      PermissionAlignmentState.notRequested => (
+          EnpriveColors.stateNoConcernBg,
+          EnpriveColors.stateNoConcernFg,
+          'Not Requested',
+          Symbols.verified_user_rounded,
+        ),
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: EnpriveColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: EnpriveColors.teal.withValues(alpha: 0.22),
+          width: 1.2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Symbols.phone_android_rounded,
+                size: 18,
+                color: EnpriveColors.tealStrong,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'ANDROID OS PERMISSION CHECK (${report.snapshot.packageName})',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: EnpriveColors.tealStrong,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          if (report.items.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: EnpriveColors.stateNoConcernBg,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Symbols.verified_user_rounded,
+                    color: EnpriveColors.stateNoConcernFg,
+                    size: 18,
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'No sensitive permissions (Location, Microphone, Camera, Contacts, or Ad ID) are requested by this APK on Android.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: EnpriveColors.stateNoConcernFg,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...report.items.map((item) {
+              final (bg, fg, label, icon) = _alignmentStyle(item.alignmentState);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10.0),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: EnpriveColors.paper,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: EnpriveColors.ink.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.friendlyName,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: EnpriveColors.ink,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: bg,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(icon, size: 13, color: fg),
+                                const SizedBox(width: 4),
+                                Text(
+                                  label,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: fg,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        item.parentExplanation,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: EnpriveColors.ink,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.osStatusSummary,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: EnpriveColors.inkSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+
+          const SizedBox(height: 6),
+          Text(
+            l10n.permissionLimitationNotice,
+            style: const TextStyle(
+              fontSize: 12,
+              color: EnpriveColors.inkSecondary,
+              fontStyle: FontStyle.italic,
             ),
           ),
         ],

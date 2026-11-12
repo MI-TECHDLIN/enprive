@@ -1,6 +1,7 @@
 package com.example.enprive
 
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
@@ -185,6 +186,54 @@ class MainActivity : FlutterActivity() {
                     val text = initialSelectedText
                     initialSelectedText = null
                     result.success(text)
+                }
+
+                "listLaunchableApps" -> {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val apps = try {
+                            val pm = packageManager
+                            val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                                addCategory(Intent.CATEGORY_LAUNCHER)
+                            }
+                            val resolveInfos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                pm.queryIntentActivities(
+                                    mainIntent,
+                                    PackageManager.ResolveInfoFlags.of(0L)
+                                )
+                            } else {
+                                @Suppress("DEPRECATION")
+                                pm.queryIntentActivities(mainIntent, 0)
+                            }
+
+                            val seen = mutableSetOf<String>()
+                            resolveInfos.mapNotNull { info ->
+                                val pkg = info.activityInfo?.packageName ?: return@mapNotNull null
+                                if (pkg == applicationContext.packageName || !seen.add(pkg)) {
+                                    return@mapNotNull null
+                                }
+                                val appInfo = info.activityInfo?.applicationInfo
+                                val label = info.loadLabel(pm).toString().takeIf { it.isNotBlank() }
+                                    ?: appInfo?.loadLabel(pm)?.toString()
+                                    ?: pkg
+                                val isSystem = ((appInfo?.flags ?: 0) and ApplicationInfo.FLAG_SYSTEM) != 0
+                                mapOf(
+                                    "packageName" to pkg,
+                                    "appName" to label,
+                                    "isSystemApp" to isSystem
+                                )
+                            }.sortedWith(
+                                compareBy<Map<String, Any>> { it["isSystemApp"] as Boolean }
+                                    .thenBy { (it["appName"] as String).lowercase() }
+                            )
+                        } catch (e: Exception) {
+                            Log.w(TAG, "listLaunchableApps error: ${e.message}")
+                            emptyList<Map<String, Any>>()
+                        }
+
+                        withContext(Dispatchers.Main) {
+                            result.success(apps)
+                        }
+                    }
                 }
 
                 "inspectSelectedApp" -> {

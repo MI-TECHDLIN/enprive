@@ -217,6 +217,24 @@ class HybridAiBridge {
     }
   }
 
+  /// Queries launchable apps installed on this Android device via local
+  /// PackageManager `<queries>` MAIN/LAUNCHER resolution.
+  /// Privacy guardrail: This list is strictly local and never sent to cloud/AI.
+  Future<List<InstalledAppEntry>> listLaunchableApps() async {
+    try {
+      final res = await _channel.invokeMethod<List>('listLaunchableApps');
+      if (res == null) return const [];
+      return res
+          .whereType<Map>()
+          .map(InstalledAppEntry.fromMap)
+          .toList(growable: false);
+    } on PlatformException {
+      return const [];
+    } on MissingPluginException {
+      return const [];
+    }
+  }
+
   /// Queries requested and granted permissions for a selected installed package.
   Future<Map<String, dynamic>> inspectSelectedApp(String packageName) async {
     try {
@@ -230,4 +248,64 @@ class HybridAiBridge {
       return {'error': 'Native package inspector unavailable.'};
     }
   }
+
+  /// Typed wrapper around [inspectSelectedApp] returning [AppPermissionSnapshot].
+  Future<AppPermissionSnapshot?> inspectAppSnapshot(String packageName) async {
+    final map = await inspectSelectedApp(packageName);
+    if (map.isEmpty || map.containsKey('error')) return null;
+    return AppPermissionSnapshot.fromMap(map);
+  }
+}
+
+class InstalledAppEntry {
+  final String packageName;
+  final String appName;
+  final bool isSystemApp;
+
+  const InstalledAppEntry({
+    required this.packageName,
+    required this.appName,
+    this.isSystemApp = false,
+  });
+
+  factory InstalledAppEntry.fromMap(Map<dynamic, dynamic> map) {
+    return InstalledAppEntry(
+      packageName: map['packageName'] as String? ?? '',
+      appName: map['appName'] as String? ?? '',
+      isSystemApp: map['isSystemApp'] as bool? ?? false,
+    );
+  }
+}
+
+class AppPermissionSnapshot {
+  final String packageName;
+  final String appName;
+  final List<String> requestedPermissions;
+  final List<String> grantedPermissions;
+
+  const AppPermissionSnapshot({
+    required this.packageName,
+    required this.appName,
+    required this.requestedPermissions,
+    required this.grantedPermissions,
+  });
+
+  factory AppPermissionSnapshot.fromMap(Map<dynamic, dynamic> map) {
+    return AppPermissionSnapshot(
+      packageName: map['packageName'] as String? ?? '',
+      appName: map['appName'] as String? ?? '',
+      requestedPermissions: (map['requestedPermissions'] as List?)
+              ?.map((e) => e.toString())
+              .toList(growable: false) ??
+          const [],
+      grantedPermissions: (map['grantedPermissions'] as List?)
+              ?.map((e) => e.toString())
+              .toList(growable: false) ??
+          const [],
+    );
+  }
+
+  bool isGranted(String permission) => grantedPermissions.contains(permission);
+  bool isRequested(String permission) =>
+      requestedPermissions.contains(permission);
 }

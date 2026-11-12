@@ -1,4 +1,5 @@
 import '../../widgets/enprive_provenance_chip.dart';
+import '../permissions/permission_comparator.dart';
 
 /// Calibrated 3-state review outcome (never a binary "Safe" certification).
 enum ReviewOverallState {
@@ -89,6 +90,7 @@ class PolicyReviewReceipt {
   final String summary;
   final String calibratedDisclaimer;
   final List<VerifiedFinding> findings;
+  final AppPermissionComparisonReport? permissionReport;
 
   const PolicyReviewReceipt({
     required this.id,
@@ -102,11 +104,19 @@ class PolicyReviewReceipt {
     required this.summary,
     required this.calibratedDisclaimer,
     required this.findings,
+    this.permissionReport,
   });
 
   int get sourceMatchedCount => findings
-      .where((f) => f.status == EvidenceStatus.sourceMatched)
+      .where(
+        (f) =>
+            f.status == EvidenceStatus.sourceMatched ||
+            f.status == EvidenceStatus.deviceObserved,
+      )
       .length;
+
+  int get deviceObservedCount =>
+      findings.where((f) => f.status == EvidenceStatus.deviceObserved).length;
 
   int get unverifiedCount =>
       findings.where((f) => f.status == EvidenceStatus.unverified).length;
