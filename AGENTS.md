@@ -70,3 +70,4 @@ devin -p "<precise task + acceptance check>" --model <SWE model>
 5. **Mascot (Deni)**:
    - Approved Mascot: **Concept C (The Protective Pebble with Paper Tab)**.
    - Must remain smoothly animated (breathing, blinking, squish on tap) and respect `disableAnimations` for reduced-motion accessibility.
+   - **Mandatory Skill Reference**: Always reference `.agents/skills/svg-mascot-animator/SKILL.md` (and its `references/creative-directions.md`, `references/rigging.md`, and `references/physics.md`) plus `.agents/skills/mobile-app-ui-design/SKILL.md` whenever creating, refining, or expanding Deni's 6-state animations and action choreography (grounded bottom-centre pivot, area-preserving squash/stretch `squash(sy, 0.55)`, 6–10% phase-lagged secondary motion on the paper tab, damped spring transitions `ζ = 0.32`, and story-driven state actions).
