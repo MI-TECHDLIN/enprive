@@ -41,7 +41,8 @@ class EvidenceValidator {
     required Set<String> validEvidenceIds,
   }) {
     final copy = Map<String, dynamic>.from(rawFinding);
-    final excerpt = copy['exact_excerpt'] as String? ?? '';
+    final excerpt =
+        (copy['exact_excerpt'] as String?) ?? (copy['quote'] as String?) ?? '';
     final evidenceRefs = (copy['evidence_refs'] as List?)?.cast<String>() ?? [];
 
     // Check evidence ID existence
