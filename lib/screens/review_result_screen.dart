@@ -37,13 +37,41 @@ class ReviewResultScreen extends StatefulWidget {
 
 class _ReviewResultScreenState extends State<ReviewResultScreen> {
   bool _isSaved = false;
+  bool _isSpeaking = false;
+
+  @override
+  void dispose() {
+    if (_isSpeaking) {
+      widget.coordinator.bridge.stopSpeaking();
+    }
+    super.dispose();
+  }
 
   DeniPose get _statePose {
+    if (_isSpeaking) return DeniPose.listening;
     return switch (widget.receipt.overallState) {
       ReviewOverallState.reviewRecommended => DeniPose.explaining,
       ReviewOverallState.noConcern => DeniPose.celebrating,
       ReviewOverallState.insufficientEvidence => DeniPose.support,
     };
+  }
+
+  Future<void> _toggleVoicePlayback(String stateTitle) async {
+    if (_isSpeaking) {
+      await widget.coordinator.bridge.stopSpeaking();
+      if (!mounted) return;
+      setState(() => _isSpeaking = false);
+      return;
+    }
+
+    setState(() => _isSpeaking = true);
+    final lang = Localizations.localeOf(context).languageCode;
+    final spokenText =
+        '${widget.receipt.subjectTitle}. $stateTitle. ${widget.receipt.summary}';
+    await widget.coordinator.bridge.speakText(
+      spokenText,
+      languageCode: lang,
+    );
   }
 
   (Color bg, Color fg, IconData icon, String title, String subtitle)
@@ -129,6 +157,27 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                   ),
                   const Spacer(),
                   EnpriveProvenanceChip(source: receipt.inferenceSource),
+                  const SizedBox(width: 8),
+                  Material(
+                    color: _isSpeaking
+                        ? EnpriveColors.teal
+                        : Colors.white.withValues(alpha: 0.85),
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      tooltip: _isSpeaking
+                          ? 'Stop reading aloud'
+                          : 'Read summary aloud',
+                      onPressed: () => _toggleVoicePlayback(stateTitle),
+                      icon: Icon(
+                        _isSpeaking
+                            ? Symbols.stop_rounded
+                            : Symbols.volume_up_rounded,
+                        size: 20,
+                        color:
+                            _isSpeaking ? Colors.white : EnpriveColors.ink,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -154,6 +203,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                             child: DeniAnimatedMascot(
                               size: 84,
                               pose: _statePose,
+                              onTap: () => _toggleVoicePlayback(stateTitle),
                             ),
                           ),
                           const SizedBox(height: 14),

@@ -166,6 +166,36 @@ class HybridAiBridge {
     }
   }
 
+  /// Speaks [text] aloud using the local Android TextToSpeech engine.
+  Future<bool> speakText(
+    String text, {
+    String languageCode = 'en',
+  }) async {
+    try {
+      final res = await _channel.invokeMethod<bool>('speakText', {
+        'text': text,
+        'languageCode': languageCode,
+      });
+      return res ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  /// Stops any active Android TextToSpeech playback.
+  Future<bool> stopSpeaking() async {
+    try {
+      final res = await _channel.invokeMethod<bool>('stopSpeaking');
+      return res ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   /// Sends text for hybrid evaluation.
   /// If [cloudConsent] is false, native code strictly enforces ONLY_ON_DEVICE.
   Future<HybridAnalysisResult> analyseText({

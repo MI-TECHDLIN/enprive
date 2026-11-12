@@ -6,7 +6,9 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.util.Log
+import java.util.Locale
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.Firebase
 import com.google.firebase.ai.InferenceMode
@@ -34,10 +36,24 @@ class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.enprive/hybrid_ai"
     private val TAG = "EnpriveHybridAi"
     private var initialSelectedText: String? = null
+    private var tts: TextToSpeech? = null
+    private var isTtsReady: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleIncomingTextIntent(intent)
+
+        // Initialize local Android TextToSpeech for Enprive Voice (English & Korean)
+        try {
+            tts = TextToSpeech(applicationContext) { status ->
+                if (status == TextToSpeech.SUCCESS) {
+                    isTtsReady = true
+                    tts?.language = Locale.US
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "TextToSpeech init note: ${e.message}")
+        }
 
         // Install App Check Debug Provider for development & testing
         try {
@@ -48,6 +64,16 @@ class MainActivity : FlutterActivity() {
         } catch (e: Exception) {
             Log.w(TAG, "Firebase App Check initialization note: ${e.message}")
         }
+    }
+
+    override fun onDestroy() {
+        try {
+            tts?.stop()
+            tts?.shutdown()
+            tts = null
+            isTtsReady = false
+        } catch (_: Exception) {}
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -186,6 +212,42 @@ class MainActivity : FlutterActivity() {
                     val text = initialSelectedText
                     initialSelectedText = null
                     result.success(text)
+                }
+
+                "speakText" -> {
+                    val text = call.argument<String>("text") ?: ""
+                    val languageCode = call.argument<String>("languageCode") ?: "en"
+                    if (text.isBlank() || !isTtsReady || tts == null) {
+                        result.success(false)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        val targetLocale = if (languageCode.lowercase().startsWith("ko")) {
+                            Locale.KOREAN
+                        } else {
+                            Locale.US
+                        }
+                        tts?.language = targetLocale
+                        val speakRes = tts?.speak(
+                            text,
+                            TextToSpeech.QUEUE_FLUSH,
+                            null,
+                            "enprive_utterance_${System.currentTimeMillis()}"
+                        )
+                        result.success(speakRes == TextToSpeech.SUCCESS)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "speakText error: ${e.message}")
+                        result.success(false)
+                    }
+                }
+
+                "stopSpeaking" -> {
+                    try {
+                        tts?.stop()
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
                 }
 
                 "listLaunchableApps" -> {
@@ -401,15 +463,21 @@ class MainActivity : FlutterActivity() {
                                 ))
                             }
                         } catch (e: Exception) {
-                            Log.e(TAG, "Inference error", e)
+                            val isUnavailable = e.javaClass.simpleName.contains("NotAvailable", ignoreCase = true) ||
+                                    (e.message?.contains("not available", ignoreCase = true) == true)
+                            if (isUnavailable) {
+                                Log.i(TAG, "On-device model unavailable on this hardware/emulator; prompting user choice.")
+                            } else {
+                                Log.w(TAG, "Inference note: ${e.message}")
+                            }
                             withContext(Dispatchers.Main) {
                                 result.success(mapOf(
                                     "schemaVersion" to schemaVersion,
                                     "requestId" to requestId,
-                                    "status" to "failed",
+                                    "status" to if (isUnavailable) "unavailable" else "failed",
                                     "inferenceSource" to "UNKNOWN",
                                     "errorCode" to (e.javaClass.simpleName),
-                                    "message" to (e.message ?: "Analysis failed")
+                                    "message" to (e.message ?: "Analysis unavailable on this device")
                                 ))
                             }
                         }

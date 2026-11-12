@@ -231,7 +231,7 @@
 
 ### Iteration 8.1 — Primary `Nunito` Typography & Inspiration-Driven UI/UX De-Noising (`feature/ui-ux-inspiration-polish`)
 - **Date**: 2026-11-12
-- **Branch / Commits**: `feature/ui-ux-inspiration-polish`
+- **Branch / Commits**: `feature/ui-ux-inspiration-polish` (`f912264`)
 - **Models Used**: Gemini 4 Argon
 - **What Was Built**:
   - **Bundled Primary `Nunito` Font (`assets/fonts/Nunito-400.ttf`..`800.ttf`, `pubspec.yaml`, `lib/core/theme/enprive_theme.dart`)**:
@@ -250,8 +250,33 @@
 
 ---
 
+### Iteration 9 — Native Android `TextToSpeech` Voice Playback, Private Readiness Sheet & Accessibility (`feature/tts-and-readiness-flow`)
+- **Date**: 2026-11-12
+- **Branch / Commits**: `feature/tts-and-readiness-flow`
+- **Models Used**: Gemini 4 Argon
+- **What Was Built**:
+  - **Native Android `TextToSpeech` (`MainActivity.kt`, `AndroidManifest.xml`, `hybrid_ai_bridge.dart`)**:
+    - Added `android.intent.action.TTS_SERVICE` query intent to `AndroidManifest.xml` for Android 11+ TTS service discovery.
+    - Initialized local `TextToSpeech` in `MainActivity.kt` with automatic `Locale.US` / `Locale.KOREAN` switching and cleanup in `onDestroy()`.
+    - Added `"speakText"` and `"stopSpeaking"` MethodChannel handlers and exposed `speakText()` / `stopSpeaking()` on `HybridAiBridge`.
+    - Refined `"analyseText"` exception handling so `FirebaseAIOnDeviceNotAvailableException` maps cleanly to `status = "unavailable"` without noisy stack traces.
+  - **Synced Voice Playback on `ReviewResultScreen` (`lib/screens/review_result_screen.dart`)**:
+    - Added a top-bar circular speaker toggle button (*Brilliant B19 top sound icon pattern*) and tap-on-Deni voice trigger.
+    - Synced playback with `DeniPose.listening` so Deni puts on the studio headset and animates the 5-bar live voice equalizer while reading the calibrated review summary aloud, stopping automatically on toggle or screen exit.
+  - **Private Analysis Readiness Sheet (`lib/widgets/private_readiness_sheet.dart`, `lib/screens/settings_screen.dart`)**:
+    - Built `PrivateReadinessSheet` (*Brilliant B19 + `x-welcome-gradient.jpeg` paper→teal bottom wash*) with peeking Deni, live `downloadOrCheckModel()` + `warmUpModel()` check, and honest local scanner fallback status.
+  - **Accessibility & Open-Source Attribution (`THIRD_PARTY_NOTICES.md`, `test/widget_test.dart`)**:
+    - Added `THIRD_PARTY_NOTICES.md` documenting `Nunito` (OFL-1.1), `Inter` (OFL-1.1 via FontBase), `Source Serif 4` (OFL-1.1), and Flutter/Firebase licenses.
+    - Added a 200% text-scale (`TextScaler.linear(2.0)`) + reduced-motion (`disableAnimations: true`) widget test across tabs plus native TTS channel unit tests.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **15/15 tests passing**.
+  - `cd android && ./gradlew compileDebugKotlin --no-daemon`: **BUILD SUCCESSFUL**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
-1. **Iteration 9 (Next) — `feature/tts-and-readiness-flow` [P0]**
-   - **Assigned Model**: **Gemini Flash / Hydrogen / Claude Sonnet / Devin CLI**
-   - **Scope**: Native Android `TextToSpeech` (`speakText`/`stopSpeaking`) synced with `DeniPose.listening`, private-analysis model readiness sheet, 200% text-scale & TalkBack audit, and `THIRD_PARTY_NOTICES.md`.
+1. **Final Release & PR Consolidation (`main` merge & APK verification)**
+   - **Assigned Model**: **Gemini 4 Argon / Hydrogen**
+   - **Scope**: Merge feature branch chain into `main`, verify release/debug APK build on `emulator-5554`, and prepare #BuildHybridAI 2026 submission walkthrough.

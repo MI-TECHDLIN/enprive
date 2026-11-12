@@ -5,6 +5,7 @@ import '../services/platform/hybrid_ai_bridge.dart';
 import '../services/storage/receipt_repository.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_tactile_button.dart';
+import '../widgets/private_readiness_sheet.dart';
 
 /// Settings & Private Analysis Readiness Screen crafted from Brilliant B19
 /// (`b19-permission-prime.png` — Deni peeking over a mock status card) and
@@ -47,32 +48,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _handleCheckOrPrepareModel() async {
     if (_isCheckingModel) return;
-    setState(() {
-      _isCheckingModel = true;
-      _modelActionFeedback = null;
-    });
-
-    final status = await widget.bridge.downloadOrCheckModel();
-    if (status == ModelDownloadStatus.available) {
-      await widget.bridge.warmUpModel();
-    }
+    final ko = widget.currentLocale.languageCode == 'ko';
+    setState(() => _isCheckingModel = true);
+    final updated = await PrivateReadinessSheet.show(
+      context,
+      bridge: widget.bridge,
+      initialCapability: widget.capability,
+      isKorean: ko,
+    );
     widget.onRefreshCapability();
-
     if (!mounted) return;
     setState(() {
       _isCheckingModel = false;
-      _modelActionFeedback = switch (status) {
-        ModelDownloadStatus.available =>
-          'Private on-device AI is ready on this phone.',
-        ModelDownloadStatus.downloading =>
-          'Downloading private model in the background…',
-        ModelDownloadStatus.downloadable =>
-          'Ready to download when connected to Wi-Fi.',
-        ModelDownloadStatus.unavailable =>
-          'Using built-in local scanner on this phone.',
-        ModelDownloadStatus.failed =>
-          'Using built-in local scanner on this phone.',
-      };
+      if (updated != null) {
+        _modelActionFeedback = updated.isSupported &&
+                updated.modelStatus == ModelDownloadStatus.available
+            ? (ko
+                ? '온디바이스 모델이 준비되었습니다.'
+                : 'On-device AI is active and ready.')
+            : (ko
+                ? '내장된 로컬 약관 스캐너로 안전하게 작동 중입니다.'
+                : 'Protected by built-in local clause scanning.');
+      }
     });
   }
 

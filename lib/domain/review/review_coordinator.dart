@@ -37,6 +37,7 @@ class ReviewCoordinator {
       'No concern identified in the reviewed evidence. This is not a safety certification.';
 
   final HybridAiBridge _bridge;
+  HybridAiBridge get bridge => _bridge;
 
   ReviewCoordinator({HybridAiBridge? bridge})
       : _bridge = bridge ?? HybridAiBridge();

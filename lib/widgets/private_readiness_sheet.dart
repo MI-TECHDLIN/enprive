@@ -1,0 +1,266 @@
+import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
+import '../core/theme/enprive_colors.dart';
+import '../services/platform/hybrid_ai_bridge.dart';
+import 'deni_animated_mascot.dart';
+import 'enprive_tactile_button.dart';
+
+/// Private Analysis Readiness Sheet crafted from Brilliant B19
+/// (`b19-permission-prime.png` — Deni peeking over a status card) and
+/// Welcome Gradient (`x-welcome-gradient.jpeg` — soft paper→teal bottom wash).
+class PrivateReadinessSheet extends StatefulWidget {
+  final HybridAiBridge bridge;
+  final DeviceCapability? initialCapability;
+  final bool isKorean;
+
+  const PrivateReadinessSheet({
+    super.key,
+    required this.bridge,
+    required this.initialCapability,
+    required this.isKorean,
+  });
+
+  static Future<DeviceCapability?> show(
+    BuildContext context, {
+    required HybridAiBridge bridge,
+    required DeviceCapability? initialCapability,
+    required bool isKorean,
+  }) {
+    return showModalBottomSheet<DeviceCapability>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => PrivateReadinessSheet(
+        bridge: bridge,
+        initialCapability: initialCapability,
+        isKorean: isKorean,
+      ),
+    );
+  }
+
+  @override
+  State<PrivateReadinessSheet> createState() => _PrivateReadinessSheetState();
+}
+
+class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
+  DeviceCapability? _capability;
+  bool _isPreparing = false;
+  String? _statusMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _capability = widget.initialCapability;
+    _runReadinessCheck();
+  }
+
+  Future<void> _runReadinessCheck() async {
+    setState(() {
+      _isPreparing = true;
+      _statusMessage = widget.isKorean
+          ? '이 휴대폰의 비공개 AI 상태를 확인하고 있어요…'
+          : 'Checking private analysis readiness on this phone…';
+    });
+
+    final status = await widget.bridge.downloadOrCheckModel();
+    if (status == ModelDownloadStatus.available) {
+      await widget.bridge.warmUpModel();
+    }
+    final updatedCap = await widget.bridge.getDeviceCapability();
+
+    if (!mounted) return;
+    setState(() {
+      _capability = updatedCap;
+      _isPreparing = false;
+      _statusMessage = switch (status) {
+        ModelDownloadStatus.available => widget.isKorean
+            ? '온디바이스 Gemini Nano가 준비되었습니다. 모든 분석이 기기 안에서 이루어집니다.'
+            : 'Gemini Nano is ready on this phone. Reviews stay completely on your device.',
+        ModelDownloadStatus.downloading => widget.isKorean
+            ? '비공개 모델을 백그라운드에서 다운로드하고 있습니다.'
+            : 'Downloading private on-device model in the background.',
+        ModelDownloadStatus.downloadable => widget.isKorean
+            ? 'Wi-Fi 연결 시 온디바이스 모델을 다운로드할 수 있습니다.'
+            : 'On-device model can be downloaded over Wi-Fi.',
+        ModelDownloadStatus.unavailable || ModelDownloadStatus.failed =>
+          widget.isKorean
+              ? '이 기기에서는 내장된 로컬 약관 스캐너로 안전하게 작동합니다.'
+              : 'This phone uses Enprive’s built-in local clause scanner by default.',
+      };
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ko = widget.isKorean;
+    final isReady = _capability?.isSupported == true &&
+        _capability?.modelStatus == ModelDownloadStatus.available;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            EnpriveColors.surface,
+            EnpriveColors.surface,
+            EnpriveColors.chipOnDeviceBg.withValues(alpha: 0.85),
+          ],
+          stops: const [0.0, 0.55, 1.0],
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle + close
+              Row(
+                children: [
+                  const SizedBox(width: 40),
+                  const Spacer(),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: EnpriveColors.ink.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.pop(context, _capability),
+                    icon: const Icon(Symbols.close_rounded),
+                  ),
+                ],
+              ),
+
+              // Brilliant B19 Peeking Deni
+              Transform.translate(
+                offset: const Offset(0, 10),
+                child: DeniAnimatedMascot(
+                  size: 84,
+                  pose: _isPreparing
+                      ? DeniPose.thinking
+                      : (isReady ? DeniPose.celebrating : DeniPose.idle),
+                ),
+              ),
+
+              // Status Card (B19 notification card layout)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: EnpriveColors.surface,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: EnpriveColors.ink.withValues(alpha: 0.06),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: isReady
+                            ? EnpriveColors.stateNoConcernBg
+                            : EnpriveColors.chipOnDeviceBg,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: _isPreparing
+                          ? const Padding(
+                              padding: EdgeInsets.all(12.0),
+                              child: CircularProgressIndicator(strokeWidth: 2.5),
+                            )
+                          : Icon(
+                              isReady
+                                  ? Symbols.check_circle_rounded
+                                  : Symbols.shield_lock_rounded,
+                              color: isReady
+                                  ? EnpriveColors.stateNoConcernFg
+                                  : EnpriveColors.tealStrong,
+                              size: 24,
+                            ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _isPreparing
+                                ? (ko ? '비공개 분석 준비 중…' : 'Preparing private analysis…')
+                                : (isReady
+                                    ? (ko ? '온디바이스 AI 준비 완료' : 'On-device AI ready')
+                                    : (ko ? '로컬 스캐너 보호 활성' : 'Local scanner active')),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: EnpriveColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _statusMessage ?? '',
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              height: 1.4,
+                              color: EnpriveColors.inkSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              Text(
+                ko
+                    ? '이 휴대폰에서 비공개로 검토합니다'
+                    : 'Private analysis on this phone',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      fontSize: 24,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                ko
+                    ? '설치된 앱 목록과 권한 상태는 절대 외부 서버로 전송되지 않습니다.'
+                    : 'Your installed apps and permission checks never leave your phone.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  height: 1.45,
+                  color: EnpriveColors.inkSecondary,
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              EnpriveTactileButton(
+                label: ko ? '확인' : 'Done',
+                onPressed: () => Navigator.pop(context, _capability),
+              ),
+              const SizedBox(height: 10),
+              EnpriveTactileButton(
+                label: ko ? '다시 확인하기' : 'Check again',
+                isSecondary: true,
+                onPressed: _isPreparing ? null : _runReadinessCheck,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
