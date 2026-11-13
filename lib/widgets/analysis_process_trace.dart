@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:shimmer/shimmer.dart';
 import '../core/theme/enprive_colors.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 
@@ -9,20 +11,9 @@ String formatThoughtSignaturePreview(String signature) {
   return '${trimmed.substring(0, 8)}…${trimmed.substring(trimmed.length - 6)}';
 }
 
-class _RecordedStep {
-  final String stage;
-  final String label;
-  bool completed;
-
-  _RecordedStep({
-    required this.stage,
-    required this.label,
-    required this.completed,
-  });
-}
-
-/// Live process timeline displaying every hybrid step, streaming model
-/// thoughts (`thoughtSummary`), and `thoughtSignature` tokens in real time.
+/// Claude-style single-line streaming ticker displaying the active review step,
+/// one-at-a-time streaming thoughts (`thoughtSummary`), and `thoughtSignature`
+/// tokens without stacking a noisy vertical todo checklist.
 class AnalysisLiveProcessView extends StatefulWidget {
   final Stream<AnalysisStreamEvent>? stream;
   final String initialLabel;
@@ -31,7 +22,7 @@ class AnalysisLiveProcessView extends StatefulWidget {
   const AnalysisLiveProcessView({
     super.key,
     required this.stream,
-    this.initialLabel = 'Reviewing on this phone…',
+    this.initialLabel = 'Reading policy clauses on this phone…',
     this.compact = false,
   });
 
@@ -42,8 +33,12 @@ class AnalysisLiveProcessView extends StatefulWidget {
 
 class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
   StreamSubscription<AnalysisStreamEvent>? _subscription;
-  final List<_RecordedStep> _steps = [];
-  String? _thoughtSummary;
+  late String _activeLabel = widget.initialLabel;
+  final List<String> _thoughtQueue = [];
+  final Set<String> _seenThoughts = {};
+  String? _currentThoughtLine;
+  Timer? _lineTicker;
+  int _stepCount = 1;
   String? _thoughtSignature;
 
   @override
@@ -55,6 +50,9 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
   @override
   void didUpdateWidget(covariant AnalysisLiveProcessView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialLabel != widget.initialLabel && _stepCount == 1) {
+      _activeLabel = widget.initialLabel;
+    }
     if (oldWidget.stream != widget.stream) {
       _subscription?.cancel();
       _attachStream();
@@ -67,27 +65,58 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
     _subscription = stream.listen((event) {
       if (!mounted) return;
       setState(() {
-        for (final step in _steps) {
-          step.completed = true;
+        if (event.label.isNotEmpty && event.label != _activeLabel) {
+          _activeLabel = event.label;
+          _stepCount++;
         }
-        final existingIdx =
-            _steps.indexWhere((s) => s.stage == event.stage && s.label == event.label);
-        if (existingIdx >= 0) {
-          _steps[existingIdx].completed = event.isCompleted;
-        } else {
-          _steps.add(
-            _RecordedStep(
-              stage: event.stage,
-              label: event.label,
-              completed: event.isCompleted,
-            ),
-          );
+
+        final rawThought = event.thoughtSummary?.trim();
+        if (rawThought != null && rawThought.isNotEmpty) {
+          final sentences = rawThought
+              .split(RegExp(r'(?<=[.!?])\s+|\n+'))
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+
+          final newSentences = <String>[];
+          for (final sentence in sentences) {
+            if (_seenThoughts.add(sentence)) {
+              newSentences.add(sentence);
+            }
+          }
+
+          if (newSentences.length == 1 && _lineTicker == null && _thoughtQueue.isEmpty) {
+            _currentThoughtLine = newSentences.last;
+          } else if (newSentences.isNotEmpty) {
+            _thoughtQueue.addAll(newSentences);
+            _currentThoughtLine ??= _thoughtQueue.removeAt(0);
+            if (_thoughtQueue.isNotEmpty) {
+              _ensureTickerRunning();
+            }
+          }
         }
-        if (event.thoughtSummary != null && event.thoughtSummary!.isNotEmpty) {
-          _thoughtSummary = event.thoughtSummary;
+
+        final rawSig = event.thoughtSignature?.trim();
+        if (rawSig != null && rawSig.isNotEmpty) {
+          _thoughtSignature = rawSig;
         }
-        if (event.thoughtSignature != null && event.thoughtSignature!.isNotEmpty) {
-          _thoughtSignature = event.thoughtSignature;
+      });
+    });
+  }
+
+  void _ensureTickerRunning() {
+    if (_lineTicker != null) return;
+    _lineTicker = Timer.periodic(const Duration(milliseconds: 950), (timer) {
+      if (!mounted || _thoughtQueue.isEmpty) {
+        timer.cancel();
+        _lineTicker = null;
+        return;
+      }
+      setState(() {
+        _currentThoughtLine = _thoughtQueue.removeAt(0);
+        if (_thoughtQueue.isEmpty) {
+          timer.cancel();
+          _lineTicker = null;
         }
       });
     });
@@ -95,140 +124,151 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
 
   @override
   void dispose() {
+    _lineTicker?.cancel();
     _subscription?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final steps = _steps.isEmpty
-        ? [
-            _RecordedStep(
-              stage: 'starting',
-              label: widget.initialLabel,
-              completed: false,
-            ),
-          ]
-        : _steps;
+    final disableAnimations = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final activeLine = _currentThoughtLine ?? _activeLabel;
+    final showTopMeta = _currentThoughtLine != null || _thoughtSignature != null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < steps.length; i++) ...[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: steps[i].completed
-                    ? const Icon(
-                        Icons.check_circle_rounded,
-                        size: 15,
-                        color: EnpriveColors.tealStrong,
-                      )
-                    : const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: EnpriveColors.tealStrong,
+    final lineText = Text(
+      activeLine,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontSize: widget.compact ? 12.5 : 13.5,
+        fontWeight: FontWeight.w600,
+        color: EnpriveColors.ink,
+      ),
+    );
+
+    final tickerChild = disableAnimations
+        ? lineText
+        : Shimmer.fromColors(
+            baseColor: EnpriveColors.ink,
+            highlightColor: EnpriveColors.tealStrong,
+            period: const Duration(milliseconds: 1800),
+            child: lineText,
+          );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: EnpriveColors.surfaceMuted.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: EnpriveColors.teal.withValues(alpha: 0.14),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showTopMeta) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _activeLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: EnpriveColors.tealStrong,
+                    ),
+                  ),
+                ),
+                if (_thoughtSignature != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: EnpriveColors.chipInCloudBg,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.verified_outlined,
+                          size: 12,
+                          color: EnpriveColors.chipInCloudFg,
                         ),
-                      ),
-              ),
-              const SizedBox(width: 8),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Thought signature ${formatThoughtSignaturePreview(_thoughtSignature!)}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: EnpriveColors.chipInCloudFg,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 6),
+          ],
+          Row(
+            children: [
+              disableAnimations
+                  ? const Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 16,
+                      color: EnpriveColors.tealStrong,
+                    )
+                  : LoadingAnimationWidget.staggeredDotsWave(
+                      color: EnpriveColors.tealStrong,
+                      size: 18,
+                    ),
+              const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  steps[i].label,
-                  style: TextStyle(
-                    fontSize: widget.compact ? 12.5 : 13,
-                    fontWeight:
-                        steps[i].completed ? FontWeight.w600 : FontWeight.w700,
-                    height: 1.35,
-                    color: steps[i].completed
-                        ? EnpriveColors.inkSecondary
-                        : EnpriveColors.ink,
+                child: ClipRect(
+                  child: AnimatedSwitcher(
+                    duration: disableAnimations
+                        ? Duration.zero
+                        : const Duration(milliseconds: 260),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.35),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Align(
+                      key: ValueKey<String>(activeLine),
+                      alignment: Alignment.centerLeft,
+                      child: tickerChild,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-          if (i < steps.length - 1) const SizedBox(height: 6),
         ],
-        if (_thoughtSummary != null) ...[
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: EnpriveColors.surfaceMuted,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Streaming thoughts',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: EnpriveColors.tealStrong,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _thoughtSummary!,
-                  maxLines: widget.compact ? 3 : 5,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    height: 1.4,
-                    color: EnpriveColors.inkSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-        if (_thoughtSignature != null) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: EnpriveColors.chipInCloudBg,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.verified_outlined,
-                  size: 13,
-                  color: EnpriveColors.chipInCloudFg,
-                ),
-                const SizedBox(width: 5),
-                Flexible(
-                  child: Text(
-                    'Thought signature ${formatThoughtSignaturePreview(_thoughtSignature!)}',
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: EnpriveColors.chipInCloudFg,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ],
+      ),
     );
   }
 }
 
-/// Completed process trace + model thoughts + thought signature viewer for
-/// finished receipts and Deni's explanations.
+/// Compact completed process summary + model thoughts + thought signature viewer
+/// for finished receipts and Deni's explanations.
 class AnalysisSavedTraceCard extends StatefulWidget {
   final List<String> processSteps;
   final String? thoughtSummary;
@@ -315,35 +355,30 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
             ],
           ),
           if (widget.processSteps.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            for (var i = 0; i < widget.processSteps.length; i++) ...[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(top: 2),
-                    child: Icon(
-                      Icons.check_circle_rounded,
-                      size: 14,
-                      color: EnpriveColors.tealStrong,
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  size: 14,
+                  color: EnpriveColors.tealStrong,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.processSteps.last,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: widget.compact ? 12 : 12.5,
+                      height: 1.35,
+                      color: EnpriveColors.inkSecondary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      widget.processSteps[i],
-                      style: TextStyle(
-                        fontSize: widget.compact ? 12 : 12.5,
-                        height: 1.35,
-                        color: EnpriveColors.inkSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (i < widget.processSteps.length - 1) const SizedBox(height: 5),
-            ],
+                ),
+              ],
+            ),
           ],
           if (hasSignature) ...[
             const SizedBox(height: 10),

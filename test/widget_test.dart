@@ -191,12 +191,13 @@ void main() {
         ),
       );
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
+      expect(find.text('Reading policy clauses on this phone…'), findsNothing);
       expect(
         find.text('Streaming reasoning & thought signature'),
         findsOneWidget,
       );
-      expect(find.text('Streaming thoughts'), findsOneWidget);
       expect(
         find.text('Verifying sharing clause verbatim boundaries.'),
         findsOneWidget,
@@ -225,8 +226,12 @@ void main() {
 
       expect(find.text('2 steps'), findsOneWidget);
       expect(
-        find.text('Masked 2 personal details with placeholders'),
+        find.text('Streaming reasoning via Firebase App Check'),
         findsOneWidget,
+      );
+      expect(
+        find.text('Masked 2 personal details with placeholders'),
+        findsNothing,
       );
       expect(find.textContaining('Thought signature:'), findsOneWidget);
       expect(find.text('View streamed thoughts'), findsOneWidget);

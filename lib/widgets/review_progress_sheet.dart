@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../core/theme/enprive_colors.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import 'analysis_process_trace.dart';
 
 /// Live progress card shown while "Review on this phone" runs.
-/// Displays every active/completed step, streamed model thoughts, and
-/// thought signature verification tokens cleanly in real time.
+/// Uses tactile motion, shimmer polish, and a Claude-style single-line
+/// streaming thought ticker rather than a noisy checklist.
 class ReviewProgressCard extends StatelessWidget {
   final String subjectTitle;
   final bool isCloudCheck;
@@ -24,12 +26,33 @@ class ReviewProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final disableAnimations = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final statusLabel = Text(
+      isKorean ? '이 휴대폰에서 검토하는 중…' : 'Reviewing on this phone…',
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: EnpriveColors.tealStrong,
+      ),
+    );
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: EnpriveColors.surface,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: EnpriveColors.teal.withValues(alpha: 0.14),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: EnpriveColors.tealStrong.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,16 +60,23 @@ class ReviewProgressCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
                   color: EnpriveColors.chipOnDeviceBg,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(
-                  Symbols.shield_lock_rounded,
-                  size: 18,
-                  color: EnpriveColors.tealStrong,
+                child: Center(
+                  child: disableAnimations
+                      ? const Icon(
+                          Symbols.shield_lock_rounded,
+                          size: 20,
+                          color: EnpriveColors.tealStrong,
+                        )
+                      : LoadingAnimationWidget.threeArchedCircle(
+                          color: EnpriveColors.tealStrong,
+                          size: 22,
+                        ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -59,36 +89,48 @@ class ReviewProgressCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 15.5,
                         fontWeight: FontWeight.w800,
                         color: EnpriveColors.ink,
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      isKorean ? '이 휴대폰에서 검토하는 중…' : 'Reviewing on this phone…',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: EnpriveColors.tealStrong,
-                      ),
-                    ),
+                    disableAnimations
+                        ? statusLabel
+                        : Shimmer.fromColors(
+                            baseColor: EnpriveColors.tealStrong,
+                            highlightColor: EnpriveColors.teal,
+                            period: const Duration(milliseconds: 1600),
+                            child: statusLabel,
+                          ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              minHeight: 7,
-              backgroundColor: EnpriveColors.ink.withValues(alpha: 0.1),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                EnpriveColors.teal,
-              ),
-            ),
-          ),
+          disableAnimations
+              ? Container(
+                  height: 6,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: EnpriveColors.teal.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                )
+              : Shimmer.fromColors(
+                  baseColor: EnpriveColors.chipOnDeviceBg,
+                  highlightColor: EnpriveColors.teal.withValues(alpha: 0.55),
+                  period: const Duration(milliseconds: 1400),
+                  child: Container(
+                    height: 6,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: EnpriveColors.chipOnDeviceBg,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
           const SizedBox(height: 14),
           AnalysisLiveProcessView(
             stream: processStream,

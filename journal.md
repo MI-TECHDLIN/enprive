@@ -374,6 +374,25 @@
 
 ---
 
+### Iteration 10.5 — Richer Review Progress Card & Claude-Style Single-Line Thought Ticker (`feature/onboarding-and-process-text-flow`)
+- **Date**: 2026-11-13
+- **Branch / Commits**: `feature/onboarding-and-process-text-flow`
+- **Models Used**: Orchestrator (Argon) + Execution model
+- **What Was Built**:
+  - **Pub.dev Motion & Shimmer Dependencies (`pubspec.yaml`, `pubspec.lock`)**:
+    - Added `loading_animation_widget` (`^1.3.0`) and `shimmer` (`^4.0.0`) after inspecting `pub.dev` and `.agents/skills/mobile-app-ui-design/SKILL.md`.
+  - **Claude-Style Single-Line Thought Ticker (`lib/widgets/analysis_process_trace.dart`)**:
+    - Replaced the vertical checklist in `AnalysisLiveProcessView` with a single active ticker row powered by `LoadingAnimationWidget.staggeredDotsWave`, `Shimmer.fromColors`, and a vertical slide + fade `AnimatedSwitcher` that smoothly streams thought sentences (`thoughtSummary`) one line at a time before cycling to the next line.
+    - Updated `AnalysisSavedTraceCard` to summarize the completed pipeline cleanly on one row alongside the step count badge, `thoughtSignature` pill, and expandable streamed thoughts.
+  - **Richer Review Progress Surface (`lib/widgets/review_progress_sheet.dart`)**:
+    - Upgraded `ReviewProgressCard` with tinted soft depth shadows, subtle accent border, `LoadingAnimationWidget.threeArchedCircle` leading indicator, shimmering subtitle (`Reviewing on this phone…`), and a rounded shimmer progress bar while respecting `MediaQuery.maybeDisableAnimationsOf`.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **24/24 tests passing**.
+  - `cd android && ./gradlew compileDebugKotlin --no-daemon`: **BUILD SUCCESSFUL**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Final Release & PR Consolidation (`main` merge & APK verification)**
