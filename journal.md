@@ -318,6 +318,25 @@
 
 ---
 
+### Iteration 10.2 — Single-Button `"Review on this phone"` Abstraction, On-Device `PiiRedactor` & App Check Hybrid Routing (`feature/onboarding-and-process-text-flow`)
+- **Date**: 2026-11-13
+- **Branch / Commits**: `feature/onboarding-and-process-text-flow`
+- **Models Used**: Orchestrator (Argon)
+- **What Was Built**:
+  - **On-Device PII Placeholder Redactor (`lib/domain/privacy/pii_redactor.dart`, `test/pii_redactor_test.dart`)**:
+    - Implemented deterministic `PiiRedactor.redact(...)` scrubbing emails (`[EMAIL]`), phone numbers (`[PHONE]`), IPv4 addresses (`[IP_ADDRESS]`), street addresses (`[ADDRESS]`), student/account IDs (`[ID]`), and labeled child/parent names (`[PERSON]`) strictly on-device before any cloud fallback, plus `isComprehensivePolicy(...)` detection (`> 1400` chars or `> 220` words).
+  - **Seamless Hybrid Routing Behind Single `"Review on this phone"` Button (`lib/domain/review/review_coordinator.dart`, `lib/services/platform/hybrid_ai_bridge.dart`)**:
+    - Simplified `_executePolicyReview` and `_showPasteModal` in `lib/main.dart` to a single **`Review on this phone`** action and removed step-by-step pipeline narration from `ReviewProgressCard` (`lib/widgets/review_progress_sheet.dart`).
+    - Behind the scenes, `runPolicyReview` and `askDeniAboutFinding` try local `ONLY_ON_DEVICE` inference first; when on-device inference is unavailable or the policy contains comprehensive details, they replace personal details with placeholders on-device and send the scrubbed text via Firebase AI Logic `PREFER_ON_DEVICE` protected by App Check (`useLimitedUseAppCheckTokens = true`), with an automatic deterministic local clause-scan offline net and redacted-snapshot fallback citation matching.
+  - **Debug + Play Integrity App Check Initialization (`android/app/src/main/kotlin/com/example/enprive/MainActivity.kt`)**:
+    - Wired `DebugAppCheckProviderFactory` for debuggable builds and `PlayIntegrityAppCheckProviderFactory` for release builds alongside updated onboarding copy (`lib/screens/onboarding_flow_screen.dart`).
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **21/21 tests passing**.
+  - `cd android && ./gradlew compileDebugKotlin --no-daemon`: **BUILD SUCCESSFUL**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Final Release & PR Consolidation (`main` merge & APK verification)**

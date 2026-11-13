@@ -95,17 +95,142 @@ We do not collect personal identifiers, precise location data, microphone audio,
     );
 
     test(
-      'requires per-check cloud consent or manual scan when on-device Nano 4 is unavailable',
+      'automatically scrubs personal details and falls back via App Check PREFER_ON_DEVICE when on-device Nano 4 is unavailable',
+      () async {
+        final recordedCalls = <Map<String, dynamic>>[];
+
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+          if (call.method == 'analyseText') {
+            final args = Map<String, dynamic>.from(call.arguments as Map);
+            recordedCalls.add(args);
+            final mode = args['requestedMode'] as String?;
+            if (mode == 'ONLY_ON_DEVICE') {
+              return {
+                'schemaVersion': 1,
+                'requestId': args['requestId'],
+                'status': 'unavailable',
+                'inferenceSource': 'UNKNOWN',
+                'message': 'AICore Gemini Nano 4 not installed on emulator.',
+              };
+            }
+            return {
+              'schemaVersion': 1,
+              'requestId': args['requestId'],
+              'status': 'success',
+              'inferenceSource': 'IN_CLOUD',
+              'structuredOutput': {
+                'overall_state': 'REVIEW_RECOMMENDED',
+                'summary': 'Background GPS tracking found.',
+                'concerns': [
+                  {
+                    'id': 'f_1',
+                    'title': 'Tracks location in background',
+                    'category': 'TRACKING',
+                    'severity': 'HIGH',
+                    'quote':
+                        'collects precise GPS location coordinates even when the application is running in the background',
+                    'explanation': 'Tracks student location in the background.',
+                  },
+                ],
+                'calibratedDisclaimer':
+                    ReviewCoordinator.calibratedDefaultDisclaimer,
+              },
+            };
+          }
+          return null;
+        });
+
+        const policyWithPii = '''
+Child: Maya Lin (privacy@school.edu, +1 415-555-0199) uses EduTrack.
+Our mobile application collects precise GPS location coordinates even when the application is running in the background to verify school bus zone attendance.
+''';
+
+        final coordinator = ReviewCoordinator();
+        final outcome = await coordinator.runPolicyReview(
+          subjectTitle: 'EduTrack',
+          sourceLabel: 'Test Snapshot',
+          policyText: policyWithPii,
+        );
+
+        expect(outcome.needsCloudConsentOrManual, isFalse);
+        expect(outcome.receipt, isNotNull);
+        expect(outcome.receipt!.inferenceSource, InferenceSource.inCloud);
+        expect(recordedCalls.length, 2);
+        expect(recordedCalls[0]['requestedMode'], 'ONLY_ON_DEVICE');
+        expect(recordedCalls[1]['requestedMode'], 'PREFER_ON_DEVICE');
+        expect(recordedCalls[1]['cloudConsent'], isTrue);
+
+        final sentText = recordedCalls[1]['text'] as String;
+        expect(sentText, isNot(contains('Maya Lin')));
+        expect(sentText, isNot(contains('privacy@school.edu')));
+        expect(sentText, isNot(contains('415-555-0199')));
+        expect(sentText, contains('[PERSON]'));
+        expect(sentText, contains('[EMAIL]'));
+        expect(sentText, contains('[PHONE]'));
+      },
+    );
+
+    test(
+      'scrubs personal details and routes comprehensive policies directly through App Check PREFER_ON_DEVICE',
+      () async {
+        final recordedCalls = <Map<String, dynamic>>[];
+
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+          if (call.method == 'analyseText') {
+            final args = Map<String, dynamic>.from(call.arguments as Map);
+            recordedCalls.add(args);
+            return {
+              'schemaVersion': 1,
+              'requestId': args['requestId'],
+              'status': 'success',
+              'inferenceSource': 'IN_CLOUD',
+              'structuredOutput': {
+                'overall_state': 'NO_CONCERN',
+                'summary': 'Reviewed comprehensive policy.',
+                'concerns': const [],
+                'calibratedDisclaimer':
+                    ReviewCoordinator.calibratedDefaultDisclaimer,
+              },
+            };
+          }
+          return null;
+        });
+
+        final longPolicy =
+            'Parent: Sarah Kim (sarah@example.org). '
+            '${'This classroom app stores math scores only in local storage. ' * 40}';
+
+        final coordinator = ReviewCoordinator();
+        final outcome = await coordinator.runPolicyReview(
+          subjectTitle: 'Long Policy',
+          sourceLabel: 'Test Snapshot',
+          policyText: longPolicy,
+        );
+
+        expect(outcome.receipt, isNotNull);
+        expect(recordedCalls.length, 1);
+        expect(recordedCalls[0]['requestedMode'], 'PREFER_ON_DEVICE');
+        expect(recordedCalls[0]['text'], isNot(contains('Sarah Kim')));
+        expect(recordedCalls[0]['text'], isNot(contains('sarah@example.org')));
+        expect(recordedCalls[0]['text'], contains('[PERSON]'));
+        expect(recordedCalls[0]['text'], contains('[EMAIL]'));
+      },
+    );
+
+    test(
+      'falls back cleanly to deterministic local clause scan when both Nano and network are unavailable',
       () async {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
             .setMockMethodCallHandler(channel, (call) async {
           if (call.method == 'analyseText') {
             return {
               'schemaVersion': 1,
-              'requestId': 'test_req_2',
+              'requestId': 'offline_req',
               'status': 'unavailable',
               'inferenceSource': 'UNKNOWN',
-              'message': 'AICore Gemini Nano 4 not installed on emulator.',
+              'message': 'Offline.',
             };
           }
           return null;
@@ -114,13 +239,14 @@ We do not collect personal identifiers, precise location data, microphone audio,
         final coordinator = ReviewCoordinator();
         final outcome = await coordinator.runPolicyReview(
           subjectTitle: 'EduTrack',
-          sourceLabel: 'Test Snapshot',
+          sourceLabel: 'Offline Test',
           policyText: sampleEduTrackPolicy,
-          cloudConsent: false,
         );
 
-        expect(outcome.needsCloudConsentOrManual, isTrue);
-        expect(outcome.receipt, isNull);
+        expect(outcome.needsCloudConsentOrManual, isFalse);
+        expect(outcome.receipt!.overallState,
+            ReviewOverallState.reviewRecommended);
+        expect(outcome.receipt!.inferenceSource, InferenceSource.onDevice);
       },
     );
 

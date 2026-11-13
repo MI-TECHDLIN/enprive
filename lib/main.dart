@@ -14,8 +14,8 @@ import 'screens/review_result_screen.dart';
 import 'screens/settings_screen.dart';
 import 'services/platform/hybrid_ai_bridge.dart';
 import 'services/storage/receipt_repository.dart';
-import 'widgets/cloud_consent_sheet.dart';
 import 'widgets/deni_animated_mascot.dart';
+import 'widgets/enprive_provenance_chip.dart';
 import 'widgets/enprive_tactile_button.dart';
 import 'widgets/installed_app_picker_sheet.dart';
 import 'widgets/review_progress_sheet.dart';
@@ -274,35 +274,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
       _isRunningReview = false;
     });
 
-    if (outcome.needsCloudConsentOrManual) {
-      setState(() => _activePose = DeniPose.support);
-      final decision = await CloudConsentSheet.show(
-        context,
-        subjectTitle: subjectTitle,
-        policyText: policyText,
-        deviceReason: outcome.errorReason,
-      );
-      if (!mounted) return;
-      if (decision == CloudConsentDecision.useCloudOnce) {
-        await _executePolicyReview(
-          subjectTitle: subjectTitle,
-          sourceLabel: sourceLabel,
-          policyText: policyText,
-          appPermissions: appPermissions,
-          cloudConsent: true,
-        );
-      } else if (decision == CloudConsentDecision.reviewLocally) {
-        await _executePolicyReview(
-          subjectTitle: subjectTitle,
-          sourceLabel: sourceLabel,
-          policyText: policyText,
-          appPermissions: appPermissions,
-          forceLocalManualScan: true,
-        );
-      }
-      return;
-    }
-
     final receipt = outcome.receipt;
     if (receipt == null) return;
 
@@ -319,7 +290,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
         builder: (_) => ReviewResultScreen(
           receipt: receipt,
           coordinator: _coordinator,
-          cloudConsentGrantedForSession: cloudConsent,
+          cloudConsentGrantedForSession:
+              receipt.inferenceSource == InferenceSource.inCloud,
           onSaveReceipt: _saveReceipt,
         ),
       ),
@@ -1088,7 +1060,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     ),
                   const SizedBox(height: 18),
                   EnpriveTactileButton(
-                    label: l10n.btnContinue,
+                    label: widget.currentLocale.languageCode == 'ko'
+                        ? '이 휴대폰에서 검토하기'
+                        : 'Review on this phone',
                     onPressed: () async {
                       if (isLinkMode) {
                         final rawUrl = urlController.text.trim();

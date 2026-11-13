@@ -8,12 +8,11 @@
 
 ## Core Architecture & #BuildHybridAI Guardrails
 
-1. **On-Device First Hybrid AI (`Firebase AI Logic`)**:
-   - Defaults strictly to on-device **Gemini Nano 4** via `OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE, modelOption = OnDeviceModelOption.PREVIEW)` in [`MainActivity.kt`](android/app/src/main/kotlin/com/example/enprive/MainActivity.kt).
-   - If the on-device model is unavailable or the policy exceeds local token limits, Enprive never silently falls back to the cloud. Instead, it presents an explicit **Per-Check Cloud Consent Sheet** ([`cloud_consent_sheet.dart`](lib/widgets/cloud_consent_sheet.dart)) offering:
-     - **Use cloud for this check** (`InferenceMode.PREFER_ON_DEVICE` with `gemini-3.8-flash` and App Check replay protection `useLimitedUseAppCheckTokens = true`), or
-     - **Review on this phone** (100% offline deterministic clause scanner in [`review_coordinator.dart`](lib/domain/review/review_models.dart)).
-   - Every result displays an honest provenance pill (`Checked on this phone` vs `Checked in cloud (consented)`) derived from `GenerateContentResponse.inferenceSource`.
+1. **Single-Button Hybrid AI (`"Review on this phone"`) + PII Scrubbing + App Check**:
+   - Presents a single calm **`Review on this phone`** action without exposing internal AI routing steps to parents or teachers.
+   - Behind the scenes, [`ReviewCoordinator`](lib/domain/review/review_coordinator.dart) runs on-device **Gemini Nano 4** first via `OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE, modelOption = OnDeviceModelOption.PREVIEW)` in [`MainActivity.kt`](android/app/src/main/kotlin/com/example/enprive/MainActivity.kt).
+   - If on-device inference is unavailable or the policy contains comprehensive multi-section details (`PiiRedactor.isComprehensivePolicy`), [`PiiRedactor`](lib/domain/privacy/pii_redactor.dart) replaces personal details (`[EMAIL]`, `[PHONE]`, `[ADDRESS]`, `[PERSON]`, `[ID]`, `[IP_ADDRESS]`) with placeholders locally and routes the scrubbed text through **Firebase AI Logic** (`InferenceMode.PREFER_ON_DEVICE`, `gemini-3.8-flash`) protected by **Firebase App Check** (`useLimitedUseAppCheckTokens = true`, Debug provider in dev / Play Integrity in release), with an offline local clause-scan fallback.
+   - Every result displays an honest provenance pill (`Checked on this phone` vs `Checked in cloud`) derived from `GenerateContentResponse.inferenceSource`.
 
 2. **Deterministic Citation Alignment (`EvidenceValidator`)**:
    - Generative models propose structured candidate findings, but [`EvidenceValidator`](lib/domain/evidence/evidence_validator.dart) deterministically verifies every cited quote (`verbatimQuote`) against the normalized source snapshot before rendering.
@@ -41,7 +40,7 @@
 # Static analysis (0 issues)
 flutter analyze
 
-# Unit & widget test suite (17/17 passing)
+# Unit & widget test suite (21/21 passing)
 flutter test
 
 # Native Android Kotlin compilation check

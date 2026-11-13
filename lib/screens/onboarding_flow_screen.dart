@@ -394,11 +394,11 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                 ),
                 const SizedBox(height: 16),
                 _ReadinessGuaranteeRow(
-                  icon: Symbols.cloud_off_rounded,
-                  title: _isKorean ? '묻지 않고 업로드 안 함' : 'Never uploaded without asking',
+                  icon: Symbols.cleaning_services_rounded,
+                  title: _isKorean ? '개인정보 자동 가림 처리' : 'Personal details scrubbed',
                   subtitle: _isKorean
-                      ? '클라우드 분석은 직접 허용한 그 검사 1회에만 실행됩니다.'
-                      : 'Cloud analysis only runs for the one check you approve.',
+                      ? '기기 내 모델이 없거나 긴 약관을 검토할 때는 이름·이메일·전화번호를 [가림] 표시로 바꾼 뒤 App Check로 안전하게 확인합니다.'
+                      : 'If on-device AI isn’t available or a policy is long, names, emails, and phone numbers become placeholders before App Check verification.',
                 ),
               ],
             ),

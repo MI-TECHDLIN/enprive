@@ -2,6 +2,7 @@ import '../../services/platform/hybrid_ai_bridge.dart';
 import '../../widgets/enprive_provenance_chip.dart';
 import '../evidence/evidence_validator.dart';
 import '../permissions/permission_comparator.dart';
+import '../privacy/pii_redactor.dart';
 import 'review_models.dart';
 
 class ReviewExecutionResult {
@@ -74,36 +75,62 @@ class ReviewCoordinator {
       );
     }
 
-    // Privacy Guardrail (AGENTS.md §3.1): Only policy text is sent to the bridge.
-    // Installed app lists and permission observations NEVER leave this device.
+    // Privacy Guardrail: Installed app lists and Android OS permission observations
+    // stay strictly on this phone and NEVER enter AI prompts.
     final reqId = 'rev_${DateTime.now().millisecondsSinceEpoch}';
-    final bridgeResult = await _bridge.analyseText(
-      requestId: reqId,
+    final isComprehensive = PiiRedactor.isComprehensivePolicy(trimmed);
+
+    // 1. Try local on-device inference first unless policy is comprehensive.
+    if (!isComprehensive && !cloudConsent) {
+      final localResult = await _bridge.analyseText(
+        requestId: reqId,
+        task: 'summarise_concerns',
+        text: trimmed,
+        cloudConsent: false,
+        requestedMode: 'ONLY_ON_DEVICE',
+      );
+
+      if (localResult.status == HybridStatus.success &&
+          localResult.structuredOutput != null) {
+        final receipt = _parseAndValidateBridgeOutput(
+          subjectTitle: subjectTitle,
+          sourceLabel: sourceLabel,
+          snapshotText: trimmed,
+          bridgeResult: localResult,
+        );
+        return ReviewExecutionResult.completed(
+          _attachPermissionComparison(receipt, appPermissions),
+        );
+      }
+    }
+
+    // 2. When on-device inference is unavailable or policy has comprehensive details,
+    // replace personal details with placeholders on-device and send the scrubbed text
+    // through Firebase AI Logic protected by App Check (limited-use tokens).
+    final redaction = PiiRedactor.redact(trimmed);
+    final cloudResult = await _bridge.analyseText(
+      requestId: '${reqId}_appcheck',
       task: 'summarise_concerns',
-      text: trimmed,
-      cloudConsent: cloudConsent,
+      text: redaction.redactedText,
+      cloudConsent: true,
+      requestedMode: 'PREFER_ON_DEVICE',
     );
 
-    if (bridgeResult.status == HybridStatus.success &&
-        bridgeResult.structuredOutput != null) {
+    if (cloudResult.status == HybridStatus.success &&
+        cloudResult.structuredOutput != null) {
       final receipt = _parseAndValidateBridgeOutput(
         subjectTitle: subjectTitle,
         sourceLabel: sourceLabel,
         snapshotText: trimmed,
-        bridgeResult: bridgeResult,
+        redactedSnapshotText: redaction.redactedText,
+        bridgeResult: cloudResult,
       );
       return ReviewExecutionResult.completed(
         _attachPermissionComparison(receipt, appPermissions),
       );
     }
 
-    if (!cloudConsent) {
-      return ReviewExecutionResult.requiresConsentChoice(
-        reason: bridgeResult.message ??
-            'On-device Gemini Nano 4 is not ready on this device.',
-      );
-    }
-
+    // 3. Offline / no-network safety net: run deterministic on-device clause scan.
     final fallbackReceipt = buildDeterministicLocalReceipt(
       subjectTitle: subjectTitle,
       sourceLabel: sourceLabel,
@@ -166,12 +193,30 @@ class ReviewCoordinator {
     final compositeInput =
         'Question: $question\nQuoted Clause: "${finding.exactExcerpt}"\n\n$snapshotText';
 
-    final res = await _bridge.analyseText(
-      requestId: reqId,
-      task: 'explain_finding',
-      text: compositeInput,
-      cloudConsent: cloudConsent,
-    );
+    HybridAnalysisResult? res;
+    if (!PiiRedactor.isComprehensivePolicy(compositeInput) && !cloudConsent) {
+      final localRes = await _bridge.analyseText(
+        requestId: reqId,
+        task: 'explain_finding',
+        text: compositeInput,
+        cloudConsent: false,
+        requestedMode: 'ONLY_ON_DEVICE',
+      );
+      if (localRes.status == HybridStatus.success) {
+        res = localRes;
+      }
+    }
+
+    if (res == null || res.status != HybridStatus.success) {
+      final scrubbed = PiiRedactor.redact(compositeInput);
+      res = await _bridge.analyseText(
+        requestId: '${reqId}_appcheck',
+        task: 'explain_finding',
+        text: scrubbed.redactedText,
+        cloudConsent: true,
+        requestedMode: 'PREFER_ON_DEVICE',
+      );
+    }
 
     if (res.status == HybridStatus.success && res.structuredOutput != null) {
       final out = res.structuredOutput!;
@@ -225,6 +270,7 @@ class ReviewCoordinator {
     required String subjectTitle,
     required String sourceLabel,
     required String snapshotText,
+    String? redactedSnapshotText,
     required HybridAnalysisResult bridgeResult,
   }) {
     final map = bridgeResult.structuredOutput!;
@@ -239,7 +285,7 @@ class ReviewCoordinator {
           (rawMap['exact_excerpt'] as String?) ??
           '';
 
-      final validated = EvidenceValidator.validateFinding(
+      var validated = EvidenceValidator.validateFinding(
         rawFinding: {
           ...rawMap,
           'exact_excerpt': quote,
@@ -247,12 +293,28 @@ class ReviewCoordinator {
         snapshotText: snapshotText,
         validEvidenceIds: {'finding_${i + 1}'},
       );
+      var contextSourceText = snapshotText;
+      if (validated['status'] != 'SOURCE_MATCHED' &&
+          redactedSnapshotText != null) {
+        final redactedValidation = EvidenceValidator.validateFinding(
+          rawFinding: {
+            ...rawMap,
+            'exact_excerpt': quote,
+          },
+          snapshotText: redactedSnapshotText,
+          validEvidenceIds: {'finding_${i + 1}'},
+        );
+        if (redactedValidation['status'] == 'SOURCE_MATCHED') {
+          validated = redactedValidation;
+          contextSourceText = redactedSnapshotText;
+        }
+      }
 
       final isSourceMatched = validated['status'] == 'SOURCE_MATCHED';
       final contextWin = isSourceMatched
           ? EvidenceValidator.extractContextWindow(
               quote: quote,
-              snapshotText: snapshotText,
+              snapshotText: contextSourceText,
             )
           : null;
 

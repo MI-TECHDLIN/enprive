@@ -203,15 +203,18 @@ class HybridAiBridge {
     required String task,
     required String text,
     required bool cloudConsent,
+    String? requestedMode,
     String? sourceSnapshotId,
   }) async {
     try {
+      final effectiveMode =
+          requestedMode ?? (cloudConsent ? 'PREFER_ON_DEVICE' : 'ONLY_ON_DEVICE');
       final res = await _channel.invokeMethod<Map>('analyseText', {
         'schemaVersion': 1,
         'requestId': requestId,
         'task': task,
         'text': text,
-        'requestedMode': cloudConsent ? 'ONLY_IN_CLOUD' : 'ONLY_ON_DEVICE',
+        'requestedMode': cloudConsent ? effectiveMode : 'ONLY_ON_DEVICE',
         'cloudConsent': cloudConsent,
         'sourceSnapshotId': sourceSnapshotId,
       });

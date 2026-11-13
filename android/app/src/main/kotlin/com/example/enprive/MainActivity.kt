@@ -22,6 +22,7 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.appcheck.appCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -55,12 +56,17 @@ class MainActivity : FlutterActivity() {
             Log.w(TAG, "TextToSpeech init note: ${e.message}")
         }
 
-        // Install App Check Debug Provider for development & testing
+        // Install App Check Provider (Debug for emulator/dev, Play Integrity for release)
         try {
+            val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
             Firebase.appCheck.installAppCheckProviderFactory(
-                DebugAppCheckProviderFactory.getInstance()
+                if (isDebuggable) {
+                    DebugAppCheckProviderFactory.getInstance()
+                } else {
+                    PlayIntegrityAppCheckProviderFactory.getInstance()
+                }
             )
-            Log.d(TAG, "Firebase App Check Debug Provider initialized successfully")
+            Log.d(TAG, "Firebase App Check initialized (debug=$isDebuggable)")
         } catch (e: Exception) {
             Log.w(TAG, "Firebase App Check initialization note: ${e.message}")
         }

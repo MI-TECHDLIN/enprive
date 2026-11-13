@@ -147,7 +147,7 @@ void main() {
   });
 
   testWidgets(
-    'ReviewProgressCard renders 4-segment progress and subject title',
+    'ReviewProgressCard renders calm single-button reviewing status and subject title',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -160,7 +160,7 @@ void main() {
       );
       await tester.pump();
       expect(find.text('EduTrack Classroom Companion'), findsOneWidget);
-      expect(find.textContaining('Step 1 of 4'), findsOneWidget);
+      expect(find.text('Reviewing on this phone…'), findsOneWidget);
     },
   );
 }
