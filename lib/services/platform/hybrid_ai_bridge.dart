@@ -53,12 +53,55 @@ class DeviceCapability {
   }
 }
 
+class AnalysisStreamEvent {
+  final String requestId;
+  final String stage;
+  final String label;
+  final String? detail;
+  final String? thoughtSummary;
+  final String? thoughtSignature;
+  final String? inferenceSource;
+  final bool isCompleted;
+  final DateTime timestamp;
+
+  AnalysisStreamEvent({
+    required this.requestId,
+    required this.stage,
+    required this.label,
+    this.detail,
+    this.thoughtSummary,
+    this.thoughtSignature,
+    this.inferenceSource,
+    this.isCompleted = false,
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
+
+  factory AnalysisStreamEvent.fromMap(Map<dynamic, dynamic> map) {
+    final rawThought = (map['thoughtSummary'] as String?)?.trim();
+    final rawSignature = (map['thoughtSignature'] as String?)?.trim();
+    final rawDetail = (map['detail'] as String?)?.trim();
+    return AnalysisStreamEvent(
+      requestId: map['requestId'] as String? ?? '',
+      stage: map['stage'] as String? ?? 'processing',
+      label: map['label'] as String? ?? 'Processing request',
+      detail: rawDetail?.isNotEmpty == true ? rawDetail : null,
+      thoughtSummary: rawThought?.isNotEmpty == true ? rawThought : null,
+      thoughtSignature: rawSignature?.isNotEmpty == true ? rawSignature : null,
+      inferenceSource: map['inferenceSource'] as String?,
+      isCompleted: map['isCompleted'] as bool? ?? false,
+    );
+  }
+}
+
 class HybridAnalysisResult {
   final int schemaVersion;
   final String requestId;
   final HybridStatus status;
   final String inferenceSource; // "ON_DEVICE" | "IN_CLOUD" | "UNKNOWN"
   final Map<String, dynamic>? structuredOutput;
+  final String? thoughtSummary;
+  final String? thoughtSignature;
+  final List<String> thoughtSignatures;
   final String? errorCode;
   final String? message;
 
@@ -68,17 +111,29 @@ class HybridAnalysisResult {
     required this.status,
     required this.inferenceSource,
     this.structuredOutput,
+    this.thoughtSummary,
+    this.thoughtSignature,
+    this.thoughtSignatures = const [],
     this.errorCode,
     this.message,
   });
 
   factory HybridAnalysisResult.fromMap(Map<dynamic, dynamic> map) {
+    final rawThought = (map['thoughtSummary'] as String?)?.trim();
+    final rawSignature = (map['thoughtSignature'] as String?)?.trim();
     return HybridAnalysisResult(
       schemaVersion: map['schemaVersion'] as int? ?? 1,
       requestId: map['requestId'] as String? ?? '',
       status: _parseStatus(map['status'] as String?),
       inferenceSource: map['inferenceSource'] as String? ?? 'UNKNOWN',
       structuredOutput: (map['structuredOutput'] as Map?)?.cast<String, dynamic>(),
+      thoughtSummary: rawThought?.isNotEmpty == true ? rawThought : null,
+      thoughtSignature: rawSignature?.isNotEmpty == true ? rawSignature : null,
+      thoughtSignatures: (map['thoughtSignatures'] as List?)
+              ?.map((e) => e.toString().trim())
+              .where((e) => e.isNotEmpty)
+              .toList(growable: false) ??
+          const [],
       errorCode: map['errorCode'] as String?,
       message: map['message'] as String?,
     );
@@ -97,6 +152,45 @@ class HybridAnalysisResult {
 
 class HybridAiBridge {
   static const MethodChannel _channel = MethodChannel('com.enprive/hybrid_ai');
+  static final Set<StreamController<AnalysisStreamEvent>> _nativeListeners = {};
+  static bool _handlerBound = false;
+
+  final StreamController<AnalysisStreamEvent> _analysisEventsController =
+      StreamController<AnalysisStreamEvent>.broadcast();
+
+  Stream<AnalysisStreamEvent> get analysisEvents {
+    _nativeListeners.add(_analysisEventsController);
+    _ensureHandlerBound();
+    return _analysisEventsController.stream;
+  }
+
+  void emitProcessEvent(AnalysisStreamEvent event) {
+    if (!_analysisEventsController.isClosed) {
+      _analysisEventsController.add(event);
+    }
+  }
+
+  static void _ensureHandlerBound() {
+    if (_handlerBound) return;
+    try {
+      _channel.setMethodCallHandler((call) async {
+        if (call.method == 'onAnalysisStreamEvent') {
+          final args = call.arguments;
+          if (args is Map) {
+            final event = AnalysisStreamEvent.fromMap(args);
+            for (final controller in List.of(_nativeListeners)) {
+              if (!controller.isClosed) {
+                controller.add(event);
+              }
+            }
+          }
+        }
+      });
+      _handlerBound = true;
+    } catch (_) {
+      // Pure Dart unit tests without ServicesBinding initialized skip MethodChannel registration.
+    }
+  }
 
   /// Queries the Android device for Gemini Nano 4 readiness.
   Future<DeviceCapability> getDeviceCapability() async {

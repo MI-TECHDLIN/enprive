@@ -5,6 +5,7 @@ import '../core/theme/enprive_theme.dart';
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
+import 'analysis_process_trace.dart';
 import 'deni_animated_mascot.dart';
 import 'enprive_provenance_chip.dart';
 
@@ -364,10 +365,17 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
 
                 if (_isAskingDeni) ...[
                   const SizedBox(height: 16),
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(12.0),
-                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: EnpriveColors.paper,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: AnalysisLiveProcessView(
+                      stream: widget.coordinator.analysisEvents,
+                      initialLabel: 'Checking on-device Gemini Nano…',
+                      compact: true,
                     ),
                   ),
                 ] else if (_deniExplanation != null) ...[
@@ -406,6 +414,18 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                             color: EnpriveColors.ink,
                           ),
                         ),
+                        if (_deniExplanation!.processSteps.isNotEmpty ||
+                            _deniExplanation!.thoughtSummary != null ||
+                            _deniExplanation!.thoughtSignature != null) ...[
+                          const SizedBox(height: 12),
+                          AnalysisSavedTraceCard(
+                            processSteps: _deniExplanation!.processSteps,
+                            thoughtSummary: _deniExplanation!.thoughtSummary,
+                            thoughtSignature: _deniExplanation!.thoughtSignature,
+                            title: 'Steps & model reasoning',
+                            compact: true,
+                          ),
+                        ],
                       ],
                     ),
                   ),

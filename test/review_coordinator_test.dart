@@ -279,5 +279,106 @@ Our mobile application collects precise GPS location coordinates even when the a
         );
       },
     );
+
+    test(
+      'propagates streamed process steps, model thoughtSummary, and thoughtSignature onto receipt and DeniExplanation',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+          if (call.method == 'analyseText') {
+            final args = Map<String, dynamic>.from(call.arguments as Map);
+            final task = args['task'] as String?;
+            if (task == 'explain_finding') {
+              return {
+                'schemaVersion': 1,
+                'requestId': args['requestId'],
+                'status': 'success',
+                'inferenceSource': 'IN_CLOUD',
+                'thoughtSummary':
+                    'Checking whether the quote specifies third-party advertising.',
+                'thoughtSignature': 'sig_deni_9876543210abcdef',
+                'structuredOutput': {
+                  'answer':
+                      'The quote states advertising partners receive engagement scores.',
+                  'whatPolicySays': 'Engagement scores may be shared.',
+                  'unknownBoundary': 'Does not state deletion timing.',
+                },
+              };
+            }
+            return {
+              'schemaVersion': 1,
+              'requestId': args['requestId'],
+              'status': 'success',
+              'inferenceSource': 'IN_CLOUD',
+              'thoughtSummary':
+                  'Inspecting data sharing clauses and checking opt-out clarity.',
+              'thoughtSignature': 'sig_review_1234567890fedcba',
+              'thoughtSignatures': ['sig_review_1234567890fedcba'],
+              'structuredOutput': {
+                'overall_state': 'NO_CONCERN',
+                'summary': 'Reviewed with thinking enabled.',
+                'concerns': const [],
+                'calibratedDisclaimer':
+                    ReviewCoordinator.calibratedDefaultDisclaimer,
+              },
+            };
+          }
+          return null;
+        });
+
+        final coordinator = ReviewCoordinator();
+        final emittedStages = <String>[];
+        final sub = coordinator.analysisEvents.listen((event) {
+          emittedStages.add(event.stage);
+        });
+
+        final outcome = await coordinator.runPolicyReview(
+          subjectTitle: 'Trace App',
+          sourceLabel: 'Test Snapshot',
+          policyText: 'We do not sell personal data.',
+          cloudConsent: true,
+        );
+
+        await Future<void>.delayed(Duration.zero);
+        expect(emittedStages, containsAll(['redacting_pii', 'sending_appcheck', 'verifying_evidence']));
+
+        final receipt = outcome.receipt!;
+        expect(receipt.processSteps, isNotEmpty);
+        expect(receipt.thoughtSummary,
+            'Inspecting data sharing clauses and checking opt-out clarity.');
+        expect(receipt.thoughtSignature, 'sig_review_1234567890fedcba');
+
+        final roundtrip = PolicyReviewReceipt.fromJson(receipt.toJson());
+        expect(roundtrip.processSteps, receipt.processSteps);
+        expect(roundtrip.thoughtSummary, receipt.thoughtSummary);
+        expect(roundtrip.thoughtSignature, receipt.thoughtSignature);
+
+        const finding = VerifiedFinding(
+          id: 'f1',
+          title: 'Sharing',
+          category: FindingCategory.sharing,
+          severity: FindingSeverity.medium,
+          exactExcerpt: 'Engagement scores may be shared with ad networks.',
+          explanation: 'Shares engagement scores.',
+          whatPolicySays: 'Engagement scores may be shared.',
+          whatAndroidReports: 'Text-only check.',
+          unknowns: ['Opt-out steps'],
+          status: EvidenceStatus.sourceMatched,
+        );
+
+        final explanation = await coordinator.askDeniAboutFinding(
+          finding: finding,
+          question: 'What does this mean?',
+          snapshotText: 'Engagement scores may be shared with ad networks.',
+          cloudConsent: true,
+        );
+        expect(explanation.processSteps, isNotEmpty);
+        expect(explanation.thoughtSummary,
+            'Checking whether the quote specifies third-party advertising.');
+        expect(explanation.thoughtSignature, 'sig_deni_9876543210abcdef');
+
+        await sub.cancel();
+      },
+    );
   });
 }

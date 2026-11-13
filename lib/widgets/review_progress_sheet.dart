@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../core/theme/enprive_colors.dart';
+import '../services/platform/hybrid_ai_bridge.dart';
+import 'analysis_process_trace.dart';
 
-/// Minimal in-flight card shown while "Review on this phone" runs.
-/// Keeps the internal hybrid routing behind a single calm status without
-/// narrating step-by-step pipeline internals to the parent/teacher.
+/// Live progress card shown while "Review on this phone" runs.
+/// Displays every active/completed step, streamed model thoughts, and
+/// thought signature verification tokens cleanly in real time.
 class ReviewProgressCard extends StatelessWidget {
   final String subjectTitle;
   final bool isCloudCheck;
   final bool isKorean;
+  final Stream<AnalysisStreamEvent>? processStream;
 
   const ReviewProgressCard({
     super.key,
     required this.subjectTitle,
     this.isCloudCheck = false,
     this.isKorean = false,
+    this.processStream,
   });
 
   @override
@@ -85,6 +89,13 @@ class ReviewProgressCard extends StatelessWidget {
                 EnpriveColors.teal,
               ),
             ),
+          ),
+          const SizedBox(height: 14),
+          AnalysisLiveProcessView(
+            stream: processStream,
+            initialLabel: isKorean
+                ? '이 휴대폰에서 로컬 AI 확인 중…'
+                : 'Checking on-device Gemini Nano…',
           ),
         ],
       ),

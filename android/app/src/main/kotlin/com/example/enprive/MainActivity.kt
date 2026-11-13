@@ -19,7 +19,10 @@ import com.google.firebase.ai.OnDeviceModelStatus
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.TextPart
+import com.google.firebase.ai.type.ThinkingLevel
 import com.google.firebase.ai.type.generationConfig
+import com.google.firebase.ai.type.thinkingConfig
 import com.google.firebase.appcheck.appCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
@@ -39,6 +42,7 @@ class MainActivity : FlutterActivity() {
     private var initialSelectedText: String? = null
     private var tts: TextToSpeech? = null
     private var isTtsReady: Boolean = false
+    private var methodChannel: MethodChannel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -133,7 +137,9 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+        val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+        methodChannel = channel
+        channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "getDeviceCapability" -> {
                     val apiLevel = Build.VERSION.SDK_INT
@@ -383,11 +389,17 @@ class MainActivity : FlutterActivity() {
                                 useLimitedUseAppCheckTokens = true
                             )
 
-                            val model = ai.generativeModel(
+                            fun createModel(includeThoughts: Boolean) = ai.generativeModel(
                                 modelName = "gemini-3.8-flash",
                                 generationConfig = generationConfig {
                                     responseMimeType = "application/json"
                                     temperature = 0.1f
+                                    if (includeThoughts) {
+                                        thinkingConfig = thinkingConfig {
+                                            this.includeThoughts = true
+                                            thinkingLevel = ThinkingLevel.LOW
+                                        }
+                                    }
                                 },
                                 onDeviceConfig = OnDeviceConfig(
                                     mode = inferenceMode,
@@ -443,17 +455,133 @@ class MainActivity : FlutterActivity() {
                             }
 
                             val prompt = "$systemPrompt\n\n--- POLICY TEXT ---\n$text"
-                            val response = model.generateContent(prompt)
-                            val responseText = response.text ?: "{}"
+                            val thoughtBuilder = StringBuilder()
+                            val answerBuilder = StringBuilder()
+                            val signatures = mutableListOf<String>()
+                            var lastInferenceSource: InferenceSource? = null
 
-                            val actualSource = when (response.inferenceSource) {
+                            suspend fun pushStreamEvent(
+                                stage: String,
+                                label: String,
+                                detail: String? = null,
+                                sourceStr: String? = null
+                            ) {
+                                withContext(Dispatchers.Main) {
+                                    methodChannel?.invokeMethod(
+                                        "onAnalysisStreamEvent",
+                                        mapOf(
+                                            "requestId" to requestId,
+                                            "stage" to stage,
+                                            "label" to label,
+                                            "detail" to detail,
+                                            "thoughtSummary" to thoughtBuilder.toString().trim().ifEmpty { null },
+                                            "thoughtSignature" to signatures.lastOrNull(),
+                                            "inferenceSource" to sourceStr,
+                                            "isCompleted" to false
+                                        )
+                                    )
+                                }
+                            }
+
+                            fun mapSource(src: InferenceSource?): String = when (src) {
                                 InferenceSource.ON_DEVICE -> "ON_DEVICE"
                                 InferenceSource.IN_CLOUD -> "IN_CLOUD"
                                 else -> if (cloudConsent) "IN_CLOUD" else "ON_DEVICE"
                             }
 
+                            suspend fun collectStream(enableThoughts: Boolean) {
+                                pushStreamEvent(
+                                    stage = "model_stream_started",
+                                    label = if (cloudConsent) {
+                                        "Streaming reasoning via App Check"
+                                    } else {
+                                        "Running local Gemini Nano check"
+                                    },
+                                    sourceStr = if (inferenceMode == InferenceMode.ONLY_ON_DEVICE) "ON_DEVICE" else null
+                                )
+                                createModel(enableThoughts).generateContentStream(prompt).collect { chunk ->
+                                    lastInferenceSource = chunk.inferenceSource
+                                    val srcLabel = mapSource(lastInferenceSource)
+                                    var chunkAddedThought = false
+                                    var chunkAddedSignature = false
+
+                                    for (candidate in chunk.candidates) {
+                                        for (part in candidate.content.parts) {
+                                            if (part is TextPart) {
+                                                val sig = part.thoughtSignature?.trim()
+                                                if (!sig.isNullOrEmpty() && !signatures.contains(sig)) {
+                                                    signatures.add(sig)
+                                                    chunkAddedSignature = true
+                                                }
+                                                if (part.isThought) {
+                                                    thoughtBuilder.append(part.text)
+                                                    chunkAddedThought = true
+                                                } else {
+                                                    answerBuilder.append(part.text)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (!chunkAddedThought) {
+                                        val fallbackSummary = chunk.thoughtSummary
+                                        if (!fallbackSummary.isNullOrEmpty()) {
+                                            thoughtBuilder.append(fallbackSummary)
+                                            chunkAddedThought = true
+                                        }
+                                    }
+
+                                    if (chunkAddedThought || chunkAddedSignature) {
+                                        pushStreamEvent(
+                                            stage = if (chunkAddedSignature && !chunkAddedThought) {
+                                                "thought_signature_received"
+                                            } else {
+                                                "streaming_thoughts"
+                                            },
+                                            label = if (srcLabel == "IN_CLOUD") {
+                                                "Streaming model thoughts & thought signature"
+                                            } else {
+                                                "Streaming on-device reasoning"
+                                            },
+                                            sourceStr = srcLabel
+                                        )
+                                    }
+                                }
+                            }
+
+                            val preferThoughts = inferenceMode != InferenceMode.ONLY_ON_DEVICE
+                            try {
+                                collectStream(preferThoughts)
+                            } catch (e: Exception) {
+                                val isUnavailable = e.javaClass.simpleName.contains("NotAvailable", ignoreCase = true) ||
+                                        (e.message?.contains("not available", ignoreCase = true) == true)
+                                val hasAnyOutput = thoughtBuilder.isNotEmpty() || answerBuilder.isNotEmpty()
+                                if (preferThoughts && !isUnavailable && !hasAnyOutput) {
+                                    Log.i(TAG, "Retrying stream without thinkingConfig: ${e.message}")
+                                    collectStream(false)
+                                } else {
+                                    throw e
+                                }
+                            }
+
+                            val responseText = answerBuilder.toString().trim().ifEmpty { "{}" }
+                            val actualSource = mapSource(lastInferenceSource)
+                            val finalThoughtSummary = thoughtBuilder.toString().trim().ifEmpty { null }
+                            val finalSignature = signatures.lastOrNull()
+
+                            pushStreamEvent(
+                                stage = "structured_output_received",
+                                label = "Structured response received — validating quotes",
+                                sourceStr = actualSource
+                            )
+
                             val jsonOutput = try {
-                                val jsonObj = JSONObject(responseText)
+                                val cleaned = responseText
+                                    .removePrefix("```json")
+                                    .removePrefix("```")
+                                    .removeSuffix("```")
+                                    .trim()
+                                val jsonObj = JSONObject(cleaned)
                                 toMap(jsonObj)
                             } catch (e: Exception) {
                                 mapOf("rawText" to responseText)
@@ -465,7 +593,10 @@ class MainActivity : FlutterActivity() {
                                     "requestId" to requestId,
                                     "status" to "success",
                                     "inferenceSource" to actualSource,
-                                    "structuredOutput" to jsonOutput
+                                    "structuredOutput" to jsonOutput,
+                                    "thoughtSummary" to finalThoughtSummary,
+                                    "thoughtSignature" to finalSignature,
+                                    "thoughtSignatures" to signatures.toList()
                                 ))
                             }
                         } catch (e: Exception) {

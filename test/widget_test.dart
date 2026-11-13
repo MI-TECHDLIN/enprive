@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +6,7 @@ import 'package:enprive/main.dart';
 import 'package:enprive/screens/onboarding_flow_screen.dart';
 import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/services/storage/receipt_repository.dart';
+import 'package:enprive/widgets/analysis_process_trace.dart';
 import 'package:enprive/widgets/review_progress_sheet.dart';
 
 void main() {
@@ -161,6 +163,90 @@ void main() {
       await tester.pump();
       expect(find.text('EduTrack Classroom Companion'), findsOneWidget);
       expect(find.text('Reviewing on this phone…'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'ReviewProgressCard renders streamed process steps, thoughts, and thought signature',
+    (WidgetTester tester) async {
+      final controller = StreamController<AnalysisStreamEvent>.broadcast();
+      addTearDown(controller.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ReviewProgressCard(
+              subjectTitle: 'EduTrack',
+              processStream: controller.stream,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Checking on-device Gemini Nano…'), findsOneWidget);
+
+      controller.add(
+        AnalysisStreamEvent(
+          requestId: 'req_1',
+          stage: 'streaming_thoughts',
+          label: 'Streaming model thoughts & thought signature',
+          thoughtSummary: 'Verifying sharing clause verbatim boundaries.',
+          thoughtSignature: 'sig_1234567890abcdef',
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.text('Streaming model thoughts & thought signature'),
+        findsOneWidget,
+      );
+      expect(find.text('Streaming thoughts'), findsOneWidget);
+      expect(
+        find.text('Verifying sharing clause verbatim boundaries.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Thought signature'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'AnalysisSavedTraceCard displays completed steps, signature, and toggles thoughts',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AnalysisSavedTraceCard(
+              processSteps: [
+                'Masked 2 personal details with placeholders',
+                'Streaming reasoning via Firebase App Check',
+              ],
+              thoughtSummary: 'Matched clause about ad network telemetry.',
+              thoughtSignature: 'sig_abcdef1234567890',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('2 steps'), findsOneWidget);
+      expect(
+        find.text('Masked 2 personal details with placeholders'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Thought signature:'), findsOneWidget);
+      expect(find.text('View streamed thoughts'), findsOneWidget);
+      expect(
+        find.text('Matched clause about ad network telemetry.'),
+        findsNothing,
+      );
+
+      await tester.tap(find.text('View streamed thoughts'));
+      await tester.pump();
+
+      expect(find.text('Hide streamed thoughts'), findsOneWidget);
+      expect(
+        find.text('Matched clause about ad network telemetry.'),
+        findsOneWidget,
+      );
     },
   );
 }

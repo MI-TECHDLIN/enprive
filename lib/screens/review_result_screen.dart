@@ -6,6 +6,7 @@ import '../domain/permissions/permission_comparator.dart';
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
+import '../widgets/analysis_process_trace.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_provenance_chip.dart';
 import '../widgets/enprive_tactile_button.dart';
@@ -427,6 +428,16 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               color: EnpriveColors.inkSecondary,
                             ),
                           ),
+                          if (receipt.processSteps.isNotEmpty ||
+                              receipt.thoughtSummary != null ||
+                              receipt.thoughtSignature != null) ...[
+                            const SizedBox(height: 18),
+                            AnalysisSavedTraceCard(
+                              processSteps: receipt.processSteps,
+                              thoughtSummary: receipt.thoughtSummary,
+                              thoughtSignature: receipt.thoughtSignature,
+                            ),
+                          ],
                           const SizedBox(height: 28),
 
                           // Findings List ("Lessons" list rhythm from x-learning-app.jpeg)

@@ -337,6 +337,26 @@
 
 ---
 
+### Iteration 10.3 — Live Streaming Thoughts, Thought Signatures & Full Process-Step State (`feature/onboarding-and-process-text-flow`)
+- **Date**: 2026-11-13
+- **Branch / Commits**: `feature/onboarding-and-process-text-flow`
+- **Models Used**: Orchestrator (Argon) + Execution model
+- **What Was Built**:
+  - **Verified Firebase AI Logic `18.2.0` Thinking & Streaming APIs (`android/app/src/main/kotlin/com/example/enprive/MainActivity.kt`)**:
+    - Confirmed via `javap` on `firebase-ai-18.2.0-api.jar` that `GenerativeModel.generateContentStream(String)`, `GenerationConfig.Builder.thinkingConfig`, `ThinkingConfig.Builder` (`includeThoughts = true`, `thinkingLevel = ThinkingLevel.LOW`), `GenerateContentResponse.thoughtSummary`, and `TextPart` (`isThought`, `thoughtSignature`) are supported directly by the SDK.
+    - Updated `MainActivity.kt` `"analyseText"` to stream via `model.generateContentStream(prompt)`, configure `thinkingConfig` (with clean fallback if `ONLY_ON_DEVICE` rejects thinking options), forward live `"onAnalysisStreamEvent"` updates to Dart, and return `thoughtSummary`, `thoughtSignature`, and `thoughtSignatures`.
+  - **Hybrid Stream & Coordinator Process Trace (`lib/services/platform/hybrid_ai_bridge.dart`, `lib/domain/review/review_models.dart`, `lib/domain/review/review_coordinator.dart`)**:
+    - Added `AnalysisStreamEvent` broadcast stream on `HybridAiBridge`, plus `processSteps`, `thoughtSummary`, and `thoughtSignature` persistence on `PolicyReviewReceipt` and `DeniExplanation`.
+    - Updated `runPolicyReview` and `askDeniAboutFinding` to emit step-by-step live events covering local Nano checks, on-device PII redaction counts, Firebase App Check `PREFER_ON_DEVICE` streaming thoughts + thought signatures, offline deterministic fallback, and verbatim quote/permission matching.
+  - **Shared Process & Thought UI (`lib/widgets/analysis_process_trace.dart`, `lib/widgets/review_progress_sheet.dart`, `lib/screens/review_result_screen.dart`, `lib/widgets/why_this_finding_sheet.dart`, `lib/main.dart`)**:
+    - Built `AnalysisLiveProcessView` and `AnalysisSavedTraceCard` so parents/teachers see every live step, streaming `thoughtSummary`, and `thoughtSignature` token while reviewing, asking Deni, and inspecting saved review results.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **24/24 tests passing** (including new coordinator trace/thought propagation and `ReviewProgressCard` / `AnalysisSavedTraceCard` widget tests).
+  - `cd android && ./gradlew compileDebugKotlin --no-daemon`: **BUILD SUCCESSFUL**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Final Release & PR Consolidation (`main` merge & APK verification)**

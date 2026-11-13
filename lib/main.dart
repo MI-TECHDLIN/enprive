@@ -632,6 +632,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                 subjectTitle: _activeReviewTitle,
                 isCloudCheck: _isCloudReviewInFlight,
                 isKorean: isKorean,
+                processStream: _coordinator.analysisEvents,
               )
             else ...[
               EnpriveTactileButton(

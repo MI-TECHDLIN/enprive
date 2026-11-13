@@ -122,6 +122,9 @@ class DeniExplanation {
   final String whatPolicySays;
   final String unknownBoundary;
   final InferenceSource inferenceSource;
+  final List<String> processSteps;
+  final String? thoughtSummary;
+  final String? thoughtSignature;
 
   const DeniExplanation({
     required this.question,
@@ -129,6 +132,9 @@ class DeniExplanation {
     required this.whatPolicySays,
     required this.unknownBoundary,
     required this.inferenceSource,
+    this.processSteps = const [],
+    this.thoughtSummary,
+    this.thoughtSignature,
   });
 }
 
@@ -145,6 +151,9 @@ class PolicyReviewReceipt {
   final String calibratedDisclaimer;
   final List<VerifiedFinding> findings;
   final AppPermissionComparisonReport? permissionReport;
+  final List<String> processSteps;
+  final String? thoughtSummary;
+  final String? thoughtSignature;
 
   const PolicyReviewReceipt({
     required this.id,
@@ -159,6 +168,9 @@ class PolicyReviewReceipt {
     required this.calibratedDisclaimer,
     required this.findings,
     this.permissionReport,
+    this.processSteps = const [],
+    this.thoughtSummary,
+    this.thoughtSignature,
   });
 
   int get sourceMatchedCount => findings
@@ -189,12 +201,21 @@ class PolicyReviewReceipt {
         'findings': findings.map((f) => f.toJson()).toList(),
         if (permissionReport != null)
           'permissionReport': permissionReport!.toJson(),
+        if (processSteps.isNotEmpty) 'processSteps': processSteps,
+        if (thoughtSummary != null) 'thoughtSummary': thoughtSummary,
+        if (thoughtSignature != null) 'thoughtSignature': thoughtSignature,
       };
 
   factory PolicyReviewReceipt.fromJson(Map<String, dynamic> json) {
     final findingsList = (json['findings'] as List?) ?? const [];
     final permMap =
         (json['permissionReport'] as Map?)?.cast<String, dynamic>();
+    final rawSteps = (json['processSteps'] as List?)
+            ?.map((e) => e.toString())
+            .toList(growable: false) ??
+        const <String>[];
+    final rawThought = (json['thoughtSummary'] as String?)?.trim();
+    final rawSignature = (json['thoughtSignature'] as String?)?.trim();
     return PolicyReviewReceipt(
       id: json['id'] as String? ?? 'rcpt_unknown',
       subjectTitle: json['subjectTitle'] as String? ?? 'Policy Snapshot',
@@ -222,6 +243,9 @@ class PolicyReviewReceipt {
       permissionReport: permMap == null
           ? null
           : AppPermissionComparisonReport.fromJson(permMap),
+      processSteps: rawSteps,
+      thoughtSummary: rawThought?.isNotEmpty == true ? rawThought : null,
+      thoughtSignature: rawSignature?.isNotEmpty == true ? rawSignature : null,
     );
   }
 }
