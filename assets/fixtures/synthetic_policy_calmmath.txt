@@ -1,0 +1,11 @@
+CALMMATH ABACUS — PRIVACY & DATA HANDLING NOTICE
+Effective Date: November 1, 2026 | Snapshot Version: 2026.11-LOCAL
+
+1. LOCAL-ONLY COMPUTATION
+CalmMath Abacus is designed for early elementary arithmetic practice. All math problem sets, practice scores, and learning progress are stored exclusively on this device inside local application storage.
+
+2. NO THIRD-PARTY DATA SHARING OR ADVERTISING
+We do not collect personal identifiers, precise location data, microphone audio, or camera input. We do not integrate third-party advertising SDKs, and we never sell, rent, or transmit student usage data to external analytics brokers.
+
+3. PARENTAL & TEACHER CONTROLS
+Parents and teachers can reset or permanently delete all local practice records at any time directly from the in-app Settings screen without creating an account or contacting support.

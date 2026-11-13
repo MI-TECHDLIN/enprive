@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:iconify_flutter/icons/ph.dart';
 import '../core/theme/enprive_colors.dart';
+import '../l10n/app_localizations.dart';
+import 'enprive_duotone_icon.dart';
 
 enum InferenceSource {
   onDevice,
@@ -20,24 +22,29 @@ class EnpriveProvenanceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (Color bg, Color fg, IconData icon, String defaultLabel) = switch (source) {
+    final l10n = AppLocalizations.of(context) ??
+        lookupAppLocalizations(
+          Localizations.maybeLocaleOf(context) ?? const Locale('en'),
+        );
+    final (Color bg, Color fg, String duotoneIcon, String defaultLabel) =
+        switch (source) {
       InferenceSource.onDevice => (
           EnpriveColors.chipOnDeviceBg,
           EnpriveColors.chipOnDeviceFg,
-          Symbols.smartphone_rounded,
-          'On this device',
+          Ph.device_mobile_duotone,
+          l10n.chipOnDevice,
         ),
       InferenceSource.inCloud => (
           EnpriveColors.chipInCloudBg,
           EnpriveColors.chipInCloudFg,
-          Symbols.cloud_done_rounded,
-          'In the cloud',
+          Ph.cloud_check_duotone,
+          l10n.chipInCloud,
         ),
       InferenceSource.locationUnavailable => (
           EnpriveColors.chipUnknownBg,
           EnpriveColors.chipUnknownFg,
-          Symbols.help_outline_rounded,
-          'Location unavailable',
+          Ph.question_duotone,
+          l10n.chipLocationUnavailable,
         ),
     };
 
@@ -56,7 +63,7 @@ class EnpriveProvenanceChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: fg),
+            EnpriveDuotoneIcon(duotoneIcon, size: 16, color: fg),
             const SizedBox(width: 6),
             Text(
               label,

@@ -72,4 +72,54 @@ class EvidenceValidator {
 
     return copy;
   }
+
+  /// Extracts a surrounding context window (`before`, `matched`, `after`) from
+  /// the normalized [snapshotText] so the UI can highlight the verbatim quote
+  /// inside its surrounding paragraph.
+  static ({String before, String matched, String after})? extractContextWindow({
+    required String quote,
+    required String snapshotText,
+    int radius = 85,
+  }) {
+    if (quote.trim().isEmpty || snapshotText.trim().isEmpty) return null;
+    final normQuote = normalize(quote);
+    final normSnapshot = normalize(snapshotText);
+    final idx = normSnapshot.indexOf(normQuote);
+    if (idx < 0) return null;
+
+    final start = (idx - radius).clamp(0, idx);
+    final end = (idx + normQuote.length + radius).clamp(
+      idx + normQuote.length,
+      normSnapshot.length,
+    );
+
+    final prefix = start > 0 ? '…' : '';
+    final suffix = end < normSnapshot.length ? '…' : '';
+
+    return (
+      before: '$prefix${normSnapshot.substring(start, idx)}',
+      matched: normSnapshot.substring(idx, idx + normQuote.length),
+      after: '${normSnapshot.substring(idx + normQuote.length, end)}$suffix',
+    );
+  }
+
+  /// Computes a deterministic 64-bit FNV-1a hex digest of the normalized policy
+  /// snapshot so receipts and findings can verify whether the policy changed.
+  static String computeSnapshotDigest(String snapshotText) {
+    final normalized = normalize(snapshotText);
+    int hash1 = 0x811c9dc5;
+    int hash2 = 0x811c9dc5;
+    for (int i = 0; i < normalized.length; i++) {
+      final code = normalized.codeUnitAt(i);
+      if (i.isEven) {
+        hash1 ^= code;
+        hash1 = (hash1 * 0x01000193) & 0xFFFFFFFF;
+      } else {
+        hash2 ^= code;
+        hash2 = (hash2 * 0x01000193) & 0xFFFFFFFF;
+      }
+    }
+    return '${hash1.toRadixString(16).padLeft(8, '0')}'
+        '${hash2.toRadixString(16).padLeft(8, '0')}';
+  }
 }

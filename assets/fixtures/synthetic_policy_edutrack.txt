@@ -1,0 +1,17 @@
+EDUTRACK KIDS & CLASSROOM COMPANION — PRIVACY POLICY
+Effective Date: November 1, 2026 | Snapshot Version: 2026.11-R2
+
+1. OVERVIEW AND SCOPE
+EduTrack Kids ("EduTrack", "we", "our") provides digital homework assignments, reading fluency recording, and classroom participation tools for students and families.
+
+2. INFORMATION WE COLLECT AUTOMATICALLY
+When a student uses EduTrack on a mobile device, we collect device identifiers, operating system telemetry, and session duration logs. In addition, our mobile application collects precise GPS location coordinates even when the application is running in the background to verify school bus zone attendance and regional classroom routing.
+
+3. VOICE RECORDINGS AND BIOMETRIC FLUENCY DATA
+For reading-aloud exercises, EduTrack records student voice audio through the device microphone. Student voice recordings and derived speech-fluency transcripts are retained indefinitely on our cloud servers to train and improve our automated speech recognition models unless a verified school administrator submits a written deletion ticket.
+
+4. THIRD-PARTY ANALYTICS AND ADVERTISING PARTNERS
+We partner with external analytics providers and third-party advertising networks. We may share persistent advertising identifiers and app usage events with third-party advertising partners to measure campaign performance and deliver contextual or behavioral promotions across partner educational services.
+
+5. PARENTAL RIGHTS AND LIMITATIONS
+Parents and legal guardians may request a summary of their child's classroom profile by contacting privacy@edutrack-example.org. Please note that revoking microphone or location permissions in Android Settings may disable core homework submission features.

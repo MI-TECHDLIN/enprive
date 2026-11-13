@@ -1,6 +1,27 @@
 # AGENTS.md — Enprive Agent Collaboration Guidelines
 
-This document governs model selection, workflow routing, and project-specific constraints for AI agents, subagents, and human collaborators working on the **Enprive** codebase.
+This document governs engineering journal tracking, model selection, workflow routing, and project-specific constraints for AI agents, subagents, and human collaborators working on the **Enprive** codebase.
+
+---
+
+## 0. Primary Protocol: Engineering Journal (`journal.md`) & Mandatory Skills
+
+`journal.md` at the repository root is the **primary source of truth** for iteration history, architectural decisions, debugging root causes, and next steps.
+
+1. **Before Every Iteration (Mandatory Read & Skill Check)**:
+   - Always read [journal.md](journal.md) **before** starting any task, creating a branch, or writing code.
+   - Verify the current `main` HEAD, active feature branch, past challenges/fixes, and queued milestones.
+   - Always inspect and follow the applicable Flutter & Dart skills installed under `.agents/skills/` before iterating (re-installable via `npx skills add flutter/agent-plugins --skill '*' --agent universal --yes` and `npx skills add dart-lang/skills --skill '*' --agent universal --yes`):
+     - Flutter skills (`flutter/agent-plugins`): `.agents/skills/flutter-apply-architecture-best-practices/SKILL.md`, `flutter-build-responsive-layout/SKILL.md`, `flutter-fix-layout-issues/SKILL.md`, `flutter-add-widget-test/SKILL.md`, `flutter-add-integration-test/SKILL.md`, `flutter-setup-localization/SKILL.md`, etc.
+     - Dart skills (`dart-lang/skills`): `.agents/skills/dart-run-static-analysis/SKILL.md`, `dart-add-unit-test/SKILL.md`, `dart-fix-runtime-errors/SKILL.md`, `dart-use-pattern-matching/SKILL.md`, `dart-write-documentation/SKILL.md`, etc.
+2. **After Every Iteration (Mandatory Update)**:
+   - Immediately **after** completing an iteration (and before opening a PR, merging, or switching models), record a new entry in [journal.md](journal.md) containing:
+     - Date, Iteration number, branch name, and commit hash(es).
+     - Active model(s) used.
+     - Summary of what was built or modified.
+     - Challenges encountered and their exact root-cause fixes.
+     - Verification status (`flutter analyze`, `flutter test`, Gradle build).
+     - Updated next-step queue and recommended model for the next turn.
 
 ---
 

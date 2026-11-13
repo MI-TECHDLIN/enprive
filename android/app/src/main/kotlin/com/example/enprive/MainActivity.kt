@@ -1,23 +1,31 @@
 package com.example.enprive
 
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.util.Log
+import java.util.Locale
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.Firebase
 import com.google.firebase.ai.InferenceMode
 import com.google.firebase.ai.InferenceSource
 import com.google.firebase.ai.OnDeviceConfig
+import com.google.firebase.ai.OnDeviceModelOption
 import com.google.firebase.ai.OnDeviceModelStatus
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.TextPart
+import com.google.firebase.ai.type.ThinkingLevel
 import com.google.firebase.ai.type.generationConfig
+import com.google.firebase.ai.type.thinkingConfig
 import com.google.firebase.appcheck.appCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -32,20 +40,50 @@ class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.enprive/hybrid_ai"
     private val TAG = "EnpriveHybridAi"
     private var initialSelectedText: String? = null
+    private var tts: TextToSpeech? = null
+    private var isTtsReady: Boolean = false
+    private var methodChannel: MethodChannel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleIncomingTextIntent(intent)
 
-        // Install App Check Debug Provider for development & testing
+        // Initialize local Android TextToSpeech for Enprive Voice (English & Korean)
         try {
+            tts = TextToSpeech(applicationContext) { status ->
+                if (status == TextToSpeech.SUCCESS) {
+                    isTtsReady = true
+                    tts?.language = Locale.US
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "TextToSpeech init note: ${e.message}")
+        }
+
+        // Install App Check Provider (Debug for emulator/dev, Play Integrity for release)
+        try {
+            val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
             Firebase.appCheck.installAppCheckProviderFactory(
-                DebugAppCheckProviderFactory.getInstance()
+                if (isDebuggable) {
+                    DebugAppCheckProviderFactory.getInstance()
+                } else {
+                    PlayIntegrityAppCheckProviderFactory.getInstance()
+                }
             )
-            Log.d(TAG, "Firebase App Check Debug Provider initialized successfully")
+            Log.d(TAG, "Firebase App Check initialized (debug=$isDebuggable)")
         } catch (e: Exception) {
             Log.w(TAG, "Firebase App Check initialization note: ${e.message}")
         }
+    }
+
+    override fun onDestroy() {
+        try {
+            tts?.stop()
+            tts?.shutdown()
+            tts = null
+            isTtsReady = false
+        } catch (_: Exception) {}
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -75,8 +113,16 @@ class MainActivity : FlutterActivity() {
         backend = GenerativeBackend.googleAI(),
         useLimitedUseAppCheckTokens = true
     ).generativeModel(
-        modelName = "gemini-2.5-flash",
-        onDeviceConfig = OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE)
+        modelName = "gemini-3.8-flash",
+        onDeviceConfig = OnDeviceConfig(
+            mode = InferenceMode.ONLY_ON_DEVICE,
+            maxOutputTokens = 1024,
+            temperature = 0.1f,
+            topK = 20,
+            seed = null,
+            candidateCount = 1,
+            modelOption = OnDeviceModelOption.PREVIEW
+        )
     )
 
     private fun mapModelStatus(status: OnDeviceModelStatus?): String {
@@ -91,7 +137,9 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+        val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+        methodChannel = channel
+        channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "getDeviceCapability" -> {
                     val apiLevel = Build.VERSION.SDK_INT
@@ -156,10 +204,106 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
+                "warmUpModel" -> {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val warmed = try {
+                            val ext = createOnDeviceModel().onDeviceExtension
+                            ext?.warmUp()
+                            true
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Model warmUp note: ${e.message}")
+                            false
+                        }
+                        withContext(Dispatchers.Main) {
+                            result.success(warmed)
+                        }
+                    }
+                }
+
                 "getInitialSelectedText" -> {
                     val text = initialSelectedText
                     initialSelectedText = null
                     result.success(text)
+                }
+
+                "speakText" -> {
+                    val text = call.argument<String>("text") ?: ""
+                    val languageCode = call.argument<String>("languageCode") ?: "en"
+                    if (text.isBlank() || !isTtsReady || tts == null) {
+                        result.success(false)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        val targetLocale = resolveBcp47Locale(languageCode)
+                        tts?.language = targetLocale
+                        val speakRes = tts?.speak(
+                            text,
+                            TextToSpeech.QUEUE_FLUSH,
+                            null,
+                            "enprive_utterance_${System.currentTimeMillis()}"
+                        )
+                        result.success(speakRes == TextToSpeech.SUCCESS)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "speakText error: ${e.message}")
+                        result.success(false)
+                    }
+                }
+
+                "stopSpeaking" -> {
+                    try {
+                        tts?.stop()
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
+                }
+
+                "listLaunchableApps" -> {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val apps = try {
+                            val pm = packageManager
+                            val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                                addCategory(Intent.CATEGORY_LAUNCHER)
+                            }
+                            val resolveInfos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                pm.queryIntentActivities(
+                                    mainIntent,
+                                    PackageManager.ResolveInfoFlags.of(0L)
+                                )
+                            } else {
+                                @Suppress("DEPRECATION")
+                                pm.queryIntentActivities(mainIntent, 0)
+                            }
+
+                            val seen = mutableSetOf<String>()
+                            resolveInfos.mapNotNull { info ->
+                                val pkg = info.activityInfo?.packageName ?: return@mapNotNull null
+                                if (pkg == applicationContext.packageName || !seen.add(pkg)) {
+                                    return@mapNotNull null
+                                }
+                                val appInfo = info.activityInfo?.applicationInfo
+                                val label = info.loadLabel(pm).toString().takeIf { it.isNotBlank() }
+                                    ?: appInfo?.loadLabel(pm)?.toString()
+                                    ?: pkg
+                                val isSystem = ((appInfo?.flags ?: 0) and ApplicationInfo.FLAG_SYSTEM) != 0
+                                mapOf(
+                                    "packageName" to pkg,
+                                    "appName" to label,
+                                    "isSystemApp" to isSystem
+                                )
+                            }.sortedWith(
+                                compareBy<Map<String, Any>> { it["isSystemApp"] as Boolean }
+                                    .thenBy { (it["appName"] as String).lowercase() }
+                            )
+                        } catch (e: Exception) {
+                            Log.w(TAG, "listLaunchableApps error: ${e.message}")
+                            emptyList<Map<String, Any>>()
+                        }
+
+                        withContext(Dispatchers.Main) {
+                            result.success(apps)
+                        }
+                    }
                 }
 
                 "inspectSelectedApp" -> {
@@ -209,6 +353,8 @@ class MainActivity : FlutterActivity() {
                     val text = call.argument<String>("text") ?: ""
                     val cloudConsent = call.argument<Boolean>("cloudConsent") ?: false
                     val requestedMode = call.argument<String>("requestedMode") ?: "ONLY_ON_DEVICE"
+                    val languageCode = call.argument<String>("languageCode") ?: "en"
+                    val targetLanguage = languageDisplayName(languageCode)
 
                     if (text.isBlank()) {
                         result.error("EMPTY_TEXT", "Text for privacy analysis cannot be empty.", null)
@@ -241,50 +387,201 @@ class MainActivity : FlutterActivity() {
                                 useLimitedUseAppCheckTokens = true
                             )
 
-                            val model = ai.generativeModel(
-                                modelName = "gemini-2.5-flash",
+                            fun createModel(includeThoughts: Boolean) = ai.generativeModel(
+                                modelName = "gemini-3.8-flash",
                                 generationConfig = generationConfig {
                                     responseMimeType = "application/json"
                                     temperature = 0.1f
+                                    if (includeThoughts) {
+                                        thinkingConfig = thinkingConfig {
+                                            this.includeThoughts = true
+                                            thinkingLevel = ThinkingLevel.LOW
+                                        }
+                                    }
                                 },
-                                onDeviceConfig = OnDeviceConfig(mode = inferenceMode)
+                                onDeviceConfig = OnDeviceConfig(
+                                    mode = inferenceMode,
+                                    maxOutputTokens = 1024,
+                                    temperature = 0.1f,
+                                    topK = 20,
+                                    seed = null,
+                                    candidateCount = 1,
+                                    modelOption = OnDeviceModelOption.PREVIEW
+                                )
                             )
 
-                            val systemPrompt = """
+                            val systemPrompt = if (task == "explain_finding") {
+                                """
+                                You are Deni, Enprive's calm, evidence-first privacy guide for parents and teachers.
+                                Explain the cited privacy finding in plain, reassuring, non-alarmist language.
+                                Output language: Write "answer", "whatPolicySays", and "unknownBoundary" naturally in $targetLanguage. Keep any verbatim quote in the policy text's original language.
+
+                                You MUST return a JSON object with this exact structure:
+                                {
+                                  "answer": "2-3 sentence plain-language explanation directly answering the user's question based only on the quote",
+                                  "whatPolicySays": "1 sentence restating the verbatim policy claim",
+                                  "unknownBoundary": "1 sentence clearly stating what this excerpt does NOT prove or specify"
+                                }
+                                Never certify an app as safe. Never invent facts outside the provided excerpt.
+                                """.trimIndent()
+                            } else {
+                                """
                                 You are Enprive, an evidence-first privacy analyst for children's apps.
                                 Analyze the following privacy policy excerpt.
                                 
                                 Task: $task
+                                Output language: Write "summary", "title", "explanation", "unknowns", and "calibratedDisclaimer" naturally in $targetLanguage. Keep JSON keys, enum values ("REVIEW_RECOMMENDED", "NO_CONCERN", "INSUFFICIENT_EVIDENCE", "DATA_COLLECTION", "SHARING", "TRACKING", "RETENTION", "PARENTAL_CONSENT", "HIGH", "MEDIUM", "LOW"), and "quote" EXACTLY as specified.
                                 
                                 You MUST return a JSON object with this exact structure:
                                 {
+                                  "overall_state": "REVIEW_RECOMMENDED" | "NO_CONCERN" | "INSUFFICIENT_EVIDENCE",
                                   "summary": "Short 1-2 sentence calibrated summary",
                                   "concerns": [
                                     {
+                                      "id": "finding_1",
+                                      "title": "Short descriptive finding title",
                                       "category": "DATA_COLLECTION" | "SHARING" | "TRACKING" | "RETENTION" | "PARENTAL_CONSENT",
                                       "severity": "HIGH" | "MEDIUM" | "LOW",
-                                      "quote": "EXACT substring quoted verbatim from the text",
-                                      "explanation": "Clear parent/teacher explanation"
+                                      "quote": "EXACT substring quoted verbatim from the policy text in its original language",
+                                      "explanation": "Clear parent/teacher explanation of why this clause matters",
+                                      "unknowns": ["What the policy text leaves unspecified"]
                                     }
                                   ],
                                   "calibratedDisclaimer": "No concern identified in the reviewed evidence. This is not a safety certification."
                                 }
                                 
-                                Strictly quote verbatim substrings for quotes. Never fabricate facts.
-                            """.trimIndent()
+                                Strictly quote verbatim substrings from the provided policy text for "quote". Never translate or alter "quote". Never fabricate facts.
+                                """.trimIndent()
+                            }
 
                             val prompt = "$systemPrompt\n\n--- POLICY TEXT ---\n$text"
-                            val response = model.generateContent(prompt)
-                            val responseText = response.text ?: "{}"
+                            val thoughtBuilder = StringBuilder()
+                            val answerBuilder = StringBuilder()
+                            val signatures = mutableListOf<String>()
+                            var lastInferenceSource: InferenceSource? = null
 
-                            val actualSource = when (response.inferenceSource) {
+                            suspend fun pushStreamEvent(
+                                stage: String,
+                                label: String,
+                                detail: String? = null,
+                                sourceStr: String? = null
+                            ) {
+                                withContext(Dispatchers.Main) {
+                                    methodChannel?.invokeMethod(
+                                        "onAnalysisStreamEvent",
+                                        mapOf(
+                                            "requestId" to requestId,
+                                            "stage" to stage,
+                                            "label" to label,
+                                            "detail" to detail,
+                                            "thoughtSummary" to thoughtBuilder.toString().trim().ifEmpty { null },
+                                            "thoughtSignature" to signatures.lastOrNull(),
+                                            "inferenceSource" to sourceStr,
+                                            "isCompleted" to false
+                                        )
+                                    )
+                                }
+                            }
+
+                            fun mapSource(src: InferenceSource?): String = when (src) {
                                 InferenceSource.ON_DEVICE -> "ON_DEVICE"
                                 InferenceSource.IN_CLOUD -> "IN_CLOUD"
                                 else -> if (cloudConsent) "IN_CLOUD" else "ON_DEVICE"
                             }
 
+                            suspend fun collectStream(enableThoughts: Boolean) {
+                                pushStreamEvent(
+                                    stage = "model_stream_started",
+                                    label = if (cloudConsent) {
+                                        "Streaming reasoning via App Check"
+                                    } else {
+                                        "Reading policy text on this phone"
+                                    },
+                                    sourceStr = if (inferenceMode == InferenceMode.ONLY_ON_DEVICE) "ON_DEVICE" else null
+                                )
+                                createModel(enableThoughts).generateContentStream(prompt).collect { chunk ->
+                                    lastInferenceSource = chunk.inferenceSource
+                                    val srcLabel = mapSource(lastInferenceSource)
+                                    var chunkAddedThought = false
+                                    var chunkAddedSignature = false
+
+                                    for (candidate in chunk.candidates) {
+                                        for (part in candidate.content.parts) {
+                                            if (part is TextPart) {
+                                                val sig = part.thoughtSignature?.trim()
+                                                if (!sig.isNullOrEmpty() && !signatures.contains(sig)) {
+                                                    signatures.add(sig)
+                                                    chunkAddedSignature = true
+                                                }
+                                                if (part.isThought) {
+                                                    thoughtBuilder.append(part.text)
+                                                    chunkAddedThought = true
+                                                } else {
+                                                    answerBuilder.append(part.text)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (!chunkAddedThought) {
+                                        val fallbackSummary = chunk.thoughtSummary
+                                        if (!fallbackSummary.isNullOrEmpty()) {
+                                            thoughtBuilder.append(fallbackSummary)
+                                            chunkAddedThought = true
+                                        }
+                                    }
+
+                                    if (chunkAddedThought || chunkAddedSignature) {
+                                        pushStreamEvent(
+                                            stage = if (chunkAddedSignature && !chunkAddedThought) {
+                                                "thought_signature_received"
+                                            } else {
+                                                "streaming_thoughts"
+                                            },
+                                            label = if (srcLabel == "IN_CLOUD") {
+                                                "Streaming reasoning & thought signature"
+                                            } else {
+                                                "Streaming reasoning on this phone"
+                                            },
+                                            sourceStr = srcLabel
+                                        )
+                                    }
+                                }
+                            }
+
+                            val preferThoughts = inferenceMode != InferenceMode.ONLY_ON_DEVICE
+                            try {
+                                collectStream(preferThoughts)
+                            } catch (e: Exception) {
+                                val isUnavailable = e.javaClass.simpleName.contains("NotAvailable", ignoreCase = true) ||
+                                        (e.message?.contains("not available", ignoreCase = true) == true)
+                                val hasAnyOutput = thoughtBuilder.isNotEmpty() || answerBuilder.isNotEmpty()
+                                if (preferThoughts && !isUnavailable && !hasAnyOutput) {
+                                    Log.i(TAG, "Retrying stream without thinkingConfig: ${e.message}")
+                                    collectStream(false)
+                                } else {
+                                    throw e
+                                }
+                            }
+
+                            val responseText = answerBuilder.toString().trim().ifEmpty { "{}" }
+                            val actualSource = mapSource(lastInferenceSource)
+                            val finalThoughtSummary = thoughtBuilder.toString().trim().ifEmpty { null }
+                            val finalSignature = signatures.lastOrNull()
+
+                            pushStreamEvent(
+                                stage = "structured_output_received",
+                                label = "Structured response received — validating quotes",
+                                sourceStr = actualSource
+                            )
+
                             val jsonOutput = try {
-                                val jsonObj = JSONObject(responseText)
+                                val cleaned = responseText
+                                    .removePrefix("```json")
+                                    .removePrefix("```")
+                                    .removeSuffix("```")
+                                    .trim()
+                                val jsonObj = JSONObject(cleaned)
                                 toMap(jsonObj)
                             } catch (e: Exception) {
                                 mapOf("rawText" to responseText)
@@ -296,19 +593,28 @@ class MainActivity : FlutterActivity() {
                                     "requestId" to requestId,
                                     "status" to "success",
                                     "inferenceSource" to actualSource,
-                                    "structuredOutput" to jsonOutput
+                                    "structuredOutput" to jsonOutput,
+                                    "thoughtSummary" to finalThoughtSummary,
+                                    "thoughtSignature" to finalSignature,
+                                    "thoughtSignatures" to signatures.toList()
                                 ))
                             }
                         } catch (e: Exception) {
-                            Log.e(TAG, "Inference error", e)
+                            val isUnavailable = e.javaClass.simpleName.contains("NotAvailable", ignoreCase = true) ||
+                                    (e.message?.contains("not available", ignoreCase = true) == true)
+                            if (isUnavailable) {
+                                Log.i(TAG, "On-device model unavailable on this hardware/emulator; prompting user choice.")
+                            } else {
+                                Log.w(TAG, "Inference note: ${e.message}")
+                            }
                             withContext(Dispatchers.Main) {
                                 result.success(mapOf(
                                     "schemaVersion" to schemaVersion,
                                     "requestId" to requestId,
-                                    "status" to "failed",
+                                    "status" to if (isUnavailable) "unavailable" else "failed",
                                     "inferenceSource" to "UNKNOWN",
                                     "errorCode" to (e.javaClass.simpleName),
-                                    "message" to (e.message ?: "Analysis failed")
+                                    "message" to (e.message ?: "Analysis unavailable on this device")
                                 ))
                             }
                         }
@@ -317,6 +623,43 @@ class MainActivity : FlutterActivity() {
 
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    private fun resolveBcp47Locale(languageCode: String): Locale {
+        val base = languageCode.lowercase().split('-', '_').firstOrNull() ?: "en"
+        val tag = when (base) {
+            "ko" -> "ko-KR"
+            "es" -> "es-ES"
+            "fr" -> "fr-FR"
+            "de" -> "de-DE"
+            "ar" -> "ar-SA"
+            "ja" -> "ja-JP"
+            "zh" -> "zh-CN"
+            "hi" -> "hi-IN"
+            "pt" -> "pt-BR"
+            "it" -> "it-IT"
+            "ru" -> "ru-RU"
+            else -> "en-US"
+        }
+        return Locale.forLanguageTag(tag)
+    }
+
+    private fun languageDisplayName(languageCode: String): String {
+        val base = languageCode.lowercase().split('-', '_').firstOrNull() ?: "en"
+        return when (base) {
+            "ko" -> "Korean"
+            "es" -> "Spanish"
+            "fr" -> "French"
+            "de" -> "German"
+            "ar" -> "Arabic"
+            "ja" -> "Japanese"
+            "zh" -> "Simplified Chinese"
+            "hi" -> "Hindi"
+            "pt" -> "Portuguese"
+            "it" -> "Italian"
+            "ru" -> "Russian"
+            else -> "English"
         }
     }
 

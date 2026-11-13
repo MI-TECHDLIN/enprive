@@ -53,12 +53,55 @@ class DeviceCapability {
   }
 }
 
+class AnalysisStreamEvent {
+  final String requestId;
+  final String stage;
+  final String label;
+  final String? detail;
+  final String? thoughtSummary;
+  final String? thoughtSignature;
+  final String? inferenceSource;
+  final bool isCompleted;
+  final DateTime timestamp;
+
+  AnalysisStreamEvent({
+    required this.requestId,
+    required this.stage,
+    required this.label,
+    this.detail,
+    this.thoughtSummary,
+    this.thoughtSignature,
+    this.inferenceSource,
+    this.isCompleted = false,
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
+
+  factory AnalysisStreamEvent.fromMap(Map<dynamic, dynamic> map) {
+    final rawThought = (map['thoughtSummary'] as String?)?.trim();
+    final rawSignature = (map['thoughtSignature'] as String?)?.trim();
+    final rawDetail = (map['detail'] as String?)?.trim();
+    return AnalysisStreamEvent(
+      requestId: map['requestId'] as String? ?? '',
+      stage: map['stage'] as String? ?? 'processing',
+      label: map['label'] as String? ?? 'Processing request',
+      detail: rawDetail?.isNotEmpty == true ? rawDetail : null,
+      thoughtSummary: rawThought?.isNotEmpty == true ? rawThought : null,
+      thoughtSignature: rawSignature?.isNotEmpty == true ? rawSignature : null,
+      inferenceSource: map['inferenceSource'] as String?,
+      isCompleted: map['isCompleted'] as bool? ?? false,
+    );
+  }
+}
+
 class HybridAnalysisResult {
   final int schemaVersion;
   final String requestId;
   final HybridStatus status;
   final String inferenceSource; // "ON_DEVICE" | "IN_CLOUD" | "UNKNOWN"
   final Map<String, dynamic>? structuredOutput;
+  final String? thoughtSummary;
+  final String? thoughtSignature;
+  final List<String> thoughtSignatures;
   final String? errorCode;
   final String? message;
 
@@ -68,17 +111,29 @@ class HybridAnalysisResult {
     required this.status,
     required this.inferenceSource,
     this.structuredOutput,
+    this.thoughtSummary,
+    this.thoughtSignature,
+    this.thoughtSignatures = const [],
     this.errorCode,
     this.message,
   });
 
   factory HybridAnalysisResult.fromMap(Map<dynamic, dynamic> map) {
+    final rawThought = (map['thoughtSummary'] as String?)?.trim();
+    final rawSignature = (map['thoughtSignature'] as String?)?.trim();
     return HybridAnalysisResult(
       schemaVersion: map['schemaVersion'] as int? ?? 1,
       requestId: map['requestId'] as String? ?? '',
       status: _parseStatus(map['status'] as String?),
       inferenceSource: map['inferenceSource'] as String? ?? 'UNKNOWN',
       structuredOutput: (map['structuredOutput'] as Map?)?.cast<String, dynamic>(),
+      thoughtSummary: rawThought?.isNotEmpty == true ? rawThought : null,
+      thoughtSignature: rawSignature?.isNotEmpty == true ? rawSignature : null,
+      thoughtSignatures: (map['thoughtSignatures'] as List?)
+              ?.map((e) => e.toString().trim())
+              .where((e) => e.isNotEmpty)
+              .toList(growable: false) ??
+          const [],
       errorCode: map['errorCode'] as String?,
       message: map['message'] as String?,
     );
@@ -97,6 +152,45 @@ class HybridAnalysisResult {
 
 class HybridAiBridge {
   static const MethodChannel _channel = MethodChannel('com.enprive/hybrid_ai');
+  static final Set<StreamController<AnalysisStreamEvent>> _nativeListeners = {};
+  static bool _handlerBound = false;
+
+  final StreamController<AnalysisStreamEvent> _analysisEventsController =
+      StreamController<AnalysisStreamEvent>.broadcast();
+
+  Stream<AnalysisStreamEvent> get analysisEvents {
+    _nativeListeners.add(_analysisEventsController);
+    _ensureHandlerBound();
+    return _analysisEventsController.stream;
+  }
+
+  void emitProcessEvent(AnalysisStreamEvent event) {
+    if (!_analysisEventsController.isClosed) {
+      _analysisEventsController.add(event);
+    }
+  }
+
+  static void _ensureHandlerBound() {
+    if (_handlerBound) return;
+    try {
+      _channel.setMethodCallHandler((call) async {
+        if (call.method == 'onAnalysisStreamEvent') {
+          final args = call.arguments;
+          if (args is Map) {
+            final event = AnalysisStreamEvent.fromMap(args);
+            for (final controller in List.of(_nativeListeners)) {
+              if (!controller.isClosed) {
+                controller.add(event);
+              }
+            }
+          }
+        }
+      });
+      _handlerBound = true;
+    } catch (_) {
+      // Pure Dart unit tests without ServicesBinding initialized skip MethodChannel registration.
+    }
+  }
 
   /// Queries the Android device for Gemini Nano 4 readiness.
   Future<DeviceCapability> getDeviceCapability() async {
@@ -118,6 +212,13 @@ class HybridAiBridge {
         apiLevel: 0,
         userMessage: 'Capability check error: ${e.message}',
       );
+    } on MissingPluginException {
+      return const DeviceCapability(
+        isSupported: false,
+        modelStatus: ModelDownloadStatus.unavailable,
+        apiLevel: 0,
+        userMessage: 'Native Android bridge not attached.',
+      );
     }
   }
 
@@ -128,6 +229,20 @@ class HybridAiBridge {
       return DeviceCapability._parseDownloadStatus(res);
     } on PlatformException {
       return ModelDownloadStatus.failed;
+    } on MissingPluginException {
+      return ModelDownloadStatus.unavailable;
+    }
+  }
+
+  /// Warms up the on-device Gemini Nano 4 model in AICore before inference.
+  Future<bool> warmUpModel() async {
+    try {
+      final res = await _channel.invokeMethod<bool>('warmUpModel');
+      return res ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
     }
   }
 
@@ -145,6 +260,36 @@ class HybridAiBridge {
     }
   }
 
+  /// Speaks [text] aloud using the local Android TextToSpeech engine.
+  Future<bool> speakText(
+    String text, {
+    String languageCode = 'en',
+  }) async {
+    try {
+      final res = await _channel.invokeMethod<bool>('speakText', {
+        'text': text,
+        'languageCode': languageCode,
+      });
+      return res ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  /// Stops any active Android TextToSpeech playback.
+  Future<bool> stopSpeaking() async {
+    try {
+      final res = await _channel.invokeMethod<bool>('stopSpeaking');
+      return res ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   /// Sends text for hybrid evaluation.
   /// If [cloudConsent] is false, native code strictly enforces ONLY_ON_DEVICE.
   Future<HybridAnalysisResult> analyseText({
@@ -152,17 +297,22 @@ class HybridAiBridge {
     required String task,
     required String text,
     required bool cloudConsent,
+    String? requestedMode,
     String? sourceSnapshotId,
+    String languageCode = 'en',
   }) async {
     try {
+      final effectiveMode =
+          requestedMode ?? (cloudConsent ? 'PREFER_ON_DEVICE' : 'ONLY_ON_DEVICE');
       final res = await _channel.invokeMethod<Map>('analyseText', {
         'schemaVersion': 1,
         'requestId': requestId,
         'task': task,
         'text': text,
-        'requestedMode': cloudConsent ? 'ONLY_IN_CLOUD' : 'ONLY_ON_DEVICE',
+        'requestedMode': cloudConsent ? effectiveMode : 'ONLY_ON_DEVICE',
         'cloudConsent': cloudConsent,
         'sourceSnapshotId': sourceSnapshotId,
+        'languageCode': languageCode,
       });
 
       if (res == null) {
@@ -184,6 +334,33 @@ class HybridAiBridge {
         errorCode: e.code,
         message: e.message,
       );
+    } on MissingPluginException {
+      return HybridAnalysisResult(
+        schemaVersion: 1,
+        requestId: requestId,
+        status: HybridStatus.unavailable,
+        inferenceSource: 'UNKNOWN',
+        errorCode: 'MISSING_PLUGIN',
+        message: 'On-device AI bridge unavailable in this environment.',
+      );
+    }
+  }
+
+  /// Queries launchable apps installed on this Android device via local
+  /// PackageManager `<queries>` MAIN/LAUNCHER resolution.
+  /// Privacy guardrail: This list is strictly local and never sent to cloud/AI.
+  Future<List<InstalledAppEntry>> listLaunchableApps() async {
+    try {
+      final res = await _channel.invokeMethod<List>('listLaunchableApps');
+      if (res == null) return const [];
+      return res
+          .whereType<Map>()
+          .map(InstalledAppEntry.fromMap)
+          .toList(growable: false);
+    } on PlatformException {
+      return const [];
+    } on MissingPluginException {
+      return const [];
     }
   }
 
@@ -196,6 +373,75 @@ class HybridAiBridge {
       return res?.cast<String, dynamic>() ?? {};
     } on PlatformException catch (e) {
       return {'error': e.message};
+    } on MissingPluginException {
+      return {'error': 'Native package inspector unavailable.'};
     }
   }
+
+  /// Typed wrapper around [inspectSelectedApp] returning [AppPermissionSnapshot].
+  Future<AppPermissionSnapshot?> inspectAppSnapshot(String packageName) async {
+    final map = await inspectSelectedApp(packageName);
+    if (map.isEmpty || map.containsKey('error')) return null;
+    return AppPermissionSnapshot.fromMap(map);
+  }
+}
+
+class InstalledAppEntry {
+  final String packageName;
+  final String appName;
+  final bool isSystemApp;
+
+  const InstalledAppEntry({
+    required this.packageName,
+    required this.appName,
+    this.isSystemApp = false,
+  });
+
+  factory InstalledAppEntry.fromMap(Map<dynamic, dynamic> map) {
+    return InstalledAppEntry(
+      packageName: map['packageName'] as String? ?? '',
+      appName: map['appName'] as String? ?? '',
+      isSystemApp: map['isSystemApp'] as bool? ?? false,
+    );
+  }
+}
+
+class AppPermissionSnapshot {
+  final String packageName;
+  final String appName;
+  final List<String> requestedPermissions;
+  final List<String> grantedPermissions;
+
+  const AppPermissionSnapshot({
+    required this.packageName,
+    required this.appName,
+    required this.requestedPermissions,
+    required this.grantedPermissions,
+  });
+
+  factory AppPermissionSnapshot.fromMap(Map<dynamic, dynamic> map) {
+    return AppPermissionSnapshot(
+      packageName: map['packageName'] as String? ?? '',
+      appName: map['appName'] as String? ?? '',
+      requestedPermissions: (map['requestedPermissions'] as List?)
+              ?.map((e) => e.toString())
+              .toList(growable: false) ??
+          const [],
+      grantedPermissions: (map['grantedPermissions'] as List?)
+              ?.map((e) => e.toString())
+              .toList(growable: false) ??
+          const [],
+    );
+  }
+
+  bool isGranted(String permission) => grantedPermissions.contains(permission);
+  bool isRequested(String permission) =>
+      requestedPermissions.contains(permission);
+
+  Map<String, dynamic> toJson() => {
+        'packageName': packageName,
+        'appName': appName,
+        'requestedPermissions': requestedPermissions,
+        'grantedPermissions': grantedPermissions,
+      };
 }
