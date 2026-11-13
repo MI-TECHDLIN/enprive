@@ -215,8 +215,8 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
         const SizedBox(height: 28),
         Text(
           _isKorean
-              ? '안녕하세요, 데니예요!\n어려운 약관을 함께 읽어드릴게요.'
-              : "Hi, I'm Deni!\nI'll help you read privacy terms.",
+              ? '안녕하세요, 데니예요.\n어려운 약관의 핵심만 같이 짚어드릴게요.'
+              : "Hi, I'm Deni.\nI read the fine print with you.",
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.displayMedium?.copyWith(
                 fontSize: 27,
@@ -228,8 +228,8 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             _isKorean
-                ? '약관 원문의 정확한 문장을 찾아 보여드리며, 근거 없이 앱이 안전하다고 단정하지 않아요.'
-                : 'I highlight verbatim quotes from app policies and never call an app "safe" without evidence.',
+                ? '모든 안내는 약관의 정확한 원문 문장에 근거하며, 근거 없이 앱이 안전하다고 단정하지 않아요.'
+                : 'I point to the exact lines in an app’s policy—and I’ll never guess or stamp an app “safe”.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: EnpriveColors.inkSecondary,
@@ -282,7 +282,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                 icon: Symbols.wb_sunny_rounded,
                 badgeBg: EnpriveColors.stateReviewRecommendedBg,
                 badgeFg: EnpriveColors.stateReviewRecommendedFg,
-                title: _isKorean ? '간단한 요약' : 'Simple\nsummary',
+                title: _isKorean ? '핵심만 간단히' : 'Quick &\nplain',
                 isSelected: _selectedDepth == ExplanationDepth.simple,
                 onTap: () =>
                     setState(() => _selectedDepth = ExplanationDepth.simple),
@@ -291,7 +291,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                 icon: Symbols.balance_rounded,
                 badgeBg: EnpriveColors.stateNoConcernBg,
                 badgeFg: EnpriveColors.stateNoConcernFg,
-                title: _isKorean ? '균형 잡힌 설명' : 'Balanced\nexplanation',
+                title: _isKorean ? '요약 + 원문' : 'Balanced\nview',
                 isSelected: _selectedDepth == ExplanationDepth.balanced,
                 onTap: () =>
                     setState(() => _selectedDepth = ExplanationDepth.balanced),
@@ -300,7 +300,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                 icon: Symbols.article_rounded,
                 badgeBg: EnpriveColors.chipInCloudBg,
                 badgeFg: EnpriveColors.chipInCloudFg,
-                title: _isKorean ? '상세 조항 분석' : 'Detailed\nclauses',
+                title: _isKorean ? '조항별 자세히' : 'Full\ndetail',
                 isSelected: _selectedDepth == ExplanationDepth.detailed,
                 onTap: () =>
                     setState(() => _selectedDepth = ExplanationDepth.detailed),
@@ -368,27 +368,27 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
               children: [
                 _ReadinessGuaranteeRow(
                   icon: Symbols.memory_rounded,
-                  title: _isKorean ? '기기 내 분석 우선' : 'On-device analysis first',
+                  title: _isKorean ? '이 기기에서 먼저 확인' : 'Checked here first',
                   subtitle: _isKorean
-                      ? 'Gemini Nano 또는 내장 문장 스캐너로 기기 안에서 약관을 대조합니다.'
-                      : 'Policy clauses are matched locally with Gemini Nano or the built-in clause scanner.',
+                      ? '약관은 기기 내 모델과 로컬 스캐너로 먼저 대조합니다.'
+                      : 'Policies are read on your phone before anything else.',
                 ),
                 const SizedBox(height: 16),
                 _ReadinessGuaranteeRow(
                   icon: Symbols.phonelink_lock_rounded,
                   title:
-                      _isKorean ? '앱 목록·권한 외부 전송 없음' : 'App lists stay on phone',
+                      _isKorean ? '앱 목록·권한은 폰 안에만' : 'Your apps stay yours',
                   subtitle: _isKorean
-                      ? '설치된 앱과 Android 권한 정보는 클라우드나 AI 프롬프트로 절대 전송되지 않습니다.'
-                      : 'Installed app lists and Android permissions never leave your phone.',
+                      ? '설치된 앱과 Android 권한 정보는 폰 밖으로 나가지 않습니다.'
+                      : 'The apps on this phone and their permissions never leave it.',
                 ),
                 const SizedBox(height: 16),
                 _ReadinessGuaranteeRow(
                   icon: Symbols.cloud_off_rounded,
-                  title: _isKorean ? '사전 동의 없는 클라우드 차단' : 'No silent cloud calls',
+                  title: _isKorean ? '묻지 않고 업로드 안 함' : 'Never uploaded without asking',
                   subtitle: _isKorean
-                      ? '클라우드 AI는 사용자가 해당 검사에 직접 동의한 경우에만 1회 실행됩니다.'
-                      : 'Cloud AI is blocked unless you explicitly approve it for a single check.',
+                      ? '클라우드 분석은 직접 허용한 그 검사 1회에만 실행됩니다.'
+                      : 'Cloud analysis only runs for the one check you approve.',
                 ),
               ],
             ),

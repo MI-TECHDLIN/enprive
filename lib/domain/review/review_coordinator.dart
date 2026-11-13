@@ -193,17 +193,30 @@ class ReviewCoordinator {
       }
     }
 
-    // Grounded deterministic on-device response when offline or without AICore
+    // Question-aware grounded response when offline or without AICore
+    final qLower = question.toLowerCase();
+    final String groundedAnswer;
+    if (qLower.contains('turn this off') || qLower.contains('opt out')) {
+      groundedAnswer =
+          'Look for a toggle in the app’s settings or Android App Permissions, '
+          'and check whether a parent or school admin must request deletion. '
+          'The quoted line does not show a one-tap opt-out.';
+    } else if (qLower.contains('unknown')) {
+      groundedAnswer = finding.unknowns.isNotEmpty
+          ? finding.unknowns.first
+          : 'This policy text does not prove how often data leaves the phone in practice.';
+    } else {
+      groundedAnswer = finding.explanation;
+    }
+
     return DeniExplanation(
       question: question,
-      answer:
-          'Based strictly on the captured excerpt, ${finding.explanation} '
-          'Because Enprive only trusts verbatim evidence, I recommend checking whether this setting can be disabled before a child uses the app.',
+      answer: groundedAnswer,
       whatPolicySays:
-          'The policy explicitly states: "${finding.exactExcerpt}"',
+          'Policy quote: “${finding.exactExcerpt}”',
       unknownBoundary: finding.unknowns.isNotEmpty
           ? finding.unknowns.first
-          : 'This policy excerpt alone cannot verify whether the app actively transmits this data right now.',
+          : 'The policy text alone cannot show whether the app transmits this data right now.',
       inferenceSource: InferenceSource.onDevice,
     );
   }
@@ -362,14 +375,14 @@ class ReviewCoordinator {
               lower.contains('share'))) {
         findings.add(_buildVerifiedLocalFinding(
           id: 'local_$idx',
-          title: 'Precise or Background Location Collection',
+          title: 'Tracks location even in the background',
           category: FindingCategory.tracking,
           severity: FindingSeverity.high,
           excerpt: sentence,
           explanation:
-              'This clause indicates that precise or background location data may be collected or shared while a student uses the app.',
+              'The app can read your child’s exact GPS location even when it isn’t open on screen.',
           unknown:
-              'The policy text does not prove whether Android OS location permissions are currently granted on this phone.',
+              'The policy text doesn’t show whether location permission is actually granted on this phone.',
           snapshotText: policyText,
         ));
         idx++;
@@ -382,14 +395,14 @@ class ReviewCoordinator {
               lower.contains('record'))) {
         findings.add(_buildVerifiedLocalFinding(
           id: 'local_$idx',
-          title: 'Voice Recording & Model Training Retention',
+          title: 'Keeps child voice recordings to train AI',
           category: FindingCategory.retention,
           severity: FindingSeverity.high,
           excerpt: sentence,
           explanation:
-              'Student voice recordings or transcripts may be stored long-term and used to train automated recognition models.',
+              'Your child’s voice recordings are kept indefinitely to train speech models unless a school admin requests deletion.',
           unknown:
-              'Does not specify whether parents can delete individual recordings directly without a school administrator.',
+              'It doesn’t say if a parent can delete recordings directly without going through a school admin.',
           snapshotText: policyText,
         ));
         idx++;
@@ -398,14 +411,14 @@ class ReviewCoordinator {
           lower.contains('behavioral promotions')) {
         findings.add(_buildVerifiedLocalFinding(
           id: 'local_$idx',
-          title: 'Third-Party Advertising & Analytics Sharing',
+          title: 'Shares ad IDs with external partners',
           category: FindingCategory.sharing,
           severity: FindingSeverity.medium,
           excerpt: sentence,
           explanation:
-              'Identifiers or usage events may be shared with external advertising or analytics partners.',
+              'Ad partners can follow what your child taps in the app using a persistent advertising ID.',
           unknown:
-              'Does not list the specific third-party ad networks or whether child-directed treatment flags are enforced.',
+              'It doesn’t name the ad networks or confirm whether child-directed ad limits are turned on.',
           snapshotText: policyText,
         ));
         idx++;
@@ -413,14 +426,14 @@ class ReviewCoordinator {
           lower.contains('revoking') && lower.contains('permissions')) {
         findings.add(_buildVerifiedLocalFinding(
           id: 'local_$idx',
-          title: 'Permission Revocation Trade-Off',
+          title: 'Features may break if permissions are off',
           category: FindingCategory.parentalConsent,
           severity: FindingSeverity.low,
           excerpt: sentence,
           explanation:
-              'Turning off microphone or location permissions in Android Settings may restrict certain homework features.',
+              'Turning off mic or location access in Android Settings may lock some classroom or homework tools.',
           unknown:
-              'Does not specify which offline features remain usable when permissions are denied.',
+              'It doesn’t list which offline activities still work with permissions turned off.',
           snapshotText: policyText,
         ));
         idx++;
@@ -475,9 +488,9 @@ class ReviewCoordinator {
       exactExcerpt: EvidenceValidator.normalize(excerpt),
       explanation: explanation,
       whatPolicySays:
-          'Matched verbatim in the captured policy snapshot (${EvidenceValidator.normalize(excerpt).length} chars).',
+          'Exact match found in this policy (${EvidenceValidator.normalize(excerpt).length} chars).',
       whatAndroidReports:
-          'Local policy snapshot check. Use "Check an app" to compare against Android OS permission state.',
+          'Text-only check. Pick this app under Check an app to see what Android actually allows.',
       unknowns: [unknown],
       status: isMatched ? EvidenceStatus.sourceMatched : EvidenceStatus.unverified,
       contextWindow: EvidenceValidator.extractContextWindow(
@@ -542,11 +555,11 @@ class ReviewCoordinator {
   ) {
     return switch (state) {
       ReviewOverallState.reviewRecommended =>
-        '$findingCount source-matched policy ${findingCount == 1 ? 'passage deserves' : 'passages deserve'} a closer look by a parent or teacher.',
+        '$findingCount ${findingCount == 1 ? 'part of this policy needs' : 'parts of this policy need'} a closer look before a child uses this app.',
       ReviewOverallState.noConcern =>
-        'No concerning data collection, sharing, or indefinite retention clauses were identified in the reviewed text.',
+        'No data sharing, tracking, or long-term retention clauses stood out in the text we reviewed.',
       ReviewOverallState.insufficientEvidence =>
-        'The provided excerpt did not contain enough verifiable policy statements to reach a conclusion.',
+        'There wasn’t enough clear policy text here to verify what the app collects.',
     };
   }
 }

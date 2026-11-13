@@ -15,25 +15,28 @@ void main() {
   setUp(() {
     recordedCalls.clear();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(const MethodChannel('com.enprive/hybrid_ai'), (call) async {
-      recordedCalls.add(call);
-      if (call.method == 'getDeviceCapability') {
-        return {
-          'isSupported': true,
-          'modelStatus': 'AVAILABLE',
-          'modelCategory': 'PREVIEW',
-          'apiLevel': 34,
-          'userMessage': 'Gemini Nano 4 is ready on this device.',
-        };
-      }
-      if (call.method == 'getInitialSelectedText') {
-        return null;
-      }
-      if (call.method == 'speakText' || call.method == 'stopSpeaking') {
-        return true;
-      }
-      return null;
-    });
+        .setMockMethodCallHandler(
+          const MethodChannel('com.enprive/hybrid_ai'),
+          (call) async {
+            recordedCalls.add(call);
+            if (call.method == 'getDeviceCapability') {
+              return {
+                'isSupported': true,
+                'modelStatus': 'AVAILABLE',
+                'modelCategory': 'PREVIEW',
+                'apiLevel': 34,
+                'userMessage': 'Gemini Nano 4 is ready on this device.',
+              };
+            }
+            if (call.method == 'getInitialSelectedText') {
+              return null;
+            }
+            if (call.method == 'speakText' || call.method == 'stopSpeaking') {
+              return true;
+            }
+            return null;
+          },
+        );
   });
 
   tearDown(() {
@@ -69,42 +72,50 @@ void main() {
     },
   );
 
-  testWidgets('EnpriveApp renders cleanly at 200% text scale and reduced motion across all tabs', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const MediaQuery(
-        data: MediaQueryData(
-          textScaler: TextScaler.linear(2.0),
-          disableAnimations: true,
+  testWidgets(
+    'EnpriveApp renders cleanly at 200% text scale and reduced motion across all tabs',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MediaQuery(
+          data: MediaQueryData(
+            textScaler: TextScaler.linear(2.0),
+            disableAnimations: true,
+          ),
+          child: EnpriveApp(),
         ),
-        child: EnpriveApp(),
-      ),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Enprive'), findsOneWidget);
+      expect(find.text('Enprive'), findsOneWidget);
 
-    // Switch to Settings tab at 200% text scale
-    await tester.tap(find.text('Settings').last);
-    await tester.pump();
-    expect(find.text('Preferences'), findsOneWidget);
-  });
+      // Switch to Settings tab at 200% text scale
+      await tester.tap(find.text('Settings').last);
+      await tester.pump();
+      expect(find.text('Preferences'), findsOneWidget);
+    },
+  );
 
-  test('HybridAiBridge speakText and stopSpeaking invoke native TTS channel', () async {
-    final bridge = HybridAiBridge();
-    final spoke = await bridge.speakText(
-      'No concern identified in the reviewed evidence.',
-      languageCode: 'en',
-    );
-    expect(spoke, isTrue);
-    expect(recordedCalls.any((c) => c.method == 'speakText'), isTrue);
+  test(
+    'HybridAiBridge speakText and stopSpeaking invoke native TTS channel',
+    () async {
+      final bridge = HybridAiBridge();
+      final spoke = await bridge.speakText(
+        'No concern identified in the reviewed evidence.',
+        languageCode: 'en',
+      );
+      expect(spoke, isTrue);
+      expect(recordedCalls.any((c) => c.method == 'speakText'), isTrue);
 
-    final stopped = await bridge.stopSpeaking();
-    expect(stopped, isTrue);
-    expect(recordedCalls.any((c) => c.method == 'stopSpeaking'), isTrue);
-  });
+      final stopped = await bridge.stopSpeaking();
+      expect(stopped, isTrue);
+      expect(recordedCalls.any((c) => c.method == 'stopSpeaking'), isTrue);
+    },
+  );
 
-  testWidgets('OnboardingFlowScreen navigates across all 3 B2-B3-B19 steps', (WidgetTester tester) async {
+  testWidgets('OnboardingFlowScreen navigates across all 3 B2-B3-B19 steps', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: OnboardingFlowScreen(
@@ -117,14 +128,14 @@ void main() {
     await tester.pump();
 
     // Step 0 (B2 Mascot Intro)
-    expect(find.textContaining("Hi, I'm Deni!"), findsOneWidget);
+    expect(find.textContaining("Hi, I'm Deni."), findsOneWidget);
 
     await tester.tap(find.text('Continue'));
     await tester.pump(const Duration(milliseconds: 300));
 
     // Step 1 (B3 Question Cards)
     expect(find.textContaining('How should I explain'), findsOneWidget);
-    await tester.tap(find.textContaining('Simple'));
+    await tester.tap(find.textContaining('Quick &'));
     await tester.pump();
 
     await tester.tap(find.text('Continue'));
@@ -135,18 +146,21 @@ void main() {
     expect(find.text('Get started'), findsOneWidget);
   });
 
-  testWidgets('ReviewProgressCard renders 4-segment progress and subject title', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: ReviewProgressCard(
-            subjectTitle: 'EduTrack Classroom Companion',
+  testWidgets(
+    'ReviewProgressCard renders 4-segment progress and subject title',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ReviewProgressCard(
+              subjectTitle: 'EduTrack Classroom Companion',
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pump();
-    expect(find.text('EduTrack Classroom Companion'), findsOneWidget);
-    expect(find.textContaining('Step 1 of 4'), findsOneWidget);
-  });
+      );
+      await tester.pump();
+      expect(find.text('EduTrack Classroom Companion'), findsOneWidget);
+      expect(find.textContaining('Step 1 of 4'), findsOneWidget);
+    },
+  );
 }

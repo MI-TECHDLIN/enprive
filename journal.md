@@ -300,6 +300,22 @@
 
 ---
 
+### Iteration 10.1 — Plain-Language Explanation Copy Polish & App Picker `Material` Fix (`feature/onboarding-and-process-text-flow`)
+- **Date**: 2026-11-13
+- **Branch / Commits**: `feature/onboarding-and-process-text-flow`
+- **Models Used**: Gemini 4 Argon + Gemini 4 Hydrogen
+- **What Was Built**:
+  - **Question-Aware & Human-Centered Explanation Copy (`review_coordinator.dart`, `onboarding_flow_screen.dart`, `settings_screen.dart`, `main.dart`)**:
+    - Replaced generic AI-sounding fallback copy in `askDeniAboutFinding` with question-aware answers that directly respond to *"Can we turn this off or opt out?"*, *"What is still unknown here?"*, and *"What does this mean for my child?"*.
+    - Rewrote deterministic finding titles, plain-language explanations, unknowns, onboarding steps (`Quick & plain`, `Balanced view`, `Full detail`, *Checked here first*, *Your apps stay yours*, *Never uploaded without asking*), Settings depth cards, and Deni pose dialogues into concise, direct parent/teacher language.
+  - **Installed App Picker Surface Fix (`lib/widgets/installed_app_picker_sheet.dart`)**:
+    - Wrapped the launchable app `ListTile` list in `Material(color: EnpriveColors.surface, borderRadius: BorderRadius.circular(24), clipBehavior: Clip.antiAlias)` to eliminate the Flutter `ListTile background color or ink splashes may be invisible` framework assertion during emulator testing.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **17/17 tests passing**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Final Release & PR Consolidation (`main` merge & APK verification)**

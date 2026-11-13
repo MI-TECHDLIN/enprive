@@ -279,11 +279,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     ),
                   )
                 else
-                  Container(
-                    decoration: BoxDecoration(
-                      color: EnpriveColors.surface,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
+                  Material(
+                    color: EnpriveColors.surface,
+                    borderRadius: BorderRadius.circular(24),
                     clipBehavior: Clip.antiAlias,
                     child: Column(
                       children:

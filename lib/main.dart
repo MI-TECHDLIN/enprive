@@ -347,19 +347,21 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
   String _poseDialogue(DeniPose pose, AppLocalizations l10n, bool isKorean) {
     return switch (pose) {
-      DeniPose.idle => l10n.deniIntro,
+      DeniPose.idle => isKorean
+          ? '아이들이 쓰는 앱의 약관과 실제 권한을 나란히 짚어드려요.'
+          : 'Pick an app or paste its policy—I’ll point to the exact lines that matter.',
       DeniPose.thinking => isKorean
-          ? '기기 내 Gemini Nano로 약관 문장을 대조하고 있어요.'
+          ? '이 휴대폰 안에서 약관 문장을 하나씩 대조하고 있어요.'
           : 'Matching policy clauses on-device with Gemini Nano.',
       DeniPose.explaining => isKorean
-          ? '발견된 모든 항목은 원문 약관의 정확한 인용구와 함께 표시됩니다.'
-          : 'Every finding is anchored to a verbatim quote from the policy.',
+          ? '모든 알림은 실제 약관 원문의 문장과 바로 연결됩니다.'
+          : 'Every concern links straight back to a verbatim line in the policy.',
       DeniPose.listening => isKorean
-          ? '결과 요약을 한국어 또는 영어로 차분하게 읽어드릴 수 있어요.'
-          : 'I can read the evidence summary aloud whenever you are ready.',
+          ? '결과 화면에서 스피커를 누르면 요약을 차분하게 읽어드려요.'
+          : 'Tap the speaker on any result and I’ll read the summary aloud.',
       DeniPose.support => isKorean
-          ? '원문에서 확인할 수 없는 내용은 추측하지 않고 미확인으로 안내해 드려요.'
-          : 'If a claim cannot be matched to the text, I mark it unverified.',
+          ? '약관에 근거가 없는 내용은 추측하지 않고 미확인으로 남깁니다.'
+          : 'If the policy doesn’t say it, I mark it unknown instead of guessing.',
       DeniPose.celebrating => l10n.stateNoConcernSubtitle,
     };
   }

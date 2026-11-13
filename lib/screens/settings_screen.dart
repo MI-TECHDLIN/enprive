@@ -64,14 +64,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _isCheckingModel = false;
       if (updated != null) {
-        _modelActionFeedback = updated.isSupported &&
+        _modelActionFeedback =
+            updated.isSupported &&
                 updated.modelStatus == ModelDownloadStatus.available
-            ? (ko
-                ? '온디바이스 모델이 준비되었습니다.'
-                : 'On-device AI is active and ready.')
+            ? (ko ? '온디바이스 모델이 준비되었습니다.' : 'On-device AI is active and ready.')
             : (ko
-                ? '내장된 로컬 약관 스캐너로 안전하게 작동 중입니다.'
-                : 'Protected by built-in local clause scanning.');
+                  ? '내장된 로컬 약관 스캐너로 안전하게 작동 중입니다.'
+                  : 'Protected by built-in local clause scanning.');
       }
     });
   }
@@ -246,15 +245,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final (icon, label) = switch (depth) {
                   ExplanationDepth.simple => (
                     Symbols.auto_awesome_rounded,
-                    ko ? '간단히' : 'Simple',
+                    ko ? '핵심만' : 'Quick',
                   ),
                   ExplanationDepth.balanced => (
                     Symbols.balance_rounded,
-                    ko ? '균형 있게' : 'Balanced',
+                    ko ? '요약+원문' : 'Balanced',
                   ),
                   ExplanationDepth.detailed => (
                     Symbols.menu_book_rounded,
-                    ko ? '자세히' : 'Detailed',
+                    ko ? '자세히' : 'Full detail',
                   ),
                 };
                 return Expanded(
