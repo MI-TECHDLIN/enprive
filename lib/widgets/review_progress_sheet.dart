@@ -1,6 +1,6 @@
 import 'package:animated_status_card/animated_status_card.dart';
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../core/theme/enprive_colors.dart';
@@ -55,7 +55,7 @@ class ReviewProgressCard extends StatelessWidget {
                 ? '이 휴대폰에서 검토하는 중…'
                 : 'Reviewing on this phone…',
             value: subjectTitle,
-            icon: Symbols.shield_lock_rounded,
+            icon: LucideIcons.shieldCheck,
             trendValue: isCloudCheck
                 ? (isKorean ? 'App Check' : 'App Check')
                 : (isKorean ? 'LIVE' : 'LIVE'),

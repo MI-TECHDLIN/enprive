@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:iconify_flutter/icons/ph.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../core/theme/enprive_colors.dart';
 import '../services/storage/receipt_repository.dart';
 import '../widgets/deni_animated_mascot.dart';
+import '../widgets/enprive_duotone_icon.dart';
 import '../widgets/enprive_tactile_button.dart';
 
 class OnboardingFlowResult {
@@ -107,8 +109,8 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                     IconButton(
                       onPressed: _handleBack,
                       icon: const Icon(
-                        Symbols.arrow_back_ios_new_rounded,
-                        size: 20,
+                        LucideIcons.chevronLeft,
+                        size: 22,
                         color: EnpriveColors.ink,
                       ),
                     ),
@@ -280,7 +282,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
             childAspectRatio: 0.94,
             children: [
               _B3GridChoiceCard(
-                icon: Symbols.wb_sunny_rounded,
+                iconSvg: Ph.sun_duotone,
                 badgeBg: EnpriveColors.stateReviewRecommendedBg,
                 badgeFg: EnpriveColors.stateReviewRecommendedFg,
                 title: _isKorean ? '핵심만 간단히' : 'Quick &\nplain',
@@ -289,7 +291,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                     setState(() => _selectedDepth = ExplanationDepth.simple),
               ),
               _B3GridChoiceCard(
-                icon: Symbols.balance_rounded,
+                iconSvg: Ph.scales_duotone,
                 badgeBg: EnpriveColors.stateNoConcernBg,
                 badgeFg: EnpriveColors.stateNoConcernFg,
                 title: _isKorean ? '요약 + 원문' : 'Balanced\nview',
@@ -298,7 +300,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                     setState(() => _selectedDepth = ExplanationDepth.balanced),
               ),
               _B3GridChoiceCard(
-                icon: Symbols.article_rounded,
+                iconSvg: Ph.book_open_duotone,
                 badgeBg: EnpriveColors.chipInCloudBg,
                 badgeFg: EnpriveColors.chipInCloudFg,
                 title: _isKorean ? '조항별 자세히' : 'Full\ndetail',
@@ -356,7 +358,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
             child: Column(
               children: [
                 _ReadinessGuaranteeRow(
-                  icon: Symbols.memory_rounded,
+                  iconSvg: Ph.cpu_duotone,
                   title: _isKorean ? '이 기기에서 먼저 확인' : 'Checked here first',
                   subtitle: _isKorean
                       ? '약관은 기기 내 모델과 로컬 스캐너로 먼저 대조합니다.'
@@ -364,7 +366,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                 ),
                 const SizedBox(height: 16),
                 _ReadinessGuaranteeRow(
-                  icon: Symbols.phonelink_lock_rounded,
+                  iconSvg: Ph.device_mobile_duotone,
                   title:
                       _isKorean ? '앱 목록·권한은 폰 안에만' : 'Your apps stay yours',
                   subtitle: _isKorean
@@ -373,7 +375,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                 ),
                 const SizedBox(height: 16),
                 _ReadinessGuaranteeRow(
-                  icon: Symbols.cleaning_services_rounded,
+                  iconSvg: Ph.eraser_duotone,
                   title: _isKorean ? '개인정보 자동 가림 처리' : 'Personal details scrubbed',
                   subtitle: _isKorean
                       ? '기기 내 모델이 없거나 긴 약관을 검토할 때는 이름·이메일·전화번호를 [가림] 표시로 바꾼 뒤 App Check로 안전하게 확인합니다.'
@@ -389,7 +391,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
 }
 
 class _B3GridChoiceCard extends StatelessWidget {
-  final IconData icon;
+  final String iconSvg;
   final Color badgeBg;
   final Color badgeFg;
   final String title;
@@ -397,7 +399,7 @@ class _B3GridChoiceCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _B3GridChoiceCard({
-    required this.icon,
+    required this.iconSvg,
     required this.badgeBg,
     required this.badgeFg,
     required this.title,
@@ -436,7 +438,7 @@ class _B3GridChoiceCard extends StatelessWidget {
                   color: badgeBg,
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: Icon(icon, size: 28, color: badgeFg),
+                child: EnpriveDuotoneIcon(iconSvg, size: 28, color: badgeFg),
               ),
               const SizedBox(height: 14),
               Text(
@@ -460,12 +462,12 @@ class _B3GridChoiceCard extends StatelessWidget {
 }
 
 class _ReadinessGuaranteeRow extends StatelessWidget {
-  final IconData icon;
+  final String iconSvg;
   final String title;
   final String subtitle;
 
   const _ReadinessGuaranteeRow({
-    required this.icon,
+    required this.iconSvg,
     required this.title,
     required this.subtitle,
   });
@@ -482,8 +484,8 @@ class _ReadinessGuaranteeRow extends StatelessWidget {
             color: EnpriveColors.surfaceMuted,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            icon,
+          child: EnpriveDuotoneIcon(
+            iconSvg,
             size: 20,
             color: EnpriveColors.tealStrong,
           ),

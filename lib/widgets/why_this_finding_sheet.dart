@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:iconify_flutter/icons/ph.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_theme.dart';
@@ -8,6 +9,7 @@ import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
 import 'analysis_process_trace.dart';
 import 'deni_animated_mascot.dart';
+import 'enprive_duotone_icon.dart';
 import 'enprive_provenance_chip.dart';
 
 /// Brilliant B30-inspired Evidence Work Card + Docked "Ask Deni" Sheet.
@@ -125,7 +127,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                 IconButton(
                   tooltip: 'Close',
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Symbols.close_rounded, size: 24),
+                  icon: const Icon(LucideIcons.x, size: 22),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -282,7 +284,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                         child: Column(
                           children: [
                             _CompactEvidenceRow(
-                              icon: Symbols.lightbulb_rounded,
+                              iconSvg: Ph.lightbulb_duotone,
                               iconColor: EnpriveColors.tealStrong,
                               label: 'In plain language',
                               body: finding.explanation,
@@ -292,7 +294,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                               color: EnpriveColors.ink.withValues(alpha: 0.08),
                             ),
                             _CompactEvidenceRow(
-                              icon: Symbols.phone_android_rounded,
+                              iconSvg: Ph.device_mobile_duotone,
                               iconColor: EnpriveColors.chipOnDeviceFg,
                               label: 'On this phone',
                               body: finding.whatAndroidReports,
@@ -305,7 +307,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                                 ),
                               ),
                               _CompactEvidenceRow(
-                                icon: Symbols.help_outline_rounded,
+                                iconSvg: Ph.question_duotone,
                                 iconColor:
                                     EnpriveColors.stateReviewRecommendedFg,
                                 label: 'What remains unknown',
@@ -495,13 +497,13 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
 }
 
 class _CompactEvidenceRow extends StatelessWidget {
-  final IconData icon;
+  final String iconSvg;
   final Color iconColor;
   final String label;
   final String body;
 
   const _CompactEvidenceRow({
-    required this.icon,
+    required this.iconSvg,
     required this.iconColor,
     required this.label,
     required this.body,
@@ -519,7 +521,7 @@ class _CompactEvidenceRow extends StatelessWidget {
             color: iconColor.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, size: 17, color: iconColor),
+          child: EnpriveDuotoneIcon(iconSvg, size: 17, color: iconColor),
         ),
         const SizedBox(width: 12),
         Expanded(

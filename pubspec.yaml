@@ -37,7 +37,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.3
-  material_symbols_icons: ^4.2960.0
   shared_preferences: ^2.5.6
   sqflite: ^2.4.6
   path: ^1.9.1
@@ -46,6 +45,8 @@ dependencies:
   shimmer: ^4.0.0
   animated_status_card: ^0.0.1
   beautiful_timeline: ^0.1.0
+  lucide_icons_flutter: ^4.0.3
+  iconify_flutter: ^0.0.7
 
 dev_dependencies:
   flutter_test:

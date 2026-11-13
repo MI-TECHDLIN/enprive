@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:iconify_flutter/icons/ph.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../core/theme/enprive_colors.dart';
 import '../domain/permissions/permission_comparator.dart';
 import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
+import 'enprive_duotone_icon.dart';
 
 class SelectedAppInspectionChoice {
   final String subjectTitle;
@@ -153,7 +155,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     IconButton(
                       tooltip: 'Close',
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Symbols.close_rounded),
+                      icon: const Icon(LucideIcons.x),
                     ),
                   ],
                 ),
@@ -188,7 +190,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       child: _SampleAppChoiceCard(
                         title: 'EduTrack',
                         subtitle: 'Location, mic & camera',
-                        icon: Symbols.school_rounded,
+                        iconSvg: Ph.graduation_cap_duotone,
                         iconBg: EnpriveColors.stateReviewRecommendedBg,
                         iconFg: EnpriveColors.stateReviewRecommendedFg,
                         onTap: () {
@@ -210,7 +212,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       child: _SampleAppChoiceCard(
                         title: 'CalmMath',
                         subtitle: 'Offline math practice',
-                        icon: Symbols.calculate_rounded,
+                        iconSvg: Ph.calculator_duotone,
                         iconBg: EnpriveColors.stateNoConcernBg,
                         iconFg: EnpriveColors.stateNoConcernFg,
                         onTap: () {
@@ -246,7 +248,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                   onChanged: (val) => setState(() => _searchQuery = val),
                   decoration: InputDecoration(
                     hintText: 'Search apps…',
-                    prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                    prefixIcon: const Icon(LucideIcons.search, size: 19),
                     filled: true,
                     fillColor: EnpriveColors.surfaceMuted,
                     contentPadding: const EdgeInsets.symmetric(
@@ -311,8 +313,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                   color: EnpriveColors.surfaceMuted,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(
-                                  Symbols.apps_rounded,
+                                child: const EnpriveDuotoneIcon(
+                                  Ph.squares_four_duotone,
                                   color: EnpriveColors.tealStrong,
                                   size: 20,
                                 ),
@@ -326,8 +328,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                 ),
                               ),
                               trailing: const Icon(
-                                Symbols.chevron_right_rounded,
+                                LucideIcons.chevronRight,
                                 color: EnpriveColors.inkSecondary,
+                                size: 18,
                               ),
                             ),
                           ],
@@ -347,7 +350,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
 class _SampleAppChoiceCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final IconData icon;
+  final String iconSvg;
   final Color iconBg;
   final Color iconFg;
   final VoidCallback onTap;
@@ -355,7 +358,7 @@ class _SampleAppChoiceCard extends StatelessWidget {
   const _SampleAppChoiceCard({
     required this.title,
     required this.subtitle,
-    required this.icon,
+    required this.iconSvg,
     required this.iconBg,
     required this.iconFg,
     required this.onTap,
@@ -381,7 +384,7 @@ class _SampleAppChoiceCard extends StatelessWidget {
                   color: iconBg,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: iconFg, size: 22),
+                child: EnpriveDuotoneIcon(iconSvg, color: iconFg, size: 22),
               ),
               const SizedBox(height: 14),
               Text(

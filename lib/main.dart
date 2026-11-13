@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:iconify_flutter/icons/ph.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons_500.dart';
 
 import 'core/theme/enprive_colors.dart';
 import 'core/theme/enprive_theme.dart';
@@ -19,6 +21,7 @@ import 'screens/settings_screen.dart';
 import 'services/platform/hybrid_ai_bridge.dart';
 import 'services/storage/receipt_repository.dart';
 import 'widgets/deni_animated_mascot.dart';
+import 'widgets/enprive_duotone_icon.dart';
 import 'widgets/enprive_provenance_chip.dart';
 import 'widgets/enprive_tactile_button.dart';
 import 'widgets/installed_app_picker_sheet.dart';
@@ -332,10 +335,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
                 color: EnpriveColors.teal,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
-                Symbols.shield_moon_rounded,
+              child: const EnpriveDuotoneIcon(
+                Ph.shield_check_duotone,
                 color: Colors.white,
-                size: 18,
+                size: 19,
               ),
             ),
             const SizedBox(width: 10),
@@ -529,7 +532,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                   subtitle: isKorean
                       ? '숙제·출결 샘플'
                       : 'Homework & attendance',
-                  icon: Symbols.school_rounded,
+                  icon: LucideIcons.graduationCap,
                   trendValue: isKorean ? '확인 권장' : 'Review',
                   trendDirection: TrendDirection.up,
                   styleType: CardStyleType.outlined,
@@ -551,7 +554,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                   subtitle: isKorean
                       ? '오프라인 수학 샘플'
                       : 'Offline math practice',
-                  icon: Symbols.calculate_rounded,
+                  icon: LucideIcons.calculator,
                   trendValue: isKorean ? '단순함' : 'Minimal',
                   trendDirection: TrendDirection.neutral,
                   styleType: CardStyleType.outlined,
@@ -650,7 +653,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                         events: [
                           TimelineEvent(
                             date: '01',
-                            icon: Symbols.format_quote_rounded,
+                            icon: LucideIcons.quote,
                             indicatorColor: EnpriveColors.tealStrong,
                             title: isKorean
                                 ? '정확한 약관 원문'
@@ -661,7 +664,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                           ),
                           TimelineEvent(
                             date: '02',
-                            icon: Symbols.shield_lock_rounded,
+                            icon: LucideIcons.shieldAlert,
                             indicatorColor:
                                 EnpriveColors.stateReviewRecommendedFg,
                             title: isKorean
@@ -673,7 +676,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                           ),
                           TimelineEvent(
                             date: '03',
-                            icon: Symbols.touch_app_rounded,
+                            icon: LucideIcons.mousePointerClick,
                             indicatorColor: EnpriveColors.chipInCloudFg,
                             title: isKorean
                                 ? '어디서나 텍스트 선택'
@@ -725,7 +728,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
-                              Symbols.arrow_forward_rounded,
+                              LucideIcons.arrowRight,
                               size: 16,
                               color: EnpriveColors.ink,
                             ),
@@ -775,15 +778,15 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                           : EnpriveColors.stateNoConcernBg,
                                       borderRadius: BorderRadius.circular(14),
                                     ),
-                                    child: Icon(
+                                    child: EnpriveDuotoneIcon(
                                       isConcern
-                                          ? Symbols.warning_amber_rounded
-                                          : Symbols.check_circle_rounded,
+                                          ? Ph.warning_duotone
+                                          : Ph.check_circle_duotone,
                                       color: isConcern
                                           ? EnpriveColors
                                                 .stateReviewRecommendedFg
                                           : EnpriveColors.stateNoConcernFg,
-                                      size: 20,
+                                      size: 21,
                                     ),
                                   ),
                                   const SizedBox(width: 14),
@@ -812,7 +815,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                     ),
                                   ),
                                   const Icon(
-                                    Symbols.chevron_right_rounded,
+                                    LucideIcons.chevronRight,
+                                    size: 18,
                                     color: EnpriveColors.inkSecondary,
                                   ),
                                 ],
@@ -1029,7 +1033,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       decoration: InputDecoration(
                         hintText: 'https://app.example.com/privacy',
                         prefixIcon: const Icon(
-                          Symbols.link_rounded,
+                          LucideIcons.link2,
                           size: 18,
                           color: EnpriveColors.tealStrong,
                         ),
@@ -1176,12 +1180,12 @@ class _FloatingBottomNavDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      (icon: Symbols.home_rounded, label: isKorean ? '홈' : 'Home'),
+      (icon: LucideIcons500.house, label: isKorean ? '홈' : 'Home'),
       (
-        icon: Symbols.receipt_long_rounded,
+        icon: LucideIcons500.receiptText,
         label: isKorean ? '영수증' : 'Receipts',
       ),
-      (icon: Symbols.tune_rounded, label: isKorean ? '설정' : 'Settings'),
+      (icon: LucideIcons500.slidersHorizontal, label: isKorean ? '설정' : 'Settings'),
     ];
 
     return SafeArea(

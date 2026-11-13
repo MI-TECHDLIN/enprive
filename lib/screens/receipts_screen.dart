@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_theme.dart';
 import '../domain/review/review_coordinator.dart';
@@ -112,8 +112,9 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                   },
                   icon: Icon(
                     _isSearching
-                        ? Symbols.close_rounded
-                        : Symbols.search_rounded,
+                        ? LucideIcons.x
+                        : LucideIcons.search,
+                    size: 20,
                     color: EnpriveColors.ink,
                   ),
                 ),
@@ -128,7 +129,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                 onChanged: (v) => setState(() => _searchQuery = v),
                 decoration: InputDecoration(
                   hintText: ko ? '앱 이름 또는 내용 검색...' : 'Search saved reviews...',
-                  prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                  prefixIcon: const Icon(LucideIcons.search, size: 19),
                   filled: true,
                   fillColor: EnpriveColors.surfaceMuted,
                   contentPadding: const EdgeInsets.symmetric(
@@ -390,7 +391,7 @@ class _MyNoteReceiptCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       const Icon(
-                        Symbols.open_in_new_rounded,
+                        LucideIcons.externalLink,
                         size: 15,
                         color: EnpriveColors.chipInCloudFg,
                       ),
@@ -424,8 +425,8 @@ class _MyNoteReceiptCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     const Icon(
-                      Symbols.delete_outline_rounded,
-                      size: 16,
+                      LucideIcons.trash2,
+                      size: 15,
                       color: Color(0xFF9E2A2B),
                     ),
                   ],

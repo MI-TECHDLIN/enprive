@@ -440,6 +440,26 @@
 
 ---
 
+### Iteration 10.8 — Two-Tier Icon System (`lucide_icons_flutter` + Phosphor Duotone `iconify_flutter`) (`feature/onboarding-and-process-text-flow`)
+- **Date**: 2026-11-13
+- **Branch / Commits**: `feature/onboarding-and-process-text-flow`
+- **Models Used**: Gemini 4 Hydrogen
+- **What Was Built**:
+  - **Pub.dev Dependencies (`pubspec.yaml`, `pubspec.lock`)**:
+    - Added `lucide_icons_flutter` (`^4.0.3`) and `iconify_flutter` (`^0.0.7`) and removed `material_symbols_icons` (`4.2960.0`) after verifying zero remaining `Symbols.` references across `lib/` and `test/`.
+  - **Reusable Duotone SVG Wrapper (`lib/widgets/enprive_duotone_icon.dart`)**:
+    - Added `EnpriveDuotoneIcon` (`ExcludeSemantics` + `Center` + `Iconify`) so Phosphor Duotone SVGs keep exact centered sizing inside fixed-size pastel containers.
+  - **Two-Tier Icon Migration Across Screens & Widgets**:
+    - **Phosphor Duotone SVGs (`Ph.*_duotone`)** for focal badges, status tiles, finding categories, provenance chips, onboarding guarantees/cards, Settings depth cards, and sheet headers (`lib/main.dart`, `lib/widgets/enprive_provenance_chip.dart`, `lib/screens/review_result_screen.dart`, `lib/screens/settings_screen.dart`, `lib/screens/onboarding_flow_screen.dart`, `lib/widgets/why_this_finding_sheet.dart`, `lib/widgets/installed_app_picker_sheet.dart`, `lib/widgets/cloud_consent_sheet.dart`, `lib/widgets/private_readiness_sheet.dart`).
+    - **Geometric Stroke Icons (`LucideIcons` / `LucideIcons500`)** for `IconData`-typed package widgets (`AnimatedStatusCard`, `AnimatedMiniStatusCard`, `BeautifulTimeline`), floating bottom navigation dock (`house`, `receiptText`, `slidersHorizontal`), search/close/chevron/bookmark/trash actions, and process/permission rows (`lib/main.dart`, `lib/screens/receipts_screen.dart`, `lib/screens/review_result_screen.dart`, `lib/widgets/review_progress_sheet.dart`, `lib/widgets/analysis_process_trace.dart`, `lib/screens/onboarding_flow_screen.dart`, `lib/screens/settings_screen.dart`, `lib/widgets/installed_app_picker_sheet.dart`, `lib/widgets/why_this_finding_sheet.dart`, `lib/widgets/cloud_consent_sheet.dart`, `lib/widgets/private_readiness_sheet.dart`).
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **24/24 tests passing**.
+  - `cd android && ./gradlew compileDebugKotlin --no-daemon`: **BUILD SUCCESSFUL**.
+  - `flutter build apk --debug` + `adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk` + cold launch: **Complete (`Status: ok`)**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Final Release & PR Consolidation (`main` merge & APK verification)**

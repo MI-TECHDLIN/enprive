@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:beautiful_timeline/beautiful_timeline.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shimmer/shimmer.dart';
 import '../core/theme/enprive_colors.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
@@ -198,7 +199,7 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(
-                          Icons.verified_outlined,
+                          LucideIcons.badgeCheck,
                           size: 12,
                           color: EnpriveColors.chipInCloudFg,
                         ),
@@ -223,7 +224,7 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
             children: [
               disableAnimations
                   ? const Icon(
-                      Icons.auto_awesome_rounded,
+                      LucideIcons.sparkles,
                       size: 16,
                       color: EnpriveColors.tealStrong,
                     )
@@ -321,7 +322,7 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
           Row(
             children: [
               const Icon(
-                Icons.route_rounded,
+                LucideIcons.route,
                 size: 16,
                 color: EnpriveColors.tealStrong,
               ),
@@ -360,7 +361,7 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
             Row(
               children: [
                 const Icon(
-                  Icons.check_circle_rounded,
+                  LucideIcons.circleCheck,
                   size: 14,
                   color: EnpriveColors.tealStrong,
                 ),
@@ -393,7 +394,7 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(
-                    Icons.verified_outlined,
+                    LucideIcons.badgeCheck,
                     size: 13,
                     color: EnpriveColors.chipInCloudFg,
                   ),
@@ -425,8 +426,8 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                   children: [
                     Icon(
                       _showThoughts
-                          ? Icons.expand_less_rounded
-                          : Icons.expand_more_rounded,
+                          ? LucideIcons.chevronUp
+                          : LucideIcons.chevronDown,
                       size: 18,
                       color: EnpriveColors.tealStrong,
                     ),
@@ -488,7 +489,7 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                     for (var i = 0; i < widget.processSteps.length; i++)
                       TimelineEvent(
                         date: '0${i + 1}',
-                        icon: Icons.check_circle_rounded,
+                        icon: LucideIcons.circleCheck,
                         indicatorColor: EnpriveColors.tealStrong,
                         title: widget.processSteps[i],
                       ),

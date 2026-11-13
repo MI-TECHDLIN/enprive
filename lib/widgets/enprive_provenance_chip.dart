@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:iconify_flutter/icons/ph.dart';
 import '../core/theme/enprive_colors.dart';
+import 'enprive_duotone_icon.dart';
 
 enum InferenceSource {
   onDevice,
@@ -20,23 +21,24 @@ class EnpriveProvenanceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (Color bg, Color fg, IconData icon, String defaultLabel) = switch (source) {
+    final (Color bg, Color fg, String duotoneIcon, String defaultLabel) =
+        switch (source) {
       InferenceSource.onDevice => (
           EnpriveColors.chipOnDeviceBg,
           EnpriveColors.chipOnDeviceFg,
-          Symbols.smartphone_rounded,
+          Ph.device_mobile_duotone,
           'On this device',
         ),
       InferenceSource.inCloud => (
           EnpriveColors.chipInCloudBg,
           EnpriveColors.chipInCloudFg,
-          Symbols.cloud_done_rounded,
+          Ph.cloud_check_duotone,
           'In the cloud',
         ),
       InferenceSource.locationUnavailable => (
           EnpriveColors.chipUnknownBg,
           EnpriveColors.chipUnknownFg,
-          Symbols.help_outline_rounded,
+          Ph.question_duotone,
           'Location unavailable',
         ),
     };
@@ -56,7 +58,7 @@ class EnpriveProvenanceChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: fg),
+            EnpriveDuotoneIcon(duotoneIcon, size: 16, color: fg),
             const SizedBox(width: 6),
             Text(
               label,

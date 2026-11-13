@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:iconify_flutter/icons/ph.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/theme/enprive_colors.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import '../services/storage/receipt_repository.dart';
 import '../widgets/deni_animated_mascot.dart';
+import '../widgets/enprive_duotone_icon.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/private_readiness_sheet.dart';
 
@@ -164,8 +166,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 color: EnpriveColors.chipOnDeviceBg,
                                 borderRadius: BorderRadius.circular(14),
                               ),
-                              child: const Icon(
-                                Symbols.shield_lock_rounded,
+                              child: const EnpriveDuotoneIcon(
+                                Ph.shield_check_duotone,
                                 color: EnpriveColors.tealStrong,
                                 size: 22,
                               ),
@@ -237,17 +239,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               children: ExplanationDepth.values.map((depth) {
                 final isSelected = widget.explanationDepth == depth;
-                final (icon, label) = switch (depth) {
+                final (iconSvg, label) = switch (depth) {
                   ExplanationDepth.simple => (
-                    Symbols.auto_awesome_rounded,
+                    Ph.sparkle_duotone,
                     ko ? '핵심만' : 'Quick',
                   ),
                   ExplanationDepth.balanced => (
-                    Symbols.balance_rounded,
+                    Ph.scales_duotone,
                     ko ? '요약+원문' : 'Balanced',
                   ),
                   ExplanationDepth.detailed => (
-                    Symbols.menu_book_rounded,
+                    Ph.book_open_duotone,
                     ko ? '자세히' : 'Full detail',
                   ),
                 };
@@ -288,8 +290,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     : EnpriveColors.surface,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Icon(
-                                icon,
+                              child: EnpriveDuotoneIcon(
+                                iconSvg,
                                 size: 20,
                                 color: isSelected
                                     ? EnpriveColors.tealStrong
@@ -381,7 +383,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       trailing: const Icon(
-                        Symbols.chevron_right_rounded,
+                        LucideIcons.chevronRight,
+                        size: 18,
                         color: EnpriveColors.inkSecondary,
                       ),
                     ),

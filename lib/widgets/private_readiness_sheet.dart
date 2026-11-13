@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:iconify_flutter/icons/ph.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../core/theme/enprive_colors.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import 'deni_animated_mascot.dart';
+import 'enprive_duotone_icon.dart';
 import 'enprive_tactile_button.dart';
 
 /// Private Analysis Readiness Sheet crafted from Brilliant B19
@@ -133,7 +135,7 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
                   IconButton(
                     tooltip: 'Close',
                     onPressed: () => Navigator.pop(context, _capability),
-                    icon: const Icon(Symbols.close_rounded),
+                    icon: const Icon(LucideIcons.x),
                   ),
                 ],
               ),
@@ -180,10 +182,10 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
                               padding: EdgeInsets.all(12.0),
                               child: CircularProgressIndicator(strokeWidth: 2.5),
                             )
-                          : Icon(
+                          : EnpriveDuotoneIcon(
                               isReady
-                                  ? Symbols.check_circle_rounded
-                                  : Symbols.shield_lock_rounded,
+                                  ? Ph.check_circle_duotone
+                                  : Ph.shield_check_duotone,
                               color: isReady
                                   ? EnpriveColors.stateNoConcernFg
                                   : EnpriveColors.tealStrong,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:iconify_flutter/icons/ph.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_theme.dart';
 import '../domain/permissions/permission_comparator.dart';
@@ -8,6 +9,7 @@ import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/analysis_process_trace.dart';
 import '../widgets/deni_animated_mascot.dart';
+import '../widgets/enprive_duotone_icon.dart';
 import '../widgets/enprive_provenance_chip.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/why_this_finding_sheet.dart';
@@ -81,21 +83,21 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       ReviewOverallState.reviewRecommended => (
           EnpriveColors.stateReviewRecommendedBg,
           EnpriveColors.stateReviewRecommendedFg,
-          Symbols.warning_amber_rounded,
+          LucideIcons.shieldAlert,
           l10n.stateReviewRecommended,
           l10n.stateReviewRecommendedSubtitle,
         ),
       ReviewOverallState.noConcern => (
           EnpriveColors.stateNoConcernBg,
           EnpriveColors.stateNoConcernFg,
-          Symbols.check_circle_rounded,
+          LucideIcons.shieldCheck,
           l10n.stateNoConcern,
           l10n.stateNoConcernSubtitle,
         ),
       ReviewOverallState.insufficientEvidence => (
           EnpriveColors.stateInsufficientEvidenceBg,
           EnpriveColors.stateInsufficientEvidenceFg,
-          Symbols.help_outline_rounded,
+          LucideIcons.circleHelp,
           l10n.stateInsufficientEvidence,
           l10n.stateInsufficientEvidenceSubtitle,
         ),
@@ -246,7 +248,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                       tooltip: 'Close',
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(
-                        Symbols.close_rounded,
+                        LucideIcons.x,
                         size: 20,
                         color: EnpriveColors.ink,
                       ),
@@ -273,9 +275,9 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                       onPressed: () => _toggleVoicePlayback(stateTitle),
                       icon: Icon(
                         _isSpeaking
-                            ? Symbols.stop_rounded
-                            : Symbols.volume_up_rounded,
-                        size: 20,
+                            ? LucideIcons.square
+                            : LucideIcons.volume2,
+                        size: 19,
                         color:
                             _isSpeaking ? Colors.white : EnpriveColors.ink,
                       ),
@@ -372,7 +374,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                             children: [
                               Expanded(
                                 child: _PastelStatTile(
-                                  icon: Symbols.article_rounded,
+                                  iconSvg: Ph.file_text_duotone,
                                   iconColor: EnpriveColors.chipInCloudFg,
                                   bg: const Color(0xFFEAF2FC),
                                   value: '${receipt.findings.length}',
@@ -382,7 +384,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: _PastelStatTile(
-                                  icon: Symbols.format_quote_rounded,
+                                  iconSvg: Ph.quotes_duotone,
                                   iconColor: EnpriveColors.stateNoConcernFg,
                                   bg: EnpriveColors.stateNoConcernBg,
                                   value: '${receipt.sourceMatchedCount}',
@@ -392,9 +394,9 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: _PastelStatTile(
-                                  icon: receipt.permissionReport != null
-                                      ? Symbols.phone_android_rounded
-                                      : Symbols.help_outline_rounded,
+                                  iconSvg: receipt.permissionReport != null
+                                      ? Ph.device_mobile_duotone
+                                      : Ph.question_duotone,
                                   iconColor:
                                       EnpriveColors.stateReviewRecommendedFg,
                                   bg: EnpriveColors.stateReviewRecommendedBg,
@@ -505,7 +507,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               onPressed: () =>
                                   _showSnapshotReceiptSheet(context, receipt),
                               icon: const Icon(
-                                Symbols.description_rounded,
+                                LucideIcons.fileText,
                                 size: 17,
                                 color: EnpriveColors.inkSecondary,
                               ),
@@ -559,12 +561,12 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                         ),
                         child: Icon(
                           _isSaved
-                              ? Symbols.bookmark_added_rounded
-                              : Symbols.bookmark_add_rounded,
+                              ? LucideIcons.bookmarkCheck
+                              : LucideIcons.bookmarkPlus,
                           color: _isSaved
                               ? EnpriveColors.stateNoConcernFg
                               : EnpriveColors.ink,
-                          size: 22,
+                          size: 21,
                         ),
                       ),
                     ),
@@ -597,14 +599,14 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
 }
 
 class _PastelStatTile extends StatelessWidget {
-  final IconData icon;
+  final String iconSvg;
   final Color iconColor;
   final Color bg;
   final String value;
   final String label;
 
   const _PastelStatTile({
-    required this.icon,
+    required this.iconSvg,
     required this.iconColor,
     required this.bg,
     required this.value,
@@ -622,7 +624,18 @@ class _PastelStatTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: iconColor),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              width: 22,
+              height: 22,
+              child: EnpriveDuotoneIcon(
+                iconSvg,
+                size: 22,
+                color: iconColor,
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
           Text(
             value,
@@ -658,13 +671,13 @@ class _CleanFindingCard extends StatelessWidget {
     required this.onTap,
   });
 
-  IconData _categoryIcon(FindingCategory category) {
+  String _categoryIconSvg(FindingCategory category) {
     return switch (category) {
-      FindingCategory.dataCollection => Symbols.folder_shared_rounded,
-      FindingCategory.sharing => Symbols.share_rounded,
-      FindingCategory.tracking => Symbols.location_on_rounded,
-      FindingCategory.retention => Symbols.history_rounded,
-      FindingCategory.parentalConsent => Symbols.family_restroom_rounded,
+      FindingCategory.dataCollection => Ph.folder_lock_duotone,
+      FindingCategory.sharing => Ph.share_network_duotone,
+      FindingCategory.tracking => Ph.map_pin_duotone,
+      FindingCategory.retention => Ph.clock_counter_clockwise_duotone,
+      FindingCategory.parentalConsent => Ph.users_three_duotone,
     };
   }
 
@@ -692,8 +705,8 @@ class _CleanFindingCard extends StatelessWidget {
                       color: EnpriveColors.surfaceMuted,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      _categoryIcon(finding.category),
+                    child: EnpriveDuotoneIcon(
+                      _categoryIconSvg(finding.category),
                       size: 20,
                       color: EnpriveColors.tealStrong,
                     ),
@@ -731,9 +744,9 @@ class _CleanFindingCard extends StatelessWidget {
                   ),
                   Icon(
                     isVerified
-                        ? Symbols.check_circle_rounded
-                        : Symbols.help_outline_rounded,
-                    size: 20,
+                        ? LucideIcons.circleCheck
+                        : LucideIcons.circleHelp,
+                    size: 19,
                     color: isVerified
                         ? EnpriveColors.stateNoConcernFg
                         : EnpriveColors.inkSecondary,
@@ -816,10 +829,10 @@ class _CleanPermissionListCard extends StatelessWidget {
                   children: [
                     Icon(
                       isMismatch
-                          ? Symbols.warning_amber_rounded
+                          ? LucideIcons.triangleAlert
                           : (item.isGranted
-                              ? Symbols.check_circle_rounded
-                              : Symbols.remove_circle_outline_rounded),
+                              ? LucideIcons.circleCheck
+                              : LucideIcons.circleMinus),
                       size: 18,
                       color: isMismatch
                           ? EnpriveColors.stateReviewRecommendedFg

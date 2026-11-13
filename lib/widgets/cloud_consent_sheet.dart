@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:iconify_flutter/icons/ph.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_theme.dart';
 import '../l10n/app_localizations.dart';
 import 'deni_animated_mascot.dart';
+import 'enprive_duotone_icon.dart';
 import 'enprive_tactile_button.dart';
 
 enum CloudConsentDecision {
@@ -81,7 +83,7 @@ class CloudConsentSheet extends StatelessWidget {
                   tooltip: 'Close',
                   onPressed: () =>
                       Navigator.pop(context, CloudConsentDecision.cancelled),
-                  icon: const Icon(Symbols.close_rounded),
+                  icon: const Icon(LucideIcons.x),
                 ),
               ],
             ),
@@ -116,9 +118,9 @@ class CloudConsentSheet extends StatelessWidget {
                           color: EnpriveColors.chipInCloudBg,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
-                          Symbols.cloud_rounded,
-                          size: 18,
+                        child: const EnpriveDuotoneIcon(
+                          Ph.cloud_check_duotone,
+                          size: 19,
                           color: EnpriveColors.chipInCloudFg,
                         ),
                       ),
