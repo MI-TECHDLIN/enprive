@@ -18,9 +18,9 @@
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
 - **Current `main` HEAD**: `a5c69d1`
-- **Active Feature Branch**: `feature/app-permission-inspector` (Iteration 7 complete, verified, ready to merge)
+- **Active Feature Branch**: `feature/onboarding-and-process-text-flow` (Iteration 10 complete, verified, ready to merge)
 - **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 24 November 2026)
-- **Next Queued Branch**: `feature/local-receipts-storage` (Iteration 8 — Local SQLite `ReceiptRepository` & 3-Tab Shell)
+- **Next Queued Branch**: `main` consolidation & final release verification
 
 ---
 
@@ -252,7 +252,7 @@
 
 ### Iteration 9 — Native Android `TextToSpeech` Voice Playback, Private Readiness Sheet & Accessibility (`feature/tts-and-readiness-flow`)
 - **Date**: 2026-11-12
-- **Branch / Commits**: `feature/tts-and-readiness-flow`
+- **Branch / Commits**: `feature/tts-and-readiness-flow` (`0c97c04`)
 - **Models Used**: Gemini 4 Argon
 - **What Was Built**:
   - **Native Android `TextToSpeech` (`MainActivity.kt`, `AndroidManifest.xml`, `hybrid_ai_bridge.dart`)**:
@@ -275,8 +275,33 @@
 
 ---
 
+### Iteration 10 — Guided 3-Step Onboarding (`B2` → `B3` → `B19`), 4-Segment Progress Card, Policy Link Input & Snapshot Provenance Sheet (`feature/onboarding-and-process-text-flow`)
+- **Date**: 2026-11-13
+- **Branch / Commits**: `feature/onboarding-and-process-text-flow`
+- **Models Used**: Gemini 4 Argon
+- **What Was Built**:
+  - **3-Step Guided Onboarding Flow (`lib/screens/onboarding_flow_screen.dart`, `lib/services/storage/receipt_repository.dart`)**:
+    - **Step 1 (`b02-koji-intro.png`)**: Minimalist centered `DeniAnimatedMascot(size: 132, pose: DeniPose.idle)` on warm paper canvas with subtle bottom gradient, bold `Nunito` headline (*"Hi, I'm Deni! I'll help you read privacy terms."*), non-certifying pledge subtitle, and full-width `Continue` CTA.
+    - **Step 2 (`b03-question-cards.png`)**: 3-segment progress bar, Deni (`DeniPose.explaining`) beside *"How should I explain privacy terms?"*, and a 2×2 grid of soft `#F3F1EC` rounded-3xl choice cards (`Simple summary`, `Balanced explanation`, `Detailed clauses`, and `Show Deni / Text-only quiet mode`).
+    - **Step 3 (`b19-permission-prime.png`)**: Deni (`DeniPose.celebrating`) peeking over the *Private by default on this phone* guarantee card with 3 icon rows (*On-device analysis first*, *App lists stay on phone*, *No silent cloud calls*) and `Get started` CTA.
+    - Persisted `hasCompletedOnboarding` in `UserPreferencesRepository` and added a *"Meet Deni & setup guide"* row in `SettingsScreen` so users and judges can replay the flow anytime.
+  - **4-Segment On-Device Analysis Progress Card (`lib/widgets/review_progress_sheet.dart`, `lib/main.dart`)**:
+    - Built `ReviewProgressCard` (*Brilliant `b30-lesson-check.png` pattern*) displaying a 4-segment progress bar paired with plain-language step status (*Step 1–4: Fingerprinting snapshot → Reading clauses on-device → Verifying verbatim quotes → Comparing local Android permissions*) whenever a review is in flight.
+  - **Policy Link / URL Input Mode (`lib/main.dart`)**:
+    - Added a segmented **`Paste text` / `Policy link`** switcher inside the review modal (`_showPasteModal`) with one-tap classroom policy URL chips (`edutrack.example.edu/privacy` and `calmmath.example.org/privacy`) that tag the resulting receipt's `sourceLabel` with the URL.
+  - **Reviewed Policy Snapshot & Provenance Sheet (`lib/screens/review_result_screen.dart`)**:
+    - Tapping the top `EnpriveProvenanceChip` or *"View reviewed policy snapshot"* at the bottom of `ReviewResultScreen` opens a draggable sheet displaying the source label, timestamp, deterministic FNV-1a snapshot digest, and the full verbatim policy snapshot in `SourceSerif4` on `quoteSurface`.
+- **Challenges & Fixes**:
+  - *Challenge*: `EnpriveColors.tealSoft` was referenced in `onboarding_flow_screen.dart` and `review_progress_sheet.dart`, whereas the WCAG token in `enprive_colors.dart` is `EnpriveColors.chipOnDeviceBg`.
+  - *Fix*: Updated both files to use `EnpriveColors.chipOnDeviceBg`.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **17/17 tests passing** (including new widget tests for `OnboardingFlowScreen` 3-step navigation and `ReviewProgressCard`).
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Final Release & PR Consolidation (`main` merge & APK verification)**
    - **Assigned Model**: **Gemini 4 Argon / Hydrogen**
-   - **Scope**: Merge feature branch chain into `main`, verify release/debug APK build on `emulator-5554`, and prepare #BuildHybridAI 2026 submission walkthrough.
+   - **Scope**: Merge feature branch chain into `main`, verify release/debug APK build, and prepare #BuildHybridAI 2026 submission walkthrough.

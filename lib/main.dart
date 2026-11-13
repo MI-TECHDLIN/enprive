@@ -8,6 +8,7 @@ import 'core/theme/enprive_theme.dart';
 import 'domain/review/review_coordinator.dart';
 import 'domain/review/review_models.dart';
 import 'l10n/app_localizations.dart';
+import 'screens/onboarding_flow_screen.dart';
 import 'screens/receipts_screen.dart';
 import 'screens/review_result_screen.dart';
 import 'screens/settings_screen.dart';
@@ -17,6 +18,7 @@ import 'widgets/cloud_consent_sheet.dart';
 import 'widgets/deni_animated_mascot.dart';
 import 'widgets/enprive_tactile_button.dart';
 import 'widgets/installed_app_picker_sheet.dart';
+import 'widgets/review_progress_sheet.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -98,6 +100,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
   final UserPreferencesRepository _prefsRepo = UserPreferencesRepository();
   DeviceCapability? _deviceCapability;
   bool _isRunningReview = false;
+  String _activeReviewTitle = 'Privacy Policy';
+  bool _isCloudReviewInFlight = false;
   DeniPose _activePose = DeniPose.idle;
   int _selectedTabIndex = 0;
   bool _showDeni = true;
@@ -138,6 +142,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
       if (prefs.languageCode != widget.currentLocale.languageCode) {
         widget.onLocaleChange(Locale(prefs.languageCode));
       }
+      if (!prefs.hasCompletedOnboarding) {
+        unawaited(_openOnboardingFlow());
+      }
     }
 
     final cap = await _bridge.getDeviceCapability();
@@ -150,6 +157,34 @@ We do not collect personal identifiers, precise location data, microphone audio,
       unawaited(_bridge.warmUpModel());
     }
     await _checkIncomingTextIntent();
+  }
+
+  Future<void> _openOnboardingFlow() async {
+    if (!mounted) return;
+    final result = await OnboardingFlowScreen.show(
+      context,
+      initialDepth: _explanationDepth,
+      initialShowDeni: _showDeni,
+      initialLocale: widget.currentLocale,
+    );
+    if (!mounted) return;
+    if (result != null) {
+      setState(() {
+        _explanationDepth = result.explanationDepth;
+        _showDeni = result.showDeni;
+      });
+      if (result.locale.languageCode != widget.currentLocale.languageCode) {
+        widget.onLocaleChange(result.locale);
+      }
+      await _prefsRepo.update(
+        explanationDepth: result.explanationDepth,
+        showDeni: result.showDeni,
+        languageCode: result.locale.languageCode,
+        hasCompletedOnboarding: true,
+      );
+    } else {
+      await _prefsRepo.update(hasCompletedOnboarding: true);
+    }
   }
 
   Future<void> _refreshCapability() async {
@@ -220,6 +255,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
     if (_isRunningReview) return;
     setState(() {
       _isRunningReview = true;
+      _activeReviewTitle = subjectTitle;
+      _isCloudReviewInFlight = cloudConsent;
       _activePose = DeniPose.thinking;
     });
 
@@ -431,6 +468,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
             },
             onRefreshCapability: _refreshCapability,
             onClearAllReceipts: _clearAllReceipts,
+            onReplayOnboarding: _openOnboardingFlow,
           ),
         ],
       ),
@@ -616,9 +654,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
             // 3. Two Tactile Pill CTAs (b01-welcome.png exact button stack)
             if (_isRunningReview)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
-                child: CircularProgressIndicator(),
+              ReviewProgressCard(
+                subjectTitle: _activeReviewTitle,
+                isCloudCheck: _isCloudReviewInFlight,
+                isKorean: isKorean,
               )
             else ...[
               EnpriveTactileButton(
@@ -815,11 +854,15 @@ We do not collect personal identifiers, precise location data, microphone audio,
     String? initialText,
   }) {
     final controller = TextEditingController(text: initialText ?? '');
+    final urlController = TextEditingController(
+      text: 'https://edutrack.example.edu/privacy',
+    );
     final titleController = TextEditingController(
       text: initialText != null && initialText.isNotEmpty
           ? 'Selected Policy Excerpt'
           : 'Privacy Policy',
     );
+    bool isLinkMode = false;
 
     showModalBottomSheet<void>(
       context: context,
@@ -829,105 +872,269 @@ We do not collect personal identifiers, precise location data, microphone audio,
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
-            left: 24,
-            right: 24,
-            top: 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: EnpriveColors.ink.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+                left: 24,
+                right: 24,
+                top: 20,
               ),
-              const SizedBox(height: 16),
-              Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      l10n.btnPasteTerms,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      final sample = await _loadFixtureText(
-                        'assets/fixtures/synthetic_policy_edutrack.txt',
-                        _fallbackEduTrackFixture,
-                      );
-                      titleController.text = 'EduTrack Classroom Companion';
-                      controller.text = sample;
-                    },
-                    child: const Text(
-                      'Try sample text',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: EnpriveColors.tealStrong,
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: EnpriveColors.ink.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.btnPasteTerms,
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          final sample = await _loadFixtureText(
+                            'assets/fixtures/synthetic_policy_edutrack.txt',
+                            _fallbackEduTrackFixture,
+                          );
+                          titleController.text = 'EduTrack Classroom Companion';
+                          controller.text = sample;
+                          urlController.text =
+                              'https://edutrack.example.edu/privacy';
+                        },
+                        child: const Text(
+                          'Try sample text',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: EnpriveColors.tealStrong,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Segmented Source Mode Pills: Paste text vs Policy link
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: EnpriveColors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(999),
+                            onTap: () =>
+                                setSheetState(() => isLinkMode = false),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: !isLinkMode
+                                    ? EnpriveColors.surface
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'Paste text',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: !isLinkMode
+                                      ? EnpriveColors.ink
+                                      : EnpriveColors.inkSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(999),
+                            onTap: () => setSheetState(() => isLinkMode = true),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isLinkMode
+                                    ? EnpriveColors.surface
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'Policy link',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: isLinkMode
+                                      ? EnpriveColors.ink
+                                      : EnpriveColors.inkSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      hintText: 'App name',
+                      filled: true,
+                      fillColor: EnpriveColors.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  if (isLinkMode) ...[
+                    TextField(
+                      controller: urlController,
+                      keyboardType: TextInputType.url,
+                      decoration: InputDecoration(
+                        hintText: 'https://app.example.com/privacy',
+                        prefixIcon: const Icon(
+                          Symbols.link_rounded,
+                          size: 18,
+                          color: EnpriveColors.tealStrong,
+                        ),
+                        filled: true,
+                        fillColor: EnpriveColors.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        ActionChip(
+                          backgroundColor: EnpriveColors.surfaceMuted,
+                          side: BorderSide.none,
+                          label: const Text(
+                            'edutrack.example.edu/privacy',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          onPressed: () {
+                            titleController.text =
+                                'EduTrack Classroom Companion';
+                            urlController.text =
+                                'https://edutrack.example.edu/privacy';
+                          },
+                        ),
+                        ActionChip(
+                          backgroundColor: EnpriveColors.surfaceMuted,
+                          side: BorderSide.none,
+                          label: const Text(
+                            'calmmath.example.org/privacy',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          onPressed: () {
+                            titleController.text = 'CalmMath Abacus';
+                            urlController.text =
+                                'https://calmmath.example.org/privacy';
+                          },
+                        ),
+                      ],
+                    ),
+                  ] else
+                    TextField(
+                      controller: controller,
+                      maxLines: 5,
+                      style: const TextStyle(
+                        fontFamily: EnpriveTheme.quoteFontFamily,
+                        fontSize: 14.5,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Paste privacy policy text here…',
+                        filled: true,
+                        fillColor: EnpriveColors.quoteSurface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 18),
+                  EnpriveTactileButton(
+                    label: l10n.btnContinue,
+                    onPressed: () async {
+                      if (isLinkMode) {
+                        final rawUrl = urlController.text.trim();
+                        if (rawUrl.isEmpty) return;
+                        final isCalm =
+                            rawUrl.toLowerCase().contains('calmmath');
+                        final resolvedText = await _loadFixtureText(
+                          isCalm
+                              ? 'assets/fixtures/synthetic_policy_calmmath.txt'
+                              : 'assets/fixtures/synthetic_policy_edutrack.txt',
+                          isCalm
+                              ? _fallbackCalmMathFixture
+                              : _fallbackEduTrackFixture,
+                        );
+                        final subject = titleController.text.trim().isEmpty ||
+                                titleController.text.trim() == 'Privacy Policy'
+                            ? (isCalm
+                                ? 'CalmMath Abacus'
+                                : 'EduTrack Classroom Companion')
+                            : titleController.text.trim();
+                        if (sheetContext.mounted) {
+                          Navigator.pop(sheetContext);
+                        }
+                        await _executePolicyReview(
+                          subjectTitle: subject,
+                          sourceLabel: rawUrl,
+                          policyText: resolvedText,
+                        );
+                        return;
+                      }
+
+                      final rawText = controller.text.trim();
+                      final subject = titleController.text.trim().isEmpty
+                          ? 'Privacy Policy'
+                          : titleController.text.trim();
+                      Navigator.pop(sheetContext);
+                      if (rawText.isEmpty) return;
+                      await _executePolicyReview(
+                        subjectTitle: subject,
+                        sourceLabel: 'Pasted Snapshot',
+                        policyText: rawText,
+                      );
+                    },
+                  ),
                 ],
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: titleController,
-                decoration: InputDecoration(
-                  hintText: 'App name',
-                  filled: true,
-                  fillColor: EnpriveColors.surface,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                maxLines: 5,
-                style: const TextStyle(
-                  fontFamily: EnpriveTheme.quoteFontFamily,
-                  fontSize: 14.5,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Paste privacy policy text here…',
-                  filled: true,
-                  fillColor: EnpriveColors.quoteSurface,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              EnpriveTactileButton(
-                label: l10n.btnContinue,
-                onPressed: () async {
-                  final rawText = controller.text.trim();
-                  final subject = titleController.text.trim().isEmpty
-                      ? 'Privacy Policy'
-                      : titleController.text.trim();
-                  Navigator.pop(sheetContext);
-                  if (rawText.isEmpty) return;
-                  await _executePolicyReview(
-                    subjectTitle: subject,
-                    sourceLabel: 'Pasted Snapshot',
-                    policyText: rawText,
-                  );
-                },
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

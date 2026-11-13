@@ -124,6 +124,102 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     );
   }
 
+  void _showSnapshotReceiptSheet(
+    BuildContext context,
+    PolicyReviewReceipt receipt,
+  ) {
+    final dt = receipt.createdAt;
+    final dateStr =
+        '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: EnpriveColors.paper,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.68,
+          minChildSize: 0.45,
+          maxChildSize: 0.92,
+          expand: false,
+          builder: (_, scrollController) {
+            return ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: EnpriveColors.ink.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'Reviewed policy snapshot',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: EnpriveColors.surface,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Source · ${receipt.sourceLabel}',
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: EnpriveColors.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Reviewed · $dateStr  |  Digest · #${receipt.snapshotDigest}',
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: EnpriveColors.inkSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: EnpriveColors.quoteSurface,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Text(
+                    receipt.snapshotText,
+                    style: const TextStyle(
+                      fontFamily: EnpriveTheme.quoteFontFamily,
+                      fontSize: 15,
+                      height: 1.55,
+                      color: EnpriveColors.ink,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -156,7 +252,13 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                     ),
                   ),
                   const Spacer(),
-                  EnpriveProvenanceChip(source: receipt.inferenceSource),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(999),
+                    onTap: () => _showSnapshotReceiptSheet(context, receipt),
+                    child: EnpriveProvenanceChip(
+                      source: receipt.inferenceSource,
+                    ),
+                  ),
                   const SizedBox(width: 8),
                   Material(
                     color: _isSpeaking
@@ -386,6 +488,26 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               l10n: l10n,
                             ),
                           ],
+                          const SizedBox(height: 18),
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: () =>
+                                  _showSnapshotReceiptSheet(context, receipt),
+                              icon: const Icon(
+                                Symbols.description_rounded,
+                                size: 17,
+                                color: EnpriveColors.inkSecondary,
+                              ),
+                              label: const Text(
+                                'View reviewed policy snapshot',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: EnpriveColors.inkSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),

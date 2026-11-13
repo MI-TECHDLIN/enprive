@@ -152,22 +152,27 @@ class UserPreferencesSnapshot {
   final bool showDeni;
   final ExplanationDepth explanationDepth;
   final String languageCode;
+  final bool hasCompletedOnboarding;
 
   const UserPreferencesSnapshot({
     this.showDeni = true,
     this.explanationDepth = ExplanationDepth.balanced,
     this.languageCode = 'en',
+    this.hasCompletedOnboarding = true,
   });
 
   UserPreferencesSnapshot copyWith({
     bool? showDeni,
     ExplanationDepth? explanationDepth,
     String? languageCode,
+    bool? hasCompletedOnboarding,
   }) {
     return UserPreferencesSnapshot(
       showDeni: showDeni ?? this.showDeni,
       explanationDepth: explanationDepth ?? this.explanationDepth,
       languageCode: languageCode ?? this.languageCode,
+      hasCompletedOnboarding:
+          hasCompletedOnboarding ?? this.hasCompletedOnboarding,
     );
   }
 }
@@ -176,6 +181,8 @@ class UserPreferencesRepository {
   static const String _keyShowDeni = 'enprive_pref_show_deni';
   static const String _keyExplanationDepth = 'enprive_pref_explanation_depth';
   static const String _keyLanguageCode = 'enprive_pref_language_code';
+  static const String _keyHasCompletedOnboarding =
+      'enprive_pref_completed_onboarding';
 
   UserPreferencesSnapshot _cached = const UserPreferencesSnapshot();
 
@@ -185,6 +192,8 @@ class UserPreferencesRepository {
       final showDeni = prefs.getBool(_keyShowDeni) ?? true;
       final depthStr = prefs.getString(_keyExplanationDepth) ?? 'balanced';
       final lang = prefs.getString(_keyLanguageCode) ?? 'en';
+      final completedOnboarding =
+          prefs.getBool(_keyHasCompletedOnboarding) ?? false;
       _cached = UserPreferencesSnapshot(
         showDeni: showDeni,
         explanationDepth: ExplanationDepth.values.firstWhere(
@@ -192,6 +201,7 @@ class UserPreferencesRepository {
           orElse: () => ExplanationDepth.balanced,
         ),
         languageCode: lang,
+        hasCompletedOnboarding: completedOnboarding,
       );
     } catch (_) {
       // Return in-memory cached snapshot if SharedPreferences is unavailable
@@ -203,11 +213,13 @@ class UserPreferencesRepository {
     bool? showDeni,
     ExplanationDepth? explanationDepth,
     String? languageCode,
+    bool? hasCompletedOnboarding,
   }) async {
     _cached = _cached.copyWith(
       showDeni: showDeni,
       explanationDepth: explanationDepth,
       languageCode: languageCode,
+      hasCompletedOnboarding: hasCompletedOnboarding,
     );
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -219,6 +231,12 @@ class UserPreferencesRepository {
       }
       if (languageCode != null) {
         await prefs.setString(_keyLanguageCode, languageCode);
+      }
+      if (hasCompletedOnboarding != null) {
+        await prefs.setBool(
+          _keyHasCompletedOnboarding,
+          hasCompletedOnboarding,
+        );
       }
     } catch (_) {
       // Keep updated _cached in memory

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+
 import '../core/theme/enprive_colors.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import '../services/storage/receipt_repository.dart';
@@ -22,6 +23,7 @@ class SettingsScreen extends StatefulWidget {
   final ValueChanged<Locale> onLocaleChanged;
   final VoidCallback onRefreshCapability;
   final VoidCallback onClearAllReceipts;
+  final VoidCallback? onReplayOnboarding;
 
   const SettingsScreen({
     super.key,
@@ -36,6 +38,7 @@ class SettingsScreen extends StatefulWidget {
     required this.onLocaleChanged,
     required this.onRefreshCapability,
     required this.onClearAllReceipts,
+    this.onReplayOnboarding,
   });
 
   @override
@@ -112,7 +115,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final ko = widget.currentLocale.languageCode == 'ko';
     final cap = widget.capability;
-    final isReady = cap?.isSupported == true &&
+    final isReady =
+        cap?.isSupported == true &&
         cap?.modelStatus == ModelDownloadStatus.available;
 
     return SafeArea(
@@ -138,9 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         size: 72,
                         pose: _isCheckingModel
                             ? DeniPose.thinking
-                            : (isReady
-                                ? DeniPose.celebrating
-                                : DeniPose.idle),
+                            : (isReady ? DeniPose.celebrating : DeniPose.idle),
                       ),
                     ),
                   Container(
@@ -194,11 +196,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     _modelActionFeedback ??
                                         (isReady
                                             ? (ko
-                                                ? '온디바이스 모델이 준비되었습니다.'
-                                                : 'On-device AI is active and ready.')
+                                                  ? '온디바이스 모델이 준비되었습니다.'
+                                                  : 'On-device AI is active and ready.')
                                             : (ko
-                                                ? '내장된 로컬 약관 스캐너로 안전하게 작동 중입니다.'
-                                                : 'Protected by built-in local clause scanning.')),
+                                                  ? '내장된 로컬 약관 스캐너로 안전하게 작동 중입니다.'
+                                                  : 'Protected by built-in local clause scanning.')),
                                     style: const TextStyle(
                                       fontSize: 13,
                                       color: EnpriveColors.inkSecondary,
@@ -243,17 +245,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final isSelected = widget.explanationDepth == depth;
                 final (icon, label) = switch (depth) {
                   ExplanationDepth.simple => (
-                      Symbols.auto_awesome_rounded,
-                      ko ? '간단히' : 'Simple',
-                    ),
+                    Symbols.auto_awesome_rounded,
+                    ko ? '간단히' : 'Simple',
+                  ),
                   ExplanationDepth.balanced => (
-                      Symbols.balance_rounded,
-                      ko ? '균형 있게' : 'Balanced',
-                    ),
+                    Symbols.balance_rounded,
+                    ko ? '균형 있게' : 'Balanced',
+                  ),
                   ExplanationDepth.detailed => (
-                      Symbols.menu_book_rounded,
-                      ko ? '자세히' : 'Detailed',
-                    ),
+                    Symbols.menu_book_rounded,
+                    ko ? '자세히' : 'Detailed',
+                  ),
                 };
                 return Expanded(
                   child: Padding(
@@ -392,6 +394,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     endIndent: 20,
                     color: EnpriveColors.ink.withValues(alpha: 0.06),
                   ),
+                  if (widget.onReplayOnboarding != null) ...[
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 4,
+                      ),
+                      onTap: widget.onReplayOnboarding,
+                      title: Text(
+                        ko ? '데니 소개 및 시작 가이드' : 'Meet Deni & setup guide',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: EnpriveColors.ink,
+                        ),
+                      ),
+                      trailing: const Icon(
+                        Symbols.chevron_right_rounded,
+                        color: EnpriveColors.inkSecondary,
+                      ),
+                    ),
+                    Divider(
+                      height: 1,
+                      indent: 20,
+                      endIndent: 20,
+                      color: EnpriveColors.ink.withValues(alpha: 0.06),
+                    ),
+                  ],
                   ListTile(
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 20,

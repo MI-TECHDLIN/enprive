@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
 import 'package:enprive/main.dart';
+import 'package:enprive/screens/onboarding_flow_screen.dart';
 import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
+import 'package:enprive/services/storage/receipt_repository.dart';
+import 'package:enprive/widgets/review_progress_sheet.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -35,28 +38,36 @@ void main() {
 
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(const MethodChannel('com.enprive/hybrid_ai'), null);
+        .setMockMethodCallHandler(
+          const MethodChannel('com.enprive/hybrid_ai'),
+          null,
+        );
   });
 
-  testWidgets('EnpriveApp renders title, tagline, Deni greeting, and interactive pose pills', (WidgetTester tester) async {
-    await tester.pumpWidget(const EnpriveApp());
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+  testWidgets(
+    'EnpriveApp renders title, tagline, Deni greeting, and interactive pose pills',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(const EnpriveApp());
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Enprive'), findsOneWidget);
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Receipts'), findsWidgets);
-    expect(find.textContaining('Deni'), findsWidgets);
-    expect(find.text('Thinking'), findsOneWidget);
+      expect(find.text('Enprive'), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Receipts'), findsWidgets);
+      expect(find.textContaining('Deni'), findsWidgets);
+      expect(find.text('Thinking'), findsOneWidget);
 
-    // Tap the 'Thinking' pose pill and verify Deni updates state dialogue
-    await tester.tap(find.text('Thinking'));
-    await tester.pump(const Duration(milliseconds: 250));
-    expect(
-      find.textContaining('Matching policy clauses on-device with Gemini Nano'),
-      findsOneWidget,
-    );
-  });
+      // Tap the 'Thinking' pose pill and verify Deni updates state dialogue
+      await tester.tap(find.text('Thinking'));
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(
+        find.textContaining(
+          'Matching policy clauses on-device with Gemini Nano',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('EnpriveApp renders cleanly at 200% text scale and reduced motion across all tabs', (WidgetTester tester) async {
     await tester.pumpWidget(
@@ -91,5 +102,51 @@ void main() {
     final stopped = await bridge.stopSpeaking();
     expect(stopped, isTrue);
     expect(recordedCalls.any((c) => c.method == 'stopSpeaking'), isTrue);
+  });
+
+  testWidgets('OnboardingFlowScreen navigates across all 3 B2-B3-B19 steps', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: OnboardingFlowScreen(
+          initialDepth: ExplanationDepth.balanced,
+          initialShowDeni: true,
+          initialLocale: Locale('en'),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Step 0 (B2 Mascot Intro)
+    expect(find.textContaining("Hi, I'm Deni!"), findsOneWidget);
+
+    await tester.tap(find.text('Continue'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Step 1 (B3 Question Cards)
+    expect(find.textContaining('How should I explain'), findsOneWidget);
+    await tester.tap(find.textContaining('Simple'));
+    await tester.pump();
+
+    await tester.tap(find.text('Continue'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Step 2 (B19 Private Readiness)
+    expect(find.textContaining('Private by default'), findsOneWidget);
+    expect(find.text('Get started'), findsOneWidget);
+  });
+
+  testWidgets('ReviewProgressCard renders 4-segment progress and subject title', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ReviewProgressCard(
+            subjectTitle: 'EduTrack Classroom Companion',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('EduTrack Classroom Companion'), findsOneWidget);
+    expect(find.textContaining('Step 1 of 4'), findsOneWidget);
   });
 }
