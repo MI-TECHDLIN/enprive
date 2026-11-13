@@ -104,7 +104,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
   bool _isCloudReviewInFlight = false;
   DeniPose _activePose = DeniPose.idle;
   int _selectedTabIndex = 0;
-  bool _showDeni = true;
   ExplanationDepth _explanationDepth = ExplanationDepth.balanced;
   final List<PolicyReviewReceipt> _savedReceipts = [];
 
@@ -136,7 +135,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
         _savedReceipts
           ..clear()
           ..addAll(storedReceipts);
-        _showDeni = prefs.showDeni;
         _explanationDepth = prefs.explanationDepth;
       });
       if (prefs.languageCode != widget.currentLocale.languageCode) {
@@ -164,21 +162,18 @@ We do not collect personal identifiers, precise location data, microphone audio,
     final result = await OnboardingFlowScreen.show(
       context,
       initialDepth: _explanationDepth,
-      initialShowDeni: _showDeni,
       initialLocale: widget.currentLocale,
     );
     if (!mounted) return;
     if (result != null) {
       setState(() {
         _explanationDepth = result.explanationDepth;
-        _showDeni = result.showDeni;
       });
       if (result.locale.languageCode != widget.currentLocale.languageCode) {
         widget.onLocaleChange(result.locale);
       }
       await _prefsRepo.update(
         explanationDepth: result.explanationDepth,
-        showDeni: result.showDeni,
         languageCode: result.locale.languageCode,
         hasCompletedOnboarding: true,
       );
@@ -396,7 +391,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
           ReceiptsScreen(
             receipts: _savedReceipts,
             coordinator: _coordinator,
-            showDeni: _showDeni,
             isKorean: isKorean,
             onDeleteReceipt: _deleteReceipt,
             onStartReviewRequested: () {
@@ -406,14 +400,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
           SettingsScreen(
             bridge: _bridge,
             capability: _deviceCapability,
-            showDeni: _showDeni,
             explanationDepth: _explanationDepth,
             currentLocale: widget.currentLocale,
             savedReceiptsCount: _savedReceipts.length,
-            onShowDeniChanged: (val) {
-              setState(() => _showDeni = val);
-              unawaited(_prefsRepo.update(showDeni: val));
-            },
             onExplanationDepthChanged: (depth) {
               setState(() => _explanationDepth = depth);
               unawaited(_prefsRepo.update(explanationDepth: depth));
@@ -449,15 +438,13 @@ We do not collect personal identifiers, precise location data, microphone audio,
         child: Column(
           children: [
             // 1. Editorial Hero Header with Deni (no state card or debug buttons)
-            if (_showDeni) ...[
-              Center(
-                child: DeniAnimatedMascot(
-                  size: 88,
-                  pose: _isRunningReview ? DeniPose.thinking : _activePose,
-                ),
+            Center(
+              child: DeniAnimatedMascot(
+                size: 88,
+                pose: _isRunningReview ? DeniPose.thinking : _activePose,
               ),
-              const SizedBox(height: 16),
-            ],
+            ),
+            const SizedBox(height: 16),
 
             // 2. Centered Editorial Headline & Subtitle
             Text(

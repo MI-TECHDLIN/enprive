@@ -22,7 +22,6 @@ enum _ReceiptFilter {
 class ReceiptsScreen extends StatefulWidget {
   final List<PolicyReviewReceipt> receipts;
   final ReviewCoordinator coordinator;
-  final bool showDeni;
   final bool isKorean;
   final ValueChanged<String> onDeleteReceipt;
   final VoidCallback onStartReviewRequested;
@@ -31,7 +30,6 @@ class ReceiptsScreen extends StatefulWidget {
     super.key,
     required this.receipts,
     required this.coordinator,
-    required this.showDeni,
     required this.isKorean,
     required this.onDeleteReceipt,
     required this.onStartReviewRequested,
@@ -227,13 +225,11 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (widget.showDeni) ...[
-                const DeniAnimatedMascot(
-                  size: 96,
-                  pose: DeniPose.idle,
-                ),
-                const SizedBox(height: 20),
-              ],
+              const DeniAnimatedMascot(
+                size: 96,
+                pose: DeniPose.idle,
+              ),
+              const SizedBox(height: 20),
               Text(
                 isFilteredEmpty
                     ? (ko ? '일치하는 영수증이 없어요' : 'No matching receipts')

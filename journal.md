@@ -419,6 +419,27 @@
 
 ---
 
+### Iteration 10.7 — Remove `Show Deni companion` Preference & Default Deni Always On (`feature/onboarding-and-process-text-flow`)
+- **Date**: 2026-11-13
+- **Branch / Commits**: `feature/onboarding-and-process-text-flow`
+- **Models Used**: Orchestrator (Argon) + Execution model
+- **What Was Built**:
+  - **Settings Screen (`lib/screens/settings_screen.dart`)**:
+    - Removed `showDeni` / `onShowDeniChanged` parameters and removed the `SwitchListTile.adaptive` preference row (`Show Deni companion` / `Deni 캐릭터 표시`) from the **Preferences** card.
+    - Rendered `DeniAnimatedMascot` above the private analysis status card unconditionally by default.
+  - **Home, Receipts, Onboarding & Preferences Persistence (`lib/main.dart`, `lib/screens/receipts_screen.dart`, `lib/screens/onboarding_flow_screen.dart`, `lib/services/storage/receipt_repository.dart`)**:
+    - Removed `showDeni` / `initialShowDeni` / `_showDeni` / `_keyShowDeni` flags across app state, `UserPreferencesSnapshot`, `UserPreferencesRepository`, `ReceiptsScreen`, and `OnboardingFlowScreen` (including removing the 4th `"Show Deni companion"` / `"Text-only quiet mode"` toggle tile from Onboarding step 1).
+    - Deni now renders by default across Home hero, Receipts empty state, and Settings.
+  - **Tests (`test/widget_test.dart`)**:
+    - Verified `expect(find.text('Show Deni companion'), findsNothing)` in the Settings tab test and updated `OnboardingFlowScreen` test instantiation.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **24/24 tests passing**.
+  - `cd android && ./gradlew compileDebugKotlin --no-daemon`: **BUILD SUCCESSFUL**.
+  - `flutter build apk --debug` + `adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk`: **Success**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Final Release & PR Consolidation (`main` merge & APK verification)**

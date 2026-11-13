@@ -91,6 +91,7 @@ void main() {
       await tester.tap(find.text('Settings').last);
       await tester.pump();
       expect(find.text('Preferences'), findsOneWidget);
+      expect(find.text('Show Deni companion'), findsNothing);
     },
   );
 
@@ -118,7 +119,6 @@ void main() {
       const MaterialApp(
         home: OnboardingFlowScreen(
           initialDepth: ExplanationDepth.balanced,
-          initialShowDeni: true,
           initialLocale: Locale('en'),
         ),
       ),

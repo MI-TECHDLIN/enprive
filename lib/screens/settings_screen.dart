@@ -14,11 +14,9 @@ import '../widgets/private_readiness_sheet.dart';
 class SettingsScreen extends StatefulWidget {
   final HybridAiBridge bridge;
   final DeviceCapability? capability;
-  final bool showDeni;
   final ExplanationDepth explanationDepth;
   final Locale currentLocale;
   final int savedReceiptsCount;
-  final ValueChanged<bool> onShowDeniChanged;
   final ValueChanged<ExplanationDepth> onExplanationDepthChanged;
   final ValueChanged<Locale> onLocaleChanged;
   final VoidCallback onRefreshCapability;
@@ -29,11 +27,9 @@ class SettingsScreen extends StatefulWidget {
     super.key,
     required this.bridge,
     required this.capability,
-    required this.showDeni,
     required this.explanationDepth,
     required this.currentLocale,
     required this.savedReceiptsCount,
-    required this.onShowDeniChanged,
     required this.onExplanationDepthChanged,
     required this.onLocaleChanged,
     required this.onRefreshCapability,
@@ -134,16 +130,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Center(
               child: Column(
                 children: [
-                  if (widget.showDeni)
-                    Transform.translate(
-                      offset: const Offset(0, 10),
-                      child: DeniAnimatedMascot(
-                        size: 72,
-                        pose: _isCheckingModel
-                            ? DeniPose.thinking
-                            : (isReady ? DeniPose.celebrating : DeniPose.idle),
-                      ),
+                  Transform.translate(
+                    offset: const Offset(0, 10),
+                    child: DeniAnimatedMascot(
+                      size: 72,
+                      pose: _isCheckingModel
+                          ? DeniPose.thinking
+                          : (isReady ? DeniPose.celebrating : DeniPose.idle),
                     ),
+                  ),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
@@ -339,29 +334,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
-                  SwitchListTile.adaptive(
-                    value: widget.showDeni,
-                    activeTrackColor: EnpriveColors.teal,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 4,
-                    ),
-                    onChanged: widget.onShowDeniChanged,
-                    title: Text(
-                      ko ? 'Deni 캐릭터 표시' : 'Show Deni companion',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: EnpriveColors.ink,
-                      ),
-                    ),
-                  ),
-                  Divider(
-                    height: 1,
-                    indent: 20,
-                    endIndent: 20,
-                    color: EnpriveColors.ink.withValues(alpha: 0.06),
-                  ),
                   ListTile(
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 20,

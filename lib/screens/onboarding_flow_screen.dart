@@ -7,12 +7,10 @@ import '../widgets/enprive_tactile_button.dart';
 
 class OnboardingFlowResult {
   final ExplanationDepth explanationDepth;
-  final bool showDeni;
   final Locale locale;
 
   const OnboardingFlowResult({
     required this.explanationDepth,
-    required this.showDeni,
     required this.locale,
   });
 }
@@ -20,20 +18,17 @@ class OnboardingFlowResult {
 /// Guided 3-Step First-Run Onboarding Flow (`b02-koji-intro.png` → `b03-question-cards.png` → `b19-permission-prime.png`).
 class OnboardingFlowScreen extends StatefulWidget {
   final ExplanationDepth initialDepth;
-  final bool initialShowDeni;
   final Locale initialLocale;
 
   const OnboardingFlowScreen({
     super.key,
     required this.initialDepth,
-    required this.initialShowDeni,
     required this.initialLocale,
   });
 
   static Future<OnboardingFlowResult?> show(
     BuildContext context, {
     required ExplanationDepth initialDepth,
-    required bool initialShowDeni,
     required Locale initialLocale,
   }) {
     return Navigator.of(context).push<OnboardingFlowResult>(
@@ -41,7 +36,6 @@ class OnboardingFlowScreen extends StatefulWidget {
         fullscreenDialog: true,
         builder: (_) => OnboardingFlowScreen(
           initialDepth: initialDepth,
-          initialShowDeni: initialShowDeni,
           initialLocale: initialLocale,
         ),
       ),
@@ -55,7 +49,6 @@ class OnboardingFlowScreen extends StatefulWidget {
 class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   int _stepIndex = 0;
   late ExplanationDepth _selectedDepth = widget.initialDepth;
-  late bool _showDeni = widget.initialShowDeni;
   late Locale _locale = widget.initialLocale;
 
   bool get _isKorean => _locale.languageCode == 'ko';
@@ -67,7 +60,6 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
       Navigator.of(context).pop(
         OnboardingFlowResult(
           explanationDepth: _selectedDepth,
-          showDeni: _showDeni,
           locale: _locale,
         ),
       );
@@ -81,7 +73,6 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
       Navigator.of(context).pop(
         OnboardingFlowResult(
           explanationDepth: _selectedDepth,
-          showDeni: _showDeni,
           locale: _locale,
         ),
       );
@@ -314,18 +305,6 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                 isSelected: _selectedDepth == ExplanationDepth.detailed,
                 onTap: () =>
                     setState(() => _selectedDepth = ExplanationDepth.detailed),
-              ),
-              _B3GridChoiceCard(
-                icon: _showDeni
-                    ? Symbols.sentiment_satisfied_rounded
-                    : Symbols.visibility_off_rounded,
-                badgeBg: EnpriveColors.surface,
-                badgeFg: EnpriveColors.ink,
-                title: _showDeni
-                    ? (_isKorean ? '데니 캐릭터 표시' : 'Show Deni\ncompanion')
-                    : (_isKorean ? '텍스트만 표시' : 'Text-only\nquiet mode'),
-                isSelected: !_showDeni,
-                onTap: () => setState(() => _showDeni = !_showDeni),
               ),
             ],
           ),
