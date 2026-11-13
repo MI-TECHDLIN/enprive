@@ -225,6 +225,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingIntroFooter => 'Know what you\'re agreeing to.';
 
   @override
+  String get splashQuote => 'Know what you\'re agreeing to';
+
+  @override
   String get onboardingStep1Question => 'How should I explain\nprivacy terms?';
 
   @override

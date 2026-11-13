@@ -18,9 +18,9 @@
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
 - **Current `main` HEAD**: `a5c69d1`
-- **Active Feature Branch**: `feature/onboarding-and-process-text-flow` (Iteration 10.9 complete, verified, ready to merge)
+- **Active Feature Branch**: `feature/splash-and-deni-icon` (branched from `feature/onboarding-and-process-text-flow` @ `24c880a`; Editorial Splash Screen, Card-Free Onboarding Step 0, Deni `A1` + smile `ip-as-logo` app icon, Home AppBar logo, and `docs/architecture/` AI Prompt Management Investigation + `scout-discover.md` completed)
 - **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 24 November 2026)
-- **Next Queued Branch**: `main` consolidation & final release verification
+- **Next Queued Action**: Review `docs/architecture/scout-discover.md` and `docs/architecture/ai-prompt-migration-plan.md` Final Decision Report; resolve Phase A consent/logging prerequisites or consolidate `feature/splash-and-deni-icon` into `main`
 
 ---
 
@@ -484,8 +484,91 @@
 
 ---
 
+### Iteration 11 — Editorial Brand Splash Screen, Onboarding Step 0 Card Removal & `ip-as-logo` Icon Skill Setup (`feature/splash-and-deni-icon`)
+- **Date**: 2026-11-13
+- **Branch / Commits**: `feature/splash-and-deni-icon` (branched from `feature/onboarding-and-process-text-flow` @ `24c880a`, uncommitted working tree)
+- **Models Used**: Orchestrator (Gemini 4 Argon / Hydrogen)
+- **What Was Built**:
+  - **Editorial Brand Splash Screen (`lib/screens/splash_screen.dart`, `lib/main.dart`, 12 `.arb` files)**:
+    - Added `EnpriveSplashScreen` on warm paper (`#FAF8F5`) displaying bold **`enprive`** (`Nunito` w800) with the centered quote **`"Know what you're agreeing to"`** (`SourceSerif4` w600, localized via `splashQuote` across all 12 `.arb` languages), calm 520ms entrance respecting `disableAnimations`, tap-to-dismiss, and automatic cross-fade transition into `HomeScreen`.
+    - Deferred first-run onboarding trigger and pending `PROCESS_TEXT` / `SEND` handling cleanly until the splash finishes (skipping fast when an external text-share intent arrives).
+    - Updated native Android (`values/colors.xml`, `drawable/splash_blank.xml`, `drawable/launch_background.xml`, `drawable-v21/launch_background.xml`, `values/styles.xml`, `values-night/styles.xml`, `values-v31/styles.xml`, `values-night-v31/styles.xml`) and iOS (`ios/Runner/Base.lproj/LaunchScreen.storyboard`) launch backgrounds to seamless warm paper (`#FAF8F5`) with empty Android 12+ icon drawable to prevent a double logo/flash on cold start.
+  - **Onboarding Step 0 Card Removal (`lib/screens/onboarding_flow_screen.dart`)**:
+    - Removed the entire explanation body card container, inner paragraphs, and footer badge from `_buildStep0Intro`, keeping only the animated Deni mascot (`DeniPose.idle`), **"Hi, I'm Deni. 👋"**, and **"Let's make app privacy easier to understand."**.
+  - **Deni App Icon Skill Installation (`.agents/skills/ip-as-logo/`)**:
+    - Installed `s1dashu/ip-as-logo-skill` via `npx -y skills@latest add s1dashu/ip-as-logo-skill`.
+    - Designed 3 Deni Concept C directions (`A` Classic Protective Pebble, `B` Warm Shielded Curio, `C` Storybook Companion; 2 IP colors + 1 solid background color, lower-left emergence) and paused before generation per `SKILL.md` governance while awaiting user confirmation to run the 6-candidate (`A1`–`C2`) batch with `image-generator`.
+- **Challenges & Root-Cause Fixes**:
+  - Re-applied `lib/main.dart` and `test/widget_test.dart` splash wiring after an open IDE editor buffer overwrote the earlier edits; confirmed persistence via test count reaching `28/28` including `EnpriveSplashScreen` tests.
+  - Added both `values-v31/styles.xml` and `values-night-v31/styles.xml` on Android so `values-night` does not override Android 12+ splash background properties in dark system theme.
+- **Verification**:
+  - `flutter gen-l10n`: **Success**.
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **28/28 tests passing** (`EnpriveSplashScreen` localization + tap dismissal, `EnpriveApp` splash-to-home flow, 200% text scale + reduced motion, and card-free Onboarding Step 0).
+  - `cd android && ./gradlew compileDebugKotlin --no-daemon`: **BUILD SUCCESSFUL**.
+  - `flutter build apk --debug` + `adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk` + launch (`com.example.enprive/.MainActivity`): **Success**.
+
+---
+
+### Iteration 12 — Deni `ip-as-logo` App Icon (`A1` + Dark Smile), Adaptive Launcher Packaging & Home AppBar Logo (`feature/splash-and-deni-icon`)
+- **Date**: 2026-11-13
+- **Branch / Commits**: `feature/splash-and-deni-icon` (uncommitted working tree ready for review/commit)
+- **Models Used**: Orchestrator (Gemini 4 Argon / Hydrogen) + workspace `image-generator` subagents (`ip-as-logo`)
+- **What Was Built**:
+  - **6-Candidate `ip-as-logo` Exploration & Final `A1` + Smile Variant**:
+    - Generated all 6 independent `1024 × 1024` candidates (`A1`, `A2`, `B1`, `B2`, `C1`, `C2`) emerging upright from the lower-left using 2 IP colors + 1 solid background color per candidate via parallel `image-generator` subagents.
+    - User selected **`A1`** (Oceanic Teal pebble + Deep Ink Navy blunt folded cap on Warm Paper Cream `#F1ECDC`–`#F4EDDD`) and requested adding a small dark curved smile (`deni_pebble_a1_smile_1794582990774.jpg`).
+  - **Cross-Platform App Icon Packaging**:
+    - Packaged `assets/images/enprive_logo.png` (`512 × 512`) and declared `assets/images/` in `pubspec.yaml`.
+    - Generated all 15 iOS `AppIcon.appiconset` PNGs (`20px` through `1024px`) matching `Contents.json`.
+    - Generated Android legacy `mipmap-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}/ic_launcher.png` (`48px`–`192px`) and API 26+ Android Adaptive Icons (`mipmap-anydpi-v26/ic_launcher.xml`, `ic_launcher_round.xml`, `values/colors.xml` `enprive_icon_bg = #F1ECDC`, `android:roundIcon` in `AndroidManifest.xml`, and `mipmap-*/ic_launcher_foreground.png`).
+  - **Home Screen AppBar Brand Mark (`lib/main.dart`, `test/widget_test.dart`)**:
+    - Replaced the old teal shield placeholder (`Ph.shield_check_duotone`) in `HomeScreen`'s `AppBar` with a crisp `34 × 34` rounded square rendering `assets/images/enprive_logo.png` (`excludeFromSemantics: true` + subtle `EnpriveColors.ink` `0.12` alpha border).
+    - Extended `test/widget_test.dart` to verify `AppBar` renders `AssetImage('assets/images/enprive_logo.png')`.
+- **Challenges & Root-Cause Fixes**:
+  - Pixel-bounds inspection on `deni_pebble_a1_smile` (`minY = 0.122`, `maxX = 0.890`) showed an unpadded full-bleed `108dp` adaptive foreground would clip the cap peak and right brim inside Android's `66–72dp` circular mask. Fixed by using `scale = 0.72` centered placement with `CLAMP_TO_EDGE` border extension for `ic_launcher_foreground.png`, preserving both seamless lower-left teal bleed and unclipped face/cap inside Pixel Launcher circles.
+  - Replaced an initial `EnpriveColors.border` reference in `lib/main.dart` with `EnpriveColors.ink.withValues(alpha: 0.12)` per `lib/core/theme/enprive_colors.dart`.
+- **Verification**:
+  - `flutter pub get`: **Success**.
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **28/28 tests passing** (including Home `AppBar` `AssetImage` assertion).
+  - `cd android && ./gradlew compileDebugKotlin --no-daemon`: **BUILD SUCCESSFUL** (21s).
+  - `flutter build apk --debug` + `adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk` + live Pixel 9 visual checks (`emulator_home.png` AppBar + `emulator_launcher.png` circular launcher icon): **Verified & clean**.
+- **Next Immediate Action & Recommended Model**:
+  - Commit and push `feature/splash-and-deni-icon` (excluding untracked local `.docx` / scratch assets) and merge PR into `main`.
+  - Recommended Model: **Gemini 4 Argon / Hydrogen**.
+
+---
+
+### Iteration 13 — Read-Only AI Prompt Management, Server Prompt Templates & Remote Config Investigation (`docs/architecture/`)
+- **Date**: 2026-11-13
+- **Branch / Commits**: `feature/splash-and-deni-icon` (read-only investigation; deliverables written strictly under `docs/architecture/`, zero app code or Firebase project changes)
+- **Models Used**: Architectural Investigator (Gemini)
+- **What Was Built**:
+  - Audited entire Flutter (`lib/`, `pubspec.yaml`, `test/`), iOS (`ios/Runner/`), and Android native Kotlin (`android/app/src/main/kotlin/com/example/enprive/MainActivity.kt`, `build.gradle.kts`, `AndroidManifest.xml`, compiled `firebase-ai-18.2.0-api.jar` bytecode via `javap`) implementation against `docs/*.docx` and live official Firebase documentation.
+  - Authored four architecture deliverables:
+    1. `docs/architecture/ai-prompt-management-investigation.md` (12-area inventory table with 5-tier status classifications, code-vs-docs discrepancies, Server Prompt Templates compatibility & IAM/logging findings, and Remote Config parameter audit).
+    2. `docs/architecture/ai-prompt-management-architecture.md` (target hybrid/cloud Mermaid architecture diagrams, Kotlin-over-Dart SDK decision, `LocalPromptRegistry`, Dotprompt contracts & split translation templates, 4-layer Deni model, 10-category/10-metric evaluation harness, and 9-column before-and-after table).
+    3. `docs/architecture/ai-prompt-migration-plan.md` (Phases A–G roadmap, rejected/deferred alternatives, and 7-question Final Decision Report).
+    4. `docs/architecture/scout-discover.md` (comprehensive consolidated Scout & Discovery dossier unifying all codebase facts, SDK/bytecode findings, architecture design, evaluation harness, migration roadmap, and Final Decision Report).
+- **Key Investigation Findings**:
+  - **`firebase-ai:18.2.0` Bytecode Ready**: Native Kotlin already bundles `TemplateGenerativeModel`, `TemplateChat`, `TemplateTool`, and `UsageMetadata`; `pubspec.yaml` contains zero Firebase plugins.
+  - **Consent Regression**: `ReviewCoordinator.runPolicyReview` & `askDeniAboutFinding` currently escalate silently via `PiiRedactor.redact` + `PREFER_ON_DEVICE` (`cloudConsent: true`), leaving `CloudConsentSheet` unused (must be fixed in Phase A before cloud templates).
+  - **Firebase Constraints**: Server Prompt Templates are Public Preview, cloud-only (no Gemini Nano/hybrid/`LiveGenerativeModel`, no enum-list output schemas), and project-wide `"template-only mode"` must remain **OFF** (`403` conflict with hybrid `GenerativeModel`); Cloud Logging prompt-body exclusion filter (`resource.type="firebasevertexai.googleapis.com/Client"`) is also required.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **28/28 tests passing** (no code modified).
+- **Next Immediate Action & Recommended Model**:
+  - User/team review of `docs/architecture/ai-prompt-migration-plan.md` before authorizing Phase A (`CloudConsentSheet` restoration & `InferenceSource.offlineDeterministic`) or Phase B/C (`LocalPromptRegistry` + `enprive-finding-explanation-cloud-v1-0-0` POC).
+  - Recommended Model for Phase A/B/C Kotlin+Dart implementation: **Gemini 4 Argon** or **Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
-1. **Final Release & PR Consolidation (`main` merge & APK verification)**
+1. **Review Investigation & Final Decision Report (`docs/architecture/`)**
+   - **Assigned Model**: Human Product/Tech Lead Review
+   - **Scope**: Approve `ADOPT WITH MODIFICATIONS` plan before Phase A (`CloudConsentSheet` + `OfflineDeterministic`) and Phase B/C (`LocalPromptRegistry` + `enprive-finding-explanation-cloud-v1-0-0` POC).
+2. **Final Release & PR Consolidation (`main` merge & APK verification)**
    - **Assigned Model**: **Gemini 4 Argon / Hydrogen**
-   - **Scope**: Merge feature branch chain into `main`, verify release/debug APK build, and prepare #BuildHybridAI 2026 submission walkthrough.
+   - **Scope**: Merge feature branch chain (`feature/onboarding-and-process-text-flow` -> `feature/splash-and-deni-icon` -> `main`), verify release/debug APK build, and prepare #BuildHybridAI 2026 submission walkthrough.

@@ -220,6 +220,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get onboardingIntroFooter => '何に同意しているのか、きちんと知ることから。';
 
   @override
+  String get splashQuote => '何に同意しているのか、きちんと知ることから';
+
+  @override
   String get onboardingStep1Question => 'プライバシー規約を\nどのように説明しましょうか？';
 
   @override

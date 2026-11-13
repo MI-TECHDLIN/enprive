@@ -65,6 +65,7 @@
   "onboardingIntroLead": "アプリのプライバシーをもっと分かりやすく。",
   "onboardingIntroBody": "アプリのプライバシーポリシーが本当に何を伝えているのかを読み解き、大切な記述を原文とともに示し、この端末が報告する権限状態も分かりやすく説明します。\n\n推測や根拠のない約束はしません。納得して判断できるよう、明確な説明と根拠だけをお届けします。",
   "onboardingIntroFooter": "何に同意しているのか、きちんと知ることから。",
+  "splashQuote": "何に同意しているのか、きちんと知ることから",
   "onboardingStep1Question": "プライバシー規約を\nどのように説明しましょうか？",
   "depthQuickMultiline": "要点のみ\n簡潔に",
   "depthBalancedMultiline": "バランス\n表示",

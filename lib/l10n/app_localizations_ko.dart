@@ -220,6 +220,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get onboardingIntroFooter => '무엇에 동의하는지 알고 선택하세요.';
 
   @override
+  String get splashQuote => '무엇에 동의하는지 알고 선택하세요';
+
+  @override
   String get onboardingStep1Question => '약관을 어떤 방식으로\n설명해 드릴까요?';
 
   @override

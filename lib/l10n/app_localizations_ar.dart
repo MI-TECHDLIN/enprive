@@ -229,6 +229,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboardingIntroFooter => 'اعرف تمامًا ما توافق عليه.';
 
   @override
+  String get splashQuote => 'اعرف تمامًا ما توافق عليه';
+
+  @override
   String get onboardingStep1Question => 'كيف تفضل أن أشرح\nشروط الخصوصية؟';
 
   @override

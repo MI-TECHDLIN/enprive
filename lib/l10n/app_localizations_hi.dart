@@ -226,6 +226,9 @@ class AppLocalizationsHi extends AppLocalizations {
       'जानिए कि आप किस बात की सहमति दे रहे हैं।';
 
   @override
+  String get splashQuote => 'जानिए कि आप किस बात की सहमति दे रहे हैं';
+
+  @override
   String get onboardingStep1Question => 'मैं गोपनीयता शर्तों को\nकैसे समझाऊँ?';
 
   @override

@@ -9,6 +9,7 @@ import 'package:enprive/l10n/app_localizations.dart';
 import 'package:enprive/l10n/enprive_languages.dart';
 import 'package:enprive/main.dart';
 import 'package:enprive/screens/onboarding_flow_screen.dart';
+import 'package:enprive/screens/splash_screen.dart';
 import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/services/storage/receipt_repository.dart';
 import 'package:enprive/widgets/analysis_process_trace.dart';
@@ -55,13 +56,29 @@ void main() {
   });
 
   testWidgets(
-    'EnpriveApp renders clean Home hero, sample app checks, and what-we-check content without pose debug card',
+    'EnpriveApp renders brand splash first then clean Home hero, sample app checks, and what-we-check content',
     (WidgetTester tester) async {
       await tester.pumpWidget(const EnpriveApp());
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 250));
 
+      expect(find.text('enprive'), findsOneWidget);
+      expect(find.text("Know what you're agreeing to"), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 1450));
+      await tester.pump(const Duration(milliseconds: 350));
+
       expect(find.text('Enprive'), findsOneWidget);
+      final appBarLogo = tester.widget<Image>(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byType(Image),
+        ),
+      );
+      expect(
+        (appBarLogo.image as AssetImage).assetName,
+        'assets/images/enprive_logo.png',
+      );
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Receipts'), findsWidgets);
       expect(find.text('Try a sample app check'), findsOneWidget);
@@ -75,7 +92,7 @@ void main() {
   );
 
   testWidgets(
-    'EnpriveApp renders cleanly at 200% text scale and reduced motion across all tabs',
+    'EnpriveApp renders cleanly at 200% text scale and reduced motion across splash and tabs',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         const MediaQuery(
@@ -89,6 +106,13 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
+      expect(find.text('enprive'), findsOneWidget);
+      expect(find.text("Know what you're agreeing to"), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
       expect(find.text('Enprive'), findsOneWidget);
 
       // Switch to Settings tab at 200% text scale
@@ -96,6 +120,33 @@ void main() {
       await tester.pump();
       expect(find.text('Preferences'), findsOneWidget);
       expect(find.text('Show Deni companion'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'EnpriveSplashScreen localizes quote across languages and dismisses on tap',
+    (WidgetTester tester) async {
+      var completed = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('ar'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: EnpriveSplashScreen(
+            onCompleted: () => completed = true,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final arQuote = lookupAppLocalizations(const Locale('ar')).splashQuote;
+      expect(find.text('enprive'), findsOneWidget);
+      expect(find.text(arQuote), findsOneWidget);
+
+      await tester.tap(find.text('enprive'));
+      await tester.pump();
+      expect(completed, isTrue);
     },
   );
 
@@ -129,7 +180,7 @@ void main() {
     );
     await tester.pump();
 
-    // Step 0 (B2 Mascot Intro — updated Deni narrative)
+    // Step 0 (B2 Mascot Intro — clean Deni greeting without body card)
     expect(find.text("Hi, I'm Deni. 👋"), findsOneWidget);
     expect(
       find.text("Let's make app privacy easier to understand."),
@@ -139,13 +190,9 @@ void main() {
       find.textContaining(
         "I'll help you uncover what an app's privacy policy really says",
       ),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(
-      find.textContaining('No guessing. No false promises.'),
-      findsOneWidget,
-    );
-    expect(find.text("Know what you're agreeing to."), findsOneWidget);
+    expect(find.text("Know what you're agreeing to."), findsNothing);
 
     await tester.tap(find.text('Continue'));
     await tester.pump(const Duration(milliseconds: 300));
@@ -273,87 +320,83 @@ void main() {
     },
   );
 
-  test(
-    'All 12 requested languages are configured locally and propagate to Cloud Gemini & disclaimer',
-    () async {
-      const expectedCodes = [
-        'en',
-        'ko',
-        'es',
-        'fr',
-        'de',
-        'ar',
-        'ja',
-        'zh',
-        'hi',
-        'pt',
-        'it',
-        'ru',
-      ];
-      expect(kEnpriveLanguages.length, expectedCodes.length);
-      expect(
-        kEnpriveLanguages.map((e) => e.code).toList(),
-        equals(expectedCodes),
-      );
+  test('All 12 requested languages are configured locally and propagate to Cloud Gemini & disclaimer', () async {
+    const expectedCodes = [
+      'en',
+      'ko',
+      'es',
+      'fr',
+      'de',
+      'ar',
+      'ja',
+      'zh',
+      'hi',
+      'pt',
+      'it',
+      'ru',
+    ];
+    expect(kEnpriveLanguages.length, expectedCodes.length);
+    expect(
+      kEnpriveLanguages.map((e) => e.code).toList(),
+      equals(expectedCodes),
+    );
 
-      for (final lang in kEnpriveLanguages) {
-        expect(AppLocalizations.delegate.isSupported(lang.locale), isTrue);
+    for (final lang in kEnpriveLanguages) {
+      expect(AppLocalizations.delegate.isSupported(lang.locale), isTrue);
+      expect(
+        AppLocalizations.supportedLocales.any(
+          (supported) => supported.languageCode == lang.code,
+        ),
+        isTrue,
+      );
+      final l10n = lookupAppLocalizations(lang.locale);
+      expect(l10n.onboardingIntroHeadline.trim(), isNotEmpty);
+      expect(l10n.onboardingIntroLead.trim(), isNotEmpty);
+      expect(l10n.onboardingIntroBody.trim(), isNotEmpty);
+      expect(l10n.onboardingIntroFooter.trim(), isNotEmpty);
+      expect(l10n.stateNoConcernSubtitle.trim(), isNotEmpty);
+      expect(l10n.progressStepCounter(1, 4).trim(), isNotEmpty);
+      expect(l10n.chooseLanguage.trim(), isNotEmpty);
+      expect(l10n.btnCheckApp.trim(), isNotEmpty);
+      expect(l10n.btnPasteTerms.trim(), isNotEmpty);
+      if (lang.code != 'en') {
         expect(
-          AppLocalizations.supportedLocales.any(
-            (supported) => supported.languageCode == lang.code,
-          ),
-          isTrue,
+          l10n.onboardingIntroLead,
+          isNot("Let's make app privacy easier to understand."),
         );
-        final l10n = lookupAppLocalizations(lang.locale);
-        expect(l10n.onboardingIntroHeadline.trim(), isNotEmpty);
-        expect(l10n.onboardingIntroLead.trim(), isNotEmpty);
-        expect(l10n.onboardingIntroBody.trim(), isNotEmpty);
-        expect(l10n.onboardingIntroFooter.trim(), isNotEmpty);
-        expect(l10n.stateNoConcernSubtitle.trim(), isNotEmpty);
-        expect(l10n.progressStepCounter(1, 4).trim(), isNotEmpty);
-        expect(l10n.chooseLanguage.trim(), isNotEmpty);
-        expect(l10n.btnCheckApp.trim(), isNotEmpty);
-        expect(l10n.btnPasteTerms.trim(), isNotEmpty);
-        if (lang.code != 'en') {
-          expect(
-            l10n.onboardingIntroLead,
-            isNot("Let's make app privacy easier to understand."),
-          );
-        }
       }
+    }
 
-      // Verify HybridAiBridge.analyseText forwards languageCode to native Kotlin/Cloud prompt
-      final bridge = HybridAiBridge();
-      await bridge.analyseText(
-        requestId: 'req_lang_test',
-        task: 'summarise_concerns',
-        text: 'Sample child app privacy policy clause.',
-        cloudConsent: false,
-        languageCode: 'fr',
-      );
-      final analyseCall = recordedCalls.lastWhere(
-        (c) => c.method == 'analyseText',
-      );
-      expect(analyseCall.arguments['languageCode'], 'fr');
+    // Verify HybridAiBridge.analyseText forwards languageCode to native Kotlin/Cloud prompt
+    final bridge = HybridAiBridge();
+    await bridge.analyseText(
+      requestId: 'req_lang_test',
+      task: 'summarise_concerns',
+      text: 'Sample child app privacy policy clause.',
+      cloudConsent: false,
+      languageCode: 'fr',
+    );
+    final analyseCall = recordedCalls.lastWhere(
+      (c) => c.method == 'analyseText',
+    );
+    expect(analyseCall.arguments['languageCode'], 'fr');
 
-      // Verify ReviewCoordinator applies localized calibrated disclaimer while preserving evidence
-      final coordinator = ReviewCoordinator(bridge: bridge);
-      final outcome = await coordinator.runPolicyReview(
-        subjectTitle: 'CalmMath',
-        sourceLabel: 'Test Snapshot',
-        policyText:
-            'We do not collect personal data from children and keep lessons stored exclusively on this device.',
-        forceLocalManualScan: true,
-        languageCode: 'es',
-      );
-      expect(outcome.receipt, isNotNull);
-      expect(outcome.receipt!.overallState, ReviewOverallState.noConcern);
-      expect(
-        outcome.receipt!.calibratedDisclaimer,
-        lookupAppLocalizations(const Locale('es')).stateNoConcernSubtitle,
-      );
-    },
-  );
+    // Verify ReviewCoordinator applies localized calibrated disclaimer while preserving evidence
+    final coordinator = ReviewCoordinator(bridge: bridge);
+    final outcome = await coordinator.runPolicyReview(
+      subjectTitle: 'CalmMath',
+      sourceLabel: 'Test Snapshot',
+      policyText: 'We do not collect personal data from children and keep lessons stored exclusively on this device.',
+      forceLocalManualScan: true,
+      languageCode: 'es',
+    );
+    expect(outcome.receipt, isNotNull);
+    expect(outcome.receipt!.overallState, ReviewOverallState.noConcern);
+    expect(
+      outcome.receipt!.calibratedDisclaimer,
+      lookupAppLocalizations(const Locale('es')).stateNoConcernSubtitle,
+    );
+  });
 
   testWidgets(
     'OnboardingFlowScreen opens 12-language picker and applies Arabic RTL cleanly',
@@ -389,7 +432,8 @@ void main() {
 
       final arL10n = lookupAppLocalizations(const Locale('ar'));
       expect(find.text(arL10n.onboardingIntroHeadline), findsOneWidget);
-      expect(find.text(arL10n.onboardingIntroFooter), findsOneWidget);
+      expect(find.text(arL10n.onboardingIntroLead), findsOneWidget);
+      expect(find.text(arL10n.onboardingIntroBody), findsNothing);
       expect(
         Directionality.of(
           tester.element(find.text(arL10n.onboardingIntroHeadline)),
@@ -477,8 +521,8 @@ void main() {
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
-      final arCounter =
-          lookupAppLocalizations(const Locale('ar')).progressStepCounter(1, 4);
+      final arCounter = lookupAppLocalizations(const Locale('ar'))
+          .progressStepCounter(1, 4);
       expect(find.text(arCounter), findsOneWidget);
       expect(tester.takeException(), isNull);
     },

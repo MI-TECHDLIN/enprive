@@ -216,6 +216,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingIntroFooter => '清楚了解你正在同意的内容。';
 
   @override
+  String get splashQuote => '清楚了解你正在同意的内容';
+
+  @override
   String get onboardingStep1Question => '你希望我如何解释\n隐私条款？';
 
   @override

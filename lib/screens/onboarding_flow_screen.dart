@@ -241,13 +241,8 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     );
   }
 
-  /// Step 0: `b02-koji-intro.png` — Deni welcome stage with clear, grounded copy.
+  /// Step 0: `b02-koji-intro.png` — Minimal centered Deni mascot & headline.
   Widget _buildStep0Intro(BuildContext context, AppLocalizations l10n) {
-    final paragraphs = l10n.onboardingIntroBody
-        .split('\n\n')
-        .where((p) => p.trim().isNotEmpty)
-        .toList(growable: false);
-
     return Center(
       key: const ValueKey<int>(0),
       child: SingleChildScrollView(
@@ -256,89 +251,27 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const DeniAnimatedMascot(
-              size: 112,
+              size: 120,
               pose: DeniPose.idle,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 22),
             Text(
               l10n.onboardingIntroHeadline,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontSize: 27,
+                    fontSize: 28,
                     height: 1.2,
                   ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               l10n.onboardingIntroLead,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: EnpriveColors.tealStrong,
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w700,
+                    color: EnpriveColors.inkSecondary,
                   ),
-            ),
-            const SizedBox(height: 18),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: EnpriveColors.surface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: EnpriveColors.ink.withValues(alpha: 0.06),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var i = 0; i < paragraphs.length; i++) ...[
-                    if (i > 0) const SizedBox(height: 12),
-                    Text(
-                      paragraphs[i],
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontSize: 14.5,
-                            height: 1.5,
-                            color: i == 0
-                                ? EnpriveColors.ink
-                                : EnpriveColors.inkSecondary,
-                          ),
-                    ),
-                  ],
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: EnpriveColors.chipOnDeviceBg,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          LucideIcons.shieldCheck,
-                          size: 16,
-                          color: EnpriveColors.tealStrong,
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            l10n.onboardingIntroFooter,
-                            style: const TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w800,
-                              color: EnpriveColors.tealStrong,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),

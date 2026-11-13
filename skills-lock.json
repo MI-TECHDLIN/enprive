@@ -229,6 +229,12 @@
       "skillPath": "skills/flutter-use-http-package/SKILL.md",
       "computedHash": "a9271fff9ed45b37f908ed57acb5e68012f97d887771b6a5efe088649a1d5ec3"
     },
+    "ip-as-logo": {
+      "source": "s1dashu/ip-as-logo-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "8c5b3f57e6b89650def1134b2995f766b19bae63c7670329fa972a0049403c4f"
+    },
     "mobile-app-ui-design": {
       "source": "ceorkm/mobile-app-ui-design",
       "sourceType": "github",

@@ -73,6 +73,7 @@
   "onboardingIntroLead": "Let's make app privacy easier to understand.",
   "onboardingIntroBody": "I'll help you uncover what an app's privacy policy really says, highlight the exact passages that matter, and explain what your device reports.\n\nNo guessing. No false promises. Just clear explanations and evidence to help you make informed decisions.",
   "onboardingIntroFooter": "Know what you're agreeing to.",
+  "splashQuote": "Know what you're agreeing to",
   "onboardingStep1Question": "How should I explain\nprivacy terms?",
   "depthQuickMultiline": "Quick &\nplain",
   "depthBalancedMultiline": "Balanced\nview",

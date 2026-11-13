@@ -227,6 +227,9 @@ class AppLocalizationsPt extends AppLocalizations {
       'Saiba exatamente com o que você está concordando.';
 
   @override
+  String get splashQuote => 'Saiba exatamente com o que você está concordando';
+
+  @override
   String get onboardingStep1Question =>
       'Como devo explicar os\ntermos de privacidade?';
 

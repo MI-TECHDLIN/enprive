@@ -228,6 +228,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get onboardingIntroFooter => 'Sachez ce que vous acceptez.';
 
   @override
+  String get splashQuote => 'Sachez ce que vous acceptez';
+
+  @override
   String get onboardingStep1Question =>
       'Comment souhaitez-vous que j\'explique\nles conditions de confidentialité ?';
 

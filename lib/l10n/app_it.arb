@@ -65,6 +65,7 @@
   "onboardingIntroLead": "Rendiamo la privacy delle app più facile da capire.",
   "onboardingIntroBody": "Ti aiuterò a scoprire cosa dice davvero l'informativa sulla privacy di un'app, evidenzierò i passaggi esatti che contano e spiegherò cosa segnala il tuo dispositivo.\n\nNiente supposizioni. Niente false promesse. Solo spiegazioni chiare e prove concrete per decidere in modo consapevole.",
   "onboardingIntroFooter": "Sappi sempre a cosa stai acconsentendo.",
+  "splashQuote": "Sappi sempre a cosa stai acconsentendo",
   "onboardingStep1Question": "Come preferisci che spieghi\ni termini sulla privacy?",
   "depthQuickMultiline": "Breve e\nsemplice",
   "depthBalancedMultiline": "Vista\nequilibrata",

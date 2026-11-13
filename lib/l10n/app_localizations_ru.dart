@@ -229,6 +229,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get onboardingIntroFooter => 'Знайте, на что вы соглашаетесь.';
 
   @override
+  String get splashQuote => 'Знайте, на что вы соглашаетесь';
+
+  @override
   String get onboardingStep1Question =>
       'Как мне объяснять\nусловия конфиденциальности?';
 

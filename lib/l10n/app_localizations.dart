@@ -508,6 +508,12 @@ abstract class AppLocalizations {
   /// **'Know what you\'re agreeing to.'**
   String get onboardingIntroFooter;
 
+  /// No description provided for @splashQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Know what you\'re agreeing to'**
+  String get splashQuote;
+
   /// No description provided for @onboardingStep1Question.
   ///
   /// In en, this message translates to:
