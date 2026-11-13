@@ -127,14 +127,20 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
-                    child: LinearProgressIndicator(
-                      value: _deniExplanation != null ? 1.0 : 0.65,
-                      minHeight: 7,
-                      backgroundColor: EnpriveColors.surfaceMuted,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        EnpriveColors.teal,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 168),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          value: _deniExplanation != null ? 1.0 : 0.65,
+                          minHeight: 7,
+                          backgroundColor: EnpriveColors.surfaceMuted,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            EnpriveColors.teal,
+                          ),
+                        ),
                       ),
                     ),
                   ),

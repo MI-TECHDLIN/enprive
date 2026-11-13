@@ -310,6 +310,8 @@
     - Rewrote deterministic finding titles, plain-language explanations, unknowns, onboarding steps (`Quick & plain`, `Balanced view`, `Full detail`, *Checked here first*, *Your apps stay yours*, *Never uploaded without asking*), Settings depth cards, and Deni pose dialogues into concise, direct parent/teacher language.
   - **Installed App Picker Surface Fix (`lib/widgets/installed_app_picker_sheet.dart`)**:
     - Wrapped the launchable app `ListTile` list in `Material(color: EnpriveColors.surface, borderRadius: BorderRadius.circular(24), clipBehavior: Clip.antiAlias)` to eliminate the Flutter `ListTile background color or ink splashes may be invisible` framework assertion during emulator testing.
+  - **Responsive Top-Right Progress Bar Alignment (`lib/screens/onboarding_flow_screen.dart`, `lib/widgets/why_this_finding_sheet.dart`)**:
+    - Moved the segmented onboarding progress bar to the top-right (`Alignment.centerRight`, capped at `maxWidth: 156` inside `Expanded`) with the `<` back button and `EN / 한국어` pill cleanly anchored on the left; aligned the `WhyThisFindingSheet` top bar `LinearProgressIndicator` (`maxWidth: 168`) to `Alignment.centerRight` as well.
 - **Verification**:
   - `flutter analyze`: **0 issues found**.
   - `flutter test`: **17/17 tests passing**.

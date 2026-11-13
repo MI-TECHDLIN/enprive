@@ -110,7 +110,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
             padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
             child: Column(
               children: [
-                // Top Bar (`b02` / `b03` back chevron + segmented progress bar + language toggle)
+                // Top Bar: back chevron + language toggle + responsive right-aligned progress bar
                 Row(
                   children: [
                     IconButton(
@@ -121,28 +121,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                         color: EnpriveColors.ink,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Row(
-                        children: List.generate(3, (index) {
-                          final active = index <= _stepIndex;
-                          return Expanded(
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 220),
-                              height: 6,
-                              margin: EdgeInsets.only(right: index < 2 ? 6 : 0),
-                              decoration: BoxDecoration(
-                                color: active
-                                    ? EnpriveColors.teal
-                                    : EnpriveColors.ink.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 4),
                     InkWell(
                       borderRadius: BorderRadius.circular(999),
                       onTap: () {
@@ -167,6 +146,37 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
                             color: EnpriveColors.ink,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 156),
+                          child: Row(
+                            children: List.generate(3, (index) {
+                              final active = index <= _stepIndex;
+                              return Expanded(
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 220),
+                                  height: 6,
+                                  margin: EdgeInsets.only(
+                                    right: index < 2 ? 6 : 0,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: active
+                                        ? EnpriveColors.teal
+                                        : EnpriveColors.ink.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                ),
+                              );
+                            }),
                           ),
                         ),
                       ),
