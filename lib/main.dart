@@ -1,3 +1,5 @@
+import 'package:animated_status_card/animated_status_card.dart';
+import 'package:beautiful_timeline/beautiful_timeline.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -520,38 +522,82 @@ We do not collect personal identifiers, precise location data, microphone audio,
               ),
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _HomeSampleCard(
-                    title: 'EduTrack Classroom',
-                    subtitle: isKorean
-                        ? '숙제·출결 · 권한 3건 요청'
-                        : 'Homework & attendance · 3 permissions requested',
-                    icon: Symbols.school_rounded,
-                    iconBg: EnpriveColors.stateReviewRecommendedBg,
-                    iconFg: EnpriveColors.stateReviewRecommendedFg,
-                    onTap: _isRunningReview
-                        ? null
-                        : () => _runQuickSampleReview(isEduTrack: true),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _HomeSampleCard(
-                    title: 'CalmMath Kids',
-                    subtitle: isKorean
-                        ? '오프라인 수학 · 민감 권한 없음'
-                        : 'Offline math practice · 0 sensitive permissions',
-                    icon: Symbols.calculate_rounded,
-                    iconBg: EnpriveColors.stateNoConcernBg,
-                    iconFg: EnpriveColors.stateNoConcernFg,
-                    onTap: _isRunningReview
-                        ? null
-                        : () => _runQuickSampleReview(isEduTrack: false),
-                  ),
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+                final disableAnimations =
+                    MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+                final stackVertically =
+                    constraints.maxWidth < 340 || textScale > 1.35;
+                final cardHeight = stackVertically
+                    ? (220 * textScale).clamp(220.0, 420.0)
+                    : 208.0;
+                final entryAnim = disableAnimations
+                    ? EntryAnimationType.none
+                    : EntryAnimationType.slideUp;
+
+                final eduCard = AnimatedStatusCard(
+                  title: 'EduTrack Classroom',
+                  value: isKorean ? '권한 3건' : '3 requests',
+                  subtitle: isKorean
+                      ? '숙제·출결 샘플'
+                      : 'Homework & attendance',
+                  icon: Symbols.school_rounded,
+                  trendValue: isKorean ? '확인 권장' : 'Review',
+                  trendDirection: TrendDirection.up,
+                  styleType: CardStyleType.outlined,
+                  statusType: CardStatusType.warning,
+                  animationType: entryAnim,
+                  height: cardHeight,
+                  borderRadius: 24,
+                  accentColor: EnpriveColors.stateReviewRecommendedFg,
+                  backgroundColor: EnpriveColors.surface,
+                  foregroundColor: EnpriveColors.ink,
+                  onTap: _isRunningReview
+                      ? null
+                      : () => _runQuickSampleReview(isEduTrack: true),
+                );
+
+                final calmCard = AnimatedStatusCard(
+                  title: 'CalmMath Kids',
+                  value: isKorean ? '민감 0건' : '0 sensitive',
+                  subtitle: isKorean
+                      ? '오프라인 수학 샘플'
+                      : 'Offline math practice',
+                  icon: Symbols.calculate_rounded,
+                  trendValue: isKorean ? '단순함' : 'Minimal',
+                  trendDirection: TrendDirection.neutral,
+                  styleType: CardStyleType.outlined,
+                  statusType: CardStatusType.success,
+                  animationType: entryAnim,
+                  height: cardHeight,
+                  borderRadius: 24,
+                  accentColor: EnpriveColors.tealStrong,
+                  backgroundColor: EnpriveColors.surface,
+                  foregroundColor: EnpriveColors.ink,
+                  onTap: _isRunningReview
+                      ? null
+                      : () => _runQuickSampleReview(isEduTrack: false),
+                );
+
+                if (stackVertically) {
+                  return Column(
+                    children: [
+                      eduCard,
+                      const SizedBox(height: 12),
+                      calmCard,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: eduCard),
+                    const SizedBox(width: 12),
+                    Expanded(child: calmCard),
+                  ],
+                );
+              },
             ),
 
             const SizedBox(height: 24),
@@ -559,7 +605,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
             // 5. What We Check For
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
               decoration: BoxDecoration(
                 color: EnpriveColors.surface,
                 borderRadius: BorderRadius.circular(24),
@@ -575,37 +621,83 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       color: EnpriveColors.ink,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  _HomeHighlightRow(
-                    icon: Symbols.format_quote_rounded,
-                    iconBg: EnpriveColors.chipOnDeviceBg,
-                    iconFg: EnpriveColors.tealStrong,
-                    title: isKorean ? '정확한 약관 원문' : 'Exact policy quotes',
-                    subtitle: isKorean
-                        ? '공유·음성 녹음·보관 기간 조항을 원문과 함께 짚어줍니다.'
-                        : 'Flags sharing, voice recording, and retention with verbatim quotes.',
-                  ),
-                  const SizedBox(height: 14),
-                  _HomeHighlightRow(
-                    icon: Symbols.shield_lock_rounded,
-                    iconBg: EnpriveColors.stateReviewRecommendedBg,
-                    iconFg: EnpriveColors.stateReviewRecommendedFg,
-                    title: isKorean
-                        ? '휴대폰 권한 불일치'
-                        : 'Phone permission mismatches',
-                    subtitle: isKorean
-                        ? '카메라·마이크·위치 권한을 약관 설명과 직접 대조합니다.'
-                        : 'Compares Camera, Mic, and Location access against what the policy claims.',
-                  ),
-                  const SizedBox(height: 14),
-                  _HomeHighlightRow(
-                    icon: Symbols.touch_app_rounded,
-                    iconBg: EnpriveColors.chipInCloudBg,
-                    iconFg: EnpriveColors.chipInCloudFg,
-                    title: isKorean ? '어디서나 텍스트 선택' : 'Select text anywhere',
-                    subtitle: isKorean
-                        ? '다른 앱에서 문장을 선택하고 Android 메뉴의 Enprive Check를 누르세요.'
-                        : 'Highlight terms in any app and tap Enprive Check from Android’s menu.',
+                  const SizedBox(height: 12),
+                  Builder(
+                    builder: (context) {
+                      final disableAnimations =
+                          MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+                      return BeautifulTimeline(
+                        axis: TimelineAxis.vertical,
+                        physics: const NeverScrollableScrollPhysics(),
+                        showAnimation: !disableAnimations,
+                        theme: TimelineThemeData(
+                          indicatorStyle: IndicatorStyle.icon,
+                          lineStyle: LineStyle.gradient,
+                          lineGradientStart: EnpriveColors.tealStrong,
+                          lineGradientEnd: EnpriveColors.chipInCloudFg,
+                          lineWidth: 2.5,
+                          backgroundColor: EnpriveColors.surface,
+                          cardBackground: EnpriveColors.paper,
+                          cardElevation: 0,
+                          cardPadding: const EdgeInsets.all(14),
+                          cardBorderRadius: BorderRadius.circular(18),
+                          padding: EdgeInsets.zero,
+                          indicatorSize: 34,
+                          spacingBetweenEvents: 10,
+                          titleStyle: const TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                            color: EnpriveColors.ink,
+                          ),
+                          descriptionStyle: const TextStyle(
+                            fontSize: 13,
+                            height: 1.38,
+                            color: EnpriveColors.inkSecondary,
+                          ),
+                          dateStyle: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: EnpriveColors.tealStrong,
+                          ),
+                        ),
+                        events: [
+                          TimelineEvent(
+                            date: '01',
+                            icon: Symbols.format_quote_rounded,
+                            indicatorColor: EnpriveColors.tealStrong,
+                            title: isKorean
+                                ? '정확한 약관 원문'
+                                : 'Exact policy quotes',
+                            description: isKorean
+                                ? '공유·음성 녹음·보관 기간 조항을 원문과 함께 짚어줍니다.'
+                                : 'Flags sharing, voice recording, and retention with verbatim quotes.',
+                          ),
+                          TimelineEvent(
+                            date: '02',
+                            icon: Symbols.shield_lock_rounded,
+                            indicatorColor:
+                                EnpriveColors.stateReviewRecommendedFg,
+                            title: isKorean
+                                ? '휴대폰 권한 불일치'
+                                : 'Phone permission mismatches',
+                            description: isKorean
+                                ? '카메라·마이크·위치 권한을 약관 설명과 직접 대조합니다.'
+                                : 'Compares Camera, Mic, and Location access against what the policy claims.',
+                          ),
+                          TimelineEvent(
+                            date: '03',
+                            icon: Symbols.touch_app_rounded,
+                            indicatorColor: EnpriveColors.chipInCloudFg,
+                            title: isKorean
+                                ? '어디서나 텍스트 선택'
+                                : 'Select text anywhere',
+                            description: isKorean
+                                ? '다른 앱에서 문장을 선택하고 Android 메뉴의 Enprive Check를 누르세요.'
+                                : 'Highlight terms in any app and tap Enprive Check from Android’s menu.',
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -1076,144 +1168,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
           },
         );
       },
-    );
-  }
-}
-
-class _HomeSampleCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color iconBg;
-  final Color iconFg;
-  final VoidCallback? onTap;
-
-  const _HomeSampleCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.iconBg,
-    required this.iconFg,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: EnpriveColors.surface,
-      borderRadius: BorderRadius.circular(24),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: iconBg,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(icon, size: 20, color: iconFg),
-                  ),
-                  const Spacer(),
-                  const Icon(
-                    Symbols.arrow_forward_rounded,
-                    size: 18,
-                    color: EnpriveColors.inkSecondary,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: EnpriveColors.ink,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  height: 1.35,
-                  color: EnpriveColors.inkSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HomeHighlightRow extends StatelessWidget {
-  final IconData icon;
-  final Color iconBg;
-  final Color iconFg;
-  final String title;
-  final String subtitle;
-
-  const _HomeHighlightRow({
-    required this.icon,
-    required this.iconBg,
-    required this.iconFg,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: iconBg,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(icon, size: 20, color: iconFg),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w800,
-                  color: EnpriveColors.ink,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 13,
-                  height: 1.38,
-                  color: EnpriveColors.inkSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

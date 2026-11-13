@@ -44,6 +44,8 @@ dependencies:
   google_fonts: ^9.0.0
   loading_animation_widget: ^1.3.0
   shimmer: ^4.0.0
+  animated_status_card: ^0.0.1
+  beautiful_timeline: ^0.1.0
 
 dev_dependencies:
   flutter_test:

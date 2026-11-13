@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:beautiful_timeline/beautiful_timeline.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:shimmer/shimmer.dart';
@@ -412,7 +413,7 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
               ),
             ),
           ],
-          if (hasThoughts) ...[
+          if (hasThoughts || widget.processSteps.length > 1) ...[
             const SizedBox(height: 8),
             InkWell(
               onTap: () => setState(() => _showThoughts = !_showThoughts),
@@ -431,9 +432,13 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      _showThoughts
-                          ? 'Hide streamed thoughts'
-                          : 'View streamed thoughts',
+                      hasThoughts
+                          ? (_showThoughts
+                              ? 'Hide streamed thoughts'
+                              : 'View streamed thoughts')
+                          : (_showThoughts
+                              ? 'Hide process timeline'
+                              : 'View process timeline'),
                       style: const TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,
@@ -445,23 +450,70 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
               ),
             ),
             if (_showThoughts) ...[
-              const SizedBox(height: 6),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: EnpriveColors.paper,
-                  borderRadius: BorderRadius.circular(12),
+              if (widget.processSteps.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                BeautifulTimeline(
+                  axis: TimelineAxis.vertical,
+                  physics: const NeverScrollableScrollPhysics(),
+                  showAnimation: false,
+                  theme: TimelineThemeData(
+                    indicatorStyle: IndicatorStyle.icon,
+                    lineStyle: LineStyle.gradient,
+                    lineGradientStart: EnpriveColors.tealStrong,
+                    lineGradientEnd: EnpriveColors.chipInCloudFg,
+                    lineWidth: 2,
+                    backgroundColor: EnpriveColors.paper,
+                    cardBackground: EnpriveColors.paper,
+                    cardElevation: 0,
+                    cardPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    cardBorderRadius: BorderRadius.circular(14),
+                    padding: EdgeInsets.zero,
+                    indicatorSize: 28,
+                    spacingBetweenEvents: 8,
+                    titleStyle: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: EnpriveColors.ink,
+                    ),
+                    dateStyle: const TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      color: EnpriveColors.tealStrong,
+                    ),
+                  ),
+                  events: [
+                    for (var i = 0; i < widget.processSteps.length; i++)
+                      TimelineEvent(
+                        date: '0${i + 1}',
+                        icon: Icons.check_circle_rounded,
+                        indicatorColor: EnpriveColors.tealStrong,
+                        title: widget.processSteps[i],
+                      ),
+                  ],
                 ),
-                child: Text(
-                  widget.thoughtSummary!,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    height: 1.45,
-                    color: EnpriveColors.inkSecondary,
+              ],
+              if (hasThoughts) ...[
+                const SizedBox(height: 6),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: EnpriveColors.paper,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    widget.thoughtSummary!,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      height: 1.45,
+                      color: EnpriveColors.inkSecondary,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ],
         ],

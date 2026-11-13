@@ -393,6 +393,32 @@
 
 ---
 
+### Iteration 10.6 — Official Flutter/Dart Skills & `animated_status_card` / `beautiful_timeline` UI Integration (`feature/onboarding-and-process-text-flow`)
+- **Date**: 2026-11-13
+- **Branch / Commits**: `feature/onboarding-and-process-text-flow`
+- **Models Used**: Orchestrator (Argon) + Execution model
+- **What Was Built**:
+  - **Official Flutter & Dart Agent Skills (`AGENTS.md`, `.agents/AGENTS.md`, `.agents/skills/`)**:
+    - Installed the official `flutter/agent-plugins` and `dart-lang/skills` bundles under `.agents/skills/` (`npx skills add flutter/agent-plugins --skill '*' --agent universal --yes` and `npx skills add dart-lang/skills --skill '*' --agent universal --yes`) and updated `AGENTS.md` + `.agents/AGENTS.md` to require inspecting them before every iteration.
+  - **`pub.dev` Card & Timeline Dependencies (`pubspec.yaml`, `pubspec.lock`)**:
+    - Added `animated_status_card` (`^0.0.1`) and `beautiful_timeline` (`^0.1.0`).
+  - **Home Screen Upgrades (`lib/main.dart`)**:
+    - Replaced `_HomeSampleCard` with responsive `AnimatedStatusCard` cards (`LayoutBuilder` + `MediaQuery.textScalerOf` / `MediaQuery.maybeDisableAnimationsOf`, stacking vertically when narrow or >1.35× text scale) for **EduTrack Classroom** and **CalmMath Kids**.
+    - Replaced `_HomeHighlightRow` under **What we check for** with a themed vertical `BeautifulTimeline` (`IndicatorStyle.icon`, `LineStyle.gradient`, `NeverScrollableScrollPhysics`).
+  - **Live Review & Saved Trace Upgrades (`lib/widgets/review_progress_sheet.dart`, `lib/widgets/analysis_process_trace.dart`)**:
+    - Replaced the manual top header row in `ReviewProgressCard` with `AnimatedMiniStatusCard` while preserving the shimmer bar and Claude-style single-line `AnalysisLiveProcessView` ticker.
+    - Added a static (`showAnimation: false`) `BeautifulTimeline` inside the expanded details view of `AnalysisSavedTraceCard` for completed review steps above saved streamed thoughts.
+- **Challenges & Root-Cause Fixes**:
+  - `beautiful_timeline`'s `TimelineThemeData` uses `lineGradientStart`, `lineGradientEnd`, `lineWidth`, and `spacingBetweenEvents` rather than `primaryColor`/`secondaryColor`/`connectorWidth`/`nodeSpacing`; aligned theme fields after inspecting the package source.
+  - `BeautifulTimeline` schedules a staggered `80ms * index` `Future.delayed` timer when `showAnimation: true`; set `showAnimation: false` for saved historical traces in `AnalysisSavedTraceCard` and bumped the Home widget test pump to `250ms` in `test/widget_test.dart` so staggered entry timers settle cleanly before widget disposal.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **24/24 tests passing** (including 200% text scale and reduced-motion widget tests).
+  - `cd android && ./gradlew compileDebugKotlin --no-daemon`: **BUILD SUCCESSFUL**.
+  - `flutter build apk --debug` + `adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk` + cold launch: **Complete (`Status: ok`)**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Final Release & PR Consolidation (`main` merge & APK verification)**

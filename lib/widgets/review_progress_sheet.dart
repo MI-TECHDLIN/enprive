@@ -1,5 +1,5 @@
+import 'package:animated_status_card/animated_status_card.dart';
 import 'package:flutter/material.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -8,8 +8,8 @@ import '../services/platform/hybrid_ai_bridge.dart';
 import 'analysis_process_trace.dart';
 
 /// Live progress card shown while "Review on this phone" runs.
-/// Uses tactile motion, shimmer polish, and a Claude-style single-line
-/// streaming thought ticker rather than a noisy checklist.
+/// Uses `AnimatedMiniStatusCard`, shimmer polish, and a Claude-style
+/// single-line streaming thought ticker.
 class ReviewProgressCard extends StatelessWidget {
   final String subjectTitle;
   final bool isCloudCheck;
@@ -26,15 +26,8 @@ class ReviewProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final disableAnimations = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    final statusLabel = Text(
-      isKorean ? '이 휴대폰에서 검토하는 중…' : 'Reviewing on this phone…',
-      style: const TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-        color: EnpriveColors.tealStrong,
-      ),
-    );
+    final disableAnimations =
+        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
     return Container(
       width: double.infinity,
@@ -57,58 +50,19 @@ class ReviewProgressCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: EnpriveColors.chipOnDeviceBg,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Center(
-                  child: disableAnimations
-                      ? const Icon(
-                          Symbols.shield_lock_rounded,
-                          size: 20,
-                          color: EnpriveColors.tealStrong,
-                        )
-                      : LoadingAnimationWidget.threeArchedCircle(
-                          color: EnpriveColors.tealStrong,
-                          size: 22,
-                        ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      subjectTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w800,
-                        color: EnpriveColors.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    disableAnimations
-                        ? statusLabel
-                        : Shimmer.fromColors(
-                            baseColor: EnpriveColors.tealStrong,
-                            highlightColor: EnpriveColors.teal,
-                            period: const Duration(milliseconds: 1600),
-                            child: statusLabel,
-                          ),
-                  ],
-                ),
-              ),
-            ],
+          AnimatedMiniStatusCard(
+            title: isKorean
+                ? '이 휴대폰에서 검토하는 중…'
+                : 'Reviewing on this phone…',
+            value: subjectTitle,
+            icon: Symbols.shield_lock_rounded,
+            trendValue: isCloudCheck
+                ? (isKorean ? 'App Check' : 'App Check')
+                : (isKorean ? 'LIVE' : 'LIVE'),
+            trendDirection: TrendDirection.up,
+            statusType: CardStatusType.info,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           disableAnimations
               ? Container(
                   height: 6,

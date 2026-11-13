@@ -55,7 +55,7 @@ void main() {
     (WidgetTester tester) async {
       await tester.pumpWidget(const EnpriveApp());
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 250));
 
       expect(find.text('Enprive'), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
@@ -179,7 +179,10 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.text('Reading policy clauses on this phone…'), findsOneWidget);
+      expect(
+        find.text('Reading policy clauses on this phone…'),
+        findsOneWidget,
+      );
 
       controller.add(
         AnalysisStreamEvent(
