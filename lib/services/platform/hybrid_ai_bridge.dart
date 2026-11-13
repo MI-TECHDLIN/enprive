@@ -299,6 +299,7 @@ class HybridAiBridge {
     required bool cloudConsent,
     String? requestedMode,
     String? sourceSnapshotId,
+    String languageCode = 'en',
   }) async {
     try {
       final effectiveMode =
@@ -311,6 +312,7 @@ class HybridAiBridge {
         'requestedMode': cloudConsent ? effectiveMode : 'ONLY_ON_DEVICE',
         'cloudConsent': cloudConsent,
         'sourceSnapshotId': sourceSnapshotId,
+        'languageCode': languageCode,
       });
 
       if (res == null) {

@@ -5,6 +5,7 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shimmer/shimmer.dart';
 import '../core/theme/enprive_colors.dart';
+import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 
 String formatThoughtSignaturePreview(String signature) {
@@ -133,6 +134,10 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context) ??
+        lookupAppLocalizations(
+          Localizations.maybeLocaleOf(context) ?? const Locale('en'),
+        );
     final disableAnimations = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     final activeLine = _currentThoughtLine ?? _activeLabel;
     final showTopMeta = _currentThoughtLine != null || _thoughtSignature != null;
@@ -205,7 +210,7 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Thought signature ${formatThoughtSignaturePreview(_thoughtSignature!)}',
+                          '${l10n.thoughtSignaturePrefix} ${formatThoughtSignaturePreview(_thoughtSignature!)}',
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -255,7 +260,7 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
                     },
                     child: Align(
                       key: ValueKey<String>(activeLine),
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       child: tickerChild,
                     ),
                   ),
@@ -283,7 +288,7 @@ class AnalysisSavedTraceCard extends StatefulWidget {
     required this.processSteps,
     this.thoughtSummary,
     this.thoughtSignature,
-    this.title = 'Review process & reasoning',
+    this.title = '',
     this.compact = false,
   });
 
@@ -296,6 +301,12 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context) ??
+        lookupAppLocalizations(
+          Localizations.maybeLocaleOf(context) ?? const Locale('en'),
+        );
+    final resolvedTitle =
+        widget.title.isEmpty ? l10n.analysisTraceDefaultTitle : widget.title;
     final hasThoughts =
         widget.thoughtSummary != null && widget.thoughtSummary!.isNotEmpty;
     final hasSignature =
@@ -329,7 +340,7 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  widget.title,
+                  resolvedTitle,
                   style: TextStyle(
                     fontSize: widget.compact ? 12.5 : 13.5,
                     fontWeight: FontWeight.w800,
@@ -346,7 +357,7 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    '${widget.processSteps.length} ${widget.processSteps.length == 1 ? 'step' : 'steps'}',
+                    l10n.stepsCountLabel(widget.processSteps.length),
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -401,7 +412,7 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                   const SizedBox(width: 5),
                   Flexible(
                     child: Text(
-                      'Thought signature: ${formatThoughtSignaturePreview(widget.thoughtSignature!)}',
+                      '${l10n.thoughtSignaturePrefix}: ${formatThoughtSignaturePreview(widget.thoughtSignature!)}',
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 11.5,
@@ -433,13 +444,9 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      hasThoughts
-                          ? (_showThoughts
-                              ? 'Hide streamed thoughts'
-                              : 'View streamed thoughts')
-                          : (_showThoughts
-                              ? 'Hide process timeline'
-                              : 'View process timeline'),
+                      _showThoughts
+                          ? l10n.hideStreamedThoughts
+                          : l10n.viewStreamedThoughts,
                       style: const TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,

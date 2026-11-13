@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../core/theme/enprive_colors.dart';
+import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import 'deni_animated_mascot.dart';
 import 'enprive_duotone_icon.dart';
@@ -13,20 +14,17 @@ import 'enprive_tactile_button.dart';
 class PrivateReadinessSheet extends StatefulWidget {
   final HybridAiBridge bridge;
   final DeviceCapability? initialCapability;
-  final bool isKorean;
 
   const PrivateReadinessSheet({
     super.key,
     required this.bridge,
     required this.initialCapability,
-    required this.isKorean,
   });
 
   static Future<DeviceCapability?> show(
     BuildContext context, {
     required HybridAiBridge bridge,
     required DeviceCapability? initialCapability,
-    required bool isKorean,
   }) {
     return showModalBottomSheet<DeviceCapability>(
       context: context,
@@ -35,7 +33,6 @@ class PrivateReadinessSheet extends StatefulWidget {
       builder: (_) => PrivateReadinessSheet(
         bridge: bridge,
         initialCapability: initialCapability,
-        isKorean: isKorean,
       ),
     );
   }
@@ -47,7 +44,7 @@ class PrivateReadinessSheet extends StatefulWidget {
 class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
   DeviceCapability? _capability;
   bool _isPreparing = false;
-  String? _statusMessage;
+  ModelDownloadStatus? _resolvedStatus;
 
   @override
   void initState() {
@@ -59,9 +56,6 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
   Future<void> _runReadinessCheck() async {
     setState(() {
       _isPreparing = true;
-      _statusMessage = widget.isKorean
-          ? '이 휴대폰의 비공개 AI 상태를 확인하고 있어요…'
-          : 'Checking private analysis readiness on this phone…';
     });
 
     final status = await widget.bridge.downloadOrCheckModel();
@@ -73,28 +67,28 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
     if (!mounted) return;
     setState(() {
       _capability = updatedCap;
+      _resolvedStatus = status;
       _isPreparing = false;
-      _statusMessage = switch (status) {
-        ModelDownloadStatus.available => widget.isKorean
-            ? '온디바이스 Gemini Nano가 준비되었습니다. 모든 분석이 기기 안에서 이루어집니다.'
-            : 'Gemini Nano is ready on this phone. Reviews stay completely on your device.',
-        ModelDownloadStatus.downloading => widget.isKorean
-            ? '비공개 모델을 백그라운드에서 다운로드하고 있습니다.'
-            : 'Downloading private on-device model in the background.',
-        ModelDownloadStatus.downloadable => widget.isKorean
-            ? 'Wi-Fi 연결 시 온디바이스 모델을 다운로드할 수 있습니다.'
-            : 'On-device model can be downloaded over Wi-Fi.',
-        ModelDownloadStatus.unavailable || ModelDownloadStatus.failed =>
-          widget.isKorean
-              ? '이 기기에서는 내장된 로컬 약관 스캐너로 안전하게 작동합니다.'
-              : 'This phone uses Enprive’s built-in local clause scanner by default.',
-      };
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final ko = widget.isKorean;
+    final l10n = AppLocalizations.of(context) ??
+        lookupAppLocalizations(
+          Localizations.maybeLocaleOf(context) ?? const Locale('en'),
+        );
+    final statusMessage = _isPreparing
+        ? l10n.checkingPhoneReadiness
+        : switch (_resolvedStatus) {
+            ModelDownloadStatus.available => l10n.geminiNanoReadyMsg,
+            ModelDownloadStatus.downloading => l10n.modelDownloadingMsg,
+            ModelDownloadStatus.downloadable => l10n.modelDownloadableMsg,
+            ModelDownloadStatus.unavailable ||
+            ModelDownloadStatus.failed ||
+            null =>
+              l10n.localScannerDefaultMsg,
+          };
     final isReady = _capability?.isSupported == true &&
         _capability?.modelStatus == ModelDownloadStatus.available;
 
@@ -199,10 +193,10 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
                         children: [
                           Text(
                             _isPreparing
-                                ? (ko ? '비공개 분석 준비 중…' : 'Preparing private analysis…')
+                                ? l10n.preparingPrivateAnalysis
                                 : (isReady
-                                    ? (ko ? '온디바이스 AI 준비 완료' : 'On-device AI ready')
-                                    : (ko ? '로컬 스캐너 보호 활성' : 'Local scanner active')),
+                                    ? l10n.onDeviceAiReadyTitle
+                                    : l10n.localScannerActiveTitle),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
@@ -211,7 +205,7 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            _statusMessage ?? '',
+                            statusMessage,
                             style: const TextStyle(
                               fontSize: 13.5,
                               height: 1.4,
@@ -227,9 +221,7 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
               const SizedBox(height: 24),
 
               Text(
-                ko
-                    ? '이 휴대폰에서 비공개로 검토합니다'
-                    : 'Private analysis on this phone',
+                l10n.privateAnalysisTitle,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       fontSize: 24,
@@ -237,9 +229,7 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
               ),
               const SizedBox(height: 8),
               Text(
-                ko
-                    ? '설치된 앱 목록과 권한 상태는 절대 외부 서버로 전송되지 않습니다.'
-                    : 'Your installed apps and permission checks never leave your phone.',
+                l10n.privateAnalysisSheetSubtitle,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14.5,
@@ -250,12 +240,12 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
               const SizedBox(height: 28),
 
               EnpriveTactileButton(
-                label: ko ? '확인' : 'Done',
+                label: l10n.btnDone,
                 onPressed: () => Navigator.pop(context, _capability),
               ),
               const SizedBox(height: 10),
               EnpriveTactileButton(
-                label: ko ? '다시 확인하기' : 'Check again',
+                label: l10n.btnCheckAgain,
                 isSecondary: true,
                 onPressed: _isPreparing ? null : _runReadinessCheck,
               ),

@@ -156,7 +156,7 @@ class CloudConsentSheet extends StatelessWidget {
 
             // Centered B19 Headline & Subtitle
             Text(
-              'Choose how to review this text',
+              l10n.chooseReviewModeTitle,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                     fontSize: 24,
@@ -166,7 +166,7 @@ class CloudConsentSheet extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Text(
-                '${l10n.cloudConsentDisclosure} Installed apps and phone permissions are never sent.',
+                '${l10n.cloudConsentDisclosure} ${l10n.cloudNeverSendsAppsNote}',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14.5,
@@ -179,7 +179,7 @@ class CloudConsentSheet extends StatelessWidget {
 
             // Two Tactile Pill Buttons (b19-permission-prime.png exact bottom stack)
             EnpriveTactileButton(
-              label: 'Review on this phone',
+              label: l10n.btnReviewOnPhone,
               onPressed: () =>
                   Navigator.pop(context, CloudConsentDecision.reviewLocally),
             ),

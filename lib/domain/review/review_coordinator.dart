@@ -1,3 +1,5 @@
+import '../../l10n/app_localizations.dart';
+import '../../l10n/enprive_languages.dart';
 import '../../services/platform/hybrid_ai_bridge.dart';
 import '../../widgets/enprive_provenance_chip.dart';
 import '../evidence/evidence_validator.dart';
@@ -72,6 +74,12 @@ class ReviewCoordinator {
     );
   }
 
+  static String _localizedDisclaimerFor(String languageCode) {
+    final normalized = enpriveLanguageByCode(languageCode);
+    if (normalized.code == 'en') return calibratedDefaultDisclaimer;
+    return lookupAppLocalizations(normalized.locale).stateNoConcernSubtitle;
+  }
+
   Future<ReviewExecutionResult> runPolicyReview({
     required String subjectTitle,
     required String sourceLabel,
@@ -79,6 +87,7 @@ class ReviewCoordinator {
     AppPermissionSnapshot? appPermissions,
     bool cloudConsent = false,
     bool forceLocalManualScan = false,
+    String languageCode = 'en',
   }) async {
     final trimmed = policyText.trim();
     if (trimmed.isEmpty) {
@@ -88,6 +97,7 @@ class ReviewCoordinator {
           sourceLabel: sourceLabel,
           snapshotText: '',
           reason: 'No policy text was provided for review.',
+          languageCode: languageCode,
         ),
       );
     }
@@ -135,6 +145,7 @@ class ReviewCoordinator {
           policyText: trimmed,
           source: InferenceSource.onDevice,
           processSteps: List<String>.unmodifiable(processSteps),
+          languageCode: languageCode,
         );
         return ReviewExecutionResult.completed(
           _attachPermissionComparison(receipt, appPermissions),
@@ -160,6 +171,7 @@ class ReviewCoordinator {
           text: trimmed,
           cloudConsent: false,
           requestedMode: 'ONLY_ON_DEVICE',
+          languageCode: languageCode,
         );
 
         if (localResult.status == HybridStatus.success &&
@@ -192,6 +204,7 @@ class ReviewCoordinator {
             processSteps: List<String>.unmodifiable(processSteps),
             thoughtSummary: thought,
             thoughtSignature: signature,
+            languageCode: languageCode,
           );
           return ReviewExecutionResult.completed(
             _attachPermissionComparison(receipt, appPermissions),
@@ -239,6 +252,7 @@ class ReviewCoordinator {
         text: redaction.redactedText,
         cloudConsent: true,
         requestedMode: 'PREFER_ON_DEVICE',
+        languageCode: languageCode,
       );
 
       if (cloudResult.status == HybridStatus.success &&
@@ -272,6 +286,7 @@ class ReviewCoordinator {
           processSteps: List<String>.unmodifiable(processSteps),
           thoughtSummary: thought,
           thoughtSignature: signature,
+          languageCode: languageCode,
         );
         return ReviewExecutionResult.completed(
           _attachPermissionComparison(receipt, appPermissions),
@@ -304,6 +319,7 @@ class ReviewCoordinator {
         processSteps: List<String>.unmodifiable(processSteps),
         thoughtSummary: streamedThought,
         thoughtSignature: streamedSignature,
+        languageCode: languageCode,
       );
       return ReviewExecutionResult.completed(
         _attachPermissionComparison(fallbackReceipt, appPermissions),
@@ -362,6 +378,8 @@ class ReviewCoordinator {
     required String question,
     required String snapshotText,
     bool cloudConsent = false,
+    String languageCode = 'en',
+    String? intentHint,
   }) async {
     final reqId = 'deni_${DateTime.now().millisecondsSinceEpoch}';
     final compositeInput =
@@ -399,6 +417,7 @@ class ReviewCoordinator {
           text: compositeInput,
           cloudConsent: false,
           requestedMode: 'ONLY_ON_DEVICE',
+          languageCode: languageCode,
         );
         if (localRes.status == HybridStatus.success) {
           res = localRes;
@@ -442,6 +461,7 @@ class ReviewCoordinator {
           text: scrubbed.redactedText,
           cloudConsent: true,
           requestedMode: 'PREFER_ON_DEVICE',
+          languageCode: languageCode,
         );
       }
 
@@ -499,14 +519,22 @@ class ReviewCoordinator {
         isCompleted: true,
       );
       final qLower = question.toLowerCase();
+      final isOptOutQuestion =
+          intentHint == 'opt_out' ||
+          qLower.contains('turn this off') ||
+          qLower.contains('opt out');
+      final isUnknownQuestion =
+          intentHint == 'unknown' || qLower.contains('unknown');
       final String groundedAnswer;
-      if (qLower.contains('turn this off') || qLower.contains('opt out')) {
+      if (isOptOutQuestion) {
         groundedAnswer =
             'Look for a toggle in the app’s settings or Android App Permissions, '
             'and check whether a parent or school admin must request deletion. '
             'The quoted line does not show a one-tap opt-out.';
-      } else if (qLower.contains('unknown')) {
-        groundedAnswer = finding.unknowns.isNotEmpty ? finding.unknowns.first : 'This policy text does not prove how often data leaves the phone in practice.';
+      } else if (isUnknownQuestion) {
+        groundedAnswer = finding.unknowns.isNotEmpty
+            ? finding.unknowns.first
+            : 'This policy text does not prove how often data leaves the phone in practice.';
       } else {
         groundedAnswer = finding.explanation;
       }
@@ -535,6 +563,7 @@ class ReviewCoordinator {
     List<String> processSteps = const [],
     String? thoughtSummary,
     String? thoughtSignature,
+    String languageCode = 'en',
   }) {
     final map = bridgeResult.structuredOutput!;
     final rawConcerns = (map['concerns'] as List?) ?? const [];
@@ -655,7 +684,7 @@ class ReviewCoordinator {
           _defaultSummaryForState(overallState, findings.length),
       calibratedDisclaimer:
           (map['calibratedDisclaimer'] as String?) ??
-          calibratedDefaultDisclaimer,
+          _localizedDisclaimerFor(languageCode),
       findings: findings,
       processSteps: processSteps,
       thoughtSummary: thoughtSummary ?? bridgeResult.thoughtSummary,
@@ -674,6 +703,7 @@ class ReviewCoordinator {
     List<String> processSteps = const [],
     String? thoughtSummary,
     String? thoughtSignature,
+    String languageCode = 'en',
   }) {
     final sentences = policyText
         .split(RegExp(r'(?<=[.!?])\s+'))
@@ -783,7 +813,7 @@ class ReviewCoordinator {
       overallState: overallState,
       inferenceSource: source,
       summary: _defaultSummaryForState(overallState, findings.length),
-      calibratedDisclaimer: calibratedDefaultDisclaimer,
+      calibratedDisclaimer: _localizedDisclaimerFor(languageCode),
       findings: findings,
       processSteps: processSteps,
       thoughtSummary: thoughtSummary,
@@ -833,6 +863,7 @@ class ReviewCoordinator {
     required String sourceLabel,
     required String snapshotText,
     required String reason,
+    String languageCode = 'en',
   }) {
     return PolicyReviewReceipt(
       id: 'insuf_${DateTime.now().millisecondsSinceEpoch}',
@@ -844,7 +875,7 @@ class ReviewCoordinator {
       overallState: ReviewOverallState.insufficientEvidence,
       inferenceSource: InferenceSource.onDevice,
       summary: reason,
-      calibratedDisclaimer: calibratedDefaultDisclaimer,
+      calibratedDisclaimer: _localizedDisclaimerFor(languageCode),
       findings: const [],
     );
   }

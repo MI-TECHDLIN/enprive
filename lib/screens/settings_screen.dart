@@ -3,11 +3,14 @@ import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/theme/enprive_colors.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/enprive_languages.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import '../services/storage/receipt_repository.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_duotone_icon.dart';
 import '../widgets/enprive_tactile_button.dart';
+import '../widgets/language_picker_sheet.dart';
 import '../widgets/private_readiness_sheet.dart';
 
 /// Settings & Private Analysis Readiness Screen crafted from Brilliant B19
@@ -45,60 +48,55 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isCheckingModel = false;
-  String? _modelActionFeedback;
+  bool? _lastCheckWasOnDeviceReady;
 
   Future<void> _handleCheckOrPrepareModel() async {
     if (_isCheckingModel) return;
-    final ko = widget.currentLocale.languageCode == 'ko';
     setState(() => _isCheckingModel = true);
     final updated = await PrivateReadinessSheet.show(
       context,
       bridge: widget.bridge,
       initialCapability: widget.capability,
-      isKorean: ko,
     );
     widget.onRefreshCapability();
     if (!mounted) return;
     setState(() {
       _isCheckingModel = false;
       if (updated != null) {
-        _modelActionFeedback =
+        _lastCheckWasOnDeviceReady =
             updated.isSupported &&
-                updated.modelStatus == ModelDownloadStatus.available
-            ? (ko ? '온디바이스 모델이 준비되었습니다.' : 'On-device AI is active and ready.')
-            : (ko
-                  ? '내장된 로컬 약관 스캐너로 안전하게 작동 중입니다.'
-                  : 'Protected by built-in local clause scanning.');
+            updated.modelStatus == ModelDownloadStatus.available;
       }
     });
   }
 
-  Future<void> _confirmClearReceipts(BuildContext context, bool ko) async {
+  Future<void> _confirmClearReceipts(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: EnpriveColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
-          ko ? '저장된 영수증을 모두 지울까요?' : 'Clear saved receipts?',
+          l10n.confirmClearReceiptsTitle,
           style: const TextStyle(fontWeight: FontWeight.w800),
         ),
         content: Text(
-          ko
-              ? '이 기기에 저장된 ${widget.savedReceiptsCount}개의 영수증이 삭제됩니다.'
-              : 'This removes ${widget.savedReceiptsCount} saved reviews from your phone.',
+          l10n.confirmClearReceiptsBody(widget.savedReceiptsCount),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(ko ? '취소' : 'Cancel'),
+            child: Text(l10n.btnCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: EnpriveColors.ctaInk,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(ko ? '삭제' : 'Clear'),
+            child: Text(l10n.btnClear),
           ),
         ],
       ),
@@ -110,11 +108,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ko = widget.currentLocale.languageCode == 'ko';
+    final l10n = AppLocalizations.of(context)!;
+    final activeLang = enpriveLanguageByCode(widget.currentLocale.languageCode);
     final cap = widget.capability;
     final isReady =
         cap?.isSupported == true &&
         cap?.modelStatus == ModelDownloadStatus.available;
+    final effectiveReady = _lastCheckWasOnDeviceReady ?? isReady;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -123,7 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              ko ? '설정' : 'Settings',
+              l10n.settingsTitle,
               style: Theme.of(context).textTheme.headlineLarge,
             ),
             const SizedBox(height: 20),
@@ -178,9 +178,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    ko
-                                        ? '이 휴대폰에서 비공개 분석'
-                                        : 'Private analysis on this phone',
+                                    l10n.privateAnalysisTitle,
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w800,
@@ -189,14 +187,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
-                                    _modelActionFeedback ??
-                                        (isReady
-                                            ? (ko
-                                                  ? '온디바이스 모델이 준비되었습니다.'
-                                                  : 'On-device AI is active and ready.')
-                                            : (ko
-                                                  ? '내장된 로컬 약관 스캐너로 안전하게 작동 중입니다.'
-                                                  : 'Protected by built-in local clause scanning.')),
+                                    effectiveReady
+                                        ? l10n.onDeviceReadyMsg
+                                        : l10n.localScannerProtectedMsg,
                                     style: const TextStyle(
                                       fontSize: 13,
                                       color: EnpriveColors.inkSecondary,
@@ -210,8 +203,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 16),
                         EnpriveTactileButton(
                           label: _isCheckingModel
-                              ? (ko ? '확인 중…' : 'Checking…')
-                              : (ko ? '기기 상태 확인하기' : 'Check readiness'),
+                              ? l10n.statusChecking
+                              : l10n.btnCheckReadiness,
                           isSecondary: true,
                           onPressed: _isCheckingModel
                               ? null
@@ -228,7 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             // 2. Brilliant B3 Pattern: Soft Choice Cards for Explanation Style
             Text(
-              ko ? '어떻게 설명해 드릴까요?' : 'How should Deni explain things?',
+              l10n.howShouldDeniExplain,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -242,21 +235,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final (iconSvg, label) = switch (depth) {
                   ExplanationDepth.simple => (
                     Ph.sparkle_duotone,
-                    ko ? '핵심만' : 'Quick',
+                    l10n.depthQuick,
                   ),
                   ExplanationDepth.balanced => (
                     Ph.scales_duotone,
-                    ko ? '요약+원문' : 'Balanced',
+                    l10n.depthBalanced,
                   ),
                   ExplanationDepth.detailed => (
                     Ph.book_open_duotone,
-                    ko ? '자세히' : 'Full detail',
+                    l10n.depthFull,
                   ),
                 };
                 return Expanded(
                   child: Padding(
-                    padding: EdgeInsets.only(
-                      right: depth != ExplanationDepth.detailed ? 10.0 : 0,
+                    padding: EdgeInsetsDirectional.only(
+                      end: depth != ExplanationDepth.detailed ? 10.0 : 0,
                     ),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(20),
@@ -301,6 +294,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             const SizedBox(height: 10),
                             Text(
                               label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w800,
@@ -322,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             // 3. Clean Minimal Preferences Group
             Text(
-              ko ? '환경 설정' : 'Preferences',
+              l10n.preferencesSection,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -341,24 +336,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       horizontal: 20,
                       vertical: 4,
                     ),
+                    onTap: () async {
+                      final picked = await EnpriveLanguagePickerSheet.show(
+                        context,
+                        currentLocale: widget.currentLocale,
+                      );
+                      if (picked != null) {
+                        widget.onLocaleChanged(picked);
+                      }
+                    },
                     title: Text(
-                      ko ? '언어' : 'Language',
+                      l10n.languageTitle,
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
                         color: EnpriveColors.ink,
                       ),
                     ),
-                    trailing: SegmentedButton<String>(
-                      showSelectedIcon: false,
-                      segments: const [
-                        ButtonSegment(value: 'en', label: Text('EN')),
-                        ButtonSegment(value: 'ko', label: Text('한국어')),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: EnpriveColors.chipOnDeviceBg,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            activeLang.nativeName,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: EnpriveColors.tealStrong,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(
+                          LucideIcons.chevronRight,
+                          size: 18,
+                          color: EnpriveColors.inkSecondary,
+                        ),
                       ],
-                      selected: {ko ? 'ko' : 'en'},
-                      onSelectionChanged: (selection) {
-                        widget.onLocaleChanged(Locale(selection.first));
-                      },
                     ),
                   ),
                   Divider(
@@ -375,7 +397,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       onTap: widget.onReplayOnboarding,
                       title: Text(
-                        ko ? '데니 소개 및 시작 가이드' : 'Meet Deni & setup guide',
+                        l10n.meetDeniGuide,
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
@@ -401,9 +423,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       vertical: 4,
                     ),
                     title: Text(
-                      ko
-                          ? '저장된 영수증 지우기 (${widget.savedReceiptsCount})'
-                          : 'Clear saved receipts (${widget.savedReceiptsCount})',
+                      l10n.clearSavedReceiptsCount(widget.savedReceiptsCount),
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
@@ -413,9 +433,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     trailing: TextButton(
                       onPressed: widget.savedReceiptsCount == 0
                           ? null
-                          : () => _confirmClearReceipts(context, ko),
+                          : () => _confirmClearReceipts(context, l10n),
                       child: Text(
-                        ko ? '지우기' : 'Clear',
+                        l10n.btnClear,
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           color: widget.savedReceiptsCount == 0

@@ -18,7 +18,7 @@
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
 - **Current `main` HEAD**: `a5c69d1`
-- **Active Feature Branch**: `feature/onboarding-and-process-text-flow` (Iteration 10 complete, verified, ready to merge)
+- **Active Feature Branch**: `feature/onboarding-and-process-text-flow` (Iteration 10.9 complete, verified, ready to merge)
 - **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 24 November 2026)
 - **Next Queued Branch**: `main` consolidation & final release verification
 
@@ -457,6 +457,30 @@
   - `flutter test`: **24/24 tests passing**.
   - `cd android && ./gradlew compileDebugKotlin --no-daemon`: **BUILD SUCCESSFUL**.
   - `flutter build apk --debug` + `adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk` + cold launch: **Complete (`Status: ok`)**.
+
+---
+
+### Iteration 10.9 — 12-Language Local + Cloud Gemini Support, Onboarding Step 0 Copy & 4-Stage Milestone `ReviewProgressCard` (`feature/onboarding-and-process-text-flow`)
+- **Date**: 2026-11-13
+- **Branch / Commits**: `feature/onboarding-and-process-text-flow`
+- **Models Used**: Orchestrator (Gemini 4 Argon / Hydrogen)
+- **What Was Built**:
+  - **12-Language Local & Cloud Gemini Localization (`lib/l10n/enprive_languages.dart`, `lib/l10n/app_*.arb`, `lib/widgets/language_picker_sheet.dart`)**:
+    - Configured full UI `.arb` bundles (`untranslated_messages.json == {}`), generated `AppLocalizations` delegates, Android TTS BCP-47 locale tags (`resolveBcp47Locale`), and Cloud/On-Device Gemini response-language prompts (`languageDisplayName`) across all 12 requested languages: **English (`en`), Korean (`ko`), Spanish (`es`), French (`fr`), German (`de`), Arabic (`ar` with automatic RTL), Japanese (`ja`), Chinese (`zh`), Hindi (`hi`), Portuguese (`pt`), Italian (`it`), and Russian (`ru`)**.
+    - Added `EnpriveLanguagePickerSheet` accessible from Home AppBar, Onboarding top bar, and Settings; updated `HybridAiBridge.analyseText` and `ReviewCoordinator` (`runPolicyReview`, `askDeniAboutFinding`, `buildDeterministicLocalReceipt`) to forward `languageCode` and use `intentHint` for language-independent fallback questions while strictly requiring verbatim source-language `quote` substrings for `EvidenceValidator`.
+    - Removed hardcoded `isKorean` branches across `lib/main.dart`, `lib/screens/receipts_screen.dart`, `lib/screens/settings_screen.dart`, `lib/screens/review_result_screen.dart`, `lib/widgets/enprive_provenance_chip.dart`, `lib/widgets/private_readiness_sheet.dart`, `lib/widgets/cloud_consent_sheet.dart`, `lib/widgets/installed_app_picker_sheet.dart`, `lib/widgets/why_this_finding_sheet.dart`, and `lib/widgets/analysis_process_trace.dart`, and switched alignment properties to `AlignmentDirectional.centerStart` / `EdgeInsetsDirectional` for Arabic RTL.
+  - **First Onboarding Screen Copy (`lib/screens/onboarding_flow_screen.dart`, `lib/l10n/app_*.arb`)**:
+    - Replaced Step 0 intro content with *"Hi, I'm Deni. 👋"*, *"Let's make app privacy easier to understand."*, the two-paragraph explanation card, and the *"Know what you're agreeing to."* footer badge, localized across all 12 languages.
+  - **Improvised 4-Stage Milestone `ReviewProgressCard` (`lib/widgets/review_progress_sheet.dart`)**:
+    - Built a two-layer progress card with overlapping 3-badge source icons top-right, a dark capsule 4-step milestone stepper (`Read → Privacy Guard → Analyze → Verify Quotes`) with animated rounded connectors, single-line live streaming reasoning ticker bottom-left, and localized tabular `"X of 4"` counter (`progressStepCounter`) bottom-right.
+- **Challenges & Root-Cause Fixes**:
+  - Moved `resolveBcp47Locale` and `languageDisplayName` out of the `setMethodCallHandler` `when` block in `android/app/src/main/kotlin/com/example/enprive/MainActivity.kt` into class-level `private fun` helpers so Kotlin compiled cleanly.
+  - Replaced `pumpAndSettle()` with explicit `pump(...)` + `dragUntilVisible` in `test/widget_test.dart` for `OnboardingFlowScreen` and `ReviewProgressCard` because `DeniAnimatedMascot` runs continuous ambient breathing animations.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **27/27 tests passing** (including 12-language bundle & `HybridAiBridge`/`ReviewCoordinator` propagation test, Onboarding picker + Arabic RTL test, and 4-step `ReviewProgressCard` stage + 200% text-scale + RTL test).
+  - `cd android && ./gradlew compileDebugKotlin --no-daemon`: **BUILD SUCCESSFUL**.
+  - `flutter build apk --debug` + `adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk` + launch (`com.example.enprive/.MainActivity`): **Success**.
 
 ---
 

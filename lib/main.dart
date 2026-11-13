@@ -14,6 +14,7 @@ import 'domain/permissions/permission_comparator.dart';
 import 'domain/review/review_coordinator.dart';
 import 'domain/review/review_models.dart';
 import 'l10n/app_localizations.dart';
+import 'l10n/enprive_languages.dart';
 import 'screens/onboarding_flow_screen.dart';
 import 'screens/receipts_screen.dart';
 import 'screens/review_result_screen.dart';
@@ -25,6 +26,7 @@ import 'widgets/enprive_duotone_icon.dart';
 import 'widgets/enprive_provenance_chip.dart';
 import 'widgets/enprive_tactile_button.dart';
 import 'widgets/installed_app_picker_sheet.dart';
+import 'widgets/language_picker_sheet.dart';
 import 'widgets/review_progress_sheet.dart';
 
 void main() {
@@ -55,7 +57,7 @@ class _EnpriveAppState extends State<EnpriveApp> {
       debugShowCheckedModeBanner: false,
       theme: EnpriveTheme.lightTheme,
       locale: _locale,
-      supportedLocales: const [Locale('en'), Locale('ko')],
+      supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -140,8 +142,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
           ..addAll(storedReceipts);
         _explanationDepth = prefs.explanationDepth;
       });
-      if (prefs.languageCode != widget.currentLocale.languageCode) {
-        widget.onLocaleChange(Locale(prefs.languageCode));
+      final savedLocale = enpriveLanguageByCode(prefs.languageCode).locale;
+      if (savedLocale.languageCode != widget.currentLocale.languageCode) {
+        widget.onLocaleChange(savedLocale);
       }
       if (!prefs.hasCompletedOnboarding) {
         unawaited(_openOnboardingFlow());
@@ -265,6 +268,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
       appPermissions: appPermissions,
       cloudConsent: cloudConsent,
       forceLocalManualScan: forceLocalManualScan,
+      languageCode: widget.currentLocale.languageCode,
     );
 
     if (!mounted) return;
@@ -320,7 +324,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isKorean = widget.currentLocale.languageCode == 'ko';
+    final activeLang = enpriveLanguageByCode(widget.currentLocale.languageCode);
 
     return Scaffold(
       extendBody: true,
@@ -353,33 +357,55 @@ We do not collect personal identifiers, precise location data, microphone audio,
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 20.0),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(999),
-              onTap: () {
-                final nextLocale = isKorean
-                    ? const Locale('en')
-                    : const Locale('ko');
-                widget.onLocaleChange(nextLocale);
-                unawaited(
-                  _prefsRepo.update(languageCode: nextLocale.languageCode),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: EnpriveColors.surfaceMuted,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  isKorean ? 'EN' : '한국어',
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
-                    color: EnpriveColors.ink,
+            padding: const EdgeInsetsDirectional.only(end: 20.0),
+            child: Tooltip(
+              message: l10n.chooseLanguage,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(999),
+                onTap: () async {
+                  final picked = await EnpriveLanguagePickerSheet.show(
+                    context,
+                    currentLocale: widget.currentLocale,
+                  );
+                  if (picked == null) return;
+                  widget.onLocaleChange(picked);
+                  unawaited(
+                    _prefsRepo.update(languageCode: picked.languageCode),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: EnpriveColors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        LucideIcons.globe,
+                        size: 14,
+                        color: EnpriveColors.ink,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        activeLang.shortBadge,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: EnpriveColors.ink,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      const Icon(
+                        LucideIcons.chevronDown,
+                        size: 13,
+                        color: EnpriveColors.inkSecondary,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -390,11 +416,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
       body: IndexedStack(
         index: _selectedTabIndex,
         children: [
-          _buildHomeTab(context, l10n, isKorean),
+          _buildHomeTab(context, l10n),
           ReceiptsScreen(
             receipts: _savedReceipts,
             coordinator: _coordinator,
-            isKorean: isKorean,
             onDeleteReceipt: _deleteReceipt,
             onStartReviewRequested: () {
               setState(() => _selectedTabIndex = 0);
@@ -423,7 +448,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
       bottomNavigationBar: _FloatingBottomNavDock(
         selectedIndex: _selectedTabIndex,
         receiptsCount: _savedReceipts.length,
-        isKorean: isKorean,
+        l10n: l10n,
         onSelect: (index) => setState(() => _selectedTabIndex = index),
       ),
     );
@@ -432,7 +457,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
   Widget _buildHomeTab(
     BuildContext context,
     AppLocalizations l10n,
-    bool isKorean,
   ) {
     return SafeArea(
       bottom: false,
@@ -451,9 +475,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
             // 2. Centered Editorial Headline & Subtitle
             Text(
-              isKorean
-                  ? '아이들이 쓰는 앱,\n약관과 권한을 한눈에'
-                  : 'A clearer look at the\napps children use',
+              l10n.homeHeroHeadline,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.displayLarge
                   ?.copyWith(fontSize: 30),
@@ -475,7 +497,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
               ReviewProgressCard(
                 subjectTitle: _activeReviewTitle,
                 isCloudCheck: _isCloudReviewInFlight,
-                isKorean: isKorean,
                 processStream: _coordinator.analysisEvents,
               )
             else ...[
@@ -501,9 +522,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
             // 4. Quick Sample App Checks
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: AlignmentDirectional.centerStart,
               child: Text(
-                isKorean ? '샘플 앱 바로 검토하기' : 'Try a sample app check',
+                l10n.trySampleCheck,
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -528,12 +549,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
                 final eduCard = AnimatedStatusCard(
                   title: 'EduTrack Classroom',
-                  value: isKorean ? '권한 3건' : '3 requests',
-                  subtitle: isKorean
-                      ? '숙제·출결 샘플'
-                      : 'Homework & attendance',
+                  value: l10n.eduTrackValue,
+                  subtitle: l10n.eduTrackSubtitle,
                   icon: LucideIcons.graduationCap,
-                  trendValue: isKorean ? '확인 권장' : 'Review',
+                  trendValue: l10n.eduTrackTrend,
                   trendDirection: TrendDirection.up,
                   styleType: CardStyleType.outlined,
                   statusType: CardStatusType.warning,
@@ -550,12 +569,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
                 final calmCard = AnimatedStatusCard(
                   title: 'CalmMath Kids',
-                  value: isKorean ? '민감 0건' : '0 sensitive',
-                  subtitle: isKorean
-                      ? '오프라인 수학 샘플'
-                      : 'Offline math practice',
+                  value: l10n.calmMathValue,
+                  subtitle: l10n.calmMathSubtitle,
                   icon: LucideIcons.calculator,
-                  trendValue: isKorean ? '단순함' : 'Minimal',
+                  trendValue: l10n.calmMathTrend,
                   trendDirection: TrendDirection.neutral,
                   styleType: CardStyleType.outlined,
                   statusType: CardStatusType.success,
@@ -604,7 +621,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isKorean ? '중점 확인 항목' : 'What we check for',
+                    l10n.whatWeCheckTitle,
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
@@ -655,35 +672,23 @@ We do not collect personal identifiers, precise location data, microphone audio,
                             date: '01',
                             icon: LucideIcons.quote,
                             indicatorColor: EnpriveColors.tealStrong,
-                            title: isKorean
-                                ? '정확한 약관 원문'
-                                : 'Exact policy quotes',
-                            description: isKorean
-                                ? '공유·음성 녹음·보관 기간 조항을 원문과 함께 짚어줍니다.'
-                                : 'Flags sharing, voice recording, and retention with verbatim quotes.',
+                            title: l10n.checkQuoteTitle,
+                            description: l10n.checkQuoteDesc,
                           ),
                           TimelineEvent(
                             date: '02',
                             icon: LucideIcons.shieldAlert,
                             indicatorColor:
                                 EnpriveColors.stateReviewRecommendedFg,
-                            title: isKorean
-                                ? '휴대폰 권한 불일치'
-                                : 'Phone permission mismatches',
-                            description: isKorean
-                                ? '카메라·마이크·위치 권한을 약관 설명과 직접 대조합니다.'
-                                : 'Compares Camera, Mic, and Location access against what the policy claims.',
+                            title: l10n.checkPermissionTitle,
+                            description: l10n.checkPermissionDesc,
                           ),
                           TimelineEvent(
                             date: '03',
                             icon: LucideIcons.mousePointerClick,
                             indicatorColor: EnpriveColors.chipInCloudFg,
-                            title: isKorean
-                                ? '어디서나 텍스트 선택'
-                                : 'Select text anywhere',
-                            description: isKorean
-                                ? '다른 앱에서 문장을 선택하고 Android 메뉴의 Enprive Check를 누르세요.'
-                                : 'Highlight terms in any app and tap Enprive Check from Android’s menu.',
+                            title: l10n.checkSelectTitle,
+                            description: l10n.checkSelectDesc,
                           ),
                         ],
                       );
@@ -709,7 +714,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     Row(
                       children: [
                         Text(
-                          isKorean ? '최근 검토한 영수증' : 'Recently reviewed',
+                          l10n.recentlyReviewed,
                           style: const TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w800,
@@ -805,7 +810,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
-                                          '${receipt.sourceMatchedCount} verified clauses',
+                                          l10n.verifiedClausesCount(
+                                            receipt.sourceMatchedCount,
+                                          ),
                                           style: const TextStyle(
                                             fontSize: 12.5,
                                             color: EnpriveColors.inkSecondary,
@@ -877,8 +884,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
     );
     final titleController = TextEditingController(
       text: initialText != null && initialText.isNotEmpty
-          ? 'Selected Policy Excerpt'
-          : 'Privacy Policy',
+          ? l10n.selectedExcerptTitle
+          : l10n.defaultSubjectTitle,
     );
     bool isLinkMode = false;
 
@@ -933,9 +940,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
                           urlController.text =
                               'https://edutrack.example.edu/privacy';
                         },
-                        child: const Text(
-                          'Try sample text',
-                          style: TextStyle(
+                        child: Text(
+                          l10n.trySampleText,
+                          style: const TextStyle(
                             fontWeight: FontWeight.w800,
                             color: EnpriveColors.tealStrong,
                           ),
@@ -969,7 +976,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                               ),
                               alignment: Alignment.center,
                               child: Text(
-                                'Paste text',
+                                l10n.modePasteText,
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
@@ -995,7 +1002,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                               ),
                               alignment: Alignment.center,
                               child: Text(
-                                'Policy link',
+                                l10n.modePolicyLink,
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
@@ -1015,7 +1022,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                   TextField(
                     controller: titleController,
                     decoration: InputDecoration(
-                      hintText: 'App name',
+                      hintText: l10n.hintAppName,
                       filled: true,
                       fillColor: EnpriveColors.surface,
                       border: OutlineInputBorder(
@@ -1093,7 +1100,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                         fontSize: 14.5,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Paste privacy policy text here…',
+                        hintText: l10n.hintPastePolicy,
                         filled: true,
                         fillColor: EnpriveColors.quoteSurface,
                         border: OutlineInputBorder(
@@ -1104,9 +1111,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     ),
                   const SizedBox(height: 18),
                   EnpriveTactileButton(
-                    label: widget.currentLocale.languageCode == 'ko'
-                        ? '이 휴대폰에서 검토하기'
-                        : 'Review on this phone',
+                    label: l10n.btnReviewOnPhone,
                     onPressed: () async {
                       if (isLinkMode) {
                         final rawUrl = urlController.text.trim();
@@ -1122,13 +1127,15 @@ We do not collect personal identifiers, precise location data, microphone audio,
                               ? _fallbackCalmMathFixture
                               : _fallbackEduTrackFixture,
                         );
+                        final trimmedTitle = titleController.text.trim();
                         final subject =
-                            titleController.text.trim().isEmpty ||
-                                titleController.text.trim() == 'Privacy Policy'
+                            trimmedTitle.isEmpty ||
+                                trimmedTitle == l10n.defaultSubjectTitle ||
+                                trimmedTitle == 'Privacy Policy'
                             ? (isCalm
                                   ? 'CalmMath Abacus'
                                   : 'EduTrack Classroom Companion')
-                            : titleController.text.trim();
+                            : trimmedTitle;
                         if (sheetContext.mounted) {
                           Navigator.pop(sheetContext);
                         }
@@ -1142,7 +1149,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
                       final rawText = controller.text.trim();
                       final subject = titleController.text.trim().isEmpty
-                          ? 'Privacy Policy'
+                          ? l10n.defaultSubjectTitle
                           : titleController.text.trim();
                       Navigator.pop(sheetContext);
                       if (rawText.isEmpty) return;
@@ -1167,25 +1174,22 @@ We do not collect personal identifiers, precise location data, microphone audio,
 class _FloatingBottomNavDock extends StatelessWidget {
   final int selectedIndex;
   final int receiptsCount;
-  final bool isKorean;
+  final AppLocalizations l10n;
   final ValueChanged<int> onSelect;
 
   const _FloatingBottomNavDock({
     required this.selectedIndex,
     required this.receiptsCount,
-    required this.isKorean,
+    required this.l10n,
     required this.onSelect,
   });
 
   @override
   Widget build(BuildContext context) {
     final items = [
-      (icon: LucideIcons500.house, label: isKorean ? '홈' : 'Home'),
-      (
-        icon: LucideIcons500.receiptText,
-        label: isKorean ? '영수증' : 'Receipts',
-      ),
-      (icon: LucideIcons500.slidersHorizontal, label: isKorean ? '설정' : 'Settings'),
+      (icon: LucideIcons500.house, label: l10n.navHome),
+      (icon: LucideIcons500.receiptText, label: l10n.navReceipts),
+      (icon: LucideIcons500.slidersHorizontal, label: l10n.navSettings),
     ];
 
     return SafeArea(

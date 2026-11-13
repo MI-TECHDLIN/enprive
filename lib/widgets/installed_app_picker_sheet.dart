@@ -153,14 +153,14 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Close',
+                      tooltip: l10n.tooltipClose,
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(LucideIcons.x),
                     ),
                   ],
                 ),
                 Text(
-                  'Checked locally on your phone. Your app list is never uploaded.',
+                  l10n.checkAppSheetSubtitle,
                   style: const TextStyle(
                     fontSize: 14,
                     color: EnpriveColors.inkSecondary,
@@ -175,9 +175,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
               children: [
                 // 1. Sample Classroom Apps (B3 Soft Choice Card Grid)
-                const Text(
-                  'Try a sample kids app',
-                  style: TextStyle(
+                Text(
+                  l10n.trySampleKidsApp,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: EnpriveColors.ink,
@@ -189,7 +189,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     Expanded(
                       child: _SampleAppChoiceCard(
                         title: 'EduTrack',
-                        subtitle: 'Location, mic & camera',
+                        subtitle: l10n.sampleEduTrackSubtitle,
                         iconSvg: Ph.graduation_cap_duotone,
                         iconBg: EnpriveColors.stateReviewRecommendedBg,
                         iconFg: EnpriveColors.stateReviewRecommendedFg,
@@ -211,7 +211,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     Expanded(
                       child: _SampleAppChoiceCard(
                         title: 'CalmMath',
-                        subtitle: 'Offline math practice',
+                        subtitle: l10n.sampleCalmMathSubtitle,
                         iconSvg: Ph.calculator_duotone,
                         iconBg: EnpriveColors.stateNoConcernBg,
                         iconFg: EnpriveColors.stateNoConcernFg,
@@ -234,9 +234,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
                 const SizedBox(height: 28),
 
                 // 2. Installed Apps on This Phone
-                const Text(
-                  'Apps on this phone',
-                  style: TextStyle(
+                Text(
+                  l10n.appsOnThisPhone,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: EnpriveColors.ink,
@@ -247,7 +247,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                 TextField(
                   onChanged: (val) => setState(() => _searchQuery = val),
                   decoration: InputDecoration(
-                    hintText: 'Search apps…',
+                    hintText: l10n.hintSearchApps,
                     prefixIcon: const Icon(LucideIcons.search, size: 19),
                     filled: true,
                     fillColor: EnpriveColors.surfaceMuted,
@@ -275,9 +275,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       color: EnpriveColors.surface,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text(
-                      'No matching apps found on this phone.',
-                      style: TextStyle(color: EnpriveColors.inkSecondary),
+                    child: Text(
+                      l10n.noMatchingApps,
+                      style: const TextStyle(color: EnpriveColors.inkSecondary),
                     ),
                   )
                 else

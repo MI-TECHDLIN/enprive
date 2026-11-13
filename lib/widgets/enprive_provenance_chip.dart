@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:iconify_flutter/icons/ph.dart';
 import '../core/theme/enprive_colors.dart';
+import '../l10n/app_localizations.dart';
 import 'enprive_duotone_icon.dart';
 
 enum InferenceSource {
@@ -21,25 +22,29 @@ class EnpriveProvenanceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context) ??
+        lookupAppLocalizations(
+          Localizations.maybeLocaleOf(context) ?? const Locale('en'),
+        );
     final (Color bg, Color fg, String duotoneIcon, String defaultLabel) =
         switch (source) {
       InferenceSource.onDevice => (
           EnpriveColors.chipOnDeviceBg,
           EnpriveColors.chipOnDeviceFg,
           Ph.device_mobile_duotone,
-          'On this device',
+          l10n.chipOnDevice,
         ),
       InferenceSource.inCloud => (
           EnpriveColors.chipInCloudBg,
           EnpriveColors.chipInCloudFg,
           Ph.cloud_check_duotone,
-          'In the cloud',
+          l10n.chipInCloud,
         ),
       InferenceSource.locationUnavailable => (
           EnpriveColors.chipUnknownBg,
           EnpriveColors.chipUnknownFg,
           Ph.question_duotone,
-          'Location unavailable',
+          l10n.chipLocationUnavailable,
         ),
     };
 

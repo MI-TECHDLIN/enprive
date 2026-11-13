@@ -5,6 +5,7 @@ import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_theme.dart';
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
+import '../l10n/app_localizations.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_tactile_button.dart';
 import 'review_result_screen.dart';
@@ -15,6 +16,15 @@ enum _ReceiptFilter {
   noConcern,
 }
 
+String _formatReceiptTimestamp(BuildContext context, DateTime dt) {
+  final localeTag = Localizations.maybeLocaleOf(context)?.toLanguageTag();
+  try {
+    return DateFormat.MMMd(localeTag).add_jm().format(dt);
+  } catch (_) {
+    return DateFormat('MMM d, h:mm a').format(dt);
+  }
+}
+
 /// Receipts Archive Screen crafted from the MyNote (`x-mynote.jpeg`) pattern:
 /// - Clean header with toggleable search bar
 /// - Soft flat filter pills (`All · Review · No concern`)
@@ -22,7 +32,6 @@ enum _ReceiptFilter {
 class ReceiptsScreen extends StatefulWidget {
   final List<PolicyReviewReceipt> receipts;
   final ReviewCoordinator coordinator;
-  final bool isKorean;
   final ValueChanged<String> onDeleteReceipt;
   final VoidCallback onStartReviewRequested;
 
@@ -30,7 +39,6 @@ class ReceiptsScreen extends StatefulWidget {
     super.key,
     required this.receipts,
     required this.coordinator,
-    required this.isKorean,
     required this.onDeleteReceipt,
     required this.onStartReviewRequested,
   });
@@ -69,19 +77,18 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
     }).toList(growable: false);
   }
 
-  String _filterLabel(_ReceiptFilter filter) {
-    final ko = widget.isKorean;
+  String _filterLabel(AppLocalizations l10n, _ReceiptFilter filter) {
     return switch (filter) {
-      _ReceiptFilter.all => ko ? '전체' : 'All',
-      _ReceiptFilter.reviewRecommended => ko ? '검토 권장' : 'Review',
-      _ReceiptFilter.noConcern => ko ? '우려 없음' : 'No concern',
+      _ReceiptFilter.all => l10n.filterAll,
+      _ReceiptFilter.reviewRecommended => l10n.filterReview,
+      _ReceiptFilter.noConcern => l10n.filterNoConcern,
     };
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final filtered = _filteredReceipts;
-    final ko = widget.isKorean;
 
     return SafeArea(
       child: Padding(
@@ -95,12 +102,12 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
             Row(
               children: [
                 Text(
-                  ko ? '영수증 보관함' : 'Receipts',
+                  l10n.receiptsTitle,
                   style: Theme.of(context).textTheme.headlineLarge,
                 ),
                 const Spacer(),
                 IconButton(
-                  tooltip: ko ? '검색' : 'Search',
+                  tooltip: l10n.tooltipSearch,
                   onPressed: () {
                     setState(() {
                       _isSearching = !_isSearching;
@@ -128,7 +135,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                 autofocus: true,
                 onChanged: (v) => setState(() => _searchQuery = v),
                 decoration: InputDecoration(
-                  hintText: ko ? '앱 이름 또는 내용 검색...' : 'Search saved reviews...',
+                  hintText: l10n.hintSearchReceipts,
                   prefixIcon: const Icon(LucideIcons.search, size: 19),
                   filled: true,
                   fillColor: EnpriveColors.surfaceMuted,
@@ -150,7 +157,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
               children: _ReceiptFilter.values.map((filter) {
                 final isSelected = _activeFilter == filter;
                 return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
+                  padding: const EdgeInsetsDirectional.only(end: 8.0),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
                     onTap: () => setState(() => _activeFilter = filter),
@@ -167,7 +174,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        _filterLabel(filter),
+                        _filterLabel(l10n, filter),
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight:
@@ -186,7 +193,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
 
             Expanded(
               child: filtered.isEmpty
-                  ? _buildEmptyState(context, ko)
+                  ? _buildEmptyState(context, l10n)
                   : ListView.separated(
                       padding: const EdgeInsets.only(bottom: 100),
                       itemCount: filtered.length,
@@ -195,7 +202,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                         final receipt = filtered[index];
                         return _MyNoteReceiptCard(
                           receipt: receipt,
-                          isKorean: ko,
+                          l10n: l10n,
                           onOpen: () {
                             Navigator.of(context).push(
                               MaterialPageRoute<void>(
@@ -217,7 +224,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, bool ko) {
+  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n) {
     final isFilteredEmpty = widget.receipts.isNotEmpty;
     return Center(
       child: SingleChildScrollView(
@@ -233,20 +240,16 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
               const SizedBox(height: 20),
               Text(
                 isFilteredEmpty
-                    ? (ko ? '일치하는 영수증이 없어요' : 'No matching receipts')
-                    : (ko ? '아직 저장된 영수증이 없어요' : 'No saved receipts yet'),
+                    ? l10n.emptyFilteredTitle
+                    : l10n.emptyReceiptsTitle,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 8),
               Text(
                 isFilteredEmpty
-                    ? (ko
-                        ? '다른 필터를 선택해 보세요.'
-                        : 'Try selecting another filter above.')
-                    : (ko
-                        ? '앱이나 약관을 검토한 뒤 북마크 아이콘을 누르면 이곳에 보관됩니다.'
-                        : 'Bookmark any app review to keep a private copy on your phone.'),
+                    ? l10n.emptyFilteredBody
+                    : l10n.emptyReceiptsBody,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14.5,
@@ -257,7 +260,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
               if (!isFilteredEmpty) ...[
                 const SizedBox(height: 24),
                 EnpriveTactileButton(
-                  label: ko ? '첫 검토 시작하기' : 'Start a review',
+                  label: l10n.btnStartReview,
                   onPressed: widget.onStartReviewRequested,
                 ),
               ],
@@ -271,13 +274,13 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
 
 class _MyNoteReceiptCard extends StatelessWidget {
   final PolicyReviewReceipt receipt;
-  final bool isKorean;
+  final AppLocalizations l10n;
   final VoidCallback onOpen;
   final VoidCallback onDelete;
 
   const _MyNoteReceiptCard({
     required this.receipt,
-    required this.isKorean,
+    required this.l10n,
     required this.onOpen,
     required this.onDelete,
   });
@@ -289,10 +292,9 @@ class _MyNoteReceiptCard extends StatelessWidget {
     final stateColor = isConcern
         ? EnpriveColors.stateReviewRecommendedFg
         : EnpriveColors.stateNoConcernFg;
-    final stateLabel = isConcern
-        ? (isKorean ? '검토 권장' : 'Review recommended')
-        : (isKorean ? '우려 사항 없음' : 'No concern identified');
-    final formattedDate = DateFormat('MMM d, h:mm a').format(receipt.createdAt);
+    final stateLabel =
+        isConcern ? l10n.stateReviewRecommended : l10n.stateNoConcern;
+    final formattedDate = _formatReceiptTimestamp(context, receipt.createdAt);
 
     return Column(
       children: [
@@ -382,7 +384,7 @@ class _MyNoteReceiptCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        isKorean ? '열기' : 'Open receipt',
+                        l10n.btnOpenReceipt,
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -416,7 +418,7 @@ class _MyNoteReceiptCard extends StatelessWidget {
                 child: Row(
                   children: [
                     Text(
-                      isKorean ? '삭제' : 'Delete',
+                      l10n.btnDelete,
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,

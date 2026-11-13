@@ -234,11 +234,7 @@ class MainActivity : FlutterActivity() {
                         return@setMethodCallHandler
                     }
                     try {
-                        val targetLocale = if (languageCode.lowercase().startsWith("ko")) {
-                            Locale.KOREAN
-                        } else {
-                            Locale.US
-                        }
+                        val targetLocale = resolveBcp47Locale(languageCode)
                         tts?.language = targetLocale
                         val speakRes = tts?.speak(
                             text,
@@ -357,6 +353,8 @@ class MainActivity : FlutterActivity() {
                     val text = call.argument<String>("text") ?: ""
                     val cloudConsent = call.argument<Boolean>("cloudConsent") ?: false
                     val requestedMode = call.argument<String>("requestedMode") ?: "ONLY_ON_DEVICE"
+                    val languageCode = call.argument<String>("languageCode") ?: "en"
+                    val targetLanguage = languageDisplayName(languageCode)
 
                     if (text.isBlank()) {
                         result.error("EMPTY_TEXT", "Text for privacy analysis cannot be empty.", null)
@@ -416,6 +414,7 @@ class MainActivity : FlutterActivity() {
                                 """
                                 You are Deni, Enprive's calm, evidence-first privacy guide for parents and teachers.
                                 Explain the cited privacy finding in plain, reassuring, non-alarmist language.
+                                Output language: Write "answer", "whatPolicySays", and "unknownBoundary" naturally in $targetLanguage. Keep any verbatim quote in the policy text's original language.
 
                                 You MUST return a JSON object with this exact structure:
                                 {
@@ -431,6 +430,7 @@ class MainActivity : FlutterActivity() {
                                 Analyze the following privacy policy excerpt.
                                 
                                 Task: $task
+                                Output language: Write "summary", "title", "explanation", "unknowns", and "calibratedDisclaimer" naturally in $targetLanguage. Keep JSON keys, enum values ("REVIEW_RECOMMENDED", "NO_CONCERN", "INSUFFICIENT_EVIDENCE", "DATA_COLLECTION", "SHARING", "TRACKING", "RETENTION", "PARENTAL_CONSENT", "HIGH", "MEDIUM", "LOW"), and "quote" EXACTLY as specified.
                                 
                                 You MUST return a JSON object with this exact structure:
                                 {
@@ -442,7 +442,7 @@ class MainActivity : FlutterActivity() {
                                       "title": "Short descriptive finding title",
                                       "category": "DATA_COLLECTION" | "SHARING" | "TRACKING" | "RETENTION" | "PARENTAL_CONSENT",
                                       "severity": "HIGH" | "MEDIUM" | "LOW",
-                                      "quote": "EXACT substring quoted verbatim from the text",
+                                      "quote": "EXACT substring quoted verbatim from the policy text in its original language",
                                       "explanation": "Clear parent/teacher explanation of why this clause matters",
                                       "unknowns": ["What the policy text leaves unspecified"]
                                     }
@@ -450,7 +450,7 @@ class MainActivity : FlutterActivity() {
                                   "calibratedDisclaimer": "No concern identified in the reviewed evidence. This is not a safety certification."
                                 }
                                 
-                                Strictly quote verbatim substrings for quotes. Never fabricate facts.
+                                Strictly quote verbatim substrings from the provided policy text for "quote". Never translate or alter "quote". Never fabricate facts.
                                 """.trimIndent()
                             }
 
@@ -623,6 +623,43 @@ class MainActivity : FlutterActivity() {
 
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    private fun resolveBcp47Locale(languageCode: String): Locale {
+        val base = languageCode.lowercase().split('-', '_').firstOrNull() ?: "en"
+        val tag = when (base) {
+            "ko" -> "ko-KR"
+            "es" -> "es-ES"
+            "fr" -> "fr-FR"
+            "de" -> "de-DE"
+            "ar" -> "ar-SA"
+            "ja" -> "ja-JP"
+            "zh" -> "zh-CN"
+            "hi" -> "hi-IN"
+            "pt" -> "pt-BR"
+            "it" -> "it-IT"
+            "ru" -> "ru-RU"
+            else -> "en-US"
+        }
+        return Locale.forLanguageTag(tag)
+    }
+
+    private fun languageDisplayName(languageCode: String): String {
+        val base = languageCode.lowercase().split('-', '_').firstOrNull() ?: "en"
+        return when (base) {
+            "ko" -> "Korean"
+            "es" -> "Spanish"
+            "fr" -> "French"
+            "de" -> "German"
+            "ar" -> "Arabic"
+            "ja" -> "Japanese"
+            "zh" -> "Simplified Chinese"
+            "hi" -> "Hindi"
+            "pt" -> "Portuguese"
+            "it" -> "Italian"
+            "ru" -> "Russian"
+            else -> "English"
         }
     }
 

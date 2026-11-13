@@ -70,17 +70,15 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
   DeniPose _deniPose = DeniPose.explaining;
   bool _isAskingDeni = false;
   DeniExplanation? _deniExplanation;
-  String _selectedQuestion = 'What does this mean for my child?';
+  int _selectedQuestionIndex = 0;
 
-  static const List<String> _presetQuestions = [
-    'What does this mean for my child?',
-    'Can we turn this off or opt out?',
-    'What is still unknown here?',
-  ];
-
-  Future<void> _askDeni(String question) async {
+  Future<void> _askDeni(
+    int questionIndex,
+    String question,
+    String languageCode,
+  ) async {
     setState(() {
-      _selectedQuestion = question;
+      _selectedQuestionIndex = questionIndex;
       _isAskingDeni = true;
       _deniPose = DeniPose.thinking;
     });
@@ -90,6 +88,12 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
       question: question,
       snapshotText: widget.snapshotText,
       cloudConsent: widget.cloudConsentGrantedForSession,
+      languageCode: languageCode,
+      intentHint: switch (questionIndex) {
+        1 => 'opt_out',
+        2 => 'unknown',
+        _ => 'meaning',
+      },
     );
 
     if (!mounted) return;
@@ -100,19 +104,31 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
     });
   }
 
-  String _categoryLabel(FindingCategory category) {
+  String _categoryLabel(AppLocalizations l10n, FindingCategory category) {
     return switch (category) {
-      FindingCategory.dataCollection => 'Data Collection',
-      FindingCategory.sharing => 'Third-Party Sharing',
-      FindingCategory.tracking => 'Location & Tracking',
-      FindingCategory.retention => 'Retention & Voice',
-      FindingCategory.parentalConsent => 'Parental Controls',
+      FindingCategory.dataCollection => l10n.categoryDataCollection,
+      FindingCategory.sharing => l10n.categorySharing,
+      FindingCategory.tracking => l10n.categoryTracking,
+      FindingCategory.retention => l10n.categoryRetention,
+      FindingCategory.parentalConsent => l10n.categoryParentalControls,
     };
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n =
+        AppLocalizations.of(context) ??
+        lookupAppLocalizations(
+          Localizations.maybeLocaleOf(context) ?? const Locale('en'),
+        );
+    final languageCode =
+        Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
+    final presetQuestions = [
+      l10n.presetQuestionMeaning,
+      l10n.presetQuestionOptOut,
+      l10n.presetQuestionUnknown,
+    ];
+    final activeQuestion = presetQuestions[_selectedQuestionIndex];
     final finding = widget.finding;
     final isVerified = finding.isVerified;
 
@@ -125,14 +141,14 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
             child: Row(
               children: [
                 IconButton(
-                  tooltip: 'Close',
+                  tooltip: l10n.tooltipClose,
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(LucideIcons.x, size: 22),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Align(
-                    alignment: Alignment.centerRight,
+                    alignment: AlignmentDirectional.centerEnd,
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 168),
                       child: ClipRRect(
@@ -221,7 +237,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                _categoryLabel(finding.category),
+                                _categoryLabel(l10n, finding.category),
                                 style: const TextStyle(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w700,
@@ -286,7 +302,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                             _CompactEvidenceRow(
                               iconSvg: Ph.lightbulb_duotone,
                               iconColor: EnpriveColors.tealStrong,
-                              label: 'In plain language',
+                              label: l10n.labelInPlainLanguage,
                               body: finding.explanation,
                             ),
                             Divider(
@@ -296,7 +312,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                             _CompactEvidenceRow(
                               iconSvg: Ph.device_mobile_duotone,
                               iconColor: EnpriveColors.chipOnDeviceFg,
-                              label: 'On this phone',
+                              label: l10n.labelOnThisPhone,
                               body: finding.whatAndroidReports,
                             ),
                             if (finding.unknowns.isNotEmpty) ...[
@@ -310,7 +326,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                                 iconSvg: Ph.question_duotone,
                                 iconColor:
                                     EnpriveColors.stateReviewRecommendedFg,
-                                label: 'What remains unknown',
+                                label: l10n.labelWhatRemainsUnknown,
                                 body: finding.unknowns.first,
                               ),
                             ],
@@ -327,12 +343,17 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _presetQuestions.map((q) {
+                  children: presetQuestions.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final q = entry.value;
                     final isSelected =
-                        q == _selectedQuestion && _deniExplanation != null;
+                        idx == _selectedQuestionIndex &&
+                        _deniExplanation != null;
                     return InkWell(
                       borderRadius: BorderRadius.circular(14),
-                      onTap: _isAskingDeni ? null : () => _askDeni(q),
+                      onTap: _isAskingDeni
+                          ? null
+                          : () => _askDeni(idx, q, languageCode),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 160),
                         padding: const EdgeInsets.symmetric(
@@ -377,7 +398,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                     ),
                     child: AnalysisLiveProcessView(
                       stream: widget.coordinator.analysisEvents,
-                      initialLabel: 'Reading cited policy clause…',
+                      initialLabel: l10n.readingCitedClause,
                       compact: true,
                     ),
                   ),
@@ -394,9 +415,9 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                       children: [
                         Row(
                           children: [
-                            const Text(
-                              'Deni’s Answer',
-                              style: TextStyle(
+                            Text(
+                              l10n.deniAnswerTitle,
+                              style: const TextStyle(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w800,
                                 color: EnpriveColors.tealStrong,
@@ -426,7 +447,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                             thoughtSummary: _deniExplanation!.thoughtSummary,
                             thoughtSignature:
                                 _deniExplanation!.thoughtSignature,
-                            title: 'Steps & model reasoning',
+                            title: l10n.stepsAndReasoning,
                             compact: true,
                           ),
                         ],
@@ -454,7 +475,11 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                 DeniAnimatedMascot(
                   size: 56,
                   pose: _deniPose,
-                  onTap: () => _askDeni(_selectedQuestion),
+                  onTap: () => _askDeni(
+                    _selectedQuestionIndex,
+                    activeQuestion,
+                    languageCode,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -472,13 +497,19 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                           ? null
                           : () {
                               if (_deniExplanation == null) {
-                                _askDeni(_selectedQuestion);
+                                _askDeni(
+                                  _selectedQuestionIndex,
+                                  activeQuestion,
+                                  languageCode,
+                                );
                               } else {
                                 Navigator.pop(context);
                               }
                             },
                       child: Text(
-                        _deniExplanation == null ? l10n.btnAskDeni : 'Done',
+                        _deniExplanation == null
+                            ? l10n.btnAskDeni
+                            : l10n.btnDone,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,

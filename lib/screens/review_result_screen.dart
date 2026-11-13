@@ -115,13 +115,13 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     );
   }
 
-  void _handleSave(PolicyReviewReceipt receipt) {
+  void _handleSave(BuildContext context, AppLocalizations l10n, PolicyReviewReceipt receipt) {
     if (_isSaved) return;
     setState(() => _isSaved = true);
     widget.onSaveReceipt?.call(receipt);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Saved to your local receipts.'),
+      SnackBar(
+        content: Text(l10n.savedToLocalReceiptsSnack),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -129,6 +129,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
 
   void _showSnapshotReceiptSheet(
     BuildContext context,
+    AppLocalizations l10n,
     PolicyReviewReceipt receipt,
   ) {
     final dt = receipt.createdAt;
@@ -166,7 +167,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  'Reviewed policy snapshot',
+                  l10n.snapshotSheetTitle,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 14),
@@ -180,7 +181,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Source · ${receipt.sourceLabel}',
+                        '${l10n.snapshotSourcePrefix} · ${receipt.sourceLabel}',
                         style: const TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w800,
@@ -189,7 +190,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Reviewed · $dateStr  |  Digest · #${receipt.snapshotDigest}',
+                        '${l10n.snapshotReviewedPrefix} · $dateStr  |  ${l10n.snapshotDigestPrefix} · #${receipt.snapshotDigest}',
                         style: const TextStyle(
                           fontSize: 12.5,
                           color: EnpriveColors.inkSecondary,
@@ -245,7 +246,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                     color: Colors.white.withValues(alpha: 0.85),
                     shape: const CircleBorder(),
                     child: IconButton(
-                      tooltip: 'Close',
+                      tooltip: l10n.tooltipClose,
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(
                         LucideIcons.x,
@@ -257,7 +258,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                   const Spacer(),
                   InkWell(
                     borderRadius: BorderRadius.circular(999),
-                    onTap: () => _showSnapshotReceiptSheet(context, receipt),
+                    onTap: () => _showSnapshotReceiptSheet(context, l10n, receipt),
                     child: EnpriveProvenanceChip(
                       source: receipt.inferenceSource,
                     ),
@@ -378,7 +379,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                   iconColor: EnpriveColors.chipInCloudFg,
                                   bg: const Color(0xFFEAF2FC),
                                   value: '${receipt.findings.length}',
-                                  label: 'Findings',
+                                  label: l10n.statFindings,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -388,7 +389,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                   iconColor: EnpriveColors.stateNoConcernFg,
                                   bg: EnpriveColors.stateNoConcernBg,
                                   value: '${receipt.sourceMatchedCount}',
-                                  label: 'Verified',
+                                  label: l10n.statVerified,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -404,8 +405,8 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                       ? '${receipt.permissionReport!.grantedSensitiveCount}'
                                       : '${receipt.unverifiedCount}',
                                   label: receipt.permissionReport != null
-                                      ? 'OS Granted'
-                                      : 'Unverified',
+                                      ? l10n.statOsGranted
+                                      : l10n.statUnverified,
                                 ),
                               ),
                             ],
@@ -445,8 +446,8 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                           // Findings List ("Lessons" list rhythm from x-learning-app.jpeg)
                           Text(
                             receipt.findings.isNotEmpty
-                                ? 'Key Findings'
-                                : 'Reviewed Excerpt',
+                                ? l10n.keyFindingsTitle
+                                : l10n.reviewedExcerptTitle,
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
@@ -478,6 +479,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                 padding: const EdgeInsets.only(bottom: 12.0),
                                 child: _CleanFindingCard(
                                   finding: finding,
+                                  l10n: l10n,
                                   onTap: () => _openFindingDetails(finding),
                                 ),
                               ),
@@ -487,9 +489,9 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                           if (receipt.permissionReport != null &&
                               receipt.permissionReport!.items.isNotEmpty) ...[
                             const SizedBox(height: 20),
-                            const Text(
-                              'Permissions on this phone',
-                              style: TextStyle(
+                            Text(
+                              l10n.permissionsOnPhoneTitle,
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                                 color: EnpriveColors.ink,
@@ -504,16 +506,19 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                           const SizedBox(height: 18),
                           Center(
                             child: TextButton.icon(
-                              onPressed: () =>
-                                  _showSnapshotReceiptSheet(context, receipt),
+                              onPressed: () => _showSnapshotReceiptSheet(
+                                context,
+                                l10n,
+                                receipt,
+                              ),
                               icon: const Icon(
                                 LucideIcons.fileText,
                                 size: 17,
                                 color: EnpriveColors.inkSecondary,
                               ),
-                              label: const Text(
-                                'View reviewed policy snapshot',
-                                style: TextStyle(
+                              label: Text(
+                                l10n.viewReviewedSnapshot,
+                                style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                   color: EnpriveColors.inkSecondary,
@@ -543,7 +548,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                   if (widget.onSaveReceipt != null) ...[
                     InkWell(
                       borderRadius: BorderRadius.circular(18),
-                      onTap: () => _handleSave(receipt),
+                      onTap: () => _handleSave(context, l10n, receipt),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
                         width: 56,
@@ -577,13 +582,13 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                       label: receipt.findings.isNotEmpty
                           ? l10n.btnAskDeni
                           : (_isSaved
-                              ? 'Saved to Receipts'
+                              ? l10n.btnSavedToReceipts
                               : l10n.btnSaveToReceipts),
                       onPressed: () {
                         if (receipt.findings.isNotEmpty) {
                           _openFindingDetails(receipt.findings.first);
                         } else {
-                          _handleSave(receipt);
+                          _handleSave(context, l10n, receipt);
                         }
                       },
                     ),
@@ -625,7 +630,7 @@ class _PastelStatTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Align(
-            alignment: Alignment.centerLeft,
+            alignment: AlignmentDirectional.centerStart,
             child: SizedBox(
               width: 22,
               height: 22,
@@ -664,10 +669,12 @@ class _PastelStatTile extends StatelessWidget {
 
 class _CleanFindingCard extends StatelessWidget {
   final VerifiedFinding finding;
+  final AppLocalizations l10n;
   final VoidCallback onTap;
 
   const _CleanFindingCard({
     required this.finding,
+    required this.l10n,
     required this.onTap,
   });
 
@@ -727,10 +734,10 @@ class _CleanFindingCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           finding.status == EvidenceStatus.deviceObserved
-                              ? 'Observed on this phone'
+                              ? l10n.observedOnPhoneLabel
                               : (isVerified
-                                  ? 'Quote verified in policy'
-                                  : 'Unverified claim'),
+                                  ? l10n.quoteVerifiedLabel
+                                  : l10n.unverifiedClaimLabel),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
