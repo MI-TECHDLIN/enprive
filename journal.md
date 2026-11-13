@@ -357,6 +357,23 @@
 
 ---
 
+### Iteration 10.4 — Production Home Screen Polish & Model-Neutral Process Copy (`feature/onboarding-and-process-text-flow`)
+- **Date**: 2026-11-13
+- **Branch / Commits**: `feature/onboarding-and-process-text-flow`
+- **Models Used**: Orchestrator (Argon) + Execution model
+- **What Was Built**:
+  - **Removed Mascot State Card & Pose Switcher Buttons (`lib/main.dart`)**:
+    - Removed the Home mascot speech bubble card, floating badges, `_cyclePose`, `_poseLabel`, `_poseDialogue`, and the `Welcome / Thinking / Explaining / Listening / Support / Complete` pose buttons.
+    - Kept a clean editorial hero header and filled the Home tab with actionable content: **Try a sample app check** one-tap cards (**EduTrack Classroom** and **CalmMath Kids** backed by `PermissionComparator.demoEduTrackSnapshot` / `demoCalmMathSnapshot`) and a **What we check for** 3-row highlight card (**Exact policy quotes**, **Phone permission mismatches**, **Select text anywhere**).
+  - **Removed Model-Specific `"Gemini Nano"` References from Process & Thought Labels (`android/app/src/main/kotlin/com/example/enprive/MainActivity.kt`, `lib/domain/review/review_coordinator.dart`, `lib/widgets/review_progress_sheet.dart`, `lib/widgets/why_this_finding_sheet.dart`)**:
+    - Replaced technical model names in live process/thought UI labels with clear human copy (`"Reading policy text on this phone"`, `"Streaming reasoning & thought signature"`, `"Preparing privacy-scrubbed check"`, etc.).
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **24/24 tests passing**.
+  - `cd android && ./gradlew compileDebugKotlin --no-daemon`: **BUILD SUCCESSFUL**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Final Release & PR Consolidation (`main` merge & APK verification)**

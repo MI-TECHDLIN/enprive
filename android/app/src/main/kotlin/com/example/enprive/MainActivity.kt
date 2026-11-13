@@ -495,7 +495,7 @@ class MainActivity : FlutterActivity() {
                                     label = if (cloudConsent) {
                                         "Streaming reasoning via App Check"
                                     } else {
-                                        "Running local Gemini Nano check"
+                                        "Reading policy text on this phone"
                                     },
                                     sourceStr = if (inferenceMode == InferenceMode.ONLY_ON_DEVICE) "ON_DEVICE" else null
                                 )
@@ -539,9 +539,9 @@ class MainActivity : FlutterActivity() {
                                                 "streaming_thoughts"
                                             },
                                             label = if (srcLabel == "IN_CLOUD") {
-                                                "Streaming model thoughts & thought signature"
+                                                "Streaming reasoning & thought signature"
                                             } else {
-                                                "Streaming on-device reasoning"
+                                                "Streaming reasoning on this phone"
                                             },
                                             sourceStr = srcLabel
                                         )

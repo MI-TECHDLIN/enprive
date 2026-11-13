@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+
 import '../core/theme/enprive_colors.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import 'analysis_process_trace.dart';
@@ -65,9 +66,7 @@ class ReviewProgressCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isKorean
-                          ? '이 휴대폰에서 검토하는 중…'
-                          : 'Reviewing on this phone…',
+                      isKorean ? '이 휴대폰에서 검토하는 중…' : 'Reviewing on this phone…',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -94,8 +93,8 @@ class ReviewProgressCard extends StatelessWidget {
           AnalysisLiveProcessView(
             stream: processStream,
             initialLabel: isKorean
-                ? '이 휴대폰에서 로컬 AI 확인 중…'
-                : 'Checking on-device Gemini Nano…',
+                ? '이 휴대폰에서 약관 조항을 읽는 중…'
+                : 'Reading policy clauses on this phone…',
           ),
         ],
       ),

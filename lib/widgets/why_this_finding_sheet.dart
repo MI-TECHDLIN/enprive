@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+
 import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_theme.dart';
 import '../domain/review/review_coordinator.dart';
@@ -157,9 +158,8 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                 // Instruction / Title (Brilliant B30 top sentence)
                 Text(
                   finding.title,
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: 24,
-                      ),
+                  style: Theme.of(context).textTheme.headlineLarge
+                      ?.copyWith(fontSize: 24),
                 ),
                 const SizedBox(height: 16),
 
@@ -200,8 +200,8 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                               finding.status == EvidenceStatus.deviceObserved
                                   ? l10n.statusDeviceObserved
                                   : (isVerified
-                                      ? l10n.statusSourceMatched
-                                      : l10n.statusUnverified),
+                                        ? l10n.statusSourceMatched
+                                        : l10n.statusUnverified),
                               style: const TextStyle(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w800,
@@ -300,8 +300,9 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                             if (finding.unknowns.isNotEmpty) ...[
                               Divider(
                                 height: 24,
-                                color:
-                                    EnpriveColors.ink.withValues(alpha: 0.08),
+                                color: EnpriveColors.ink.withValues(
+                                  alpha: 0.08,
+                                ),
                               ),
                               _CompactEvidenceRow(
                                 icon: Symbols.help_outline_rounded,
@@ -374,7 +375,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                     ),
                     child: AnalysisLiveProcessView(
                       stream: widget.coordinator.analysisEvents,
-                      initialLabel: 'Checking on-device Gemini Nano…',
+                      initialLabel: 'Reading cited policy clause…',
                       compact: true,
                     ),
                   ),
@@ -421,7 +422,8 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                           AnalysisSavedTraceCard(
                             processSteps: _deniExplanation!.processSteps,
                             thoughtSummary: _deniExplanation!.thoughtSummary,
-                            thoughtSignature: _deniExplanation!.thoughtSignature,
+                            thoughtSignature:
+                                _deniExplanation!.thoughtSignature,
                             title: 'Steps & model reasoning',
                             compact: true,
                           ),

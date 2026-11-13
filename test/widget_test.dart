@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
@@ -50,7 +51,7 @@ void main() {
   });
 
   testWidgets(
-    'EnpriveApp renders title, tagline, Deni greeting, and interactive pose pills',
+    'EnpriveApp renders clean Home hero, sample app checks, and what-we-check content without pose debug card',
     (WidgetTester tester) async {
       await tester.pumpWidget(const EnpriveApp());
       await tester.pump();
@@ -59,18 +60,13 @@ void main() {
       expect(find.text('Enprive'), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Receipts'), findsWidgets);
-      expect(find.textContaining('Deni'), findsWidgets);
-      expect(find.text('Thinking'), findsOneWidget);
-
-      // Tap the 'Thinking' pose pill and verify Deni updates state dialogue
-      await tester.tap(find.text('Thinking'));
-      await tester.pump(const Duration(milliseconds: 250));
-      expect(
-        find.textContaining(
-          'Matching policy clauses on-device with Gemini Nano',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('Try a sample app check'), findsOneWidget);
+      expect(find.text('EduTrack Classroom'), findsOneWidget);
+      expect(find.text('CalmMath Kids'), findsOneWidget);
+      expect(find.text('What we check for'), findsOneWidget);
+      expect(find.text('Exact policy quotes'), findsOneWidget);
+      expect(find.textContaining('Deni ·'), findsNothing);
+      expect(find.text('Thinking'), findsNothing);
     },
   );
 
@@ -183,13 +179,13 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.text('Checking on-device Gemini Nano…'), findsOneWidget);
+      expect(find.text('Reading policy clauses on this phone…'), findsOneWidget);
 
       controller.add(
         AnalysisStreamEvent(
           requestId: 'req_1',
           stage: 'streaming_thoughts',
-          label: 'Streaming model thoughts & thought signature',
+          label: 'Streaming reasoning & thought signature',
           thoughtSummary: 'Verifying sharing clause verbatim boundaries.',
           thoughtSignature: 'sig_1234567890abcdef',
         ),
@@ -197,7 +193,7 @@ void main() {
       await tester.pump();
 
       expect(
-        find.text('Streaming model thoughts & thought signature'),
+        find.text('Streaming reasoning & thought signature'),
         findsOneWidget,
       );
       expect(find.text('Streaming thoughts'), findsOneWidget);

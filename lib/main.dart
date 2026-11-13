@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+
 import 'core/theme/enprive_colors.dart';
 import 'core/theme/enprive_theme.dart';
+import 'domain/permissions/permission_comparator.dart';
 import 'domain/review/review_coordinator.dart';
 import 'domain/review/review_models.dart';
 import 'l10n/app_localizations.dart';
@@ -48,20 +50,14 @@ class _EnpriveAppState extends State<EnpriveApp> {
       debugShowCheckedModeBanner: false,
       theme: EnpriveTheme.lightTheme,
       locale: _locale,
-      supportedLocales: const [
-        Locale('en'),
-        Locale('ko'),
-      ],
+      supportedLocales: const [Locale('en'), Locale('ko')],
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: HomeScreen(
-        currentLocale: _locale,
-        onLocaleChange: _setLocale,
-      ),
+      home: HomeScreen(currentLocale: _locale, onLocaleChange: _setLocale),
     );
   }
 }
@@ -95,7 +91,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
 ''';
 
   final HybridAiBridge _bridge = HybridAiBridge();
-  late final ReviewCoordinator _coordinator = ReviewCoordinator(bridge: _bridge);
+  late final ReviewCoordinator _coordinator = ReviewCoordinator(
+    bridge: _bridge,
+  );
   final ReceiptRepository _receiptRepo = ReceiptRepository();
   final UserPreferencesRepository _prefsRepo = UserPreferencesRepository();
   DeviceCapability? _deviceCapability;
@@ -298,44 +296,25 @@ We do not collect personal identifiers, precise location data, microphone audio,
     );
   }
 
-  void _cyclePose() {
-    const poses = DeniPose.values;
-    final nextIndex = (poses.indexOf(_activePose) + 1) % poses.length;
-    setState(() {
-      _activePose = poses[nextIndex];
-    });
-  }
-
-  String _poseLabel(DeniPose pose, bool isKorean) {
-    return switch (pose) {
-      DeniPose.idle => isKorean ? '환영' : 'Welcome',
-      DeniPose.thinking => isKorean ? '분석 중' : 'Thinking',
-      DeniPose.explaining => isKorean ? '근거 설명' : 'Explaining',
-      DeniPose.listening => isKorean ? '음성 안내' : 'Listening',
-      DeniPose.support => isKorean ? '확인 필요' : 'Support',
-      DeniPose.celebrating => isKorean ? '검토 완료' : 'Complete',
-    };
-  }
-
-  String _poseDialogue(DeniPose pose, AppLocalizations l10n, bool isKorean) {
-    return switch (pose) {
-      DeniPose.idle => isKorean
-          ? '아이들이 쓰는 앱의 약관과 실제 권한을 나란히 짚어드려요.'
-          : 'Pick an app or paste its policy—I’ll point to the exact lines that matter.',
-      DeniPose.thinking => isKorean
-          ? '이 휴대폰 안에서 약관 문장을 하나씩 대조하고 있어요.'
-          : 'Matching policy clauses on-device with Gemini Nano.',
-      DeniPose.explaining => isKorean
-          ? '모든 알림은 실제 약관 원문의 문장과 바로 연결됩니다.'
-          : 'Every concern links straight back to a verbatim line in the policy.',
-      DeniPose.listening => isKorean
-          ? '결과 화면에서 스피커를 누르면 요약을 차분하게 읽어드려요.'
-          : 'Tap the speaker on any result and I’ll read the summary aloud.',
-      DeniPose.support => isKorean
-          ? '약관에 근거가 없는 내용은 추측하지 않고 미확인으로 남깁니다.'
-          : 'If the policy doesn’t say it, I mark it unknown instead of guessing.',
-      DeniPose.celebrating => l10n.stateNoConcernSubtitle,
-    };
+  Future<void> _runQuickSampleReview({required bool isEduTrack}) async {
+    final policyText = isEduTrack
+        ? await _loadFixtureText(
+            'assets/fixtures/synthetic_policy_edutrack.txt',
+            _fallbackEduTrackFixture,
+          )
+        : await _loadFixtureText(
+            'assets/fixtures/synthetic_policy_calmmath.txt',
+            _fallbackCalmMathFixture,
+          );
+    if (!mounted) return;
+    await _executePolicyReview(
+      subjectTitle: isEduTrack ? 'EduTrack Classroom' : 'CalmMath Kids',
+      sourceLabel: 'Classroom Sample',
+      policyText: policyText,
+      appPermissions: isEduTrack
+          ? PermissionComparator.demoEduTrackSnapshot
+          : PermissionComparator.demoCalmMathSnapshot,
+    );
   }
 
   @override
@@ -366,9 +345,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
             Text(
               l10n.appTitle,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: EnpriveColors.ink,
-                    fontWeight: FontWeight.w800,
-                  ),
+                color: EnpriveColors.ink,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ],
         ),
@@ -378,8 +357,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
             child: InkWell(
               borderRadius: BorderRadius.circular(999),
               onTap: () {
-                final nextLocale =
-                    isKorean ? const Locale('en') : const Locale('ko');
+                final nextLocale = isKorean
+                    ? const Locale('en')
+                    : const Locale('ko');
                 widget.onLocaleChange(nextLocale);
                 unawaited(
                   _prefsRepo.update(languageCode: nextLocale.languageCode),
@@ -466,152 +446,25 @@ We do not collect personal identifiers, precise location data, microphone audio,
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
         child: Column(
           children: [
-            // 1. Brilliant B1 + Family Splash Hero Stage Card
+            // 1. Editorial Hero Header with Deni (no state card or debug buttons)
             if (_showDeni) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 18),
-                decoration: BoxDecoration(
-                  color: EnpriveColors.surfaceMuted,
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: Column(
-                  children: [
-                    // Stage with subtle floating privacy artifacts (x-family-splash.jpeg)
-                    SizedBox(
-                      height: 124,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Positioned(
-                            left: 24,
-                            top: 8,
-                            child: _FloatingStageBadge(
-                              icon: Symbols.format_quote_rounded,
-                              color: EnpriveColors.tealStrong,
-                            ),
-                          ),
-                          Positioned(
-                            right: 28,
-                            top: 12,
-                            child: _FloatingStageBadge(
-                              icon: Symbols.lock_rounded,
-                              color: EnpriveColors.stateNoConcernFg,
-                            ),
-                          ),
-                          Positioned(
-                            left: 44,
-                            bottom: 8,
-                            child: _FloatingStageBadge(
-                              icon: Symbols.phone_android_rounded,
-                              color: EnpriveColors.chipInCloudFg,
-                            ),
-                          ),
-                          DeniAnimatedMascot(
-                            size: 108,
-                            pose: _activePose,
-                            onTap: _cyclePose,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Floating White Speech Bubble Card (b01-welcome.png overlay card)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: EnpriveColors.surface,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Deni · ${_poseLabel(_activePose, isKorean)}',
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
-                              color: EnpriveColors.tealStrong,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 200),
-                            child: Text(
-                              _poseDialogue(_activePose, l10n, isKorean),
-                              key: ValueKey<String>(
-                                '${_activePose.name}_$isKorean',
-                              ),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                height: 1.4,
-                                color: EnpriveColors.inkSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Quiet Pose Switcher Row
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: DeniPose.values.map((pose) {
-                          final isSelected = pose == _activePose;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 6.0),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(999),
-                              onTap: () => setState(() => _activePose = pose),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? EnpriveColors.ink
-                                      : Colors.white.withValues(alpha: 0.65),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  _poseLabel(pose, isKorean),
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : EnpriveColors.inkSecondary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ],
+              Center(
+                child: DeniAnimatedMascot(
+                  size: 88,
+                  pose: _isRunningReview ? DeniPose.thinking : _activePose,
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 16),
             ],
 
-            // 2. Centered Editorial Headline & Subtitle (Brilliant b01-welcome.png)
+            // 2. Centered Editorial Headline & Subtitle
             Text(
               isKorean
                   ? '아이들이 쓰는 앱,\n약관과 권한을 한눈에'
                   : 'A clearer look at the\napps children use',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    fontSize: 30,
-                  ),
+              style: Theme.of(context).textTheme.displayLarge
+                  ?.copyWith(fontSize: 30),
             ),
             const SizedBox(height: 10),
             Padding(
@@ -619,14 +472,13 @@ We do not collect personal identifiers, precise location data, microphone audio,
               child: Text(
                 l10n.homePrivacySubtitle,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: EnpriveColors.inkSecondary,
-                    ),
+                style: Theme.of(context).textTheme.bodyLarge
+                    ?.copyWith(color: EnpriveColors.inkSecondary),
               ),
             ),
             const SizedBox(height: 28),
 
-            // 3. Two Tactile Pill CTAs (b01-welcome.png exact button stack)
+            // 3. Two Tactile Pill CTAs
             if (_isRunningReview)
               ReviewProgressCard(
                 subjectTitle: _activeReviewTitle,
@@ -652,6 +504,112 @@ We do not collect personal identifiers, precise location data, microphone audio,
                 },
               ),
             ],
+
+            const SizedBox(height: 28),
+
+            // 4. Quick Sample App Checks
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                isKorean ? '샘플 앱 바로 검토하기' : 'Try a sample app check',
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: EnpriveColors.ink,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _HomeSampleCard(
+                    title: 'EduTrack Classroom',
+                    subtitle: isKorean
+                        ? '숙제·출결 · 권한 3건 요청'
+                        : 'Homework & attendance · 3 permissions requested',
+                    icon: Symbols.school_rounded,
+                    iconBg: EnpriveColors.stateReviewRecommendedBg,
+                    iconFg: EnpriveColors.stateReviewRecommendedFg,
+                    onTap: _isRunningReview
+                        ? null
+                        : () => _runQuickSampleReview(isEduTrack: true),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _HomeSampleCard(
+                    title: 'CalmMath Kids',
+                    subtitle: isKorean
+                        ? '오프라인 수학 · 민감 권한 없음'
+                        : 'Offline math practice · 0 sensitive permissions',
+                    icon: Symbols.calculate_rounded,
+                    iconBg: EnpriveColors.stateNoConcernBg,
+                    iconFg: EnpriveColors.stateNoConcernFg,
+                    onTap: _isRunningReview
+                        ? null
+                        : () => _runQuickSampleReview(isEduTrack: false),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // 5. What We Check For
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: EnpriveColors.surface,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isKorean ? '중점 확인 항목' : 'What we check for',
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: EnpriveColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _HomeHighlightRow(
+                    icon: Symbols.format_quote_rounded,
+                    iconBg: EnpriveColors.chipOnDeviceBg,
+                    iconFg: EnpriveColors.tealStrong,
+                    title: isKorean ? '정확한 약관 원문' : 'Exact policy quotes',
+                    subtitle: isKorean
+                        ? '공유·음성 녹음·보관 기간 조항을 원문과 함께 짚어줍니다.'
+                        : 'Flags sharing, voice recording, and retention with verbatim quotes.',
+                  ),
+                  const SizedBox(height: 14),
+                  _HomeHighlightRow(
+                    icon: Symbols.shield_lock_rounded,
+                    iconBg: EnpriveColors.stateReviewRecommendedBg,
+                    iconFg: EnpriveColors.stateReviewRecommendedFg,
+                    title: isKorean
+                        ? '휴대폰 권한 불일치'
+                        : 'Phone permission mismatches',
+                    subtitle: isKorean
+                        ? '카메라·마이크·위치 권한을 약관 설명과 직접 대조합니다.'
+                        : 'Compares Camera, Mic, and Location access against what the policy claims.',
+                  ),
+                  const SizedBox(height: 14),
+                  _HomeHighlightRow(
+                    icon: Symbols.touch_app_rounded,
+                    iconBg: EnpriveColors.chipInCloudBg,
+                    iconFg: EnpriveColors.chipInCloudFg,
+                    title: isKorean ? '어디서나 텍스트 선택' : 'Select text anywhere',
+                    subtitle: isKorean
+                        ? '다른 앱에서 문장을 선택하고 Android 메뉴의 Enprive Check를 누르세요.'
+                        : 'Highlight terms in any app and tap Enprive Check from Android’s menu.',
+                  ),
+                ],
+              ),
+            ),
 
             // 4. Monday Home "Recently visited →" Card Group (x-monday-home.jpeg)
             if (_savedReceipts.isNotEmpty) ...[
@@ -700,7 +658,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     ..._savedReceipts.take(2).toList().asMap().entries.map((e) {
                       final idx = e.key;
                       final receipt = e.value;
-                      final isConcern = receipt.overallState ==
+                      final isConcern =
+                          receipt.overallState ==
                           ReviewOverallState.reviewRecommended;
                       return Column(
                         children: [
@@ -722,8 +681,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
                               );
                             },
                             child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 4.0),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 4.0,
+                              ),
                               child: Row(
                                 children: [
                                   Container(
@@ -732,7 +692,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                     decoration: BoxDecoration(
                                       color: isConcern
                                           ? EnpriveColors
-                                              .stateReviewRecommendedBg
+                                                .stateReviewRecommendedBg
                                           : EnpriveColors.stateNoConcernBg,
                                       borderRadius: BorderRadius.circular(14),
                                     ),
@@ -742,7 +702,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                           : Symbols.check_circle_rounded,
                                       color: isConcern
                                           ? EnpriveColors
-                                              .stateReviewRecommendedFg
+                                                .stateReviewRecommendedFg
                                           : EnpriveColors.stateNoConcernFg,
                                       size: 20,
                                     ),
@@ -1068,8 +1028,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       if (isLinkMode) {
                         final rawUrl = urlController.text.trim();
                         if (rawUrl.isEmpty) return;
-                        final isCalm =
-                            rawUrl.toLowerCase().contains('calmmath');
+                        final isCalm = rawUrl.toLowerCase().contains(
+                          'calmmath',
+                        );
                         final resolvedText = await _loadFixtureText(
                           isCalm
                               ? 'assets/fixtures/synthetic_policy_calmmath.txt'
@@ -1078,11 +1039,12 @@ We do not collect personal identifiers, precise location data, microphone audio,
                               ? _fallbackCalmMathFixture
                               : _fallbackEduTrackFixture,
                         );
-                        final subject = titleController.text.trim().isEmpty ||
+                        final subject =
+                            titleController.text.trim().isEmpty ||
                                 titleController.text.trim() == 'Privacy Policy'
                             ? (isCalm
-                                ? 'CalmMath Abacus'
-                                : 'EduTrack Classroom Companion')
+                                  ? 'CalmMath Abacus'
+                                  : 'EduTrack Classroom Companion')
                             : titleController.text.trim();
                         if (sheetContext.mounted) {
                           Navigator.pop(sheetContext);
@@ -1118,25 +1080,140 @@ We do not collect personal identifiers, precise location data, microphone audio,
   }
 }
 
-class _FloatingStageBadge extends StatelessWidget {
+class _HomeSampleCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
   final IconData icon;
-  final Color color;
+  final Color iconBg;
+  final Color iconFg;
+  final VoidCallback? onTap;
 
-  const _FloatingStageBadge({
+  const _HomeSampleCard({
+    required this.title,
+    required this.subtitle,
     required this.icon,
-    required this.color,
+    required this.iconBg,
+    required this.iconFg,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(12),
+    return Material(
+      color: EnpriveColors.surface,
+      borderRadius: BorderRadius.circular(24),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: iconBg,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(icon, size: 20, color: iconFg),
+                  ),
+                  const Spacer(),
+                  const Icon(
+                    Symbols.arrow_forward_rounded,
+                    size: 18,
+                    color: EnpriveColors.inkSecondary,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: EnpriveColors.ink,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  height: 1.35,
+                  color: EnpriveColors.inkSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      child: Icon(icon, size: 18, color: color),
+    );
+  }
+}
+
+class _HomeHighlightRow extends StatelessWidget {
+  final IconData icon;
+  final Color iconBg;
+  final Color iconFg;
+  final String title;
+  final String subtitle;
+
+  const _HomeHighlightRow({
+    required this.icon,
+    required this.iconBg,
+    required this.iconFg,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: iconBg,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(icon, size: 20, color: iconFg),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: EnpriveColors.ink,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.38,
+                  color: EnpriveColors.inkSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1215,8 +1292,9 @@ class _FloatingBottomNavDock extends StatelessWidget {
                         item.label,
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight:
-                              isSelected ? FontWeight.w800 : FontWeight.w600,
+                          fontWeight: isSelected
+                              ? FontWeight.w800
+                              : FontWeight.w600,
                           color: isSelected
                               ? EnpriveColors.tealStrong
                               : EnpriveColors.inkSecondary,

@@ -42,7 +42,7 @@ class ReviewCoordinator {
   Stream<AnalysisStreamEvent> get analysisEvents => _bridge.analysisEvents;
 
   ReviewCoordinator({HybridAiBridge? bridge})
-      : _bridge = bridge ?? HybridAiBridge();
+    : _bridge = bridge ?? HybridAiBridge();
 
   void _recordAndEmitStep({
     required String requestId,
@@ -104,7 +104,8 @@ class ReviewCoordinator {
       if (event.thoughtSummary != null && event.thoughtSummary!.isNotEmpty) {
         streamedThought = event.thoughtSummary;
       }
-      if (event.thoughtSignature != null && event.thoughtSignature!.isNotEmpty) {
+      if (event.thoughtSignature != null &&
+          event.thoughtSignature!.isNotEmpty) {
         streamedSignature = event.thoughtSignature;
       }
     });
@@ -150,7 +151,7 @@ class ReviewCoordinator {
           requestId: reqId,
           steps: processSteps,
           stage: 'checking_on_device',
-          label: 'Checking on-device Gemini Nano',
+          label: 'Reading policy text on this phone',
           inferenceSource: 'ON_DEVICE',
         );
         final localResult = await _bridge.analyseText(
@@ -166,7 +167,7 @@ class ReviewCoordinator {
           final thought = localResult.thoughtSummary ?? streamedThought;
           final signature = localResult.thoughtSignature ?? streamedSignature;
           if (thought != null) {
-            processSteps.add('Captured on-device reasoning');
+            processSteps.add('Captured policy reasoning');
           }
           if (signature != null) {
             processSteps.add('Captured thought signature');
@@ -201,14 +202,14 @@ class ReviewCoordinator {
           requestId: reqId,
           steps: processSteps,
           stage: 'on_device_unavailable',
-          label: 'On-device AI unavailable — routing safely via App Check',
+          label: 'Preparing privacy-scrubbed check',
         );
       } else {
         _recordAndEmitStep(
           requestId: reqId,
           steps: processSteps,
           stage: 'routing_comprehensive',
-          label: 'Policy has detailed clauses — preparing App Check review',
+          label: 'Long policy — preparing privacy-scrubbed check',
         );
       }
 
@@ -228,7 +229,7 @@ class ReviewCoordinator {
         requestId: '${reqId}_appcheck',
         steps: processSteps,
         stage: 'sending_appcheck',
-        label: 'Streaming reasoning via Firebase App Check',
+        label: 'Streaming reasoning with App Check protection',
         inferenceSource: 'IN_CLOUD',
       );
 
@@ -282,7 +283,7 @@ class ReviewCoordinator {
         requestId: reqId,
         steps: processSteps,
         stage: 'offline_fallback',
-        label: 'Model offline — running deterministic local clause scan',
+        label: 'Scanning policy clauses on this phone',
         inferenceSource: 'ON_DEVICE',
       );
       _recordAndEmitStep(
@@ -324,12 +325,12 @@ class ReviewCoordinator {
     );
     final enrichedFindings =
         PermissionComparator.enrichFindingsWithDeviceReport(
-      policyFindings: baseReceipt.findings,
-      report: report,
-    );
+          policyFindings: baseReceipt.findings,
+          report: report,
+        );
 
-    final hasConcerns = enrichedFindings.any((f) => f.isVerified) ||
-        report.mismatchCount > 0;
+    final hasConcerns =
+        enrichedFindings.any((f) => f.isVerified) || report.mismatchCount > 0;
     final updatedState = hasConcerns
         ? ReviewOverallState.reviewRecommended
         : baseReceipt.overallState;
@@ -376,7 +377,8 @@ class ReviewCoordinator {
       if (event.thoughtSummary != null && event.thoughtSummary!.isNotEmpty) {
         streamedThought = event.thoughtSummary;
       }
-      if (event.thoughtSignature != null && event.thoughtSignature!.isNotEmpty) {
+      if (event.thoughtSignature != null &&
+          event.thoughtSignature!.isNotEmpty) {
         streamedSignature = event.thoughtSignature;
       }
     });
@@ -388,7 +390,7 @@ class ReviewCoordinator {
           requestId: reqId,
           steps: processSteps,
           stage: 'checking_on_device',
-          label: 'Checking on-device Gemini Nano',
+          label: 'Reading cited clause on this phone',
           inferenceSource: 'ON_DEVICE',
         );
         final localRes = await _bridge.analyseText(
@@ -405,7 +407,7 @@ class ReviewCoordinator {
             requestId: reqId,
             steps: processSteps,
             stage: 'on_device_unavailable',
-            label: 'On-device AI unavailable — routing safely via App Check',
+            label: 'Preparing privacy-scrubbed explanation',
           );
         }
       } else {
@@ -431,7 +433,7 @@ class ReviewCoordinator {
           requestId: '${reqId}_appcheck',
           steps: processSteps,
           stage: 'sending_appcheck',
-          label: 'Streaming Deni reasoning via App Check',
+          label: 'Streaming explanation with App Check protection',
           inferenceSource: 'IN_CLOUD',
         );
         res = await _bridge.analyseText(
@@ -469,9 +471,11 @@ class ReviewCoordinator {
           return DeniExplanation(
             question: question,
             answer: answer,
-            whatPolicySays: (out['whatPolicySays'] as String?)?.trim() ??
+            whatPolicySays:
+                (out['whatPolicySays'] as String?)?.trim() ??
                 finding.whatPolicySays,
-            unknownBoundary: (out['unknownBoundary'] as String?)?.trim() ??
+            unknownBoundary:
+                (out['unknownBoundary'] as String?)?.trim() ??
                 (finding.unknowns.isNotEmpty
                     ? finding.unknowns.first
                     : 'The policy text does not state how often this occurs in practice.'),
@@ -490,7 +494,7 @@ class ReviewCoordinator {
         requestId: reqId,
         steps: processSteps,
         stage: 'offline_fallback',
-        label: 'Model offline — explaining from verified quote',
+        label: 'Answering directly from verified quote',
         inferenceSource: 'ON_DEVICE',
         isCompleted: true,
       );
@@ -502,9 +506,7 @@ class ReviewCoordinator {
             'and check whether a parent or school admin must request deletion. '
             'The quoted line does not show a one-tap opt-out.';
       } else if (qLower.contains('unknown')) {
-        groundedAnswer = finding.unknowns.isNotEmpty
-            ? finding.unknowns.first
-            : 'This policy text does not prove how often data leaves the phone in practice.';
+        groundedAnswer = finding.unknowns.isNotEmpty ? finding.unknowns.first : 'This policy text does not prove how often data leaves the phone in practice.';
       } else {
         groundedAnswer = finding.explanation;
       }
@@ -512,11 +514,8 @@ class ReviewCoordinator {
       return DeniExplanation(
         question: question,
         answer: groundedAnswer,
-        whatPolicySays:
-            'Policy quote: “${finding.exactExcerpt}”',
-        unknownBoundary: finding.unknowns.isNotEmpty
-            ? finding.unknowns.first
-            : 'The policy text alone cannot show whether the app transmits this data right now.',
+        whatPolicySays: 'Policy quote: “${finding.exactExcerpt}”',
+        unknownBoundary: finding.unknowns.isNotEmpty ? finding.unknowns.first : 'The policy text alone cannot show whether the app transmits this data right now.',
         inferenceSource: InferenceSource.onDevice,
         processSteps: List<String>.unmodifiable(processSteps),
         thoughtSummary: streamedThought,
@@ -545,15 +544,13 @@ class ReviewCoordinator {
       final item = rawConcerns[i];
       if (item is! Map) continue;
       final rawMap = item.cast<String, dynamic>();
-      final quote = (rawMap['quote'] as String?) ??
+      final quote =
+          (rawMap['quote'] as String?) ??
           (rawMap['exact_excerpt'] as String?) ??
           '';
 
       var validated = EvidenceValidator.validateFinding(
-        rawFinding: {
-          ...rawMap,
-          'exact_excerpt': quote,
-        },
+        rawFinding: {...rawMap, 'exact_excerpt': quote},
         snapshotText: snapshotText,
         validEvidenceIds: {'finding_${i + 1}'},
       );
@@ -561,10 +558,7 @@ class ReviewCoordinator {
       if (validated['status'] != 'SOURCE_MATCHED' &&
           redactedSnapshotText != null) {
         final redactedValidation = EvidenceValidator.validateFinding(
-          rawFinding: {
-            ...rawMap,
-            'exact_excerpt': quote,
-          },
+          rawFinding: {...rawMap, 'exact_excerpt': quote},
           snapshotText: redactedSnapshotText,
           validEvidenceIds: {'finding_${i + 1}'},
         );
@@ -582,9 +576,8 @@ class ReviewCoordinator {
             )
           : null;
 
-      final rawUnknowns = (validated['unknowns'] as List?)
-              ?.map((e) => e.toString())
-              .toList() ??
+      final rawUnknowns =
+          (validated['unknowns'] as List?)?.map((e) => e.toString()).toList() ??
           <String>[];
       if (rawUnknowns.isEmpty) {
         rawUnknowns.add(
@@ -600,20 +593,19 @@ class ReviewCoordinator {
       findings.add(
         VerifiedFinding(
           id: (rawMap['id'] as String?) ?? 'finding_${i + 1}',
-          title: (rawMap['title'] as String?) ??
+          title:
+              (rawMap['title'] as String?) ??
               _defaultTitleForCategory(categoryStr),
           category: _parseCategory(categoryStr),
           severity: _parseSeverity(severityStr),
           exactExcerpt: quote.isEmpty
               ? 'No verbatim quote supplied by model.'
               : EvidenceValidator.normalize(quote),
-          explanation: (rawMap['explanation'] as String?) ??
-              'This clause describes data handling that warrants parent or teacher review.',
+          explanation: (rawMap['explanation'] as String?) ?? 'This clause describes data handling that warrants parent or teacher review.',
           whatPolicySays: isSourceMatched
               ? 'Verbatim match confirmed in captured snapshot (${EvidenceValidator.normalize(quote).length} chars).'
               : 'Model cited a passage that could not be matched verbatim in the captured snapshot.',
-          whatAndroidReports:
-              'Text-only policy review. Run "Check an app" to compare against live Android OS permissions.',
+          whatAndroidReports: 'Text-only policy review. Run "Check an app" to compare against live Android OS permissions.',
           unknowns: rawUnknowns,
           status: isSourceMatched
               ? EvidenceStatus.sourceMatched
@@ -633,8 +625,8 @@ class ReviewCoordinator {
       overallState = findings.isEmpty && rawState == 'REVIEW_RECOMMENDED'
           ? ReviewOverallState.insufficientEvidence
           : (hasVerifiedConcerns
-              ? ReviewOverallState.reviewRecommended
-              : ReviewOverallState.insufficientEvidence);
+                ? ReviewOverallState.reviewRecommended
+                : ReviewOverallState.insufficientEvidence);
     } else if (rawState == 'NO_CONCERN' && findings.isEmpty) {
       overallState = ReviewOverallState.noConcern;
     } else if (findings.isNotEmpty && !hasVerifiedConcerns) {
@@ -658,10 +650,12 @@ class ReviewCoordinator {
       createdAt: DateTime.now(),
       overallState: overallState,
       inferenceSource: sourceChip,
-      summary: (map['summary'] as String?) ??
+      summary:
+          (map['summary'] as String?) ??
           _defaultSummaryForState(overallState, findings.length),
       calibratedDisclaimer:
-          (map['calibratedDisclaimer'] as String?) ?? calibratedDefaultDisclaimer,
+          (map['calibratedDisclaimer'] as String?) ??
+          calibratedDefaultDisclaimer,
       findings: findings,
       processSteps: processSteps,
       thoughtSummary: thoughtSummary ?? bridgeResult.thoughtSummary,
@@ -694,7 +688,8 @@ class ReviewCoordinator {
       final lower = sentence.toLowerCase();
 
       // Skip explicit non-collection reassurance clauses
-      final isNegatedReassurance = lower.contains('we do not collect') ||
+      final isNegatedReassurance =
+          lower.contains('we do not collect') ||
           lower.contains('we never sell') ||
           lower.contains('stored exclusively on this device') ||
           lower.contains('do not integrate third-party advertising');
@@ -705,18 +700,18 @@ class ReviewCoordinator {
               lower.contains('background') ||
               lower.contains('precise') ||
               lower.contains('share'))) {
-        findings.add(_buildVerifiedLocalFinding(
-          id: 'local_$idx',
-          title: 'Tracks location even in the background',
-          category: FindingCategory.tracking,
-          severity: FindingSeverity.high,
-          excerpt: sentence,
-          explanation:
-              'The app can read your child’s exact GPS location even when it isn’t open on screen.',
-          unknown:
-              'The policy text doesn’t show whether location permission is actually granted on this phone.',
-          snapshotText: policyText,
-        ));
+        findings.add(
+          _buildVerifiedLocalFinding(
+            id: 'local_$idx',
+            title: 'Tracks location even in the background',
+            category: FindingCategory.tracking,
+            severity: FindingSeverity.high,
+            excerpt: sentence,
+            explanation: 'The app can read your child’s exact GPS location even when it isn’t open on screen.',
+            unknown: 'The policy text doesn’t show whether location permission is actually granted on this phone.',
+            snapshotText: policyText,
+          ),
+        );
         idx++;
       } else if ((lower.contains('voice') ||
               lower.contains('microphone') ||
@@ -725,49 +720,49 @@ class ReviewCoordinator {
               lower.contains('indefinitely') ||
               lower.contains('train') ||
               lower.contains('record'))) {
-        findings.add(_buildVerifiedLocalFinding(
-          id: 'local_$idx',
-          title: 'Keeps child voice recordings to train AI',
-          category: FindingCategory.retention,
-          severity: FindingSeverity.high,
-          excerpt: sentence,
-          explanation:
-              'Your child’s voice recordings are kept indefinitely to train speech models unless a school admin requests deletion.',
-          unknown:
-              'It doesn’t say if a parent can delete recordings directly without going through a school admin.',
-          snapshotText: policyText,
-        ));
+        findings.add(
+          _buildVerifiedLocalFinding(
+            id: 'local_$idx',
+            title: 'Keeps child voice recordings to train AI',
+            category: FindingCategory.retention,
+            severity: FindingSeverity.high,
+            excerpt: sentence,
+            explanation: 'Your child’s voice recordings are kept indefinitely to train speech models unless a school admin requests deletion.',
+            unknown: 'It doesn’t say if a parent can delete recordings directly without going through a school admin.',
+            snapshotText: policyText,
+          ),
+        );
         idx++;
       } else if (lower.contains('advertising') ||
           lower.contains('third-party') ||
           lower.contains('behavioral promotions')) {
-        findings.add(_buildVerifiedLocalFinding(
-          id: 'local_$idx',
-          title: 'Shares ad IDs with external partners',
-          category: FindingCategory.sharing,
-          severity: FindingSeverity.medium,
-          excerpt: sentence,
-          explanation:
-              'Ad partners can follow what your child taps in the app using a persistent advertising ID.',
-          unknown:
-              'It doesn’t name the ad networks or confirm whether child-directed ad limits are turned on.',
-          snapshotText: policyText,
-        ));
+        findings.add(
+          _buildVerifiedLocalFinding(
+            id: 'local_$idx',
+            title: 'Shares ad IDs with external partners',
+            category: FindingCategory.sharing,
+            severity: FindingSeverity.medium,
+            excerpt: sentence,
+            explanation: 'Ad partners can follow what your child taps in the app using a persistent advertising ID.',
+            unknown: 'It doesn’t name the ad networks or confirm whether child-directed ad limits are turned on.',
+            snapshotText: policyText,
+          ),
+        );
         idx++;
       } else if (lower.contains('disable core') ||
           lower.contains('revoking') && lower.contains('permissions')) {
-        findings.add(_buildVerifiedLocalFinding(
-          id: 'local_$idx',
-          title: 'Features may break if permissions are off',
-          category: FindingCategory.parentalConsent,
-          severity: FindingSeverity.low,
-          excerpt: sentence,
-          explanation:
-              'Turning off mic or location access in Android Settings may lock some classroom or homework tools.',
-          unknown:
-              'It doesn’t list which offline activities still work with permissions turned off.',
-          snapshotText: policyText,
-        ));
+        findings.add(
+          _buildVerifiedLocalFinding(
+            id: 'local_$idx',
+            title: 'Features may break if permissions are off',
+            category: FindingCategory.parentalConsent,
+            severity: FindingSeverity.low,
+            excerpt: sentence,
+            explanation: 'Turning off mic or location access in Android Settings may lock some classroom or homework tools.',
+            unknown: 'It doesn’t list which offline activities still work with permissions turned off.',
+            snapshotText: policyText,
+          ),
+        );
         idx++;
       }
     }
@@ -775,8 +770,8 @@ class ReviewCoordinator {
     final overallState = findings.isNotEmpty
         ? ReviewOverallState.reviewRecommended
         : (sentences.isEmpty
-            ? ReviewOverallState.insufficientEvidence
-            : ReviewOverallState.noConcern);
+              ? ReviewOverallState.insufficientEvidence
+              : ReviewOverallState.noConcern);
 
     return PolicyReviewReceipt(
       id: 'local_${DateTime.now().millisecondsSinceEpoch}',
@@ -807,10 +802,7 @@ class ReviewCoordinator {
     required String snapshotText,
   }) {
     final validated = EvidenceValidator.validateFinding(
-      rawFinding: {
-        'id': id,
-        'exact_excerpt': excerpt,
-      },
+      rawFinding: {'id': id, 'exact_excerpt': excerpt},
       snapshotText: snapshotText,
       validEvidenceIds: {id},
     );
@@ -824,10 +816,11 @@ class ReviewCoordinator {
       explanation: explanation,
       whatPolicySays:
           'Exact match found in this policy (${EvidenceValidator.normalize(excerpt).length} chars).',
-      whatAndroidReports:
-          'Text-only check. Pick this app under Check an app to see what Android actually allows.',
+      whatAndroidReports: 'Text-only check. Pick this app under Check an app to see what Android actually allows.',
       unknowns: [unknown],
-      status: isMatched ? EvidenceStatus.sourceMatched : EvidenceStatus.unverified,
+      status: isMatched
+          ? EvidenceStatus.sourceMatched
+          : EvidenceStatus.unverified,
       contextWindow: EvidenceValidator.extractContextWindow(
         quote: excerpt,
         snapshotText: snapshotText,
@@ -891,10 +884,8 @@ class ReviewCoordinator {
     return switch (state) {
       ReviewOverallState.reviewRecommended =>
         '$findingCount ${findingCount == 1 ? 'part of this policy needs' : 'parts of this policy need'} a closer look before a child uses this app.',
-      ReviewOverallState.noConcern =>
-        'No data sharing, tracking, or long-term retention clauses stood out in the text we reviewed.',
-      ReviewOverallState.insufficientEvidence =>
-        'There wasn’t enough clear policy text here to verify what the app collects.',
+      ReviewOverallState.noConcern => 'No data sharing, tracking, or long-term retention clauses stood out in the text we reviewed.',
+      ReviewOverallState.insufficientEvidence => 'There wasn’t enough clear policy text here to verify what the app collects.',
     };
   }
 }
