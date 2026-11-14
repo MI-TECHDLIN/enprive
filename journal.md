@@ -759,6 +759,41 @@
 
 ---
 
+### Iteration 21 — Stage 2 Core Entry, Home & Input Flows M3E Migration (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop Stage 1 commit `a5820c2`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`SKILL.md`, `components.md`, `layout.md`, `theming.md`, `android-conventions.md`)
+  - `hamen/material-3-skill` (`SKILL.md`, `component-catalog.md`, `typography-and-shape.md`, `color-system.md`)
+  - `.agents/skills/svg-mascot-animator/SKILL.md` & `.agents/skills/mobile-app-ui-design/SKILL.md`
+  - All 8 visual inspiration boards in `mobile ui and ux inspration/` (never staged or committed per `AGENTS.md` Rule 2.3)
+- **What Was Built**:
+  - **1. Resilient M3E Theme Resolution (`lib/core/theme/enprive_m3e_theme.dart`)**:
+    - Added `EnpriveM3ETheme.of(BuildContext context)` which returns `M3ETheme.maybeOf(context)` when inside `M3EMaterialApp` / `EnpriveM3EBridgeScope` and falls back to Enprive's `lightThemeData` or `darkThemeData` based on `Theme.of(context).brightness` when screens are pumped inside standalone `MaterialApp` test harnesses.
+  - **2. Splash & Onboarding Flows (`lib/screens/splash_screen.dart`, `lib/screens/onboarding_flow_screen.dart`)**:
+    - Migrated `EnpriveSplashScreen` to `EnpriveM3ETheme.of(context)`, `context.enpriveSurfaces`, and `context.enpriveType.policyQuotation` (removing all static `EnpriveColors.*`).
+    - Migrated `OnboardingFlowScreen` to `EnpriveM3ETheme.localizationsDelegates` + `EnpriveM3EBridgeScope`, `DeniAnimatedMascot` across all 3 LOD tiers (`136dp` Hero on Step 0, `56dp` Compact on Step 1, and `92dp` Standard `celebrating` on Step 2), a 2x2 Bento `M3ECard` choice grid (`_M3EGridChoiceCard`), and an `M3ECard` local-privacy readiness card.
+  - **3. Home Screen, Paste Modal & Floating M3E Navigation Dock (`lib/main.dart`)**:
+    - Migrated `HomeScreen` to `EnpriveM3ETheme.of(context)`, `DeniAnimatedMascot` (`size: 144`, Hero LOD), two-column asymmetric `_SampleAppM3EBentoCard` (`M3ECard` with `tabularMetricLarge` counters), `_WhatWeCheckSegmentedGroup` (`EnpriveRadii.groupedCardRadius` segmented containment with `01`/`02`/`03` tabular index badges), and `M3ECard` `Recently reviewed` summary.
+    - Migrated `_showPasteModal` to `M3ESegmentedButton<bool>` (`Paste text` vs `Policy link`) and `M3EChip` sample URL chips (`EduTrack URL`, `CalmMath URL`).
+    - Upgraded `_FloatingBottomNavDock` with an M3E `secondaryContainer` active pill indicator (`BorderRadius.circular(999)`) and adaptive `BoxConstraints(minHeight: 68)` so 200% text scaling (`textScaleFactor = 2.0`) renders with zero overflow.
+    - Removed `AnimatedStatusCard`, `BeautifulTimeline`, and all static `EnpriveColors.*` references from `lib/main.dart`.
+  - **4. Installed App Picker & Cloud Consent Sheet (`lib/widgets/installed_app_picker_sheet.dart`, `lib/widgets/cloud_consent_sheet.dart`)**:
+    - Migrated `InstalledAppPickerSheet` to `M3ECard` sample classroom cards (`EduTrack`, `CalmMath`), `M3ESearchBar`, `M3ELoadingIndicator(size: 36)`, `DeniAnimatedMascot` empty state (`size: 64`, `DeniPose.thinking`), and `EnpriveRadii.groupedCardRadius` segmented installed apps list.
+    - Migrated `CloudConsentSheet` to `EnpriveM3ETheme.of(context)`, `DeniAnimatedMascot` (`size: 84`, `DeniPose.support`), `M3ECard` (`surfaces.quoteSurface`) with untruncated `SelectableText` in `typeExt.policyQuotation`, and dynamic semantic tokens.
+- **Challenges & Root-Cause Fixes**:
+  - **200% Text Scale (`textScaleFactor = 2.0`) Overflow in `_FloatingBottomNavDock`**: Fixed `height: 68` overflowed by `2.0px` at 200% text scale; replaced fixed height with `constraints: const BoxConstraints(minHeight: 68)` and `mainAxisSize: MainAxisSize.min`.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **48/48 passed (100%)**.
+  - `flutter build apk --debug`: **Built and installed `app-debug.apk` on `emulator-5554`**; verified live Light & Dark screenshots (`stage2_01` through `stage2_06`).
+- **Next Immediate Action & Recommended Model**:
+  - Proceed to **Stage 3 — Review Result, Ask Deni (`WhyThisFindingSheet`), Receipts & Settings** (`ReviewResultScreen`, `WhyThisFindingSheet`, `ReceiptsScreen`, `SettingsScreen`) after user review of Stage 2.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Manual Device & GCP Verification + Phase A Review**

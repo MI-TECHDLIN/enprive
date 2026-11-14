@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../core/theme/enprive_colors.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
+
+import '../core/theme/enprive_theme.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/enprive_languages.dart';
 import '../services/storage/receipt_repository.dart';
 import '../widgets/deni_animated_mascot.dart';
-import '../widgets/enprive_duotone_icon.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/language_picker_sheet.dart';
 
@@ -20,7 +20,13 @@ class OnboardingFlowResult {
   });
 }
 
-/// Guided 3-Step First-Run Onboarding Flow (`b02-koji-intro.png` → `b03-question-cards.png` → `b19-permission-prime.png`).
+/// Guided 3-Step Material 3 Expressive First-Run Onboarding Flow:
+/// - **Step 0 (Hero Intro)**: Deni at `LOD 3 · 136dp` (`DeniPose.idle`) with
+///   editorial display typography.
+/// - **Step 1 (Explanation Depth)**: Deni at `LOD 1 · 56dp` (`DeniPose.explaining`)
+///   with a 2x2 Bento grid of `M3ECard` choice squircles.
+/// - **Step 2 (Private Readiness)**: Deni at `LOD 2 · 92dp` (`DeniPose.celebrating`)
+///   peeking over a segmented M3E local-privacy guarantee card.
 class OnboardingFlowScreen extends StatefulWidget {
   final ExplanationDepth initialDepth;
   final Locale initialLocale;
@@ -95,44 +101,39 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   @override
   Widget build(BuildContext context) {
     final langOption = enpriveLanguageByCode(_locale.languageCode);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Localizations.override(
       context: context,
       locale: _locale,
-      delegates: AppLocalizations.localizationsDelegates,
-      child: Builder(
-        builder: (localizedContext) {
-          final l10n = AppLocalizations.of(localizedContext)!;
+      delegates: EnpriveM3ETheme.localizationsDelegates,
+      child: EnpriveM3EBridgeScope(
+        themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+        child: Builder(
+          builder: (localizedContext) {
+            final l10n = AppLocalizations.of(localizedContext)!;
+            final m3e = EnpriveM3ETheme.of(localizedContext);
+            final scheme = m3e.colorScheme;
+            final surfaces = localizedContext.enpriveSurfaces;
+            final disableAnimations =
+                EnpriveMotionTokens.isReducedMotion(localizedContext);
 
-          return Scaffold(
-            backgroundColor: EnpriveColors.paper,
-            body: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: const [0.0, 0.72, 1.0],
-                  colors: [
-                    EnpriveColors.paper,
-                    EnpriveColors.paper,
-                    EnpriveColors.chipOnDeviceBg.withValues(alpha: 0.55),
-                  ],
-                ),
-              ),
-              child: SafeArea(
+            return Scaffold(
+              backgroundColor: scheme.surface,
+              body: SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
                   child: Column(
                     children: [
-                      // Top Bar: back chevron + 12-language picker pill + responsive progress bar
+                      // Top Bar: back chevron + 12-language M3E pill + capsule progress track
                       Row(
                         children: [
                           IconButton(
                             onPressed: _handleBack,
-                            icon: const Icon(
+                            icon: Icon(
                               LucideIcons.chevronLeft,
                               size: 22,
-                              color: EnpriveColors.ink,
+                              color: scheme.onSurface,
                             ),
                           ),
                           const SizedBox(width: 4),
@@ -141,35 +142,37 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                             onTap: () => _pickLanguage(localizedContext),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 11,
-                                vertical: 6,
+                                horizontal: 12,
+                                vertical: 7,
                               ),
                               decoration: BoxDecoration(
-                                color: EnpriveColors.surfaceMuted,
+                                color: surfaces.cardMuted,
                                 borderRadius: BorderRadius.circular(999),
+                                border: Border.all(
+                                  color: surfaces.hairlineBorder,
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     LucideIcons.globe,
-                                    size: 13.5,
-                                    color: EnpriveColors.tealStrong,
+                                    size: 14,
+                                    color: scheme.primary,
                                   ),
                                   const SizedBox(width: 5),
                                   Text(
                                     langOption.shortBadge,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                      color: EnpriveColors.ink,
-                                    ),
+                                    style: m3e.typography.emphasized.labelSmall
+                                        .copyWith(
+                                          color: scheme.onSurface,
+                                        ),
                                   ),
                                   const SizedBox(width: 3),
-                                  const Icon(
+                                  Icon(
                                     LucideIcons.chevronDown,
                                     size: 13,
-                                    color: EnpriveColors.inkSecondary,
+                                    color: scheme.onSurfaceVariant,
                                   ),
                                 ],
                               ),
@@ -186,17 +189,17 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                                     final active = index <= _stepIndex;
                                     return Expanded(
                                       child: AnimatedContainer(
-                                        duration:
-                                            const Duration(milliseconds: 220),
+                                        duration: disableAnimations
+                                            ? Duration.zero
+                                            : const Duration(milliseconds: 220),
                                         height: 6,
                                         margin: EdgeInsetsDirectional.only(
                                           end: index < 2 ? 6 : 0,
                                         ),
                                         decoration: BoxDecoration(
                                           color: active
-                                              ? EnpriveColors.teal
-                                              : EnpriveColors.ink
-                                                  .withValues(alpha: 0.1),
+                                              ? scheme.primary
+                                              : scheme.surfaceContainerHighest,
                                           borderRadius:
                                               BorderRadius.circular(999),
                                         ),
@@ -213,7 +216,9 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                       // Main Step Stage
                       Expanded(
                         child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 240),
+                          duration: disableAnimations
+                              ? Duration.zero
+                              : const Duration(milliseconds: 240),
                           child: switch (_stepIndex) {
                             0 => _buildStep0Intro(localizedContext, l10n),
                             1 =>
@@ -234,15 +239,18 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                   ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
 
-  /// Step 0: `b02-koji-intro.png` — Minimal centered Deni mascot & headline.
+  /// Step 0: Hero Deni (`LOD 3 · 136dp`) & editorial headline.
   Widget _buildStep0Intro(BuildContext context, AppLocalizations l10n) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+
     return Center(
       key: const ValueKey<int>(0),
       child: SingleChildScrollView(
@@ -251,27 +259,27 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const DeniAnimatedMascot(
-              size: 120,
+              size: 136,
               pose: DeniPose.idle,
             ),
             const SizedBox(height: 22),
             Text(
               l10n.onboardingIntroHeadline,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontSize: 28,
-                    height: 1.2,
-                  ),
+              style: m3e.typography.emphasized.headlineLarge.copyWith(
+                fontSize: 28,
+                height: 1.2,
+                color: scheme.onSurface,
+              ),
             ),
             const SizedBox(height: 10),
             Text(
               l10n.onboardingIntroLead,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontSize: 16.5,
-                    fontWeight: FontWeight.w700,
-                    color: EnpriveColors.inkSecondary,
-                  ),
+              style: m3e.typography.emphasized.titleMedium.copyWith(
+                fontSize: 16.5,
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -279,8 +287,12 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     );
   }
 
-  /// Step 1: `b03-question-cards.png` — Mascot + Question Header + 2x2 Choice Cards Grid.
+  /// Step 1: Compact Deni (`LOD 1 · 56dp`) + 2x2 M3E Bento Choice Grid.
   Widget _buildStep1QuestionCards(BuildContext context, AppLocalizations l10n) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final semantics = context.enpriveSemantics;
+
     return SingleChildScrollView(
       key: const ValueKey<int>(1),
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -290,17 +302,18 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
           Row(
             children: [
               const DeniAnimatedMascot(
-                size: 64,
+                size: 56,
                 pose: DeniPose.explaining,
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   l10n.onboardingStep1Question,
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: 23,
-                        height: 1.22,
-                      ),
+                  style: m3e.typography.emphasized.headlineMedium.copyWith(
+                    fontSize: 23,
+                    height: 1.22,
+                    color: scheme.onSurface,
+                  ),
                 ),
               ),
             ],
@@ -314,28 +327,25 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
             crossAxisSpacing: 14,
             childAspectRatio: 0.94,
             children: [
-              _B3GridChoiceCard(
-                iconSvg: Ph.sun_duotone,
-                badgeBg: EnpriveColors.stateReviewRecommendedBg,
-                badgeFg: EnpriveColors.stateReviewRecommendedFg,
+              _M3EGridChoiceCard(
+                icon: LucideIcons.sun,
+                badgePair: semantics.reviewRecommended,
                 title: l10n.depthQuickMultiline,
                 isSelected: _selectedDepth == ExplanationDepth.simple,
                 onTap: () =>
                     setState(() => _selectedDepth = ExplanationDepth.simple),
               ),
-              _B3GridChoiceCard(
-                iconSvg: Ph.scales_duotone,
-                badgeBg: EnpriveColors.stateNoConcernBg,
-                badgeFg: EnpriveColors.stateNoConcernFg,
+              _M3EGridChoiceCard(
+                icon: LucideIcons.scale,
+                badgePair: semantics.noConcern,
                 title: l10n.depthBalancedMultiline,
                 isSelected: _selectedDepth == ExplanationDepth.balanced,
                 onTap: () =>
                     setState(() => _selectedDepth = ExplanationDepth.balanced),
               ),
-              _B3GridChoiceCard(
-                iconSvg: Ph.book_open_duotone,
-                badgeBg: EnpriveColors.chipInCloudBg,
-                badgeFg: EnpriveColors.chipInCloudFg,
+              _M3EGridChoiceCard(
+                icon: LucideIcons.bookOpen,
+                badgePair: semantics.inCloud,
                 title: l10n.depthFullMultiline,
                 isSelected: _selectedDepth == ExplanationDepth.detailed,
                 onTap: () =>
@@ -348,8 +358,13 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     );
   }
 
-  /// Step 2: `b19-permission-prime.png` — Deni peeking over the Private On-Device Readiness Card.
+  /// Step 2: Standard Deni (`LOD 2 · 92dp`, `celebrating`) peeking over the
+  /// Private On-Device Readiness Card.
   Widget _buildStep2Readiness(BuildContext context, AppLocalizations l10n) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final surfaces = context.enpriveSurfaces;
+
     return SingleChildScrollView(
       key: const ValueKey<int>(2),
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -358,16 +373,19 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
           Text(
             l10n.onboardingReadinessTitle,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  fontSize: 27,
-                  height: 1.2,
-                ),
+            style: m3e.typography.emphasized.headlineLarge.copyWith(
+              fontSize: 27,
+              height: 1.2,
+              color: scheme.onSurface,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             l10n.onboardingReadinessSubtitle,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: m3e.typeScale.bodyMedium.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 12),
           Transform.translate(
@@ -377,29 +395,27 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
               pose: DeniPose.celebrating,
             ),
           ),
-          Container(
-            width: double.infinity,
+          M3ECard(
+            color: surfaces.card,
+            borderRadius: BorderRadius.circular(28),
+            border: BorderSide(color: surfaces.hairlineBorder),
             padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              color: EnpriveColors.surface,
-              borderRadius: BorderRadius.circular(28),
-            ),
             child: Column(
               children: [
                 _ReadinessGuaranteeRow(
-                  iconSvg: Ph.cpu_duotone,
+                  icon: LucideIcons.cpu,
                   title: l10n.readinessRow1Title,
                   subtitle: l10n.readinessRow1Desc,
                 ),
                 const SizedBox(height: 16),
                 _ReadinessGuaranteeRow(
-                  iconSvg: Ph.device_mobile_duotone,
+                  icon: LucideIcons.smartphone,
                   title: l10n.readinessRow2Title,
                   subtitle: l10n.readinessRow2Desc,
                 ),
                 const SizedBox(height: 16),
                 _ReadinessGuaranteeRow(
-                  iconSvg: Ph.eraser_duotone,
+                  icon: LucideIcons.eraser,
                   title: l10n.readinessRow3Title,
                   subtitle: l10n.readinessRow3Desc,
                 ),
@@ -412,18 +428,16 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   }
 }
 
-class _B3GridChoiceCard extends StatelessWidget {
-  final String iconSvg;
-  final Color badgeBg;
-  final Color badgeFg;
+class _M3EGridChoiceCard extends StatelessWidget {
+  final IconData icon;
+  final SemanticColorPair badgePair;
   final String title;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _B3GridChoiceCard({
-    required this.iconSvg,
-    required this.badgeBg,
-    required this.badgeFg,
+  const _M3EGridChoiceCard({
+    required this.icon,
+    required this.badgePair,
     required this.title,
     required this.isSelected,
     required this.onTap,
@@ -431,85 +445,83 @@ class _B3GridChoiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isSelected
-          ? EnpriveColors.chipOnDeviceBg
-          : EnpriveColors.surfaceMuted,
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final semantics = context.enpriveSemantics;
+    final surfaces = context.enpriveSurfaces;
+
+    return M3ECard(
+      color: isSelected ? semantics.onDevice.background : surfaces.card,
       borderRadius: BorderRadius.circular(24),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
+      border: BorderSide(
+        color: isSelected ? scheme.primary : surfaces.hairlineBorder,
+        width: isSelected ? 2 : 1,
+      ),
+      padding: const EdgeInsets.all(16),
+      onPressed: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: badgePair.background,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Icon(icon, size: 26, color: badgePair.foreground),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: m3e.typography.emphasized.titleSmall.copyWith(
+              fontSize: 15,
+              height: 1.22,
               color: isSelected
-                  ? EnpriveColors.teal
-                  : Colors.transparent,
-              width: 2,
+                  ? semantics.onDevice.foreground
+                  : scheme.onSurface,
             ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: badgeBg,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: EnpriveDuotoneIcon(iconSvg, size: 28, color: badgeFg),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  height: 1.22,
-                  color: isSelected
-                      ? EnpriveColors.tealStrong
-                      : EnpriveColors.ink,
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }
 }
 
 class _ReadinessGuaranteeRow extends StatelessWidget {
-  final String iconSvg;
+  final IconData icon;
   final String title;
   final String subtitle;
 
   const _ReadinessGuaranteeRow({
-    required this.iconSvg,
+    required this.icon,
     required this.title,
     required this.subtitle,
   });
 
   @override
   Widget build(BuildContext context) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final semantics = context.enpriveSemantics;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 40,
           height: 40,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: EnpriveColors.surfaceMuted,
+            color: semantics.onDevice.background,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: EnpriveDuotoneIcon(
-            iconSvg,
+          child: Icon(
+            icon,
             size: 20,
-            color: EnpriveColors.tealStrong,
+            color: semantics.onDevice.foreground,
           ),
         ),
         const SizedBox(width: 14),
@@ -519,19 +531,18 @@ class _ReadinessGuaranteeRow extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: m3e.typography.emphasized.titleSmall.copyWith(
                   fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: EnpriveColors.ink,
+                  color: scheme.onSurface,
                 ),
               ),
               const SizedBox(height: 3),
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: m3e.typeScale.bodySmall.copyWith(
                   fontSize: 13,
                   height: 1.38,
-                  color: EnpriveColors.inkSecondary,
+                  color: scheme.onSurfaceVariant,
                 ),
               ),
             ],

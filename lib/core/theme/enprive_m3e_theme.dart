@@ -275,6 +275,16 @@ abstract final class EnpriveM3ETheme {
       ),
     );
   }
+
+  /// Resolves the active [M3EThemeData] from the nearest [M3ETheme], or falls
+  /// back to Enprive's [lightThemeData] / [darkThemeData] matching
+  /// `Theme.of(context).brightness` when rendered inside a standalone test harness.
+  static M3EThemeData of(BuildContext context) {
+    final inherited = M3ETheme.maybeOf(context);
+    if (inherited != null) return inherited;
+    final brightness = legacy.Theme.of(context).brightness;
+    return brightness == Brightness.dark ? darkThemeData : lightThemeData;
+  }
 }
 
 extension on M3ETypeScale {

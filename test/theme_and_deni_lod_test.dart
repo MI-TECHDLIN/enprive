@@ -3,10 +3,12 @@ import 'package:enprive/core/theme/enprive_theme.dart';
 import 'package:enprive/domain/review/review_models.dart';
 import 'package:enprive/main.dart';
 import 'package:enprive/screens/design_system_preview_screen.dart';
+import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/services/storage/receipt_repository.dart';
 import 'package:enprive/widgets/analysis_process_trace.dart';
 import 'package:enprive/widgets/deni_animated_mascot.dart';
 import 'package:enprive/widgets/enprive_provenance_chip.dart';
+import 'package:enprive/widgets/installed_app_picker_sheet.dart';
 import 'package:enprive/widgets/m3e/enprive_m3e_components.dart';
 import 'package:enprive/widgets/review_progress_sheet.dart';
 import 'package:flutter/material.dart';
@@ -564,6 +566,71 @@ void main() {
           await tester.tap(viewThoughtsToggle);
           await tester.pump(const Duration(milliseconds: 200));
         }
+        expect(tester.takeException(), isNull);
+      },
+    );
+  });
+
+  group('Stage 2 — Core Entry, Home & Input Flows M3E Migration', () {
+    testWidgets(
+      'InstalledAppPickerSheet renders M3ECard sample profiles, M3ESearchBar filtering, and Deni empty state',
+      (WidgetTester tester) async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+              const MethodChannel('com.enprive/hybrid_ai'),
+              (call) async {
+                if (call.method == 'listLaunchableApps') {
+                  return [
+                    {
+                      'appName': 'StudyBuddy Reader',
+                      'packageName': 'org.example.studybuddy',
+                      'versionName': '2.4.0',
+                      'targetSdk': 34,
+                      'isSystemApp': false,
+                    },
+                  ];
+                }
+                return null;
+              },
+            );
+
+        final activeData = EnpriveM3ETheme.darkThemeData;
+        await tester.pumpWidget(
+          M3EMaterialApp(
+            data: activeData,
+            typeface: EnpriveM3ETheme.typefaceConfig,
+            autoTheming: false,
+            dynamicColoring: false,
+            initialTheme: activeData.brightness,
+            theme: EnpriveM3ETheme.lightThemeData.toThemeData(),
+            darkTheme: EnpriveM3ETheme.darkThemeData.toThemeData(),
+            localizationsDelegates: EnpriveM3ETheme.localizationsDelegates,
+            appBuilder: (context, child) => EnpriveM3EBridgeScope(
+              themeMode: ThemeMode.dark,
+              child: child ?? const SizedBox.shrink(),
+            ),
+            home: Scaffold(
+              body: InstalledAppPickerSheet(
+                bridge: HybridAiBridge(),
+                eduTrackPolicyText: 'EduTrack sample policy text',
+                calmMathPolicyText: 'CalmMath sample policy text',
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 200));
+
+        expect(find.byType(M3ESearchBar), findsOneWidget);
+        expect(find.text('EduTrack'), findsOneWidget);
+        expect(find.text('CalmMath'), findsOneWidget);
+        expect(find.text('StudyBuddy Reader'), findsOneWidget);
+
+        // Filter to non-existent app to trigger DeniAnimatedMascot empty state
+        await tester.enterText(find.byType(EditableText), 'NonExistentAppXYZ');
+        await tester.pump(const Duration(milliseconds: 200));
+
+        expect(find.byType(DeniAnimatedMascot), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );

@@ -1,14 +1,10 @@
-import 'package:animated_status_card/animated_status_card.dart';
-import 'package:beautiful_timeline/beautiful_timeline.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:lucide_icons_flutter/lucide_icons_500.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 
-import 'core/theme/enprive_colors.dart';
 import 'core/theme/enprive_theme.dart';
 import 'domain/permissions/permission_comparator.dart';
 import 'domain/privacy/pii_redactor.dart';
@@ -25,7 +21,6 @@ import 'services/platform/hybrid_ai_bridge.dart';
 import 'services/storage/receipt_repository.dart';
 import 'widgets/cloud_consent_sheet.dart';
 import 'widgets/deni_animated_mascot.dart';
-import 'widgets/enprive_duotone_icon.dart';
 import 'widgets/enprive_tactile_button.dart';
 import 'widgets/installed_app_picker_sheet.dart';
 import 'widgets/language_picker_sheet.dart';
@@ -654,13 +649,18 @@ We do not collect personal identifiers, precise location data, microphone audio,
     BuildContext context,
     AppLocalizations l10n,
   ) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final semantics = context.enpriveSemantics;
+    final surfaces = context.enpriveSurfaces;
+
     return SafeArea(
       bottom: false,
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
         child: Column(
           children: [
-            // 1. Editorial Hero Header with Deni (no state card or debug buttons)
+            // 1. Editorial Hero Stage with Deni (LOD 2 · 88dp)
             Center(
               child: DeniAnimatedMascot(
                 size: 88,
@@ -673,8 +673,11 @@ We do not collect personal identifiers, precise location data, microphone audio,
             Text(
               l10n.homeHeroHeadline,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.displayLarge
-                  ?.copyWith(fontSize: 30),
+              style: m3e.typography.emphasized.displaySmall.copyWith(
+                fontSize: 30,
+                height: 1.15,
+                color: scheme.onSurface,
+              ),
             ),
             const SizedBox(height: 10),
             Padding(
@@ -682,13 +685,15 @@ We do not collect personal identifiers, precise location data, microphone audio,
               child: Text(
                 l10n.homePrivacySubtitle,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge
-                    ?.copyWith(color: EnpriveColors.inkSecondary),
+                style: m3e.typeScale.bodyLarge.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.45,
+                ),
               ),
             ),
             const SizedBox(height: 28),
 
-            // 3. Two Tactile Pill CTAs
+            // 3. Two Tactile Pill CTAs (or Live 4-Stage M3E ReviewProgressCard)
             if (_isRunningReview)
               ReviewProgressCard(
                 subjectTitle: _activeReviewTitle,
@@ -716,15 +721,14 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
             const SizedBox(height: 28),
 
-            // 4. Quick Sample App Checks
+            // 4. Quick Sample App Checks (M3E Bento Cards inspired by Music OS & colo.jpeg)
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: Text(
                 l10n.trySampleCheck,
-                style: const TextStyle(
+                style: m3e.typography.emphasized.titleMedium.copyWith(
                   fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: EnpriveColors.ink,
+                  color: scheme.onSurface,
                 ),
               ),
             ),
@@ -732,52 +736,28 @@ We do not collect personal identifiers, precise location data, microphone audio,
             LayoutBuilder(
               builder: (context, constraints) {
                 final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-                final disableAnimations =
-                    MediaQuery.maybeDisableAnimationsOf(context) ?? false;
                 final stackVertically =
                     constraints.maxWidth < 340 || textScale > 1.35;
-                final cardHeight = stackVertically
-                    ? (220 * textScale).clamp(220.0, 420.0)
-                    : 218.0;
-                final entryAnim = disableAnimations
-                    ? EntryAnimationType.none
-                    : EntryAnimationType.slideUp;
 
-                final eduCard = AnimatedStatusCard(
+                final eduCard = _SampleAppM3EBentoCard(
                   title: 'EduTrack Classroom',
                   value: l10n.eduTrackValue,
                   subtitle: l10n.eduTrackSubtitle,
+                  trendBadge: l10n.eduTrackTrend,
                   icon: LucideIcons.graduationCap,
-                  trendValue: l10n.eduTrackTrend,
-                  trendDirection: TrendDirection.up,
-                  styleType: CardStyleType.outlined,
-                  statusType: CardStatusType.warning,
-                  animationType: entryAnim,
-                  height: cardHeight,
-                  borderRadius: 24,
-                  accentColor: EnpriveColors.stateReviewRecommendedFg,
-                  backgroundColor: EnpriveColors.surface,
-                  foregroundColor: EnpriveColors.ink,
+                  semanticPair: semantics.reviewRecommended,
                   onTap: _isRunningReview
                       ? null
                       : () => _runQuickSampleReview(isEduTrack: true),
                 );
 
-                final calmCard = AnimatedStatusCard(
+                final calmCard = _SampleAppM3EBentoCard(
                   title: 'CalmMath Kids',
                   value: l10n.calmMathValue,
                   subtitle: l10n.calmMathSubtitle,
+                  trendBadge: l10n.calmMathTrend,
                   icon: LucideIcons.calculator,
-                  trendValue: l10n.calmMathTrend,
-                  trendDirection: TrendDirection.neutral,
-                  styleType: CardStyleType.outlined,
-                  statusType: CardStatusType.success,
-                  animationType: entryAnim,
-                  height: cardHeight,
-                  borderRadius: 24,
-                  accentColor: EnpriveColors.tealStrong,
-                  backgroundColor: EnpriveColors.surface,
-                  foregroundColor: EnpriveColors.ink,
+                  semanticPair: semantics.noConcern,
                   onTap: _isRunningReview
                       ? null
                       : () => _runQuickSampleReview(isEduTrack: false),
@@ -793,145 +773,72 @@ We do not collect personal identifiers, precise location data, microphone audio,
                   );
                 }
 
-                return Row(
-                  children: [
-                    Expanded(child: eduCard),
-                    const SizedBox(width: 12),
-                    Expanded(child: calmCard),
-                  ],
+                return IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(child: eduCard),
+                      const SizedBox(width: 12),
+                      Expanded(child: calmCard),
+                    ],
+                  ),
                 );
               },
             ),
 
             const SizedBox(height: 24),
 
-            // 5. What We Check For
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-              decoration: BoxDecoration(
-                color: EnpriveColors.surface,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.whatWeCheckTitle,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: EnpriveColors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Builder(
-                    builder: (context) {
-                      final disableAnimations =
-                          MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-                      return BeautifulTimeline(
-                        axis: TimelineAxis.vertical,
-                        physics: const NeverScrollableScrollPhysics(),
-                        showAnimation: !disableAnimations,
-                        theme: TimelineThemeData(
-                          indicatorStyle: IndicatorStyle.icon,
-                          lineStyle: LineStyle.gradient,
-                          lineGradientStart: EnpriveColors.tealStrong,
-                          lineGradientEnd: EnpriveColors.chipInCloudFg,
-                          lineWidth: 2.5,
-                          backgroundColor: EnpriveColors.surface,
-                          cardBackground: EnpriveColors.paper,
-                          cardElevation: 0,
-                          cardPadding: const EdgeInsets.all(14),
-                          cardBorderRadius: BorderRadius.circular(18),
-                          padding: EdgeInsets.zero,
-                          indicatorSize: 34,
-                          spacingBetweenEvents: 10,
-                          titleStyle: const TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w800,
-                            color: EnpriveColors.ink,
-                          ),
-                          descriptionStyle: const TextStyle(
-                            fontSize: 13,
-                            height: 1.38,
-                            color: EnpriveColors.inkSecondary,
-                          ),
-                          dateStyle: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: EnpriveColors.tealStrong,
-                          ),
-                        ),
-                        events: [
-                          TimelineEvent(
-                            date: '01',
-                            icon: LucideIcons.quote,
-                            indicatorColor: EnpriveColors.tealStrong,
-                            title: l10n.checkQuoteTitle,
-                            description: l10n.checkQuoteDesc,
-                          ),
-                          TimelineEvent(
-                            date: '02',
-                            icon: LucideIcons.shieldAlert,
-                            indicatorColor:
-                                EnpriveColors.stateReviewRecommendedFg,
-                            title: l10n.checkPermissionTitle,
-                            description: l10n.checkPermissionDesc,
-                          ),
-                          TimelineEvent(
-                            date: '03',
-                            icon: LucideIcons.mousePointerClick,
-                            indicatorColor: EnpriveColors.chipInCloudFg,
-                            title: l10n.checkSelectTitle,
-                            description: l10n.checkSelectDesc,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
+            // 5. What We Check For (M3E Expressive Segmented Containment)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                l10n.whatWeCheckTitle,
+                style: m3e.typography.emphasized.titleMedium.copyWith(
+                  fontSize: 17,
+                  color: scheme.onSurface,
+                ),
               ),
             ),
+            const SizedBox(height: 12),
+            _WhatWeCheckSegmentedGroup(l10n: l10n),
 
-            // 4. Monday Home "Recently visited →" Card Group (x-monday-home.jpeg)
+            // 6. Recently Reviewed (Segmented M3E Cards)
             if (_savedReceipts.isNotEmpty) ...[
               const SizedBox(height: 28),
-              Container(
-                width: double.infinity,
+              M3ECard(
+                color: surfaces.card,
+                borderRadius: BorderRadius.circular(28),
+                border: BorderSide(color: surfaces.hairlineBorder),
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: EnpriveColors.surface,
-                  borderRadius: BorderRadius.circular(28),
-                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Text(
-                          l10n.recentlyReviewed,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: EnpriveColors.ink,
+                        Expanded(
+                          child: Text(
+                            l10n.recentlyReviewed,
+                            style: m3e.typography.emphasized.titleMedium
+                                .copyWith(
+                                  fontSize: 17,
+                                  color: scheme.onSurface,
+                                ),
                           ),
                         ),
-                        const Spacer(),
                         InkWell(
                           borderRadius: BorderRadius.circular(999),
                           onTap: () => setState(() => _selectedTabIndex = 1),
                           child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: const BoxDecoration(
-                              color: EnpriveColors.surfaceMuted,
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: scheme.surfaceContainerHigh,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
+                            child: Icon(
                               LucideIcons.arrowRight,
                               size: 16,
-                              color: EnpriveColors.ink,
+                              color: scheme.onSurface,
                             ),
                           ),
                         ),
@@ -944,15 +851,23 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       final isConcern =
                           receipt.overallState ==
                           ReviewOverallState.reviewRecommended;
-                      return Column(
-                        children: [
-                          if (idx > 0)
-                            Divider(
-                              height: 20,
-                              color: EnpriveColors.ink.withValues(alpha: 0.06),
-                            ),
-                          InkWell(
-                            borderRadius: BorderRadius.circular(16),
+                      final badgePair = isConcern
+                          ? semantics.reviewRecommended
+                          : semantics.noConcern;
+                      final count = _savedReceipts.take(2).length;
+
+                      return Padding(
+                        padding: EdgeInsets.only(top: idx > 0 ? 4 : 0),
+                        child: Material(
+                          color: scheme.surfaceContainerLow,
+                          borderRadius: EnpriveRadii.groupedCardRadius(
+                            index: idx,
+                            count: count,
+                            outer: 18,
+                            inner: 4,
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
@@ -965,28 +880,24 @@ We do not collect personal identifiers, precise location data, microphone audio,
                             },
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                vertical: 4.0,
+                                horizontal: 14,
+                                vertical: 12,
                               ),
                               child: Row(
                                 children: [
                                   Container(
                                     width: 44,
                                     height: 44,
+                                    alignment: Alignment.center,
                                     decoration: BoxDecoration(
-                                      color: isConcern
-                                          ? EnpriveColors
-                                                .stateReviewRecommendedBg
-                                          : EnpriveColors.stateNoConcernBg,
+                                      color: badgePair.background,
                                       borderRadius: BorderRadius.circular(14),
                                     ),
-                                    child: EnpriveDuotoneIcon(
+                                  child: Icon(
                                       isConcern
-                                          ? Ph.warning_duotone
-                                          : Ph.check_circle_duotone,
-                                      color: isConcern
-                                          ? EnpriveColors
-                                                .stateReviewRecommendedFg
-                                          : EnpriveColors.stateNoConcernFg,
+                                          ? LucideIcons.triangleAlert
+                                          : LucideIcons.circleCheck,
+                                      color: badgePair.foreground,
                                       size: 21,
                                     ),
                                   ),
@@ -998,35 +909,38 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                       children: [
                                         Text(
                                           receipt.subjectTitle,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 15,
-                                            color: EnpriveColors.ink,
-                                          ),
+                                          style: m3e
+                                              .typography
+                                              .emphasized
+                                              .titleSmall
+                                              .copyWith(
+                                                fontSize: 15,
+                                                color: scheme.onSurface,
+                                              ),
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
                                           l10n.verifiedClausesCount(
                                             receipt.sourceMatchedCount,
                                           ),
-                                          style: const TextStyle(
-                                            fontSize: 12.5,
-                                            color: EnpriveColors.inkSecondary,
-                                          ),
+                                          style: m3e.typeScale.bodySmall
+                                              .copyWith(
+                                                color: scheme.onSurfaceVariant,
+                                              ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  const Icon(
+                                  Icon(
                                     LucideIcons.chevronRight,
                                     size: 18,
-                                    color: EnpriveColors.inkSecondary,
+                                    color: scheme.onSurfaceVariant,
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       );
                     }),
                   ],
@@ -1084,17 +998,23 @@ We do not collect personal identifiers, precise location data, microphone audio,
           : l10n.defaultSubjectTitle,
     );
     bool isLinkMode = false;
+    final rootScheme = EnpriveM3ETheme.of(context).colorScheme;
 
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: EnpriveColors.paper,
+      backgroundColor: rootScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (sheetContext, setSheetState) {
+            final m3e = EnpriveM3ETheme.of(sheetContext);
+            final scheme = m3e.colorScheme;
+            final surfaces = sheetContext.enpriveSurfaces;
+            final typeExt = sheetContext.enpriveType;
+
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
@@ -1111,7 +1031,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: EnpriveColors.ink.withValues(alpha: 0.14),
+                        color: scheme.outlineVariant,
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
@@ -1122,7 +1042,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       Expanded(
                         child: Text(
                           l10n.btnPasteTerms,
-                          style: Theme.of(context).textTheme.headlineMedium,
+                          style: m3e.typography.emphasized.headlineMedium
+                              .copyWith(
+                                color: scheme.onSurface,
+                              ),
                         ),
                       ),
                       TextButton(
@@ -1138,9 +1061,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
                         },
                         child: Text(
                           l10n.trySampleText,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: EnpriveColors.tealStrong,
+                          style: m3e.typography.emphasized.labelLarge.copyWith(
+                            color: scheme.primary,
                           ),
                         ),
                       ),
@@ -1149,81 +1071,46 @@ We do not collect personal identifiers, precise location data, microphone audio,
                   const SizedBox(height: 12),
 
                   // Segmented Source Mode Pills: Paste text vs Policy link
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: EnpriveColors.surfaceMuted,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(999),
-                            onTap: () =>
-                                setSheetState(() => isLinkMode = false),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              decoration: BoxDecoration(
-                                color: !isLinkMode
-                                    ? EnpriveColors.surface
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                l10n.modePasteText,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  color: !isLinkMode
-                                      ? EnpriveColors.ink
-                                      : EnpriveColors.inkSecondary,
-                                ),
-                              ),
-                            ),
-                          ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: M3ESegmentedButton<bool>(
+                      showSelectedIcon: false,
+                      segments: [
+                        M3ESegment<bool>(
+                          value: false,
+                          icon: const Icon(LucideIcons.fileText, size: 16),
+                          label: l10n.modePasteText,
                         ),
-                        Expanded(
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(999),
-                            onTap: () => setSheetState(() => isLinkMode = true),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isLinkMode
-                                    ? EnpriveColors.surface
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                l10n.modePolicyLink,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  color: isLinkMode
-                                      ? EnpriveColors.ink
-                                      : EnpriveColors.inkSecondary,
-                                ),
-                              ),
-                            ),
-                          ),
+                        M3ESegment<bool>(
+                          value: true,
+                          icon: const Icon(LucideIcons.link2, size: 16),
+                          label: l10n.modePolicyLink,
                         ),
                       ],
+                      selected: {isLinkMode},
+                      onSelectionChanged: (selection) {
+                        setSheetState(() => isLinkMode = selection.first);
+                      },
                     ),
                   ),
                   const SizedBox(height: 12),
 
                   TextField(
                     controller: titleController,
+                    style: m3e.typeScale.bodyLarge.copyWith(
+                      color: scheme.onSurface,
+                    ),
                     decoration: InputDecoration(
                       hintText: l10n.hintAppName,
                       filled: true,
-                      fillColor: EnpriveColors.surface,
+                      fillColor: surfaces.card,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
+                        borderSide: BorderSide(color: surfaces.hairlineBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: surfaces.hairlineBorder),
                       ),
                     ),
                   ),
@@ -1233,35 +1120,40 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     TextField(
                       controller: urlController,
                       keyboardType: TextInputType.url,
+                      style: m3e.typeScale.bodyMedium.copyWith(
+                        color: scheme.onSurface,
+                      ),
                       decoration: InputDecoration(
                         hintText: 'https://app.example.com/privacy',
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                           LucideIcons.link2,
                           size: 18,
-                          color: EnpriveColors.tealStrong,
+                          color: scheme.primary,
                         ),
                         filled: true,
-                        fillColor: EnpriveColors.surface,
+                        fillColor: surfaces.card,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
+                          borderSide: BorderSide(
+                            color: surfaces.hairlineBorder,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: surfaces.hairlineBorder,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 10),
                     Wrap(
                       spacing: 8,
+                      runSpacing: 8,
                       children: [
-                        ActionChip(
-                          backgroundColor: EnpriveColors.surfaceMuted,
-                          side: BorderSide.none,
-                          label: const Text(
-                            'edutrack.example.edu/privacy',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                        M3EChip(
+                          label: 'edutrack.example.edu/privacy',
+                          type: M3EChipType.assist,
                           onPressed: () {
                             titleController.text =
                                 'EduTrack Classroom Companion';
@@ -1269,16 +1161,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                 'https://edutrack.example.edu/privacy';
                           },
                         ),
-                        ActionChip(
-                          backgroundColor: EnpriveColors.surfaceMuted,
-                          side: BorderSide.none,
-                          label: const Text(
-                            'calmmath.example.org/privacy',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                        M3EChip(
+                          label: 'calmmath.example.org/privacy',
+                          type: M3EChipType.assist,
                           onPressed: () {
                             titleController.text = 'CalmMath Abacus';
                             urlController.text =
@@ -1291,17 +1176,22 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     TextField(
                       controller: controller,
                       maxLines: 5,
-                      style: const TextStyle(
-                        fontFamily: EnpriveTheme.quoteFontFamily,
-                        fontSize: 14.5,
-                      ),
+                      style: typeExt.policyQuotation,
                       decoration: InputDecoration(
                         hintText: l10n.hintPastePolicy,
                         filled: true,
-                        fillColor: EnpriveColors.quoteSurface,
+                        fillColor: surfaces.quoteSurface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide.none,
+                          borderSide: BorderSide(
+                            color: surfaces.hairlineBorder,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide(
+                            color: surfaces.hairlineBorder,
+                          ),
                         ),
                       ),
                     ),
@@ -1366,7 +1256,234 @@ We do not collect personal identifiers, precise location data, microphone audio,
   }
 }
 
-/// Floating Pill Bottom Navigation Dock (`x-monday-home.jpeg` pattern).
+/// Expressive Bento Sample App Card inspired by the "Music OS" and Dark Bento
+/// Grid reference boards.
+class _SampleAppM3EBentoCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String subtitle;
+  final String trendBadge;
+  final IconData icon;
+  final SemanticColorPair semanticPair;
+  final VoidCallback? onTap;
+
+  const _SampleAppM3EBentoCard({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.trendBadge,
+    required this.icon,
+    required this.semanticPair,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final surfaces = context.enpriveSurfaces;
+    final typeExt = context.enpriveType;
+
+    return M3ECard(
+      color: surfaces.card,
+      borderRadius: BorderRadius.circular(24),
+      border: BorderSide(color: surfaces.hairlineBorder),
+      padding: const EdgeInsets.all(16),
+      onPressed: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: semanticPair.background,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, size: 21, color: semanticPair.foreground),
+              ),
+              Icon(
+                LucideIcons.arrowUpRight,
+                size: 18,
+                color: scheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            style: m3e.typography.emphasized.titleSmall.copyWith(
+              color: scheme.onSurface,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: typeExt.tabularMetricMedium.copyWith(
+              fontSize: 22,
+              color: semanticPair.foreground,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: m3e.typeScale.bodySmall.copyWith(
+              color: scheme.onSurfaceVariant,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+              color: semanticPair.background,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              trendBadge,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: m3e.typography.emphasized.labelSmall.copyWith(
+                fontSize: 10.5,
+                color: semanticPair.foreground,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Expressive Segmented Containment group for "What we check for" (`22dp` outer
+/// corners, `4dp` inner seam corners, circular tabular `01`/`02`/`03` badges).
+class _WhatWeCheckSegmentedGroup extends StatelessWidget {
+  final AppLocalizations l10n;
+
+  const _WhatWeCheckSegmentedGroup({required this.l10n});
+
+  @override
+  Widget build(BuildContext context) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final semantics = context.enpriveSemantics;
+    final surfaces = context.enpriveSurfaces;
+
+    final checks = [
+      (
+        index: '01',
+        icon: LucideIcons.quote,
+        pair: semantics.onDevice,
+        title: l10n.checkQuoteTitle,
+        desc: l10n.checkQuoteDesc,
+      ),
+      (
+        index: '02',
+        icon: LucideIcons.shieldAlert,
+        pair: semantics.reviewRecommended,
+        title: l10n.checkPermissionTitle,
+        desc: l10n.checkPermissionDesc,
+      ),
+      (
+        index: '03',
+        icon: LucideIcons.mousePointerClick,
+        pair: semantics.inCloud,
+        title: l10n.checkSelectTitle,
+        desc: l10n.checkSelectDesc,
+      ),
+    ];
+
+    return Column(
+      children: [
+        for (var i = 0; i < checks.length; i++) ...[
+          if (i > 0) const SizedBox(height: 3),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: surfaces.card,
+              borderRadius: EnpriveRadii.groupedCardRadius(
+                index: i,
+                count: checks.length,
+                outer: 22,
+                inner: 4,
+              ),
+              border: Border.all(color: surfaces.hairlineBorder),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: checks[i].pair.background,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Icon(
+                    checks[i].icon,
+                    size: 19,
+                    color: checks[i].pair.foreground,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            checks[i].index,
+                            style: m3e.typography.emphasized.labelSmall
+                                .copyWith(
+                                  color: scheme.primary,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              checks[i].title,
+                              style: m3e.typography.emphasized.titleSmall
+                                  .copyWith(
+                                    color: scheme.onSurface,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        checks[i].desc,
+                        style: m3e.typeScale.bodySmall.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Material 3 Expressive Floating Pill Bottom Navigation Dock inspired by
+/// `plan check up.jpeg` and `x-monday-home.jpeg`.
 class _FloatingBottomNavDock extends StatelessWidget {
   final int selectedIndex;
   final int receiptsCount;
@@ -1382,11 +1499,9 @@ class _FloatingBottomNavDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final surfaces = context.surfaceTokens;
-    final colorScheme = context.colorScheme;
-    final activeColor = context.isDarkMode
-        ? EnpriveColors.tealDarkAccent
-        : EnpriveColors.tealStrong;
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final surfaces = context.enpriveSurfaces;
 
     final items = [
       (icon: LucideIcons500.house, label: l10n.navHome),
@@ -1399,8 +1514,8 @@ class _FloatingBottomNavDock extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 14),
         child: Container(
-          height: 68,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          constraints: const BoxConstraints(minHeight: 68),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: surfaces.card,
             borderRadius: BorderRadius.circular(28),
@@ -1425,31 +1540,48 @@ class _FloatingBottomNavDock extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   onTap: () => onSelect(index),
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Badge(
-                        isLabelVisible: showBadge,
-                        label: Text('$receiptsCount'),
-                        backgroundColor: activeColor,
-                        child: Icon(
-                          item.icon,
-                          size: 24,
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
                           color: isSelected
-                              ? activeColor
-                              : colorScheme.onSurfaceVariant,
+                              ? scheme.secondaryContainer
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Badge(
+                          isLabelVisible: showBadge,
+                          label: Text('$receiptsCount'),
+                          backgroundColor: scheme.primary,
+                          textColor: scheme.onPrimary,
+                          child: Icon(
+                            item.icon,
+                            size: 22,
+                            color: isSelected
+                                ? scheme.onSecondaryContainer
+                                : scheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
                         item.label,
-                        style: TextStyle(
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: m3e.typeScale.labelSmall.copyWith(
                           fontSize: 12,
                           fontWeight: isSelected
                               ? FontWeight.w800
                               : FontWeight.w600,
                           color: isSelected
-                              ? activeColor
-                              : colorScheme.onSurfaceVariant,
+                              ? scheme.onSurface
+                              : scheme.onSurfaceVariant,
                         ),
                       ),
                     ],
