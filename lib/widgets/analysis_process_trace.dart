@@ -1,10 +1,12 @@
 import 'dart:async';
-import 'package:beautiful_timeline/beautiful_timeline.dart';
+
 import 'package:flutter/material.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:shimmer/shimmer.dart';
-import '../core/theme/enprive_colors.dart';
+
+import '../core/theme/enprive_theme.dart';
+import '../core/theme/enprive_tokens.dart';
 import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 
@@ -14,9 +16,9 @@ String formatThoughtSignaturePreview(String signature) {
   return '${trimmed.substring(0, 8)}…${trimmed.substring(trimmed.length - 6)}';
 }
 
-/// Claude-style single-line streaming ticker displaying the active review step,
+/// Single-line streaming ticker displaying the active review step,
 /// one-at-a-time streaming thoughts (`thoughtSummary`), and `thoughtSignature`
-/// tokens without stacking a noisy vertical todo checklist.
+/// tokens with Material 3 Expressive morphing [M3ELoadingIndicator].
 class AnalysisLiveProcessView extends StatefulWidget {
   final Stream<AnalysisStreamEvent>? stream;
   final String initialLabel;
@@ -88,7 +90,9 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
             }
           }
 
-          if (newSentences.length == 1 && _lineTicker == null && _thoughtQueue.isEmpty) {
+          if (newSentences.length == 1 &&
+              _lineTicker == null &&
+              _thoughtQueue.isEmpty) {
             _currentThoughtLine = newSentences.last;
           } else if (newSentences.isNotEmpty) {
             _thoughtQueue.addAll(newSentences);
@@ -138,39 +142,43 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
         lookupAppLocalizations(
           Localizations.maybeLocaleOf(context) ?? const Locale('en'),
         );
-    final disableAnimations = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final m3e = M3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final semantics = context.enpriveSemantics;
+    final surfaces = context.enpriveSurfaces;
+    final disableAnimations = EnpriveMotionTokens.isReducedMotion(context);
+
     final activeLine = _currentThoughtLine ?? _activeLabel;
-    final showTopMeta = _currentThoughtLine != null || _thoughtSignature != null;
+    final showTopMeta =
+        _currentThoughtLine != null || _thoughtSignature != null;
 
     final lineText = Text(
       activeLine,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: TextStyle(
+      style: m3e.typeScale.bodyMedium.copyWith(
         fontSize: widget.compact ? 12.5 : 13.5,
         fontWeight: FontWeight.w600,
-        color: EnpriveColors.ink,
+        color: scheme.onSurface,
       ),
     );
 
     final tickerChild = disableAnimations
         ? lineText
         : Shimmer.fromColors(
-            baseColor: EnpriveColors.ink,
-            highlightColor: EnpriveColors.tealStrong,
+            baseColor: scheme.onSurface,
+            highlightColor: scheme.primary,
             period: const Duration(milliseconds: 1800),
             child: lineText,
           );
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: EnpriveColors.surfaceMuted.withValues(alpha: 0.75),
+        color: surfaces.container.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: EnpriveColors.teal.withValues(alpha: 0.14),
-        ),
+        border: Border.all(color: surfaces.hairlineBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,37 +192,36 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
                     _activeLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: EnpriveColors.tealStrong,
+                    style: m3e.typography.emphasized.labelSmall.copyWith(
+                      color: scheme.primary,
                     ),
                   ),
                 ),
                 if (_thoughtSignature != null) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
-                      color: EnpriveColors.chipInCloudBg,
+                      color: semantics.inCloud.background,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           LucideIcons.badgeCheck,
                           size: 12,
-                          color: EnpriveColors.chipInCloudFg,
+                          color: semantics.inCloud.foreground,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${l10n.thoughtSignaturePrefix} ${formatThoughtSignaturePreview(_thoughtSignature!)}',
-                          style: const TextStyle(
+                          style: m3e.typography.emphasized.labelSmall.copyWith(
                             fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: EnpriveColors.chipInCloudFg,
+                            color: semantics.inCloud.foreground,
                           ),
                         ),
                       ],
@@ -227,16 +234,21 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
           ],
           Row(
             children: [
-              disableAnimations
-                  ? const Icon(
-                      LucideIcons.sparkles,
-                      size: 16,
-                      color: EnpriveColors.tealStrong,
-                    )
-                  : LoadingAnimationWidget.staggeredDotsWave(
-                      color: EnpriveColors.tealStrong,
-                      size: 18,
-                    ),
+              if (disableAnimations)
+                Icon(
+                  LucideIcons.sparkles,
+                  size: 16,
+                  color: scheme.primary,
+                )
+              else
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: M3ELoadingIndicator(
+                    size: 24,
+                    color: scheme.primary,
+                  ),
+                ),
               const SizedBox(width: 10),
               Expanded(
                 child: ClipRect(
@@ -275,7 +287,7 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
 }
 
 /// Compact completed process summary + model thoughts + thought signature viewer
-/// for finished receipts and Deni's explanations.
+/// for finished receipts and Deni's explanations, using M3E segmented step items.
 class AnalysisSavedTraceCard extends StatefulWidget {
   final List<String> processSteps;
   final String? thoughtSummary;
@@ -305,6 +317,11 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
         lookupAppLocalizations(
           Localizations.maybeLocaleOf(context) ?? const Locale('en'),
         );
+    final m3e = M3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final semantics = context.enpriveSemantics;
+    final surfaces = context.enpriveSurfaces;
+
     final resolvedTitle =
         widget.title.isEmpty ? l10n.analysisTraceDefaultTitle : widget.title;
     final hasThoughts =
@@ -320,48 +337,46 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
       padding: EdgeInsets.all(widget.compact ? 12 : 16),
       decoration: BoxDecoration(
         color: widget.compact
-            ? EnpriveColors.surfaceMuted.withValues(alpha: 0.75)
-            : EnpriveColors.surface,
-        borderRadius: BorderRadius.circular(widget.compact ? 14 : 20),
-        border: Border.all(
-          color: EnpriveColors.ink.withValues(alpha: 0.06),
-        ),
+            ? surfaces.container.withValues(alpha: 0.85)
+            : surfaces.card,
+        borderRadius: BorderRadius.circular(widget.compact ? 16 : 22),
+        border: Border.all(color: surfaces.hairlineBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 LucideIcons.route,
                 size: 16,
-                color: EnpriveColors.tealStrong,
+                color: scheme.primary,
               ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   resolvedTitle,
-                  style: TextStyle(
+                  style: m3e.typography.emphasized.labelLarge.copyWith(
                     fontSize: widget.compact ? 12.5 : 13.5,
-                    fontWeight: FontWeight.w800,
-                    color: EnpriveColors.ink,
+                    color: scheme.onSurface,
                   ),
                 ),
               ),
               if (widget.processSteps.isNotEmpty)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
-                    color: EnpriveColors.chipOnDeviceBg,
+                    color: semantics.onDevice.background,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     l10n.stepsCountLabel(widget.processSteps.length),
-                    style: const TextStyle(
+                    style: m3e.typography.emphasized.labelSmall.copyWith(
                       fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: EnpriveColors.chipOnDeviceFg,
+                      color: semantics.onDevice.foreground,
                     ),
                   ),
                 ),
@@ -371,10 +386,10 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(
+                Icon(
                   LucideIcons.circleCheck,
                   size: 14,
-                  color: EnpriveColors.tealStrong,
+                  color: scheme.primary,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -382,10 +397,9 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                     widget.processSteps.last,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: m3e.typeScale.bodySmall.copyWith(
                       fontSize: widget.compact ? 12 : 12.5,
-                      height: 1.35,
-                      color: EnpriveColors.inkSecondary,
+                      color: scheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -398,26 +412,25 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: EnpriveColors.chipInCloudBg,
+                color: semantics.inCloud.background,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     LucideIcons.badgeCheck,
                     size: 13,
-                    color: EnpriveColors.chipInCloudFg,
+                    color: semantics.inCloud.foreground,
                   ),
                   const SizedBox(width: 5),
                   Flexible(
                     child: Text(
                       '${l10n.thoughtSignaturePrefix}: ${formatThoughtSignaturePreview(widget.thoughtSignature!)}',
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: m3e.typography.emphasized.labelSmall.copyWith(
                         fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: EnpriveColors.chipInCloudFg,
+                        color: semantics.inCloud.foreground,
                       ),
                     ),
                   ),
@@ -440,17 +453,15 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                           ? LucideIcons.chevronUp
                           : LucideIcons.chevronDown,
                       size: 18,
-                      color: EnpriveColors.tealStrong,
+                      color: scheme.primary,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       _showThoughts
                           ? l10n.hideStreamedThoughts
                           : l10n.viewStreamedThoughts,
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w800,
-                        color: EnpriveColors.tealStrong,
+                      style: m3e.typography.emphasized.labelMedium.copyWith(
+                        color: scheme.primary,
                       ),
                     ),
                   ],
@@ -460,46 +471,66 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
             if (_showThoughts) ...[
               if (widget.processSteps.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                BeautifulTimeline(
-                  axis: TimelineAxis.vertical,
-                  physics: const NeverScrollableScrollPhysics(),
-                  showAnimation: false,
-                  theme: TimelineThemeData(
-                    indicatorStyle: IndicatorStyle.icon,
-                    lineStyle: LineStyle.gradient,
-                    lineGradientStart: EnpriveColors.tealStrong,
-                    lineGradientEnd: EnpriveColors.chipInCloudFg,
-                    lineWidth: 2,
-                    backgroundColor: EnpriveColors.paper,
-                    cardBackground: EnpriveColors.paper,
-                    cardElevation: 0,
-                    cardPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    cardBorderRadius: BorderRadius.circular(14),
-                    padding: EdgeInsets.zero,
-                    indicatorSize: 28,
-                    spacingBetweenEvents: 8,
-                    titleStyle: const TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: EnpriveColors.ink,
-                    ),
-                    dateStyle: const TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      color: EnpriveColors.tealStrong,
-                    ),
-                  ),
-                  events: [
-                    for (var i = 0; i < widget.processSteps.length; i++)
-                      TimelineEvent(
-                        date: '0${i + 1}',
-                        icon: LucideIcons.circleCheck,
-                        indicatorColor: EnpriveColors.tealStrong,
-                        title: widget.processSteps[i],
+                Column(
+                  children: [
+                    for (var i = 0; i < widget.processSteps.length; i++) ...[
+                      if (i > 0) const SizedBox(height: 3),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: scheme.surfaceContainerLow,
+                          borderRadius: EnpriveRadii.groupedCardRadius(
+                            index: i,
+                            count: widget.processSteps.length,
+                            outer: 16,
+                            inner: 4,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 24,
+                              height: 24,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: semantics.onDevice.background,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                (i + 1).toString().padLeft(2, '0'),
+                                style: m3e.typography.emphasized.labelSmall
+                                    .copyWith(
+                                      fontSize: 10.5,
+                                      color: semantics.onDevice.foreground,
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures(),
+                                      ],
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                widget.processSteps[i],
+                                style: m3e.typeScale.bodySmall.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: scheme.onSurface,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              LucideIcons.circleCheck,
+                              size: 15,
+                              color: scheme.primary,
+                            ),
+                          ],
+                        ),
                       ),
+                    ],
                   ],
                 ),
               ],
@@ -509,15 +540,15 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: EnpriveColors.paper,
-                    borderRadius: BorderRadius.circular(12),
+                    color: scheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: surfaces.hairlineBorder),
                   ),
                   child: Text(
                     widget.thoughtSummary!,
-                    style: const TextStyle(
-                      fontSize: 12.5,
+                    style: m3e.typeScale.bodySmall.copyWith(
                       height: 1.45,
-                      color: EnpriveColors.inkSecondary,
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
                 ),

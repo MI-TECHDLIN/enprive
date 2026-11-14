@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 
-import '../core/theme/enprive_colors.dart';
+import '../core/theme/enprive_theme.dart';
 import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import 'deni_animated_mascot.dart';
-import 'enprive_duotone_icon.dart';
 import 'enprive_tactile_button.dart';
 
-/// Private Analysis Readiness Sheet crafted from Brilliant B19
-/// (`b19-permission-prime.png` — Deni peeking over a status card) and
-/// Welcome Gradient (`x-welcome-gradient.jpeg` — soft paper→teal bottom wash).
+/// Material 3 Expressive Private Analysis Readiness Sheet pairing Deni at
+/// `LOD 2 · 84dp` (`DeniLodTier.standard`) with an M3E status card and
+/// morphing [M3ELoadingIndicator].
 class PrivateReadinessSheet extends StatefulWidget {
   final HybridAiBridge bridge;
   final DeviceCapability? initialCapability;
@@ -75,11 +74,16 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n =
-        AppLocalizations.of(context) ??
+    final l10n = AppLocalizations.of(context) ??
         lookupAppLocalizations(
           Localizations.maybeLocaleOf(context) ?? const Locale('en'),
         );
+    final m3e = M3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final semantics = context.enpriveSemantics;
+    final surfaces = context.enpriveSurfaces;
+    final reducedMotion = EnpriveMotionTokens.isReducedMotion(context);
+
     final statusMessage = _isPreparing
         ? l10n.checkingPhoneReadiness
         : switch (_resolvedStatus) {
@@ -88,25 +92,19 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
             ModelDownloadStatus.downloadable => l10n.modelDownloadableMsg,
             ModelDownloadStatus.unavailable ||
             ModelDownloadStatus.failed ||
-            null => l10n.localScannerDefaultMsg,
+            null =>
+              l10n.localScannerDefaultMsg,
           };
     final isReady =
         _capability?.isSupported == true &&
         _capability?.modelStatus == ModelDownloadStatus.available;
 
+    final badgePair = isReady ? semantics.noConcern : semantics.onDevice;
+
     return Container(
       decoration: BoxDecoration(
+        color: scheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            EnpriveColors.surface,
-            EnpriveColors.surface,
-            EnpriveColors.chipOnDeviceBg.withValues(alpha: 0.85),
-          ],
-          stops: const [0.0, 0.55, 1.0],
-        ),
       ),
       child: SafeArea(
         child: Padding(
@@ -114,7 +112,6 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Drag handle + close
               Row(
                 children: [
                   const SizedBox(width: 40),
@@ -123,7 +120,7 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: EnpriveColors.ink.withValues(alpha: 0.14),
+                      color: scheme.outlineVariant,
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
@@ -131,63 +128,55 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
                   IconButton(
                     tooltip: 'Close',
                     onPressed: () => Navigator.pop(context, _capability),
-                    icon: const Icon(LucideIcons.x),
+                    icon: Icon(
+                      LucideIcons.x,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
 
-              // Brilliant B19 Peeking Deni
               Transform.translate(
-                offset: const Offset(0, 10),
+                offset: const Offset(0, 8),
                 child: DeniAnimatedMascot(
                   size: 84,
+                  lodOverride: DeniLodTier.standard,
                   pose: _isPreparing
                       ? DeniPose.thinking
                       : (isReady ? DeniPose.idle : DeniPose.support),
                 ),
               ),
 
-              // Status Card (B19 notification card layout)
-              Container(
-                width: double.infinity,
+              M3ECard(
+                color: surfaces.card,
+                borderRadius: BorderRadius.circular(24),
+                border: BorderSide(color: surfaces.hairlineBorder),
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: EnpriveColors.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: EnpriveColors.ink.withValues(alpha: 0.06),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
                 child: Row(
                   children: [
                     Container(
                       width: 46,
                       height: 46,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: isReady
-                            ? EnpriveColors.stateNoConcernBg
-                            : EnpriveColors.chipOnDeviceBg,
+                        color: badgePair.background,
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: _isPreparing
-                          ? const Padding(
-                              padding: EdgeInsets.all(12.0),
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
+                      child: _isPreparing && !reducedMotion
+                          ? SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: M3ELoadingIndicator(
+                                size: 28,
+                                color: badgePair.foreground,
                               ),
                             )
-                          : EnpriveDuotoneIcon(
+                          : Icon(
                               isReady
-                                  ? Ph.check_circle_duotone
-                                  : Ph.shield_check_duotone,
-                              color: isReady
-                                  ? EnpriveColors.stateNoConcernFg
-                                  : EnpriveColors.tealStrong,
-                              size: 24,
+                                  ? LucideIcons.circleCheck
+                                  : LucideIcons.shieldCheck,
+                              color: badgePair.foreground,
+                              size: 22,
                             ),
                     ),
                     const SizedBox(width: 14),
@@ -201,19 +190,17 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
                                 : (isReady
                                       ? l10n.onDeviceAiReadyTitle
                                       : l10n.localScannerActiveTitle),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: EnpriveColors.ink,
-                            ),
+                            style: m3e.typography.emphasized.titleMedium
+                                .copyWith(
+                                  color: scheme.onSurface,
+                                ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             statusMessage,
-                            style: const TextStyle(
-                              fontSize: 13.5,
+                            style: m3e.typeScale.bodySmall.copyWith(
                               height: 1.4,
-                              color: EnpriveColors.inkSecondary,
+                              color: scheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -227,17 +214,17 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
               Text(
                 l10n.privateAnalysisTitle,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineLarge
-                    ?.copyWith(fontSize: 24),
+                style: m3e.typography.emphasized.headlineSmall.copyWith(
+                  color: scheme.onSurface,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 l10n.privateAnalysisSheetSubtitle,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14.5,
+                style: m3e.typeScale.bodyMedium.copyWith(
                   height: 1.45,
-                  color: EnpriveColors.inkSecondary,
+                  color: scheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 28),

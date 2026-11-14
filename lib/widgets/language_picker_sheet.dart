@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 
-import '../core/theme/enprive_colors.dart';
+import '../core/theme/enprive_theme.dart';
+import '../core/theme/enprive_tokens.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/enprive_languages.dart';
-import 'enprive_duotone_icon.dart';
 
-/// Shared bottom sheet allowing the user to pick any of Enprive's 12 local &
-/// Cloud Gemini languages.
+/// Shared Material 3 Expressive bottom sheet allowing the user to pick any of
+/// Enprive's 12 local & Cloud Gemini languages.
 class EnpriveLanguagePickerSheet extends StatelessWidget {
   final Locale selectedLocale;
 
@@ -21,10 +21,11 @@ class EnpriveLanguagePickerSheet extends StatelessWidget {
     BuildContext context, {
     required Locale currentLocale,
   }) {
+    final scheme = M3ETheme.of(context).colorScheme;
     return showModalBottomSheet<Locale>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: EnpriveColors.paper,
+      backgroundColor: scheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
@@ -36,7 +37,13 @@ class EnpriveLanguagePickerSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context) ??
         lookupAppLocalizations(selectedLocale);
-    final selectedCode = enpriveLanguageByCode(selectedLocale.languageCode).code;
+    final m3e = M3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final semantics = context.enpriveSemantics;
+    final surfaces = context.enpriveSurfaces;
+
+    final selectedCode =
+        enpriveLanguageByCode(selectedLocale.languageCode).code;
     final maxSheetHeight = MediaQuery.of(context).size.height * 0.78;
 
     return SafeArea(
@@ -54,7 +61,7 @@ class EnpriveLanguagePickerSheet extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: EnpriveColors.ink.withValues(alpha: 0.14),
+                    color: scheme.outlineVariant,
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -63,15 +70,15 @@ class EnpriveLanguagePickerSheet extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: 42,
+                    height: 42,
                     decoration: BoxDecoration(
-                      color: EnpriveColors.chipOnDeviceBg,
+                      color: semantics.onDevice.background,
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const EnpriveDuotoneIcon(
-                      Ph.translate_duotone,
-                      color: EnpriveColors.tealStrong,
+                    child: Icon(
+                      LucideIcons.languages,
+                      color: semantics.onDevice.foreground,
                       size: 20,
                     ),
                   ),
@@ -82,15 +89,16 @@ class EnpriveLanguagePickerSheet extends StatelessWidget {
                       children: [
                         Text(
                           l10n.chooseLanguage,
-                          style: Theme.of(context).textTheme.headlineMedium,
+                          style: m3e.typography.emphasized.titleLarge.copyWith(
+                            color: scheme.onSurface,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           l10n.languageSubtitle,
-                          style: const TextStyle(
-                            fontSize: 12.5,
+                          style: m3e.typeScale.bodySmall.copyWith(
+                            color: scheme.onSurfaceVariant,
                             height: 1.35,
-                            color: EnpriveColors.inkSecondary,
                           ),
                         ),
                       ],
@@ -99,30 +107,37 @@ class EnpriveLanguagePickerSheet extends StatelessWidget {
                   IconButton(
                     tooltip: l10n.tooltipClose,
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(LucideIcons.x, size: 20),
+                    icon: Icon(
+                      LucideIcons.x,
+                      size: 20,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
               Flexible(
-                child: Material(
-                  color: EnpriveColors.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  clipBehavior: Clip.antiAlias,
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: kEnpriveLanguages.length,
-                    separatorBuilder: (_, _) => Divider(
-                      height: 1,
-                      indent: 20,
-                      endIndent: 20,
-                      color: EnpriveColors.ink.withValues(alpha: 0.06),
-                    ),
-                    itemBuilder: (context, index) {
-                      final option = kEnpriveLanguages[index];
-                      final isSelected = option.code == selectedCode;
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: kEnpriveLanguages.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 3),
+                  itemBuilder: (context, index) {
+                    final option = kEnpriveLanguages[index];
+                    final isSelected = option.code == selectedCode;
+                    final radius = EnpriveRadii.groupedCardRadius(
+                      index: index,
+                      count: kEnpriveLanguages.length,
+                      outer: 20,
+                      inner: 4,
+                    );
 
-                      return ListTile(
+                    return Material(
+                      color: isSelected
+                          ? semantics.onDevice.background
+                          : surfaces.card,
+                      borderRadius: radius,
+                      clipBehavior: Clip.antiAlias,
+                      child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 18,
                           vertical: 4,
@@ -134,50 +149,48 @@ class EnpriveLanguagePickerSheet extends StatelessWidget {
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? EnpriveColors.chipOnDeviceBg
-                                : EnpriveColors.surfaceMuted,
+                                ? scheme.primary
+                                : scheme.surfaceContainerHigh,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             option.code.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w800,
+                            style: m3e.typography.emphasized.labelSmall.copyWith(
                               color: isSelected
-                                  ? EnpriveColors.tealStrong
-                                  : EnpriveColors.inkSecondary,
+                                  ? scheme.onPrimary
+                                  : scheme.onSurfaceVariant,
                             ),
                           ),
                         ),
                         title: Text(
                           option.nativeName,
-                          style: TextStyle(
-                            fontSize: 15.5,
-                            fontWeight: isSelected
-                                ? FontWeight.w800
-                                : FontWeight.w700,
-                            color: EnpriveColors.ink,
+                          style: m3e.typography.emphasized.bodyLarge.copyWith(
+                            color: isSelected
+                                ? semantics.onDevice.foreground
+                                : scheme.onSurface,
                           ),
                         ),
                         subtitle: option.nativeName == option.englishName
                             ? null
                             : Text(
                                 option.englishName,
-                                style: const TextStyle(
-                                  fontSize: 12.5,
-                                  color: EnpriveColors.inkSecondary,
+                                style: m3e.typeScale.bodySmall.copyWith(
+                                  color: isSelected
+                                      ? semantics.onDevice.foreground
+                                          .withValues(alpha: 0.85)
+                                      : scheme.onSurfaceVariant,
                                 ),
                               ),
                         trailing: isSelected
-                            ? const Icon(
+                            ? Icon(
                                 LucideIcons.circleCheck,
-                                color: EnpriveColors.tealStrong,
+                                color: semantics.onDevice.foreground,
                                 size: 20,
                               )
                             : const SizedBox(width: 20),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],

@@ -1,20 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 
-import '../core/theme/enprive_colors.dart';
+import '../core/theme/enprive_theme.dart';
 import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import 'analysis_process_trace.dart';
-import 'enprive_duotone_icon.dart';
 
-/// Live 4-stage milestone progress card shown while a policy or app review runs.
-///
-/// Combines a calm paper-white header, overlapping source icon badges, a dark
-/// capsule milestone track with animated rounded connectors, and a live
-/// streaming reasoning + step-counter footer.
+/// Live 4-stage Material 3 Expressive milestone progress card shown while a
+/// policy or app review runs.
 class ReviewProgressCard extends StatefulWidget {
   final String subjectTitle;
   final bool isCloudCheck;
@@ -67,7 +63,8 @@ class _ReviewProgressCardState extends State<ReviewProgressCard> {
         event.stage,
         isCompleted: event.isCompleted,
       );
-      final isCloudEvent = event.inferenceSource == 'IN_CLOUD' ||
+      final isCloudEvent =
+          event.inferenceSource == 'IN_CLOUD' ||
           event.stage == 'sending_appcheck';
       setState(() {
         if (nextIndex > _activeStepIndex) {
@@ -112,36 +109,28 @@ class _ReviewProgressCardState extends State<ReviewProgressCard> {
 
   @override
   Widget build(BuildContext context) {
-    final disableAnimations =
-        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final disableAnimations = EnpriveMotionTokens.isReducedMotion(context);
     final l10n = AppLocalizations.of(context) ??
         lookupAppLocalizations(
           Localizations.maybeLocaleOf(context) ?? const Locale('en'),
         );
-    final displayStep = (_activeStepIndex + 1).clamp(1, _totalSteps);
+    final m3e = M3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final semantics = context.enpriveSemantics;
+    final surfaces = context.enpriveSurfaces;
 
-    return Container(
-      width: double.infinity,
+    final displayStep = (_activeStepIndex + 1).clamp(1, _totalSteps);
+    final modePair =
+        _isInCloudActive ? semantics.inCloud : semantics.onDevice;
+
+    return M3ECard(
+      color: surfaces.card,
+      borderRadius: BorderRadius.circular(28),
+      border: BorderSide(color: surfaces.hairlineBorder, width: 1.5),
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: EnpriveColors.surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: EnpriveColors.teal.withValues(alpha: 0.16),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: EnpriveColors.tealStrong.withValues(alpha: 0.08),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Stage headline + Subject subtitle on left, Source cluster + Mode badge on right
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -151,10 +140,8 @@ class _ReviewProgressCardState extends State<ReviewProgressCard> {
                   children: [
                     Text(
                       l10n.reviewingOnPhone,
-                      style: const TextStyle(
-                        fontSize: 17.5,
-                        fontWeight: FontWeight.w800,
-                        color: EnpriveColors.ink,
+                      style: m3e.typography.emphasized.titleMedium.copyWith(
+                        color: scheme.onSurface,
                         height: 1.25,
                       ),
                     ),
@@ -163,10 +150,9 @@ class _ReviewProgressCardState extends State<ReviewProgressCard> {
                       widget.subjectTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 13.5,
+                      style: m3e.typeScale.bodySmall.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: EnpriveColors.inkSecondary,
+                        color: scheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -184,20 +170,15 @@ class _ReviewProgressCardState extends State<ReviewProgressCard> {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: _isInCloudActive
-                          ? EnpriveColors.chipInCloudBg
-                          : EnpriveColors.chipOnDeviceBg,
+                      color: modePair.background,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
                       _isInCloudActive ? 'App Check' : 'LIVE',
-                      style: TextStyle(
+                      style: m3e.typography.emphasized.labelSmall.copyWith(
                         fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
                         letterSpacing: 0.4,
-                        color: _isInCloudActive
-                            ? EnpriveColors.chipInCloudFg
-                            : EnpriveColors.tealStrong,
+                        color: modePair.foreground,
                       ),
                     ),
                   ),
@@ -208,7 +189,6 @@ class _ReviewProgressCardState extends State<ReviewProgressCard> {
 
           const SizedBox(height: 16),
 
-          // Signature Dark Capsule Milestone Track (4-stage pipeline)
           _DarkCapsuleMilestoneTrack(
             activeStepIndex: _activeStepIndex,
             isCompleted: _isCompleted,
@@ -217,7 +197,6 @@ class _ReviewProgressCardState extends State<ReviewProgressCard> {
 
           const SizedBox(height: 14),
 
-          // Footer: Live animated ticker on left + Tabular "X of 4" counter on right
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -235,16 +214,14 @@ class _ReviewProgressCardState extends State<ReviewProgressCard> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: EnpriveColors.surfaceMuted,
+                  color: scheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   l10n.progressStepCounter(displayStep, _totalSteps),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: EnpriveColors.inkSecondary,
-                    fontFeatures: [FontFeature.tabularFigures()],
+                  style: m3e.typography.emphasized.labelSmall.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
               ),
@@ -263,6 +240,10 @@ class _OverlappingSourceBadges extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = M3ETheme.of(context).colorScheme;
+    final semantics = context.enpriveSemantics;
+    final surfaces = context.enpriveSurfaces;
+
     return SizedBox(
       width: 68,
       height: 28,
@@ -272,30 +253,34 @@ class _OverlappingSourceBadges extends StatelessWidget {
           PositionedDirectional(
             end: 40,
             child: _miniBadge(
-              bg: EnpriveColors.surfaceMuted,
-              iconSvg: Ph.file_text_duotone,
-              color: EnpriveColors.ink,
+              bg: scheme.surfaceContainerHigh,
+              borderColor: surfaces.card,
+              icon: LucideIcons.fileText,
+              color: scheme.onSurface,
             ),
           ),
           PositionedDirectional(
             end: 20,
             child: _miniBadge(
-              bg: EnpriveColors.chipOnDeviceBg,
-              iconSvg: Ph.device_mobile_duotone,
-              color: EnpriveColors.tealStrong,
+              bg: semantics.onDevice.background,
+              borderColor: surfaces.card,
+              icon: LucideIcons.smartphone,
+              color: semantics.onDevice.foreground,
             ),
           ),
           PositionedDirectional(
             end: 0,
             child: _miniBadge(
               bg: isCloudCheck
-                  ? EnpriveColors.chipInCloudBg
-                  : EnpriveColors.stateNoConcernBg,
-              iconSvg:
-                  isCloudCheck ? Ph.cloud_check_duotone : Ph.shield_check_duotone,
+                  ? semantics.inCloud.background
+                  : semantics.noConcern.background,
+              borderColor: surfaces.card,
+              icon: isCloudCheck
+                  ? LucideIcons.cloudCheck
+                  : LucideIcons.shieldCheck,
               color: isCloudCheck
-                  ? EnpriveColors.chipInCloudFg
-                  : EnpriveColors.stateNoConcernFg,
+                  ? semantics.inCloud.foreground
+                  : semantics.noConcern.foreground,
             ),
           ),
         ],
@@ -305,7 +290,8 @@ class _OverlappingSourceBadges extends StatelessWidget {
 
   Widget _miniBadge({
     required Color bg,
-    required String iconSvg,
+    required Color borderColor,
+    required IconData icon,
     required Color color,
   }) {
     return Container(
@@ -314,11 +300,11 @@ class _OverlappingSourceBadges extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         shape: BoxShape.circle,
-        border: Border.all(color: EnpriveColors.surface, width: 2),
+        border: Border.all(color: borderColor, width: 2),
       ),
       child: Center(
-        child: EnpriveDuotoneIcon(
-          iconSvg,
+        child: Icon(
+          icon,
           size: 14,
           color: color,
         ),
@@ -345,11 +331,11 @@ class _DarkCapsuleMilestoneTrack extends StatelessWidget {
     LucideIcons.badgeCheck,
   ];
 
-  static const Color _trackDark = EnpriveColors.ctaInk;
-  static const Color _inactiveNodeFill = Color(0xFF333B3F);
-  static const Color _inactiveRing = Color(0xFF535F65);
-  static const Color _inactiveIcon = Color(0xFF97A4AA);
-  static const Color _accentMint = Color(0xFF2ED3B7);
+  static const Color _trackDark = Color(0xFF162133);
+  static const Color _inactiveNodeFill = Color(0xFF283446);
+  static const Color _inactiveRing = Color(0xFF475569);
+  static const Color _inactiveIcon = Color(0xFF94A3B8);
+  static const Color _accentMint = Color(0xFF3BD4B7);
 
   @override
   Widget build(BuildContext context) {

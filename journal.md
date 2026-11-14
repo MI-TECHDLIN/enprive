@@ -727,6 +727,38 @@
 
 ---
 
+### Iteration 20 — Stage 1 Reusable Enprive M3E Domain Components & Shared System Widget Migration (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop Stage 0 commit `255ad51`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`SKILL.md`, `components.md`, `layout.md`, `theming.md`)
+  - `hamen/material-3-skill` (`SKILL.md`, `component-catalog.md`, `typography-and-shape.md`, `color-system.md`)
+  - All 8 visual inspiration boards in `mobile ui and ux inspration/`
+- **What Was Built**:
+  - **1. Reusable Enprive M3E Domain Components (`lib/widgets/m3e/`)**:
+    - `EnpriveEditorialHeader` (`lib/widgets/m3e/enprive_editorial_header.dart`): Two-tone editorial headline (`onSurface` primary line + `onSurfaceVariant` secondary line) with optional overline and trailing action slot.
+    - `EnpriveBentoPostureCard` (`lib/widgets/m3e/enprive_bento_posture_card.dart`): Asymmetric 2-column Bento grid with provenance pill, oversized tabular numeral (`tabularMetricLarge`), `M3EProgressIndicator.linearWavy` (respecting reduced-motion), and stacked right semantic tiles with `M3ELoadingIndicator` (`28dp` morphing polygon).
+    - `EnpriveFindingM3ECard` (`lib/widgets/m3e/enprive_finding_m3e_card.dart`): Segmented/standalone finding card with circular tabular index badge (`01`, `02`), AAA-contrasted semantic severity pill, deterministic `QUOTE MATCHED` vs `UNVERIFIED` badge, `SourceSerif4` italic quote callout, `SHA-256` digest preview, and tactile `M3EButton.tonal` `"Ask Deni · Why this matters"` action.
+    - `EnpriveCollapsibleQuoteBox` (`lib/widgets/m3e/enprive_collapsible_quote_box.dart`): Animated collapsible policy quotation & `SHA-256` box that automatically collapses to a 1-line bar when `autoCollapseTrigger` fires (keeping streamed Deni responses above the fold).
+    - `EnpriveSegmentedM3EGroup` (`lib/widgets/m3e/enprive_segmented_m3e_group.dart`): Reusable `M3EList` + `M3EListItem` segmented containment wrapper (`20dp` outer corners, `4dp` inner seam corners, `3dp` gap).
+    - `EnpriveDeniStageCard` (`lib/widgets/m3e/enprive_deni_stage_card.dart`): Companion card pairing `DeniAnimatedMascot` at any of the 3 LOD tiers (`52dp`, `84dp`, `144dp`) with calibrated guidance and action strip.
+    - `enprive_m3e_components.dart` (`lib/widgets/m3e/enprive_m3e_components.dart`): Barrel export for all reusable M3E domain components.
+  - **2. Shared System & Trace Widget M3E Migration (`lib/widgets/`)**:
+    - Migrated `lib/widgets/analysis_process_trace.dart` (`AnalysisLiveProcessView` & `AnalysisSavedTraceCard`), `lib/widgets/review_progress_sheet.dart` (`ReviewProgressCard`), `lib/widgets/private_readiness_sheet.dart` (`PrivateReadinessSheet`), and `lib/widgets/language_picker_sheet.dart` (`EnpriveLanguagePickerSheet`) from static `EnpriveColors.*`, `BeautifulTimeline`, and `LoadingAnimationWidget` to `M3ETheme.of(context)`, `Enprive*` `ThemeExtension` tokens, `M3ECard`, `M3ELoadingIndicator`, and `EnpriveRadii.groupedCardRadius`.
+  - **3. Stage 1 Widget Test Suite (`test/theme_and_deni_lod_test.dart`)**:
+    - Added full Light & Dark mode widget verification for all 6 `lib/widgets/m3e/` components plus `ReviewProgressCard` and `AnalysisSavedTraceCard`.
+- **Challenges & Root-Cause Fixes**:
+  - **`M3ECard` Tap Parameter Name**: `M3ECard` uses `onPressed:` rather than `onTap:`; aligned all interactive `M3ECard` wrappers to `onPressed:`.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **47/47 passed (100%)**.
+- **Next Immediate Action & Recommended Model**:
+  - Proceed to **Stage 2 — Core Entry, Home & Input Flows** (`EnpriveMainShell`, `OnboardingScreen`, `HomeScreen`, `InstalledAppPickerSheet`, `PastePolicyModal`, `CloudConsentSheet`) after user review of Stage 1.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Manual Device & GCP Verification + Phase A Review**

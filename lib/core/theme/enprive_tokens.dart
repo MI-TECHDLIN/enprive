@@ -286,6 +286,9 @@ class EnpriveSurfaceTokens extends ThemeExtension<EnpriveSurfaceTokens> {
     this.groupedInnerRadius = 6.0,
   });
 
+  Color get container => cardMuted;
+  Color get quoteCallout => quoteSurface;
+
   static const EnpriveSurfaceTokens light = EnpriveSurfaceTokens(
     canvas: EnpriveColors.paper,
     card: EnpriveColors.surface,
@@ -486,11 +489,19 @@ class EnpriveMotionTokens extends ThemeExtension<EnpriveMotionTokens> {
 
   static const EnpriveMotionTokens standard = EnpriveMotionTokens();
 
+  static bool isReducedMotion(BuildContext context) =>
+      MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+
+  Duration get standardDuration => spatialDefault;
+  Curve get emphasizedCurve => Curves.easeOutCubic;
+
   /// Returns `Duration.zero` when OS reduced-motion accessibility is enabled.
   Duration effectiveDuration(BuildContext context, Duration base) {
-    final disableAnimations =
-        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    return disableAnimations ? Duration.zero : base;
+    return isReducedMotion(context) ? Duration.zero : base;
+  }
+
+  Curve effectiveCurve(BuildContext context, Curve base) {
+    return isReducedMotion(context) ? Curves.linear : base;
   }
 
   @override
@@ -708,13 +719,19 @@ extension EnpriveThemeContext on BuildContext {
       Theme.of(this).extension<EnpriveSemanticColors>() ??
       (isDarkMode ? EnpriveSemanticColors.dark : EnpriveSemanticColors.light);
 
+  EnpriveSemanticColors get enpriveSemantics => semanticColors;
+
   EnpriveSurfaceTokens get surfaceTokens =>
       Theme.of(this).extension<EnpriveSurfaceTokens>() ??
       (isDarkMode ? EnpriveSurfaceTokens.dark : EnpriveSurfaceTokens.light);
 
+  EnpriveSurfaceTokens get enpriveSurfaces => surfaceTokens;
+
   EnpriveMotionTokens get motionTokens =>
       Theme.of(this).extension<EnpriveMotionTokens>() ??
       EnpriveMotionTokens.standard;
+
+  EnpriveMotionTokens get enpriveMotion => motionTokens;
 
   EnpriveTypographyExtension get enpriveType =>
       Theme.of(this).extension<EnpriveTypographyExtension>() ??

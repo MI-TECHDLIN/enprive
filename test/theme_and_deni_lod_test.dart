@@ -1,9 +1,14 @@
 import 'package:enprive/core/theme/enprive_colors.dart';
 import 'package:enprive/core/theme/enprive_theme.dart';
+import 'package:enprive/domain/review/review_models.dart';
 import 'package:enprive/main.dart';
 import 'package:enprive/screens/design_system_preview_screen.dart';
 import 'package:enprive/services/storage/receipt_repository.dart';
+import 'package:enprive/widgets/analysis_process_trace.dart';
 import 'package:enprive/widgets/deni_animated_mascot.dart';
+import 'package:enprive/widgets/enprive_provenance_chip.dart';
+import 'package:enprive/widgets/m3e/enprive_m3e_components.dart';
+import 'package:enprive/widgets/review_progress_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -395,6 +400,171 @@ void main() {
           find.byType(M3EMaterialApp),
         );
         expect(m3eAppLight.initialTheme, Brightness.light);
+      },
+    );
+  });
+
+  group('Stage 1 — Reusable Enprive M3E Domain Components & Shared System Widgets', () {
+    testWidgets(
+      'EnpriveEditorialHeader, EnpriveBentoPostureCard, EnpriveFindingM3ECard, EnpriveCollapsibleQuoteBox, EnpriveSegmentedM3EGroup, EnpriveDeniStageCard, and ReviewProgressCard render cleanly in Light & Dark modes',
+      (WidgetTester tester) async {
+        var askDeniTapped = false;
+        const sampleFinding = VerifiedFinding(
+          id: 'f_1',
+          title: 'Advertising ID Shared with Third Parties',
+          category: FindingCategory.sharing,
+          severity: FindingSeverity.high,
+          exactExcerpt:
+              'We may share persistent advertising identifiers with ad partners.',
+          explanation:
+              'Allows cross-app behavioral profiling unless restricted.',
+          whatPolicySays: 'Discloses ad partner sharing.',
+          whatAndroidReports: 'AD_ID permission declared.',
+          unknowns: ['Partner list not enumerated'],
+          status: EvidenceStatus.sourceMatched,
+        );
+
+        Widget buildStage1Harness({
+          required ThemeMode mode,
+          required bool autoCollapseQuote,
+        }) {
+          final activeData = EnpriveM3ETheme.resolve(
+            mode: mode,
+            platformBrightness: Brightness.light,
+          );
+          return M3EMaterialApp(
+            data: activeData,
+            typeface: EnpriveM3ETheme.typefaceConfig,
+            autoTheming: false,
+            dynamicColoring: false,
+            initialTheme: activeData.brightness,
+            theme: EnpriveM3ETheme.lightThemeData.toThemeData(),
+            darkTheme: EnpriveM3ETheme.darkThemeData.toThemeData(),
+            localizationsDelegates: EnpriveM3ETheme.localizationsDelegates,
+            appBuilder: (context, child) => EnpriveM3EBridgeScope(
+              themeMode: mode,
+              child: child ?? const SizedBox.shrink(),
+            ),
+            home: Scaffold(
+              body: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    const EnpriveEditorialHeader(
+                      overline: 'STAGE 1 SYSTEM',
+                      primaryLine: 'Privacy Posture',
+                      secondaryLine: 'Evidence-First M3E Components',
+                    ),
+                    const SizedBox(height: 12),
+                    const EnpriveBentoPostureCard(
+                      source: InferenceSource.onDevice,
+                      primaryMetricValue: '04',
+                      primaryMetricTitle: 'Verified Clauses',
+                      primaryMetricSubtitle: '100% Quote Aligned',
+                      topTileTitle: 'Nano 4',
+                      topTileSubtitle: 'Local inference active',
+                      isTopTileLoading: true,
+                      bottomTileTitle: '01 Flag',
+                      bottomTileSubtitle: 'Review recommended',
+                      flagCount: 1,
+                    ),
+                    const SizedBox(height: 12),
+                    EnpriveFindingM3ECard(
+                      finding: sampleFinding,
+                      index: 0,
+                      totalCount: 2,
+                      sha256Preview: '8f4b2e9c10a7',
+                      onAskDeni: () => askDeniTapped = true,
+                    ),
+                    const SizedBox(height: 12),
+                    EnpriveCollapsibleQuoteBox(
+                      key: const Key('stage1_collapsible_quote'),
+                      quote: sampleFinding.exactExcerpt,
+                      sha256Digest: '8f4b2e9c10a74d3b',
+                      autoCollapseTrigger: autoCollapseQuote,
+                    ),
+                    const SizedBox(height: 12),
+                    const EnpriveSegmentedM3EGroup(
+                      sectionTitle: 'Segmented Guardrails',
+                      items: [
+                        EnpriveSegmentedM3EItem(
+                          overline: 'LOCAL ONLY',
+                          title: 'Package inspection stays on phone',
+                          supportingText: 'Never transmitted to cloud',
+                          trailingMeta: 'ON-DEVICE',
+                        ),
+                        EnpriveSegmentedM3EItem(
+                          overline: 'EVIDENCE',
+                          title: 'Deterministic quote verification',
+                          supportingText: 'Backed by EvidenceValidator',
+                          trailingMeta: 'SHA-256',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const EnpriveDeniStageCard(
+                      pose: DeniPose.support,
+                      lodTier: DeniLodTier.standard,
+                      badgeText: 'CALIBRATED GUIDANCE',
+                      title: 'Deni Companion Stage',
+                      message:
+                          'No concern identified in the reviewed evidence. This is not a safety certification.',
+                    ),
+                    const SizedBox(height: 12),
+                    const ReviewProgressCard(
+                      subjectTitle: 'CalmMath Policy Snapshot',
+                    ),
+                    const SizedBox(height: 12),
+                    const AnalysisSavedTraceCard(
+                      processSteps: [
+                        'Extracted local policy clauses',
+                        'Verified quote alignment against SHA-256 snapshot',
+                      ],
+                      thoughtSummary:
+                          'Checked ad identifier disclosure against manifest permissions.',
+                      thoughtSignature: 'sig_98ab76cd54ef321098ab',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        await tester.pumpWidget(
+          buildStage1Harness(mode: ThemeMode.light, autoCollapseQuote: false),
+        );
+        await tester.pump();
+
+        expect(find.text('STAGE 1 SYSTEM'), findsOneWidget);
+        expect(find.text('Advertising ID Shared with Third Parties'), findsOneWidget);
+        expect(find.text('QUOTE MATCHED'), findsOneWidget);
+        expect(find.text('SHA-256 · 8f4b2e9c10a74d3b'), findsOneWidget);
+
+        // Tap Ask Deni button on EnpriveFindingM3ECard
+        final askDeniBtn = find.text('Ask Deni · Why this matters');
+        await tester.ensureVisible(askDeniBtn);
+        await tester.tap(askDeniBtn);
+        await tester.pump();
+        expect(askDeniTapped, isTrue);
+
+        // Trigger auto-collapse on EnpriveCollapsibleQuoteBox and switch to Dark Mode
+        await tester.pumpWidget(
+          buildStage1Harness(mode: ThemeMode.dark, autoCollapseQuote: true),
+        );
+        await tester.pump(const Duration(milliseconds: 350));
+
+        // When collapsed, the SHA-256 line inside EnpriveCollapsibleQuoteBox is hidden
+        expect(find.text('SHA-256 · 8f4b2e9c10a74d3b'), findsNothing);
+
+        // Expand AnalysisSavedTraceCard thoughts in Dark Mode
+        final viewThoughtsToggle = find.text('View streamed thoughts & steps');
+        if (viewThoughtsToggle.evaluate().isNotEmpty) {
+          await tester.ensureVisible(viewThoughtsToggle);
+          await tester.tap(viewThoughtsToggle);
+          await tester.pump(const Duration(milliseconds: 200));
+        }
+        expect(tester.takeException(), isNull);
       },
     );
   });
