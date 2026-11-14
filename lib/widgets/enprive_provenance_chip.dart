@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:iconify_flutter/icons/ph.dart';
-import '../core/theme/enprive_colors.dart';
+import '../core/theme/enprive_theme.dart';
 import '../l10n/app_localizations.dart';
 import 'enprive_duotone_icon.dart';
 
@@ -46,35 +46,35 @@ class EnpriveProvenanceChip extends StatelessWidget {
         lookupAppLocalizations(
           Localizations.maybeLocaleOf(context) ?? const Locale('en'),
         );
-    final (Color bg, Color fg, String duotoneIcon, String defaultLabel) =
-        switch (source) {
+    final semantics = context.semanticColors;
+
+    final (
+      SemanticColorPair pair,
+      String duotoneIcon,
+      String defaultLabel,
+    ) = switch (source) {
       InferenceSource.onDevice => (
-          EnpriveColors.chipOnDeviceBg,
-          EnpriveColors.chipOnDeviceFg,
+          semantics.onDevice,
           Ph.device_mobile_duotone,
           l10n.chipOnDevice,
         ),
       InferenceSource.inCloud => (
-          EnpriveColors.chipInCloudBg,
-          EnpriveColors.chipInCloudFg,
+          semantics.inCloud,
           Ph.cloud_check_duotone,
           l10n.chipInCloud,
         ),
       InferenceSource.offlineDeterministic => (
-          EnpriveColors.chipOfflineBg,
-          EnpriveColors.chipOfflineFg,
+          semantics.offlineFallback,
           Ph.shield_check_duotone,
           l10n.chipOfflineDeterministic,
         ),
       InferenceSource.unknown => (
-          EnpriveColors.chipUnknownBg,
-          EnpriveColors.chipUnknownFg,
+          semantics.unknown,
           Ph.question_duotone,
           l10n.chipUnknown,
         ),
       InferenceSource.locationUnavailable => (
-          EnpriveColors.chipUnknownBg,
-          EnpriveColors.chipUnknownFg,
+          semantics.unknown,
           Ph.question_duotone,
           l10n.chipLocationUnavailable,
         ),
@@ -88,22 +88,19 @@ class EnpriveProvenanceChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: fg.withValues(alpha: 0.2), width: 1),
+          color: pair.background,
+          borderRadius: BorderRadius.circular(EnpriveRadii.pill),
+          border: Border.all(color: pair.border, width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            EnpriveDuotoneIcon(duotoneIcon, size: 16, color: fg),
+            EnpriveDuotoneIcon(duotoneIcon, size: 16, color: pair.icon),
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(
-                color: fg,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
+              style: context.enpriveType.evidenceBadge.copyWith(
+                color: pair.foreground,
               ),
             ),
           ],

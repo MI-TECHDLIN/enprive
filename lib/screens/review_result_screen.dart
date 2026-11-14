@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../core/theme/enprive_colors.dart';
+
 import '../core/theme/enprive_theme.dart';
 import '../domain/permissions/permission_comparator.dart';
 import '../domain/review/review_coordinator.dart';
@@ -9,17 +8,16 @@ import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/analysis_process_trace.dart';
 import '../widgets/deni_animated_mascot.dart';
-import '../widgets/enprive_duotone_icon.dart';
 import '../widgets/enprive_provenance_chip.dart';
-import '../widgets/enprive_tactile_button.dart';
+import '../widgets/m3e/enprive_m3e_components.dart';
 import '../widgets/why_this_finding_sheet.dart';
 
-/// Evidence Result Screen crafted directly from the Interactive Learning App
-/// (`x-learning-app.jpeg`) and Brilliant Lesson (`b30-lesson-check.png`) patterns:
-/// - Full-bleed state-tinted hero header with centered Deni + state pill + serif title
-/// - Curved white sheet with 3 pastel stat tiles
-/// - Scannable quote-first finding cards without nested box noise
-/// - Docked bottom bar with bookmark button + primary CTA
+/// Material 3 Expressive Evidence Result Screen:
+/// - Archival canvas with [EnpriveReviewHeroCard] (inset teal mesh banner,
+///   overlapping Deni Standard LOD medallion, borderless 3-column metrics, and
+///   leading-arrow tactile CTA)
+/// - Segmented quote-first `M3ECard` finding cards (`EnpriveRadii.groupedCardRadius`)
+/// - Contextual bookmark save action in top bar when reviewing unsaved results
 class ReviewResultScreen extends StatefulWidget {
   final PolicyReviewReceipt receipt;
   final ReviewCoordinator coordinator;
@@ -52,9 +50,10 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
 
   DeniPose get _statePose {
     if (_isSpeaking) return DeniPose.listening;
+    if (_isSaved) return DeniPose.celebrating;
     return switch (widget.receipt.overallState) {
       ReviewOverallState.reviewRecommended => DeniPose.explaining,
-      ReviewOverallState.noConcern => DeniPose.celebrating,
+      ReviewOverallState.noConcern => DeniPose.idle,
       ReviewOverallState.insufficientEvidence => DeniPose.support,
     };
   }
@@ -71,36 +70,30 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     final lang = Localizations.localeOf(context).languageCode;
     final spokenText =
         '${widget.receipt.subjectTitle}. $stateTitle. ${widget.receipt.summary}';
-    await widget.coordinator.bridge.speakText(
-      spokenText,
-      languageCode: lang,
-    );
+    await widget.coordinator.bridge.speakText(spokenText, languageCode: lang);
   }
 
-  (Color bg, Color fg, IconData icon, String title, String subtitle)
-      _stateConfig(AppLocalizations l10n) {
+  (SemanticColorPair pair, IconData icon, String title, String subtitle)
+  _stateConfig(AppLocalizations l10n, EnpriveSemanticColors semantics) {
     return switch (widget.receipt.overallState) {
       ReviewOverallState.reviewRecommended => (
-          EnpriveColors.stateReviewRecommendedBg,
-          EnpriveColors.stateReviewRecommendedFg,
-          LucideIcons.shieldAlert,
-          l10n.stateReviewRecommended,
-          l10n.stateReviewRecommendedSubtitle,
-        ),
+        semantics.reviewRecommended,
+        LucideIcons.shieldAlert,
+        l10n.stateReviewRecommended,
+        l10n.stateReviewRecommendedSubtitle,
+      ),
       ReviewOverallState.noConcern => (
-          EnpriveColors.stateNoConcernBg,
-          EnpriveColors.stateNoConcernFg,
-          LucideIcons.shieldCheck,
-          l10n.stateNoConcern,
-          l10n.stateNoConcernSubtitle,
-        ),
+        semantics.noConcern,
+        LucideIcons.shieldCheck,
+        l10n.stateNoConcern,
+        l10n.stateNoConcernSubtitle,
+      ),
       ReviewOverallState.insufficientEvidence => (
-          EnpriveColors.stateInsufficientEvidenceBg,
-          EnpriveColors.stateInsufficientEvidenceFg,
-          LucideIcons.circleHelp,
-          l10n.stateInsufficientEvidence,
-          l10n.stateInsufficientEvidenceSubtitle,
-        ),
+        semantics.insufficientEvidence,
+        LucideIcons.circleHelp,
+        l10n.stateInsufficientEvidence,
+        l10n.stateInsufficientEvidenceSubtitle,
+      ),
     };
   }
 
@@ -115,7 +108,11 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     );
   }
 
-  void _handleSave(BuildContext context, AppLocalizations l10n, PolicyReviewReceipt receipt) {
+  void _handleSave(
+    BuildContext context,
+    AppLocalizations l10n,
+    PolicyReviewReceipt receipt,
+  ) {
     if (_isSaved) return;
     setState(() => _isSaved = true);
     widget.onSaveReceipt?.call(receipt);
@@ -136,89 +133,92 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     final dateStr =
         '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    final surfaces = context.enpriveSurfaces;
 
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: EnpriveColors.paper,
+      backgroundColor: surfaces.canvas,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       builder: (sheetContext) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.68,
-          minChildSize: 0.45,
-          maxChildSize: 0.92,
-          expand: false,
-          builder: (_, scrollController) {
-            return ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: EnpriveColors.ink.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  l10n.snapshotSheetTitle,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: EnpriveColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        return EnpriveM3EBridgeScope.ensure(
+          sheetContext,
+          child: Builder(
+            builder: (innerContext) {
+              final m3e = EnpriveM3ETheme.of(innerContext);
+              final scheme = m3e.colorScheme;
+              final innerSurfaces = innerContext.enpriveSurfaces;
+              final typeExt = innerContext.enpriveType;
+
+              return DraggableScrollableSheet(
+                initialChildSize: 0.68,
+                minChildSize: 0.45,
+                maxChildSize: 0.92,
+                expand: false,
+                builder: (_, scrollController) {
+                  return ListView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
                     children: [
-                      Text(
-                        '${l10n.snapshotSourcePrefix} · ${receipt.sourceLabel}',
-                        style: const TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w800,
-                          color: EnpriveColors.ink,
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: scheme.outlineVariant,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 18),
                       Text(
-                        '${l10n.snapshotReviewedPrefix} · $dateStr  |  ${l10n.snapshotDigestPrefix} · #${receipt.snapshotDigest}',
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          color: EnpriveColors.inkSecondary,
+                        l10n.snapshotSheetTitle,
+                        style: m3e.typography.emphasized.headlineSmall.copyWith(
+                          color: scheme.onSurface,
                         ),
+                      ),
+                      const SizedBox(height: 14),
+                      EnpriveMaterialCardSurface(
+                        variant: EnpriveCardVariant.elevated,
+                        backgroundColor: innerSurfaces.card,
+                        borderRadius: BorderRadius.circular(EnpriveRadii.lg),
+                        lipHeight: 2.5,
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${l10n.snapshotSourcePrefix} · ${receipt.sourceLabel}',
+                              style: m3e.typeScale.titleSmall.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: scheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${l10n.snapshotReviewedPrefix} · $dateStr  |  ${l10n.snapshotDigestPrefix} · #${receipt.snapshotDigest}',
+                              style: typeExt.sha256Hash.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      EnpriveQuoteCard(
+                        quote: receipt.snapshotText,
+                        sha256Digest: receipt.snapshotDigest,
+                        borderRadius: BorderRadius.circular(EnpriveRadii.xl),
+                        padding: const EdgeInsets.all(20),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: EnpriveColors.quoteSurface,
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: Text(
-                    receipt.snapshotText,
-                    style: const TextStyle(
-                      fontFamily: EnpriveTheme.quoteFontFamily,
-                      fontSize: 15,
-                      height: 1.55,
-                      color: EnpriveColors.ink,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
+                  );
+                },
+              );
+            },
+          ),
         );
       },
     );
@@ -226,209 +226,185 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final receipt = widget.receipt;
-    final (stateBg, stateFg, stateIcon, stateTitle, stateSubtitle) =
-        _stateConfig(l10n);
+    return EnpriveM3EBridgeScope.ensure(
+      context,
+      child: Builder(
+        builder: (context) {
+          final l10n = AppLocalizations.of(context)!;
+          final receipt = widget.receipt;
+          final m3e = EnpriveM3ETheme.of(context);
+          final scheme = m3e.colorScheme;
+          final surfaces = context.enpriveSurfaces;
+          final semantics = context.enpriveSemantics;
+          final (_, _, stateTitle, stateSubtitle) = _stateConfig(
+            l10n,
+            semantics,
+          );
+          final MaterialLocalizations? matL10n =
+              Localizations.of<MaterialLocalizations>(
+                context,
+                MaterialLocalizations,
+              );
+          final String formattedDate = matL10n != null
+              ? matL10n.formatShortMonthDay(receipt.createdAt)
+              : '${receipt.createdAt.year}-${receipt.createdAt.month.toString().padLeft(2, '0')}-${receipt.createdAt.day.toString().padLeft(2, '0')}';
 
-    return Scaffold(
-      backgroundColor: stateBg,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            // Top Navigation Row inside tinted header (x-learning-app.jpeg pattern)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Row(
+          return Scaffold(
+            backgroundColor: surfaces.canvas,
+            body: SafeArea(
+              bottom: false,
+              child: Column(
                 children: [
-                  Material(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    shape: const CircleBorder(),
-                    child: IconButton(
-                      tooltip: l10n.tooltipClose,
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(
-                        LucideIcons.x,
-                        size: 20,
-                        color: EnpriveColors.ink,
-                      ),
+                  // Top Navigation Row on calm editorial canvas
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
                     ),
-                  ),
-                  const Spacer(),
-                  InkWell(
-                    borderRadius: BorderRadius.circular(999),
-                    onTap: () => _showSnapshotReceiptSheet(context, l10n, receipt),
-                    child: EnpriveProvenanceChip(
-                      source: receipt.inferenceSource,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Material(
-                    color: _isSpeaking
-                        ? EnpriveColors.teal
-                        : Colors.white.withValues(alpha: 0.85),
-                    shape: const CircleBorder(),
-                    child: IconButton(
-                      tooltip: _isSpeaking
-                          ? 'Stop reading aloud'
-                          : 'Read summary aloud',
-                      onPressed: () => _toggleVoicePlayback(stateTitle),
-                      icon: Icon(
-                        _isSpeaking
-                            ? LucideIcons.square
-                            : LucideIcons.volume2,
-                        size: 19,
-                        color:
-                            _isSpeaking ? Colors.white : EnpriveColors.ink,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Scrollable Hero + Curved Sheet Body
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    // Centered Tinted Hero Stage (x-learning-app.jpeg)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 104,
-                            height: 104,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.65),
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: DeniAnimatedMascot(
-                              size: 84,
-                              pose: _statePose,
-                              onTap: () => _toggleVoicePlayback(stateTitle),
+                    child: Row(
+                      children: [
+                        Material(
+                          color: surfaces.card.withValues(alpha: 0.90),
+                          shape: CircleBorder(
+                            side: BorderSide(color: surfaces.hairlineBorder),
+                          ),
+                          child: IconButton(
+                            tooltip: l10n.tooltipClose,
+                            onPressed: () => Navigator.pop(context),
+                            icon: Icon(
+                              LucideIcons.x,
+                              size: 20,
+                              color: scheme.onSurface,
                             ),
                           ),
-                          const SizedBox(height: 14),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.82),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(stateIcon, size: 15, color: stateFg),
-                                const SizedBox(width: 6),
-                                Text(
-                                  stateTitle,
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: stateFg,
-                                  ),
-                                ),
-                              ],
-                            ),
+                        ),
+                        const Spacer(),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(999),
+                          onTap: () =>
+                              _showSnapshotReceiptSheet(context, l10n, receipt),
+                          child: EnpriveProvenanceChip(
+                            source: receipt.inferenceSource,
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            receipt.subjectTitle,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineLarge
-                                ?.copyWith(
-                                  fontSize: 26,
-                                  color: EnpriveColors.ink,
-                                ),
+                        ),
+                        if (widget.onSaveReceipt != null) ...[
+                          const SizedBox(width: 8),
+                          Material(
+                            color: _isSaved
+                                ? semantics.noConcern.background
+                                : surfaces.card.withValues(alpha: 0.90),
+                            shape: CircleBorder(
+                              side: BorderSide(
+                                color: _isSaved
+                                    ? semantics.noConcern.border
+                                    : surfaces.hairlineBorder,
+                              ),
+                            ),
+                            child: IconButton(
+                              tooltip: _isSaved
+                                  ? l10n.btnSavedToReceipts
+                                  : l10n.btnSaveToReceipts,
+                              onPressed: () =>
+                                  _handleSave(context, l10n, receipt),
+                              icon: Icon(
+                                _isSaved
+                                    ? LucideIcons.bookmarkCheck
+                                    : LucideIcons.bookmarkPlus,
+                                size: 19,
+                                color: _isSaved
+                                    ? semantics.noConcern.foreground
+                                    : scheme.onSurface,
+                              ),
+                            ),
                           ),
                         ],
-                      ),
+                      ],
                     ),
+                  ),
 
-                    // Curved White Content Sheet (x-learning-app.jpeg)
-                    Container(
-                      width: double.infinity,
-                      constraints: BoxConstraints(
-                        minHeight: MediaQuery.of(context).size.height * 0.58,
-                      ),
-                      padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
-                      decoration: const BoxDecoration(
-                        color: EnpriveColors.paper,
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(32),
-                        ),
+                  // Scrollable M3E Hero Posture Card + Editorial Evidence Sheet
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.fromLTRB(
+                        20,
+                        4,
+                        20,
+                        MediaQuery.of(context).padding.bottom + 28,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 3 Pastel Stat Tiles (x-learning-app.jpeg exact layout)
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _PastelStatTile(
-                                  iconSvg: Ph.file_text_duotone,
-                                  iconColor: EnpriveColors.chipInCloudFg,
-                                  bg: const Color(0xFFEAF2FC),
-                                  value: '${receipt.findings.length}',
-                                  label: l10n.statFindings,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _PastelStatTile(
-                                  iconSvg: Ph.quotes_duotone,
-                                  iconColor: EnpriveColors.stateNoConcernFg,
-                                  bg: EnpriveColors.stateNoConcernBg,
-                                  value: '${receipt.sourceMatchedCount}',
-                                  label: l10n.statVerified,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _PastelStatTile(
-                                  iconSvg: receipt.permissionReport != null
-                                      ? Ph.device_mobile_duotone
-                                      : Ph.question_duotone,
-                                  iconColor:
-                                      EnpriveColors.stateReviewRecommendedFg,
-                                  bg: EnpriveColors.stateReviewRecommendedBg,
-                                  value: receipt.permissionReport != null
-                                      ? '${receipt.permissionReport!.grantedSensitiveCount}'
-                                      : '${receipt.unverifiedCount}',
-                                  label: receipt.permissionReport != null
-                                      ? l10n.statOsGranted
-                                      : l10n.statUnverified,
-                                ),
-                              ),
-                            ],
+                          EnpriveReviewHeroCard(
+                            subjectTitle: receipt.subjectTitle,
+                            subtitle: '${receipt.sourceLabel} · $formattedDate',
+                            overallState: receipt.overallState,
+                            stateBadgeLabel: stateTitle,
+                            findingsCountValue: '${receipt.findings.length}',
+                            findingsLabel: l10n.statFindings,
+                            verifiedCountValue: '${receipt.sourceMatchedCount}',
+                            verifiedLabel: l10n.statVerified,
+                            secondaryMetricValue:
+                                receipt.permissionReport != null
+                                ? '${receipt.permissionReport!.grantedSensitiveCount}'
+                                : '${receipt.unverifiedCount}',
+                            secondaryMetricLabel:
+                                receipt.permissionReport != null
+                                ? l10n.statOsGranted
+                                : l10n.statUnverified,
+                            hasPermissionReport:
+                                receipt.permissionReport != null,
+                            mascotPose: _statePose,
+                            sourceActionLabel: l10n.snapshotSourcePrefix,
+                            sourceActionTooltip: l10n.viewReviewedSnapshot,
+                            onSourceAction: () => _showSnapshotReceiptSheet(
+                              context,
+                              l10n,
+                              receipt,
+                            ),
+                            isSpeaking: _isSpeaking,
+                            voiceTooltip: _isSpeaking
+                                ? 'Stop reading aloud'
+                                : 'Read summary aloud',
+                            onVoiceAction: () =>
+                                _toggleVoicePlayback(stateTitle),
+                            primaryCtaLabel: receipt.findings.isNotEmpty
+                                ? l10n.btnAskDeni
+                                : (widget.onSaveReceipt != null
+                                      ? (_isSaved
+                                            ? l10n.btnSavedToReceipts
+                                            : l10n.btnSaveToReceipts)
+                                      : l10n.viewReviewedSnapshot),
+                            onPrimaryCta: () {
+                              if (receipt.findings.isNotEmpty) {
+                                _openFindingDetails(receipt.findings.first);
+                              } else if (widget.onSaveReceipt != null) {
+                                _handleSave(context, l10n, receipt);
+                              } else {
+                                _showSnapshotReceiptSheet(
+                                  context,
+                                  l10n,
+                                  receipt,
+                                );
+                              }
+                            },
+                            onMascotTap: () => _toggleVoicePlayback(stateTitle),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 22),
 
-                          // Summary & Calibrated Note (no heavy boxes)
+                          // Summary & Calibrated Note
                           Text(
                             receipt.summary,
-                            style: const TextStyle(
-                              fontSize: 15,
+                            style: m3e.typeScale.bodyLarge.copyWith(
                               height: 1.5,
-                              color: EnpriveColors.ink,
+                              color: scheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             stateSubtitle,
-                            style: const TextStyle(
-                              fontSize: 13,
+                            style: m3e.typeScale.bodySmall.copyWith(
                               height: 1.4,
-                              color: EnpriveColors.inkSecondary,
+                              color: scheme.onSurfaceVariant,
                             ),
                           ),
                           if (receipt.processSteps.isNotEmpty ||
@@ -443,62 +419,61 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                           ],
                           const SizedBox(height: 28),
 
-                          // Findings List ("Lessons" list rhythm from x-learning-app.jpeg)
+                          // Findings List
                           Text(
                             receipt.findings.isNotEmpty
                                 ? l10n.keyFindingsTitle
                                 : l10n.reviewedExcerptTitle,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: EnpriveColors.ink,
-                            ),
+                            style: m3e.typography.emphasized.titleMedium
+                                .copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: scheme.onSurface,
+                                ),
                           ),
                           const SizedBox(height: 12),
 
                           if (receipt.findings.isEmpty)
-                            Container(
+                            EnpriveQuoteCard(
+                              quote: receipt.snapshotText,
+                              sha256Digest: receipt.snapshotDigest,
+                              borderRadius: BorderRadius.circular(
+                                EnpriveRadii.lg,
+                              ),
                               padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: EnpriveColors.quoteSurface,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                receipt.snapshotText,
-                                style: const TextStyle(
-                                  fontFamily: EnpriveTheme.quoteFontFamily,
-                                  fontSize: 15,
-                                  height: 1.55,
-                                  color: EnpriveColors.ink,
-                                ),
-                              ),
                             )
                           else
-                            ...receipt.findings.map(
-                              (finding) => Padding(
-                                padding: const EdgeInsets.only(bottom: 12.0),
-                                child: _CleanFindingCard(
-                                  finding: finding,
+                            ...receipt.findings.asMap().entries.map(
+                              (entry) => Padding(
+                                padding: EdgeInsets.only(
+                                  bottom:
+                                      entry.key < receipt.findings.length - 1
+                                      ? 6.0
+                                      : 0.0,
+                                ),
+                                child: _M3EFindingCard(
+                                  finding: entry.value,
+                                  index: entry.key,
+                                  totalCount: receipt.findings.length,
                                   l10n: l10n,
-                                  onTap: () => _openFindingDetails(finding),
+                                  onTap: () => _openFindingDetails(entry.value),
                                 ),
                               ),
                             ),
 
-                          // Optional Permission Check Section (clean single list card)
+                          // Optional Permission Check Section
                           if (receipt.permissionReport != null &&
                               receipt.permissionReport!.items.isNotEmpty) ...[
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 24),
                             Text(
                               l10n.permissionsOnPhoneTitle,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: EnpriveColors.ink,
-                              ),
+                              style: m3e.typography.emphasized.titleMedium
+                                  .copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: scheme.onSurface,
+                                  ),
                             ),
                             const SizedBox(height: 12),
-                            _CleanPermissionListCard(
+                            _M3EPermissionListCard(
                               report: receipt.permissionReport!,
                               l10n: l10n,
                             ),
@@ -511,17 +486,16 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                 l10n,
                                 receipt,
                               ),
-                              icon: const Icon(
+                              icon: Icon(
                                 LucideIcons.fileText,
                                 size: 17,
-                                color: EnpriveColors.inkSecondary,
+                                color: scheme.onSurfaceVariant,
                               ),
                               label: Text(
                                 l10n.viewReviewedSnapshot,
-                                style: const TextStyle(
-                                  fontSize: 13,
+                                style: m3e.typeScale.labelLarge.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: EnpriveColors.inkSecondary,
+                                  color: scheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -529,343 +503,140 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Sticky Bottom Bar (x-learning-app.jpeg: square bookmark + dark pill CTA)
-            Container(
-              color: EnpriveColors.paper,
-              padding: EdgeInsets.fromLTRB(
-                24,
-                12,
-                24,
-                MediaQuery.of(context).padding.bottom + 16,
-              ),
-              child: Row(
-                children: [
-                  if (widget.onSaveReceipt != null) ...[
-                    InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: () => _handleSave(context, l10n, receipt),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: _isSaved
-                              ? EnpriveColors.stateNoConcernBg
-                              : EnpriveColors.surface,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: _isSaved
-                                ? EnpriveColors.stateNoConcernFg
-                                : EnpriveColors.ink.withValues(alpha: 0.12),
-                          ),
-                        ),
-                        child: Icon(
-                          _isSaved
-                              ? LucideIcons.bookmarkCheck
-                              : LucideIcons.bookmarkPlus,
-                          color: _isSaved
-                              ? EnpriveColors.stateNoConcernFg
-                              : EnpriveColors.ink,
-                          size: 21,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                  ],
-                  Expanded(
-                    child: EnpriveTactileButton(
-                      label: receipt.findings.isNotEmpty
-                          ? l10n.btnAskDeni
-                          : (_isSaved
-                              ? l10n.btnSavedToReceipts
-                              : l10n.btnSaveToReceipts),
-                      onPressed: () {
-                        if (receipt.findings.isNotEmpty) {
-                          _openFindingDetails(receipt.findings.first);
-                        } else {
-                          _handleSave(context, l10n, receipt);
-                        }
-                      },
-                    ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 }
 
-class _PastelStatTile extends StatelessWidget {
-  final String iconSvg;
-  final Color iconColor;
-  final Color bg;
-  final String value;
-  final String label;
-
-  const _PastelStatTile({
-    required this.iconSvg,
-    required this.iconColor,
-    required this.bg,
-    required this.value,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: SizedBox(
-              width: 22,
-              height: 22,
-              child: EnpriveDuotoneIcon(
-                iconSvg,
-                size: 22,
-                color: iconColor,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: EnpriveColors.ink,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: EnpriveColors.inkSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CleanFindingCard extends StatelessWidget {
+class _M3EFindingCard extends StatelessWidget {
   final VerifiedFinding finding;
+  final int index;
+  final int totalCount;
   final AppLocalizations l10n;
   final VoidCallback onTap;
 
-  const _CleanFindingCard({
+  const _M3EFindingCard({
     required this.finding,
+    required this.index,
+    required this.totalCount,
     required this.l10n,
     required this.onTap,
   });
 
-  String _categoryIconSvg(FindingCategory category) {
+  String _categoryLabel(FindingCategory category) {
     return switch (category) {
-      FindingCategory.dataCollection => Ph.folder_lock_duotone,
-      FindingCategory.sharing => Ph.share_network_duotone,
-      FindingCategory.tracking => Ph.map_pin_duotone,
-      FindingCategory.retention => Ph.clock_counter_clockwise_duotone,
-      FindingCategory.parentalConsent => Ph.users_three_duotone,
+      FindingCategory.dataCollection => l10n.categoryDataCollection,
+      FindingCategory.sharing => l10n.categorySharing,
+      FindingCategory.tracking => l10n.categoryTracking,
+      FindingCategory.retention => l10n.categoryRetention,
+      FindingCategory.parentalConsent => l10n.categoryParentalControls,
     };
   }
 
   @override
   Widget build(BuildContext context) {
     final isVerified = finding.isVerified;
+    final String verifyLabel = finding.status == EvidenceStatus.deviceObserved
+        ? l10n.observedOnPhoneLabel
+        : (isVerified ? l10n.quoteVerifiedLabel : l10n.unverifiedClaimLabel);
 
-    return Material(
-      color: EnpriveColors.surface,
-      borderRadius: BorderRadius.circular(22),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: EnpriveColors.surfaceMuted,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: EnpriveDuotoneIcon(
-                      _categoryIconSvg(finding.category),
-                      size: 20,
-                      color: EnpriveColors.tealStrong,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          finding.title,
-                          style: const TextStyle(
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w700,
-                            color: EnpriveColors.ink,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          finding.status == EvidenceStatus.deviceObserved
-                              ? l10n.observedOnPhoneLabel
-                              : (isVerified
-                                  ? l10n.quoteVerifiedLabel
-                                  : l10n.unverifiedClaimLabel),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isVerified
-                                ? EnpriveColors.tealStrong
-                                : EnpriveColors.inkSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    isVerified
-                        ? LucideIcons.circleCheck
-                        : LucideIcons.circleHelp,
-                    size: 19,
-                    color: isVerified
-                        ? EnpriveColors.stateNoConcernFg
-                        : EnpriveColors.inkSecondary,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                finding.explanation,
-                style: const TextStyle(
-                  fontSize: 14,
-                  height: 1.45,
-                  color: EnpriveColors.inkSecondary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: EnpriveColors.quoteSurface,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  '“${finding.exactExcerpt}”',
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: EnpriveTheme.quoteFontFamily,
-                    fontSize: 14,
-                    height: 1.45,
-                    color: EnpriveColors.ink,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return EnpriveFindingM3ECard(
+      finding: finding,
+      index: index,
+      totalCount: totalCount,
+      categoryLabel: _categoryLabel(finding.category),
+      severityLabel: finding.severity == FindingSeverity.high
+          ? l10n.stateReviewRecommended
+          : null,
+      verificationLabel: verifyLabel,
+      onTapCard: onTap,
     );
   }
 }
 
-class _CleanPermissionListCard extends StatelessWidget {
+class _M3EPermissionListCard extends StatelessWidget {
   final AppPermissionComparisonReport report;
   final AppLocalizations l10n;
 
-  const _CleanPermissionListCard({
-    required this.report,
-    required this.l10n,
-  });
+  const _M3EPermissionListCard({required this.report, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: EnpriveColors.surface,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ...report.items.asMap().entries.map((entry) {
-            final idx = entry.key;
-            final item = entry.value;
-            final isMismatch = item.alignmentState ==
-                PermissionAlignmentState.undisclosedInPolicy;
-            return Column(
-              children: [
-                if (idx > 0)
-                  Divider(
-                    height: 20,
-                    color: EnpriveColors.ink.withValues(alpha: 0.06),
-                  ),
-                Row(
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final surfaces = context.enpriveSurfaces;
+    final semantics = context.enpriveSemantics;
+
+    return Column(
+      children: [
+        for (var idx = 0; idx < report.items.length; idx++) ...[
+          if (idx > 0) const SizedBox(height: 4),
+          Builder(
+            builder: (context) {
+              final item = report.items[idx];
+              final isMismatch =
+                  item.alignmentState ==
+                  PermissionAlignmentState.undisclosedInPolicy;
+              final Color iconBg = isMismatch
+                  ? semantics.reviewRecommended.background
+                  : (item.isGranted
+                        ? semantics.onDevice.background
+                        : surfaces.cardMuted);
+              final Color iconFg = isMismatch
+                  ? semantics.reviewRecommended.foreground
+                  : (item.isGranted
+                        ? semantics.onDevice.foreground
+                        : scheme.onSurfaceVariant);
+
+              return EnpriveSegmentedCardTile(
+                index: idx,
+                totalCount: report.items.length,
+                lipHeight: 1.5,
+                child: Row(
                   children: [
-                    Icon(
-                      isMismatch
-                          ? LucideIcons.triangleAlert
-                          : (item.isGranted
-                              ? LucideIcons.circleCheck
-                              : LucideIcons.circleMinus),
-                      size: 18,
-                      color: isMismatch
-                          ? EnpriveColors.stateReviewRecommendedFg
-                          : (item.isGranted
-                              ? EnpriveColors.tealStrong
-                              : EnpriveColors.inkSecondary),
+                    Container(
+                      width: 34,
+                      height: 34,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: iconBg,
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Icon(
+                        isMismatch
+                            ? LucideIcons.triangleAlert
+                            : (item.isGranted
+                                  ? LucideIcons.circleCheck
+                                  : LucideIcons.circleMinus),
+                        size: 17,
+                        color: iconFg,
+                      ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             item.friendlyName,
-                            style: const TextStyle(
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w700,
-                              color: EnpriveColors.ink,
-                            ),
+                            style: m3e.typography.emphasized.titleSmall
+                                .copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: scheme.onSurface,
+                                ),
                           ),
+                          const SizedBox(height: 2),
                           Text(
                             item.parentExplanation,
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              height: 1.35,
-                              color: EnpriveColors.inkSecondary,
+                            style: m3e.typeScale.bodySmall.copyWith(
+                              height: 1.38,
+                              color: scheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -873,11 +644,11 @@ class _CleanPermissionListCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ],
-            );
-          }),
+              );
+            },
+          ),
         ],
-      ),
+      ],
     );
   }
 }

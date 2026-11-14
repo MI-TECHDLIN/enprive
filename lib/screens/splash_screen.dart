@@ -2,12 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_theme.dart';
 import '../l10n/app_localizations.dart';
 
-/// Minimal editorial brand splash screen displaying the bold `enprive` wordmark
-/// above a subtle localized quote (`Know what you're agreeing to`).
+/// Minimal editorial Material 3 Expressive brand splash screen displaying the
+/// bold `enprive` wordmark above a subtle localized quote (`Know what you're
+/// agreeing to`) in both Light ("Warm Archival Paper") and Dark ("Obsidian
+/// Ceramic Slate") modes.
 class EnpriveSplashScreen extends StatefulWidget {
   final VoidCallback onCompleted;
   final Duration displayDuration;
@@ -54,8 +55,7 @@ class _EnpriveSplashScreenState extends State<EnpriveSplashScreen>
     if (_scheduled) return;
     _scheduled = true;
 
-    final disableAnimations =
-        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final disableAnimations = EnpriveMotionTokens.isReducedMotion(context);
     final effectiveDelay = disableAnimations
         ? (widget.displayDuration < const Duration(milliseconds: 500)
               ? widget.displayDuration
@@ -87,28 +87,28 @@ class _EnpriveSplashScreenState extends State<EnpriveSplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final l10n =
-        AppLocalizations.of(context) ??
+    final l10n = AppLocalizations.of(context) ??
         lookupAppLocalizations(
           Localizations.maybeLocaleOf(context) ?? const Locale('en'),
         );
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final typeExt = context.enpriveType;
 
     final content = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const FittedBox(
+        FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
             'enprive',
             maxLines: 1,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: EnpriveTheme.primaryDisplayFontFamily,
+            style: m3e.typography.emphasized.displayMedium.copyWith(
               fontSize: 48,
-              fontWeight: FontWeight.w800,
               height: 1.05,
               letterSpacing: -1.4,
-              color: EnpriveColors.ink,
+              color: scheme.onSurface,
             ),
           ),
         ),
@@ -118,13 +118,10 @@ class _EnpriveSplashScreenState extends State<EnpriveSplashScreen>
           child: Text(
             l10n.splashQuote,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontFamily: EnpriveTheme.quoteFontFamily,
+            style: typeExt.policyQuotation.copyWith(
               fontSize: 15,
-              fontWeight: FontWeight.w600,
               height: 1.4,
-              letterSpacing: 0.1,
-              color: EnpriveColors.inkSecondary,
+              color: scheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -132,7 +129,7 @@ class _EnpriveSplashScreenState extends State<EnpriveSplashScreen>
     );
 
     return Scaffold(
-      backgroundColor: EnpriveColors.paper,
+      backgroundColor: scheme.surface,
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _finishNow,

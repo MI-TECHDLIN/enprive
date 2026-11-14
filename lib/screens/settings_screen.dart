@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../core/theme/enprive_colors.dart';
+import '../core/theme/enprive_theme.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/enprive_languages.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
@@ -11,19 +11,22 @@ import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_duotone_icon.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/language_picker_sheet.dart';
+import '../widgets/m3e/enprive_m3e_components.dart';
 import '../widgets/private_readiness_sheet.dart';
+import 'design_system_preview_screen.dart';
 
-/// Settings & Private Analysis Readiness Screen crafted from Brilliant B19
-/// (`b19-permission-prime.png` — Deni peeking over a mock status card) and
-/// Brilliant B3 (`b03-question-cards.png` — soft grey choice cards).
+/// Settings & Private Analysis Readiness Screen with Material 3 Expressive
+/// token integration, System/Light/Dark appearance control, and 3-tier Deni LOD.
 class SettingsScreen extends StatefulWidget {
   final HybridAiBridge bridge;
   final DeviceCapability? capability;
   final ExplanationDepth explanationDepth;
   final Locale currentLocale;
+  final ThemeMode currentThemeMode;
   final int savedReceiptsCount;
   final ValueChanged<ExplanationDepth> onExplanationDepthChanged;
   final ValueChanged<Locale> onLocaleChanged;
+  final ValueChanged<ThemeMode>? onThemeModeChanged;
   final VoidCallback onRefreshCapability;
   final VoidCallback onClearAllReceipts;
   final VoidCallback? onReplayOnboarding;
@@ -34,9 +37,11 @@ class SettingsScreen extends StatefulWidget {
     required this.capability,
     required this.explanationDepth,
     required this.currentLocale,
+    this.currentThemeMode = ThemeMode.system,
     required this.savedReceiptsCount,
     required this.onExplanationDepthChanged,
     required this.onLocaleChanged,
+    this.onThemeModeChanged,
     required this.onRefreshCapability,
     required this.onClearAllReceipts,
     this.onReplayOnboarding,
@@ -74,11 +79,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     BuildContext context,
     AppLocalizations l10n,
   ) async {
+    final surfaces = context.enpriveSurfaces;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: EnpriveColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: surfaces.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(EnpriveRadii.xl),
+          side: BorderSide(color: surfaces.hairlineBorder),
+        ),
         title: Text(
           l10n.confirmClearReceiptsTitle,
           style: const TextStyle(fontWeight: FontWeight.w800),
@@ -92,9 +101,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(l10n.btnCancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: EnpriveColors.ctaInk,
-            ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(l10n.btnClear),
           ),
@@ -108,348 +114,375 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final activeLang = enpriveLanguageByCode(widget.currentLocale.languageCode);
-    final cap = widget.capability;
-    final isReady =
-        cap?.isSupported == true &&
-        cap?.modelStatus == ModelDownloadStatus.available;
-    final effectiveReady = _lastCheckWasOnDeviceReady ?? isReady;
+    return EnpriveM3EBridgeScope.ensure(
+      context,
+      child: Builder(
+        builder: (context) {
+          final l10n = AppLocalizations.of(context)!;
+          final activeLang = enpriveLanguageByCode(
+            widget.currentLocale.languageCode,
+          );
+          final m3e = EnpriveM3ETheme.of(context);
+          final scheme = m3e.colorScheme;
+          final surfaces = context.enpriveSurfaces;
+          final semantics = context.enpriveSemantics;
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 110),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.settingsTitle,
-              style: Theme.of(context).textTheme.headlineLarge,
-            ),
-            const SizedBox(height: 20),
+          final cap = widget.capability;
+          final isReady =
+              cap?.isSupported == true &&
+              cap?.modelStatus == ModelDownloadStatus.available;
+          final effectiveReady = _lastCheckWasOnDeviceReady ?? isReady;
 
-            // 1. Brilliant B19 Pattern: Deni peeking over a clean status card
-            Center(
-              child: Column(
+          final prefRows = <Widget>[
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 4,
+              ),
+              onTap: () async {
+                final picked = await EnpriveLanguagePickerSheet.show(
+                  context,
+                  currentLocale: widget.currentLocale,
+                );
+                if (picked != null) {
+                  widget.onLocaleChanged(picked);
+                }
+              },
+              title: Text(
+                l10n.languageTitle,
+                style: m3e.typeScale.titleSmall.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: scheme.onSurface,
+                ),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Transform.translate(
-                    offset: const Offset(0, 10),
-                    child: DeniAnimatedMascot(
-                      size: 72,
-                      pose: _isCheckingModel
-                          ? DeniPose.thinking
-                          : (isReady ? DeniPose.celebrating : DeniPose.idle),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: semantics.onDevice.background,
+                      borderRadius: BorderRadius.circular(EnpriveRadii.pill),
+                      border: Border.all(color: semantics.onDevice.border),
+                    ),
+                    child: Text(
+                      activeLang.nativeName,
+                      style: m3e.typeScale.labelMedium.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: semantics.onDevice.foreground,
+                      ),
                     ),
                   ),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: EnpriveColors.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: EnpriveColors.ink.withValues(alpha: 0.05),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+                  const SizedBox(width: 6),
+                  Icon(
+                    LucideIcons.chevronRight,
+                    size: 18,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+            if (widget.onReplayOnboarding != null)
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 4,
+                ),
+                onTap: widget.onReplayOnboarding,
+                title: Text(
+                  l10n.meetDeniGuide,
+                  style: m3e.typeScale.titleSmall.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurface,
+                  ),
+                ),
+                trailing: Icon(
+                  LucideIcons.chevronRight,
+                  size: 18,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ListTile(
+              key: const Key('open_design_system_preview_tile'),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 4,
+              ),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => DesignSystemPreviewScreen(
+                      currentThemeMode: widget.currentThemeMode,
+                      onThemeModeChanged: widget.onThemeModeChanged,
                     ),
+                  ),
+                );
+              },
+              title: Text(
+                'Theme & Deni LOD Preview',
+                style: m3e.typeScale.titleSmall.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: scheme.onSurface,
+                ),
+              ),
+              trailing: Icon(
+                LucideIcons.chevronRight,
+                size: 18,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 4,
+              ),
+              title: Text(
+                l10n.clearSavedReceiptsCount(widget.savedReceiptsCount),
+                style: m3e.typeScale.titleSmall.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: scheme.onSurface,
+                ),
+              ),
+              trailing: TextButton(
+                onPressed: widget.savedReceiptsCount == 0
+                    ? null
+                    : () => _confirmClearReceipts(context, l10n),
+                child: Text(
+                  l10n.btnClear,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: widget.savedReceiptsCount == 0
+                        ? surfaces.disabledFg
+                        : semantics.reviewRecommended.foreground,
+                  ),
+                ),
+              ),
+            ),
+          ];
+
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 110),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.settingsTitle,
+                    style: m3e.typography.emphasized.headlineMedium.copyWith(
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 1. Deni Companion Status M3ECard (LOD 2: 76dp standard companion)
+                  Center(
                     child: Column(
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: EnpriveColors.chipOnDeviceBg,
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: const EnpriveDuotoneIcon(
-                                Ph.shield_check_duotone,
-                                color: EnpriveColors.tealStrong,
-                                size: 22,
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                        Transform.translate(
+                          offset: const Offset(0, 10),
+                          child: DeniAnimatedMascot(
+                            size: 76,
+                            pose: _isCheckingModel
+                                ? DeniPose.thinking
+                                : (effectiveReady
+                                      ? DeniPose.idle
+                                      : DeniPose.support),
+                          ),
+                        ),
+                        EnpriveMaterialCardSurface(
+                          variant: EnpriveCardVariant.elevated,
+                          backgroundColor: surfaces.card,
+                          borderRadius: BorderRadius.circular(EnpriveRadii.xl),
+                          lipHeight: 3.0,
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            children: [
+                              Row(
                                 children: [
-                                  Text(
-                                    l10n.privateAnalysisTitle,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w800,
-                                      color: EnpriveColors.ink,
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: semantics.onDevice.background,
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(
+                                        color: semantics.onDevice.border,
+                                      ),
+                                    ),
+                                    child: EnpriveDuotoneIcon(
+                                      Ph.shield_check_duotone,
+                                      color: semantics.onDevice.icon,
+                                      size: 22,
                                     ),
                                   ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    effectiveReady
-                                        ? l10n.onDeviceReadyMsg
-                                        : l10n.localScannerProtectedMsg,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: EnpriveColors.inkSecondary,
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          l10n.privateAnalysisTitle,
+                                          style: m3e.typeScale.titleMedium
+                                              .copyWith(
+                                                fontWeight: FontWeight.w800,
+                                                color: scheme.onSurface,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          effectiveReady
+                                              ? l10n.onDeviceReadyMsg
+                                              : l10n.localScannerProtectedMsg,
+                                          style: m3e.typeScale.bodySmall
+                                              .copyWith(
+                                                color: scheme.onSurfaceVariant,
+                                              ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        EnpriveTactileButton(
-                          label: _isCheckingModel
-                              ? l10n.statusChecking
-                              : l10n.btnCheckReadiness,
-                          isSecondary: true,
-                          onPressed: _isCheckingModel
-                              ? null
-                              : _handleCheckOrPrepareModel,
+                              const SizedBox(height: 16),
+                              EnpriveTactileButton(
+                                label: _isCheckingModel
+                                    ? l10n.statusChecking
+                                    : l10n.btnCheckReadiness,
+                                isSecondary: true,
+                                onPressed: _isCheckingModel
+                                    ? null
+                                    : _handleCheckOrPrepareModel,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
 
-            const SizedBox(height: 28),
+                  const SizedBox(height: 28),
 
-            // 2. Brilliant B3 Pattern: Soft Choice Cards for Explanation Style
-            Text(
-              l10n.howShouldDeniExplain,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: EnpriveColors.ink,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: ExplanationDepth.values.map((depth) {
-                final isSelected = widget.explanationDepth == depth;
-                final (iconSvg, label) = switch (depth) {
-                  ExplanationDepth.simple => (
-                    Ph.sparkle_duotone,
-                    l10n.depthQuick,
-                  ),
-                  ExplanationDepth.balanced => (
-                    Ph.scales_duotone,
-                    l10n.depthBalanced,
-                  ),
-                  ExplanationDepth.detailed => (
-                    Ph.book_open_duotone,
-                    l10n.depthFull,
-                  ),
-                };
-                return Expanded(
-                  child: Padding(
-                    padding: EdgeInsetsDirectional.only(
-                      end: depth != ExplanationDepth.detailed ? 10.0 : 0,
+                  // 2. Explanation Depth Selector (48dp+ accessible touch targets)
+                  Text(
+                    l10n.howShouldDeniExplain,
+                    style: m3e.typography.emphasized.titleMedium.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: scheme.onSurface,
                     ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () => widget.onExplanationDepthChanged(depth),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 160),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 18,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: ExplanationDepth.values.map((depth) {
+                      final isSelected = widget.explanationDepth == depth;
+                      final (iconData, label) = switch (depth) {
+                        ExplanationDepth.simple => (
+                          LucideIcons.sparkles,
+                          l10n.depthQuick,
                         ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? EnpriveColors.surface
-                              : EnpriveColors.surfaceMuted,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isSelected
-                                ? EnpriveColors.teal
-                                : Colors.transparent,
-                            width: 2.0,
+                        ExplanationDepth.balanced => (
+                          LucideIcons.scale,
+                          l10n.depthBalanced,
+                        ),
+                        ExplanationDepth.detailed => (
+                          LucideIcons.bookOpen,
+                          l10n.depthFull,
+                        ),
+                      };
+                      return Expanded(
+                        child: Padding(
+                          padding: EdgeInsetsDirectional.only(
+                            end: depth != ExplanationDepth.detailed
+                                ? 10.0
+                                : 0.0,
+                          ),
+                          child: EnpriveBentoChoiceCard.compactOption(
+                            title: label,
+                            icon: iconData,
+                            selected: isSelected,
+                            onPressed: () =>
+                                widget.onExplanationDepthChanged(depth),
                           ),
                         ),
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? EnpriveColors.chipOnDeviceBg
-                                    : EnpriveColors.surface,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: EnpriveDuotoneIcon(
-                                iconSvg,
-                                size: 20,
-                                color: isSelected
-                                    ? EnpriveColors.tealStrong
-                                    : EnpriveColors.inkSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: isSelected
-                                    ? EnpriveColors.ink
-                                    : EnpriveColors.inkSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 28),
-
-            // 3. Clean Minimal Preferences Group
-            Text(
-              l10n.preferencesSection,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: EnpriveColors.ink,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Material(
-              color: EnpriveColors.surface,
-              borderRadius: BorderRadius.circular(24),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                children: [
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 4,
-                    ),
-                    onTap: () async {
-                      final picked = await EnpriveLanguagePickerSheet.show(
-                        context,
-                        currentLocale: widget.currentLocale,
                       );
-                      if (picked != null) {
-                        widget.onLocaleChanged(picked);
-                      }
-                    },
-                    title: Text(
-                      l10n.languageTitle,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: EnpriveColors.ink,
-                      ),
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // 3. Appearance (System / Light / Dark — Brand-Locked HCT)
+                  Text(
+                    'Appearance',
+                    style: m3e.typography.emphasized.titleMedium.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: scheme.onSurface,
                     ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: EnpriveColors.chipOnDeviceBg,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            activeLang.nativeName,
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
-                              color: EnpriveColors.tealStrong,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      for (final (index, entry) in [
+                        (ThemeMode.system, LucideIcons.smartphone, 'System'),
+                        (ThemeMode.light, LucideIcons.sun, 'Light'),
+                        (ThemeMode.dark, LucideIcons.moon, 'Dark'),
+                      ].indexed)
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsetsDirectional.only(
+                              end: index < 2 ? 10.0 : 0.0,
+                            ),
+                            child: EnpriveBentoChoiceCard.compactOption(
+                              key: Key('theme_mode_option_${entry.$1.name}'),
+                              title: entry.$3,
+                              icon: entry.$2,
+                              selected: widget.currentThemeMode == entry.$1,
+                              onPressed: () =>
+                                  widget.onThemeModeChanged?.call(entry.$1),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        const Icon(
-                          LucideIcons.chevronRight,
-                          size: 18,
-                          color: EnpriveColors.inkSecondary,
-                        ),
-                      ],
+                    ],
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // 4. Preferences Group (M3E Tactile Segmented Containment)
+                  Text(
+                    l10n.preferencesSection,
+                    style: m3e.typography.emphasized.titleMedium.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: scheme.onSurface,
                     ),
                   ),
-                  Divider(
-                    height: 1,
-                    indent: 20,
-                    endIndent: 20,
-                    color: EnpriveColors.ink.withValues(alpha: 0.06),
-                  ),
-                  if (widget.onReplayOnboarding != null) ...[
-                    ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 4,
-                      ),
-                      onTap: widget.onReplayOnboarding,
-                      title: Text(
-                        l10n.meetDeniGuide,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                          color: EnpriveColors.ink,
+                  const SizedBox(height: 12),
+                  Column(
+                    children: prefRows.asMap().entries.map((entry) {
+                      final idx = entry.key;
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: idx < prefRows.length - 1 ? 4.0 : 0.0,
                         ),
-                      ),
-                      trailing: const Icon(
-                        LucideIcons.chevronRight,
-                        size: 18,
-                        color: EnpriveColors.inkSecondary,
-                      ),
-                    ),
-                    Divider(
-                      height: 1,
-                      indent: 20,
-                      endIndent: 20,
-                      color: EnpriveColors.ink.withValues(alpha: 0.06),
-                    ),
-                  ],
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 4,
-                    ),
-                    title: Text(
-                      l10n.clearSavedReceiptsCount(widget.savedReceiptsCount),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: EnpriveColors.ink,
-                      ),
-                    ),
-                    trailing: TextButton(
-                      onPressed: widget.savedReceiptsCount == 0
-                          ? null
-                          : () => _confirmClearReceipts(context, l10n),
-                      child: Text(
-                        l10n.btnClear,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          color: widget.savedReceiptsCount == 0
-                              ? EnpriveColors.inkDisabled
-                              : EnpriveColors.stateReviewRecommendedFg,
+                        child: EnpriveSegmentedCardTile(
+                          index: idx,
+                          totalCount: prefRows.length,
+                          lipHeight: 2.0,
+                          padding: EdgeInsets.zero,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: entry.value,
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    }).toList(),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

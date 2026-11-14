@@ -18,9 +18,9 @@
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
 - **Current `main` HEAD**: `a5c69d1`
-- **Active Feature Branch**: `feature/phase-a-privacy-boundary` (branched from `feature/splash-and-deni-icon` @ `4bbdc28`; Phase A privacy boundary restoration + closure hardening completed, awaiting manual GCP/physical-device verification before PR/Phase B)
+- **Active Feature Branch**: `feature/m3-expressive-rebrand` (branched from `feature/phase-a-privacy-boundary` @ `c902d16`; complete Stage 0–4 Material 3 Expressive (`material_3_expressive: 1.2.1`) design-system replacement and Deni 3-tier LOD completed and verified)
 - **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 24 November 2026)
-- **Next Queued Action**: Run manual live Firebase/GCP Cloud Logging audit on `enprive-hybrid-ai` and physical Android AICore/App Check verification; obtain closure sign-off before opening Phase A PR or starting Phase B.
+- **Next Queued Action**: Review `feature/m3-expressive-rebrand` (Stages 0–4) for merge into `feature/phase-a-privacy-boundary` / `main`, and run manual live Firebase/GCP Cloud Logging audit on `enprive-hybrid-ai` and physical Android AICore/App Check verification before Phase B.
 
 ---
 
@@ -688,7 +688,269 @@
   - `flutter test`: **39/39 passed**.
   - `cd android && ./gradlew :app:testDebugUnitTest --console=plain`: **BUILD SUCCESSFUL**, `HybridAiPolicyTest`: **15/15 passed**.
 - **Next Immediate Action & Recommended Model**:
-  - Commit the verified Phase A + Audit baseline (`Iterations 14–18`) on `feature/phase-a-privacy-boundary`, branch `feature/m3-expressive-rebrand`, and execute **Design Phase 1 — Theme Foundation and Deni LOD**.
+  - Commit the verified Phase A + Audit baseline (`Iterations 14–18`) on `feature/phase-a-privacy-boundary`, branch `feature/m3-expressive-rebrand`, and execute **Stage 0 — Material 3 Expressive Proof of Concept**.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 19 — Stage 0 Material 3 Expressive (`material_3_expressive: 1.2.1`) Proof of Concept, Namespace Bridge & Deni 3-Tier LOD (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (branched from `feature/phase-a-privacy-boundary` commit `c902d16`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`.agents/skills/android-design/SKILL.md` + `theming.md`, `components.md`, `layout.md`, `android-conventions.md`)
+  - `hamen/material-3-skill` (`.agents/skills/material-3/SKILL.md` + 6 reference files)
+  - `.agents/skills/svg-mascot-animator/SKILL.md` & `.agents/skills/mobile-app-ui-design/SKILL.md`
+  - All 8 visual inspiration boards in `mobile ui and ux inspration/` (untracked per `AGENTS.md` Rule 2.3)
+- **What Was Built**:
+  - **1. Dependencies (`pubspec.yaml`)**:
+    - Added `material_3_expressive: 1.2.1` (exact pin), `material_color_utilities: ^0.13.0`, and `material_ui: ^1.11.0`.
+  - **2. M3E Theme Architecture & Dual-Namespace Bridge (`lib/core/theme/enprive_m3e_theme.dart`, `lib/core/theme/enprive_theme.dart`, `lib/core/theme/enprive_tokens.dart`)**:
+    - Built `EnpriveM3ETheme` with complete 44-role `M3EColorScheme`s for Light ("Warm Archival Paper" `#FAF7F2` / `#FFFFFF`) and Dark ("Obsidian Ceramic Slate" `#0C1116` / `#141C23`), dual-scale `M3ETypography` (`baseline` + `emphasized` with `Nunito` brand and `Inter` plain typefaces), and configured `M3ECardTheme`, `M3EButtonTheme`, `M3EAppBarTheme`, and `M3ENavigationBarTheme`.
+    - Built `EnpriveM3EBridgeScope` synchronizing `M3ETheme`, `modern.Theme`, `MaterialUiCompatibilityBridge`, `legacy.Theme` (with `EnpriveSemanticColors`, `EnpriveSurfaceTokens`, `EnpriveMotionTokens`, and `EnpriveTypographyExtension`), and `legacy.ScaffoldMessenger`.
+    - Created `EnpriveM3ETheme.localizationsDelegates` combining `AppLocalizations.delegate`, `...modern.GlobalMaterialLocalizations.delegates`, and `legacy_l10n.Global*Localizations.delegate` for full 13-locale + RTL (`ar`) support.
+  - **3. Deni 3-Tier LOD System (`lib/widgets/deni_animated_mascot.dart`)**:
+    - Implemented `DeniLodTier` (`compact` `48–64dp`, `standard` `68–112dp`, `hero` `116dp+`) with automatic `resolveTierForSize(size)`, dark-mode luminous teal rim-lighting, and non-certification star particles for `celebrating`.
+  - **4. Root App Shell & Stage 0 Proof-of-Concept Screen (`lib/main.dart`, `lib/screens/design_system_preview_screen.dart`, `lib/screens/settings_screen.dart`, `lib/services/storage/receipt_repository.dart`)**:
+    - Migrated `EnpriveApp` in `lib/main.dart` to `M3EMaterialApp` + `EnpriveM3EBridgeScope` with persisted `ThemeMode` (`system`, `light`, `dark`) in `UserPreferencesRepository`.
+    - Built `EnpriveM3EStage0App` and `DesignSystemPreviewScreen` showcasing `M3EAppBar.top`, `M3ESegmentedButton`, `M3ESearchBar`, asymmetric Bento posture grid (`M3EProgressIndicator.linearWavy` + `M3ELoadingIndicator`), Deni `52dp`/`84dp`/`144dp` LODs with `M3EChip` pose toggles, `M3EList` + `M3EListItem` segmented containment, `Q1` verbatim quote card, `M3EButtonGroup`, `M3EButton.filled`, `M3EBottomSheet.show`, and `M3ENavigationBar`.
+- **Challenges & Root-Cause Fixes**:
+  - **Decoupled Localization Delegates in `M3EMaterialApp`**: `modern.MaterialApp` (`package:material_ui`) requires `modern.GlobalMaterialLocalizations.delegates` (`material_ui` + `cupertino_ui`); fixed by spreading `...modern.GlobalMaterialLocalizations.delegates` in `EnpriveM3ETheme.localizationsDelegates`.
+  - **`M3ELoadingIndicator` Spec Size Range Assertion**: `M3ELoadingIndicator` asserts `size in 24.0..240.0`; standardized compact inline indicator size to `28dp`.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **46/46 passed (100%)**.
+  - `flutter build apk --debug`: **Built `build/app/outputs/flutter-apk/app-debug.apk` cleanly**; verified live Light & Dark screenshots on `emulator-5554`.
+- **Next Immediate Action & Recommended Model**:
+  - Execute **Stage 1 — Full Token & Reusable M3E Component System** on `feature/m3-expressive-rebrand`.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 20 — Stage 1 Reusable Enprive M3E Domain Components & Shared System Widget Migration (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop Stage 0 commit `255ad51`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`SKILL.md`, `components.md`, `layout.md`, `theming.md`)
+  - `hamen/material-3-skill` (`SKILL.md`, `component-catalog.md`, `typography-and-shape.md`, `color-system.md`)
+  - All 8 visual inspiration boards in `mobile ui and ux inspration/`
+- **What Was Built**:
+  - **1. Reusable Enprive M3E Domain Components (`lib/widgets/m3e/`)**:
+    - `EnpriveEditorialHeader` (`lib/widgets/m3e/enprive_editorial_header.dart`): Two-tone editorial headline (`onSurface` primary line + `onSurfaceVariant` secondary line) with optional overline and trailing action slot.
+    - `EnpriveBentoPostureCard` (`lib/widgets/m3e/enprive_bento_posture_card.dart`): Asymmetric 2-column Bento grid with provenance pill, oversized tabular numeral (`tabularMetricLarge`), `M3EProgressIndicator.linearWavy` (respecting reduced-motion), and stacked right semantic tiles with `M3ELoadingIndicator` (`28dp` morphing polygon).
+    - `EnpriveFindingM3ECard` (`lib/widgets/m3e/enprive_finding_m3e_card.dart`): Segmented/standalone finding card with circular tabular index badge (`01`, `02`), AAA-contrasted semantic severity pill, deterministic `QUOTE MATCHED` vs `UNVERIFIED` badge, `SourceSerif4` italic quote callout, `SHA-256` digest preview, and tactile `M3EButton.tonal` `"Ask Deni · Why this matters"` action.
+    - `EnpriveCollapsibleQuoteBox` (`lib/widgets/m3e/enprive_collapsible_quote_box.dart`): Animated collapsible policy quotation & `SHA-256` box that automatically collapses to a 1-line bar when `autoCollapseTrigger` fires (keeping streamed Deni responses above the fold).
+    - `EnpriveSegmentedM3EGroup` (`lib/widgets/m3e/enprive_segmented_m3e_group.dart`): Reusable `M3EList` + `M3EListItem` segmented containment wrapper (`20dp` outer corners, `4dp` inner seam corners, `3dp` gap).
+    - `EnpriveDeniStageCard` (`lib/widgets/m3e/enprive_deni_stage_card.dart`): Companion card pairing `DeniAnimatedMascot` at any of the 3 LOD tiers (`52dp`, `84dp`, `144dp`) with calibrated guidance and action strip.
+    - `enprive_m3e_components.dart` (`lib/widgets/m3e/enprive_m3e_components.dart`): Barrel export for all reusable M3E domain components.
+  - **2. Shared System & Trace Widget M3E Migration (`lib/widgets/`)**:
+    - Migrated `lib/widgets/analysis_process_trace.dart` (`AnalysisLiveProcessView` & `AnalysisSavedTraceCard`), `lib/widgets/review_progress_sheet.dart` (`ReviewProgressCard`), `lib/widgets/private_readiness_sheet.dart` (`PrivateReadinessSheet`), and `lib/widgets/language_picker_sheet.dart` (`EnpriveLanguagePickerSheet`) from static `EnpriveColors.*`, `BeautifulTimeline`, and `LoadingAnimationWidget` to `M3ETheme.of(context)`, `Enprive*` `ThemeExtension` tokens, `M3ECard`, `M3ELoadingIndicator`, and `EnpriveRadii.groupedCardRadius`.
+  - **3. Stage 1 Widget Test Suite (`test/theme_and_deni_lod_test.dart`)**:
+    - Added full Light & Dark mode widget verification for all 6 `lib/widgets/m3e/` components plus `ReviewProgressCard` and `AnalysisSavedTraceCard`.
+- **Challenges & Root-Cause Fixes**:
+  - **`M3ECard` Tap Parameter Name**: `M3ECard` uses `onPressed:` rather than `onTap:`; aligned all interactive `M3ECard` wrappers to `onPressed:`.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **47/47 passed (100%)**.
+- **Next Immediate Action & Recommended Model**:
+  - Proceed to **Stage 2 — Core Entry, Home & Input Flows** (`EnpriveMainShell`, `OnboardingScreen`, `HomeScreen`, `InstalledAppPickerSheet`, `PastePolicyModal`, `CloudConsentSheet`) after user review of Stage 1.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 21 — Stage 2 Core Entry, Home & Input Flows M3E Migration (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop Stage 1 commit `a5820c2`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`SKILL.md`, `components.md`, `layout.md`, `theming.md`, `android-conventions.md`)
+  - `hamen/material-3-skill` (`SKILL.md`, `component-catalog.md`, `typography-and-shape.md`, `color-system.md`)
+  - `.agents/skills/svg-mascot-animator/SKILL.md` & `.agents/skills/mobile-app-ui-design/SKILL.md`
+  - All 8 visual inspiration boards in `mobile ui and ux inspration/` (never staged or committed per `AGENTS.md` Rule 2.3)
+- **What Was Built**:
+  - **1. Resilient M3E Theme Resolution (`lib/core/theme/enprive_m3e_theme.dart`)**:
+    - Added `EnpriveM3ETheme.of(BuildContext context)` which returns `M3ETheme.maybeOf(context)` when inside `M3EMaterialApp` / `EnpriveM3EBridgeScope` and falls back to Enprive's `lightThemeData` or `darkThemeData` based on `Theme.of(context).brightness` when screens are pumped inside standalone `MaterialApp` test harnesses.
+  - **2. Splash & Onboarding Flows (`lib/screens/splash_screen.dart`, `lib/screens/onboarding_flow_screen.dart`)**:
+    - Migrated `EnpriveSplashScreen` to `EnpriveM3ETheme.of(context)`, `context.enpriveSurfaces`, and `context.enpriveType.policyQuotation` (removing all static `EnpriveColors.*`).
+    - Migrated `OnboardingFlowScreen` to `EnpriveM3ETheme.localizationsDelegates` + `EnpriveM3EBridgeScope`, `DeniAnimatedMascot` across all 3 LOD tiers (`136dp` Hero on Step 0, `56dp` Compact on Step 1, and `92dp` Standard `celebrating` on Step 2), a 2x2 Bento `M3ECard` choice grid (`_M3EGridChoiceCard`), and an `M3ECard` local-privacy readiness card.
+  - **3. Home Screen, Paste Modal & Floating M3E Navigation Dock (`lib/main.dart`)**:
+    - Migrated `HomeScreen` to `EnpriveM3ETheme.of(context)`, `DeniAnimatedMascot` (`size: 144`, Hero LOD), two-column asymmetric `_SampleAppM3EBentoCard` (`M3ECard` with `tabularMetricLarge` counters), `_WhatWeCheckSegmentedGroup` (`EnpriveRadii.groupedCardRadius` segmented containment with `01`/`02`/`03` tabular index badges), and `M3ECard` `Recently reviewed` summary.
+    - Migrated `_showPasteModal` to `M3ESegmentedButton<bool>` (`Paste text` vs `Policy link`) and `M3EChip` sample URL chips (`EduTrack URL`, `CalmMath URL`).
+    - Upgraded `_FloatingBottomNavDock` with an M3E `secondaryContainer` active pill indicator (`BorderRadius.circular(999)`) and adaptive `BoxConstraints(minHeight: 68)` so 200% text scaling (`textScaleFactor = 2.0`) renders with zero overflow.
+    - Removed `AnimatedStatusCard`, `BeautifulTimeline`, and all static `EnpriveColors.*` references from `lib/main.dart`.
+  - **4. Installed App Picker & Cloud Consent Sheet (`lib/widgets/installed_app_picker_sheet.dart`, `lib/widgets/cloud_consent_sheet.dart`)**:
+    - Migrated `InstalledAppPickerSheet` to `M3ECard` sample classroom cards (`EduTrack`, `CalmMath`), `M3ESearchBar`, `M3ELoadingIndicator(size: 36)`, `DeniAnimatedMascot` empty state (`size: 64`, `DeniPose.thinking`), and `EnpriveRadii.groupedCardRadius` segmented installed apps list.
+    - Migrated `CloudConsentSheet` to `EnpriveM3ETheme.of(context)`, `DeniAnimatedMascot` (`size: 84`, `DeniPose.support`), `M3ECard` (`surfaces.quoteSurface`) with untruncated `SelectableText` in `typeExt.policyQuotation`, and dynamic semantic tokens.
+- **Challenges & Root-Cause Fixes**:
+  - **200% Text Scale (`textScaleFactor = 2.0`) Overflow in `_FloatingBottomNavDock`**: Fixed `height: 68` overflowed by `2.0px` at 200% text scale; replaced fixed height with `constraints: const BoxConstraints(minHeight: 68)` and `mainAxisSize: MainAxisSize.min`.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **48/48 passed (100%)**.
+  - `flutter build apk --debug`: **Built and installed `app-debug.apk` on `emulator-5554`**; verified live Light & Dark screenshots (`stage2_01` through `stage2_06`).
+- **Next Immediate Action & Recommended Model**:
+  - Proceed to **Stage 3 — Review Result, Ask Deni (`WhyThisFindingSheet`), Receipts & Settings** (`ReviewResultScreen`, `WhyThisFindingSheet`, `ReceiptsScreen`, `SettingsScreen`) after user review of Stage 2.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 22 — Stage 3 Review Result, Ask Deni (`WhyThisFindingSheet`), Receipts & Settings M3E Migration (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop Stage 2 commit `cddb45a`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`SKILL.md`, `components.md`, `layout.md`, `theming.md`, `android-conventions.md`)
+  - `hamen/material-3-skill` (`SKILL.md`, `component-catalog.md`, `typography-and-shape.md`, `color-system.md`)
+  - `.agents/skills/svg-mascot-animator/SKILL.md` & `.agents/skills/mobile-app-ui-design/SKILL.md`
+  - All 8 visual inspiration boards in `mobile ui and ux inspration/` (never staged or committed per `AGENTS.md` Rule 2.3)
+- **What Was Built**:
+  - **1. Standalone Test Harness Bridge (`lib/core/theme/enprive_m3e_theme.dart`)**:
+    - Added `EnpriveM3EBridgeScope.ensure(BuildContext context, {required Widget child})` so screens and modal bottom sheets rendered inside standalone `MaterialApp` test harnesses automatically mount `M3ETheme`, `modern.Theme`, and `MaterialUiCompatibilityBridge` with zero overhead when already inside `M3EMaterialApp`.
+  - **2. Review Result Screen (`lib/screens/review_result_screen.dart`)**:
+    - Migrated `ReviewResultScreen` from static `EnpriveColors.*` to `EnpriveM3ETheme.of(context)`, `context.enpriveSemantics`, `context.enpriveSurfaces`, and `context.enpriveType`.
+    - Upgraded the state-tinted hero stage with Deni Standard LOD (`84dp`), AAA semantic state pill (`semantics.reviewRecommended`, `semantics.noConcern`, `semantics.insufficientEvidence`), and `m3e.typography.emphasized.headlineMedium`.
+    - Replaced `_PastelStatTile` with `_M3EStatTile` (`M3ECard` with `tabularMetricLarge` counters), `_CleanFindingCard` with segmented `_M3EFindingCard` (`M3ECard` + `EnpriveRadii.groupedCardRadius` + `SourceSerif4` italic quote callout), and `_CleanPermissionListCard` with `_M3EPermissionListCard` (`M3ECard`).
+    - Upgraded `_showSnapshotReceiptSheet` with `M3ECard` metadata (`typeExt.sha256Hash`) and `M3ECard` policy snapshot (`typeExt.policyQuotation`).
+  - **3. Ask Deni Sheet (`lib/widgets/why_this_finding_sheet.dart`)**:
+    - Migrated `WhyThisFindingSheet` to `EnpriveM3EBridgeScope.ensure`, `M3EProgressIndicator.linearWavy` (with reduced-motion fallback), unified `M3ECard` evidence work card, auto-collapsible `SourceSerif4` policy quote stage (`_isQuoteCollapsed`), `M3ECard` live process & answer cards, and Deni Compact LOD (`56dp`) docked bar.
+  - **4. Receipts Archive Screen (`lib/screens/receipts_screen.dart`)**:
+    - Migrated `ReceiptsScreen` to `M3ESearchBar`, `M3EChip` filter chips (`All · Review · No concern`), and `_M3EReceiptCard` (`M3ECard` with AAA state badge, `SourceSerif4` summary, `EnpriveProvenanceChip`, and AAA-contrasted `semantics.inCloud` / `semantics.highConcern` action strip).
+  - **5. Settings Screen (`lib/screens/settings_screen.dart`)**:
+    - Removed remaining `EnpriveColors.*` references, upgraded the Deni companion status card to `M3ECard`, and converted the `Preferences` group to segmented `M3ECard` containment (`EnpriveRadii.groupedCardRadius`).
+- **Challenges & Root-Cause Fixes**:
+  - **`ListTile` Material Ancestor Assertion inside `M3ECard`**: Because `M3ECard` paints its background via a `DecoratedBox`/`modern.Material`, placing a `legacy.ListTile` directly inside `M3ECard` triggered Flutter's `ListTile` splash visibility assertion. Fixed by wrapping `entry.value` inside `Material(color: Colors.transparent, borderRadius: radius, clipBehavior: Clip.antiAlias, ...)` inside each segmented `M3ECard`.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **49/49 passed (100%)**.
+  - `flutter build apk --debug`: **Built and installed `app-debug.apk` on `emulator-5554`**; verified live Light & Dark screenshots (`stage3_01` through `stage3_06`).
+- **Next Immediate Action & Recommended Model**:
+  - Proceed to **Stage 4 — Full Legacy Cleanup, Final Accessibility/Locale Verification & Rebrand Sign-off** after user review of Stage 3.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 23 — Stage 4 Full Legacy Cleanup, Final Accessibility/Locale Verification & Rebrand Sign-off (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop Stage 3 commit `93bea44`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`SKILL.md`, `components.md`, `layout.md`, `theming.md`, `android-conventions.md`)
+  - `hamen/material-3-skill` (`SKILL.md`, `component-catalog.md`, `typography-and-shape.md`, `color-system.md`)
+  - `.agents/skills/svg-mascot-animator/SKILL.md` & `.agents/skills/mobile-app-ui-design/SKILL.md`
+  - All 8 visual inspiration boards in `mobile ui and ux inspration/` (never staged or committed per `AGENTS.md` Rule 2.3)
+- **What Was Built**:
+  - **1. Legacy UI Dependency Cleanup (`pubspec.yaml` & `pubspec.lock`)**:
+    - Removed unused legacy third-party UI dependencies (`loading_animation_widget: ^1.3.0`, `animated_status_card: ^0.0.1`, `beautiful_timeline: ^0.1.0`) from `pubspec.yaml` now that all progress indicators, status cards, and process timelines are rendered with `material_3_expressive: 1.2.1` (`M3EProgressIndicator`, `M3ECard`, and `AnalysisProcessTrace`).
+  - **2. Static Architectural Boundary Audit (`test/theme_and_deni_lod_test.dart`)**:
+    - Added an automated static source-code audit test verifying that **zero** `.dart` files in `lib/` outside `lib/core/theme/` and `lib/widgets/deni_animated_mascot.dart` (mascot SVG vector palette) import `enprive_colors.dart` or reference `EnpriveColors.*`.
+  - **3. 200% Text Scaling, Reduced Motion & Arabic RTL Dark-Mode Verification (`test/theme_and_deni_lod_test.dart`)**:
+    - Added end-to-end Stage 4 accessibility and localization widget tests verifying `ReviewResultScreen` and `ReceiptsScreen` at `TextScaler.linear(2.0)`, `disableAnimations: true`, and `Locale('ar')` (RTL) in Dark Mode (`ThemeMode.dark`) with zero layout overflows or exceptions.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **51/51 passed (100%)**.
+- **Next Immediate Action & Recommended Model**:
+  - Complete M3E Rebrand (`Stages 0–4`) ready for final review, PR creation, or merge into `feature/phase-a-privacy-boundary` / `main`.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 24 — Custom Material 3 Expressive Tactile Card Family & Full Screen Migration (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop commit `b9c83a9`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`SKILL.md`, `components.md` single-action card rule & zero internal card scrolling, `layout.md`, `theming.md` Screen Check Light + Dark parity)
+  - `hamen/material-3-skill` (`SKILL.md`, `component-catalog.md`, `typography-and-shape.md`, `color-system.md`)
+  - `.agents/skills/mobile-app-ui-design/SKILL.md` (Bento asymmetric composition, tabular metric hierarchy, optical nested icon wells, dual-cue selection)
+  - `.agents/skills/flutter-add-widget-test/SKILL.md` & `.agents/skills/dart-run-static-analysis/SKILL.md`
+  - Visual inspiration boards under `mobile ui and ux inspration/` (kept uncommitted per `AGENTS.md` Rule 2.3)
+- **What Was Built**:
+  - **1. Shared Material Tactile Card Foundation (`lib/widgets/m3e/enprive_material_card_surface.dart`)**:
+    - Built `EnpriveCardVariant` (`elevated`, `tonal`, `archival`, `outlined`, `selected`) and `EnpriveMaterialCardSurface` wrapping real `M3ECard` inside a crisp `1.5dp`/`2.0dp` outline + solid `0dp`-blur bottom tactile lip (`topMargin + currentLip == restingLip` for zero layout jump), press-state corner tightening (`-5dp`), harmonized lip shading (`resolveLipColor`), and full `MediaQuery.maybeDisableAnimationsOf(context)` reduced-motion compliance.
+  - **2. Bespoke Typed Card Components (`lib/widgets/m3e/`)**:
+    - Added `EnpriveBentoChoiceCard` (`lib/widgets/m3e/enprive_bento_choice_card.dart`) & `.compactOption`: tactile Bento option card and 3-up compact selector with optional `metricHighlight`, optical nested icon squircle, soft corner watermark icon, trailing action/check circle, and dual-cue selection.
+    - Added `EnpriveMetricTileCard` (`lib/widgets/m3e/enprive_metric_tile_card.dart`): `tabularMetricLarge` counter, whispering label, optical icon well, and bottom posture progress bar.
+    - Added `EnpriveQuoteCard` (`lib/widgets/m3e/enprive_quote_card.dart`): Warm Paper / Obsidian Slate archival evidence card using `Stack` + `PositionedDirectional` rounded inset bookmark spine (`3.5dp`), `contextWindow` clause highlight or `SelectableText` with zero internal scroll views, and `Flexible` SHA-256 footer pill.
+    - Added `EnpriveCompanionCard` (`lib/widgets/m3e/enprive_companion_card.dart`) & updated `EnpriveDeniStageCard`: supports `EnpriveCompanionLayout.inline` (alcove) and `.peeking` (top-edge overlap) with `DeniAnimatedMascot`.
+    - Added `EnpriveReceiptCard` (`lib/widgets/m3e/enprive_receipt_card.dart`): posture header strip, `EnpriveProvenanceChip`, tabular timestamp/source meta, summary, and footer strip with `M3EButton.tonal` Open + `48×48dp` danger-tinted Delete button.
+    - Upgraded `EnpriveFindingM3ECard`, `EnpriveCollapsibleQuoteBox`, `EnpriveBentoPostureCard`, `EnpriveSegmentedCardTile` / `EnpriveSegmentedM3EGroup` (`22dp` outer / `6dp` inner radii, `4dp` gap, zero horizontal `Divider` lines), and exported all 12 modules via `lib/widgets/m3e/enprive_m3e_components.dart`.
+  - **3. Full Screen, Sheet & Catalog Migration**:
+    - Migrated all card surfaces across `lib/main.dart`, `lib/screens/review_result_screen.dart`, `lib/screens/receipts_screen.dart`, `lib/screens/settings_screen.dart`, `lib/screens/onboarding_flow_screen.dart` (upgraded Step 2 depth selection to a balanced `2+1` asymmetric Bento layout), `lib/widgets/installed_app_picker_sheet.dart`, `lib/widgets/cloud_consent_sheet.dart` (removed inner scrollable quote box in favor of direct `EnpriveQuoteCard(selectable: true)` inside the sheet scroll container), `lib/widgets/why_this_finding_sheet.dart`, `lib/widgets/private_readiness_sheet.dart`, `lib/widgets/review_progress_sheet.dart`, `lib/widgets/analysis_process_trace.dart`, and added Section 5 (`Custom Material 3 Expressive Card Family`) to `lib/screens/design_system_preview_screen.dart`.
+  - **4. Dedicated Custom Card Test Suite (`test/m3e_custom_cards_test.dart`)**:
+    - Added 5 widget tests verifying tactile lip depression, corner radius morphing, reduced motion, dual-cue selection across Light/Dark, Dark + 200% text scale + Arabic RTL rendering on Metric/Quote/Companion/Receipt cards, `EnpriveFindingM3ECard` single-action assertion (`onTapCard` XOR `onAskDeni`), and segmented `22dp`/`6dp` corner radii.
+- **Challenges & Root-Cause Fixes**:
+  - **1. Outer `AnimatedContainer` vs `M3ECard` Internal Container**: `EnpriveMaterialCardSurface` composes an outer `AnimatedContainer` tactile shell around `M3ECard` (which itself renders an internal `AnimatedContainer`); scoped widget test finders via `find.descendant(..., matching: find.byType(AnimatedContainer)).first`.
+  - **2. `M3ELoadingIndicator` Sizing & Intrinsic Conflict**: `M3ELoadingIndicator` enforces outer bounds in `24.0–240.0` and rejects unconstrained `IntrinsicHeight`; wrapped indicator in explicit `SizedBox(width: 24, height: 24)` inside `EnpriveBentoPostureCard` and replaced `IntrinsicHeight` archival spines in `EnpriveQuoteCard`, `EnpriveCollapsibleQuoteBox`, `EnpriveFindingM3ECard`, and `WhyThisFindingSheet` with `Stack` + `PositionedDirectional`.
+  - **3. Visual Polish from Live Emulator Screen Check**: Live screenshot inspection caught slight outer-corner spine pinching on rounded quote boxes, vertical 3-line pill stacking on `EnpriveFindingM3ECard`, and an orphan half-width grid cell on Onboarding Step 2; inset the rounded bookmark spines (`top/bottom` inset + `borderRadius: 2`), gave status pills their own full-width wrap row, and upgraded Onboarding Step 2 to a `2+1` asymmetric Bento layout.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **56/56 passed (100%)** (`test/pii_redactor_test.dart`, `test/evidence_validator_test.dart`, `test/permission_comparator_test.dart`, `test/widget_test.dart`, `test/theme_and_deni_lod_test.dart`, `test/m3e_custom_cards_test.dart`).
+  - `flutter build apk --debug`: Built and installed on `emulator-5554`; visually inspected Light & Dark Mode screenshots across Home, Receipts, Review Result (metrics + findings + WhyThisFindingSheet), Settings, Onboarding (`2+1` Bento + Readiness), and Section 5 Custom Card Catalog.
+- **Next Immediate Action & Recommended Model**:
+  - Complete M3E Rebrand + Custom Material Tactile Card System on `feature/m3-expressive-rebrand` ready for PR / merge review into `feature/phase-a-privacy-boundary` / `main`.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 25 — Editorial Stacked Receipt Card Redesign & Search Header Polish (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop commit `002dab2`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`SKILL.md`, `components.md` strict single-action card discipline & contrast-paired role usage, `theming.md` Light + Dark Screen Check parity)
+  - `hamen/material-3-skill` (`component-catalog.md`, `typography-and-shape.md`)
+  - `.agents/skills/mobile-app-ui-design/SKILL.md` (anti-clutter visual hierarchy, stepped cardstock card stack, restrained monochrome surfaces with single decisive CTA)
+  - `.agents/skills/flutter-add-widget-test/SKILL.md` & `.agents/skills/dart-run-static-analysis/SKILL.md`
+  - User-uploaded stepped stacked-card editorial UI reference (`media_1794688592689_54609d9b.jpg`) + `mobile ui and ux inspration/`
+- **What Was Built**:
+  - **1. Editorial Stacked-Card Redesign of `EnpriveReceiptCard` (`lib/widgets/m3e/enprive_receipt_card.dart`)**:
+    - Replaced both the legacy 3-band HTML-like divider card and an interim heavier Bento-nested draft with a compact, full-width 3-sheet stepped archival receipt deck (`Stack` of two inset peeking cardstock edges + crisp `22dp` `EnpriveMaterialCardSurface` top face, zero internal pastel boxes, zero `SHA-256` hash clutter).
+    - Top bar pairs the full source & tabular timestamp (`metaLine`, displaying cleanly without ellipsis) with a quiet ghost `LucideIcons.trash2` delete `IconButton` (`48dp` padded touch target).
+    - Middle editorial band pairs bold `titleLarge` app title and 2-line concise summary with a minimalist 3-step vertical posture meter (`_VerticalPostureMeter`: `┃ • •` monochrome ink capsule + muted dots encoding `reviewRecommended`, `insufficientEvidence`, or `noConcern`).
+    - Inset `1dp` `surfaces.hairlineBorder` separator anchors a bare high-contrast (`>= 8:1`) semantic shield glyph, localized verdict label + `Findings · Verified` tabular count (`findingsLabel` / `verifiedLabel`), and a decisive spring-morphing `M3EButton` (`Open receipt`) using `surfaces.tactilePrimaryBg` / `surfaces.tactilePrimaryFg` + `M3EButtonMotion.expressiveSpatialPress` (`borderRadius: 999` -> `14`).
+    - Responsive `LayoutBuilder` stacks the footer cleanly into a full-width column above `1.25x` text scale or `< 260dp` width.
+  - **2. Receipts Screen Header & Localization Wiring (`lib/screens/receipts_screen.dart`)**:
+    - Framed the top-right Search `IconButton` in a `44x44dp` tonal rounded `14dp` container (`48dp` padded target) and passed localized `l10n.statFindings` and `l10n.statVerified` into `EnpriveReceiptCard`.
+  - **3. Widget Test Coverage (`test/m3e_custom_cards_test.dart`)**:
+    - Added a dedicated widget test verifying `EnpriveReceiptCard` renders localized verdict and `2 Findings · 1 Verified` counts, omits `SHA-256` clutter, handles Open & Delete taps cleanly, and overflows zero widgets under Dark Mode + `TextScaler.linear(2.0)` + Arabic RTL (`Locale('ar')`).
+- **Challenges & Root-Cause Fixes**:
+  - **1. `material_ui` vs `flutter/material` `MaterialTapTargetSize` Collision**: Removed `MaterialTapTargetSize` import mismatch from `M3EButtonDecoration` (`material_3_expressive` imports `material_ui`), keeping standard `M3EButton` default padded hit targets cleanly while applying `MaterialTapTargetSize.padded` directly on Flutter's `IconButton`.
+  - **2. Iterative Visual Refinement From Emulator Inspection**: Initial multi-box Bento prototype exceeded 50% viewport height and felt overly busy with pastel inner cards + SHA-256 badges, while an interim footer layout truncated `"PM"` on `Classroom Sample · Nov 14 9:30 PM`. Adopted user's stacked-card editorial feedback, moved `metaLine` into the wide top row and `Findings · Verified` beneath the verdict label, and verified crisp rendering across both Light (`Warm Paper`) and Dark (`Obsidian Slate`) emulator captures.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **57/57 passed (100%)** (`pii_redactor_test`, `evidence_validator_test`, `permission_comparator_test`, `widget_test`, `theme_and_deni_lod_test`, `m3e_custom_cards_test`).
+  - `flutter build apk --debug`: Built cleanly (`app-debug.apk`), installed on `Pixel_9` (`emulator-5554`), and visually inspected both Light and Dark Mode `ReceiptsScreen` captures.
+- **Next Immediate Action & Recommended Model**:
+  - Review `feature/m3-expressive-rebrand` changes for PR / merge into `feature/phase-a-privacy-boundary` / `main`.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+## Iteration 26 — Review Result Hero Posture Card Redesign (`EnpriveReviewHeroCard`) & Live Light/Dark Verification
+
+- **Date**: 2026-11-14
+- **Branch**: `feature/m3-expressive-rebrand` (based on `fc7199d`)
+- **Base Commit Before Iteration**: `fc7199d`
+- **Active Model**: Antigravity Coding Agent
+- **Summary of Changes**:
+  - Created [`EnpriveReviewHeroCard`](lib/widgets/m3e/enprive_review_hero_card.dart) and exported it via [`enprive_m3e_components.dart`](lib/widgets/m3e/enprive_m3e_components.dart), replacing the full-bleed pastel scaffold hero stage and boxed 3-stat row on `ReviewResultScreen` with a crisp M3 Expressive hero posture summary card inspired by the left reference card aesthetic:
+    - Neutral `EnpriveMaterialCardSurface` cardstock framing an inset organic emerald-teal mesh header (`_OrganicTealMeshPainter` built purely from theme context tokens without static `enprive_colors.dart` imports) and top-end calibrated posture badge (`Review recommended` / `No concern identified` / `Insufficient evidence`).
+    - Overlapping `84dp` Deni portrait medallion (`DeniAnimatedMascot(size: 70)` -> `DeniLodTier.standard`, tap hit-tested inside `Stack` bounds and respecting `disableAnimations`).
+    - Identity header (`subjectTitle` + `${sourceLabel} · ${formattedDate}`) paired with a compact `M3EButton` `Source` snapshot pill and `40dp` circular read-aloud toggle button, responsive `Wrap` stacking at `> 1.28x` text scale.
+    - Inset horizontal hairline divider anchoring a borderless 3-column tabular metric row (`Findings`, `Verified`, and `OS Granted` / `Unverified`).
+    - Full-width tactile pill CTA (`_HeroArrowPillButton`) with leading RTL-aware circular arrow badge (`Ask Deni` when findings exist, `Save to Receipts` / `Saved to Receipts` when savable with zero findings, or `View reviewed policy snapshot` on already-saved zero-finding receipts).
+  - Refactored [`ReviewResultScreen`](lib/screens/review_result_screen.dart) onto `surfaces.canvas` (`Warm Paper` / `Obsidian Slate`), removed the duplicate docked bottom bar and boxed `_M3EStatTile` row, placed conditional Bookmark saving in the top navigation bar when `onSaveReceipt != null`, and kept calibrated summary/disclaimer text, `AnalysisSavedTraceCard`, segmented `Findings`, and `WhyThisFindingSheet` intact.
+  - Added widget tests in [`test/m3e_custom_cards_test.dart`](test/m3e_custom_cards_test.dart) covering `EnpriveReviewHeroCard` Light/Dark rendering, callback interactions (`onSourceAction`, `onVoiceAction`, `onMascotTap`, `onPrimaryCta`), reduced motion, `TextScaler.linear(2.0)`, and Arabic RTL (`Locale('ar')`).
+- **Challenges & Root-Cause Fixes**:
+  - **1. Subtitle Ellipsis Clipping Beside Action Controls**: In initial emulator captures, `Classroom Sample · Nov 14` truncated to `Classroom Sample · Nov...` beside `[Source]` and the voice button. Reduced `Source` pill horizontal padding (`13dp`), tightened `Wrap` spacing (`6dp`), and tuned subtitle typography (`bodySmall`, `13sp`, `w500`, `maxLines: 2`), eliminating truncation cleanly.
+  - **2. Light-Mode Mesh Contrast vs Muddy White Washout**: Blending `semantics.onDevice.background` with `surfaces.card` washed the lower-right mesh bloom smoky grey in Light Mode. Shifted the Light-Mode stops strictly onto `semantics.onDevice.icon` + `semantics.onDevice.background` blends for a luminous botanical mineral-teal gradient without importing `enprive_colors.dart`.
+  - **3. `MaterialLocalizations.maybeOf` & `DeniPose` Lookup**: Fixed `Localizations.of<MaterialLocalizations>(context, MaterialLocalizations)` date formatting on `ReviewResultScreen` and verified `DeniPose.explaining` in hero widget tests.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **58/58 passed (100%)** (`pii_redactor_test`, `evidence_validator_test`, `permission_comparator_test`, `widget_test`, `theme_and_deni_lod_test`, `m3e_custom_cards_test`).
+  - `flutter build apk --debug`: Built cleanly (`build/app/outputs/flutter-apk/app-debug.apk`), installed on `Pixel_9` (`emulator-5554`), and visually inspected refined Light and Dark Mode captures (`hero_result_light.png`, `hero_result_dark.png`).
+- **Next Immediate Action & Recommended Model**:
+  - Review `feature/m3-expressive-rebrand` changes for PR / merge into `feature/phase-a-privacy-boundary` / `main`.
   - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
 
 ---

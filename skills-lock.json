@@ -1,6 +1,18 @@
 {
   "version": 2,
   "skills": {
+    "android-design": {
+      "source": "charliesbot/android-design",
+      "sourceType": "github",
+      "skillPath": "skills/android-design/SKILL.md",
+      "computedHash": "ce0b3894606222d28ae4cd515218199c794ab99e313d755571095daeccb1914d"
+    },
+    "android-design-explore": {
+      "source": "charliesbot/android-design",
+      "sourceType": "github",
+      "skillPath": "skills/android-design-explore/SKILL.md",
+      "computedHash": "7e0d2586e865051ea7902e0f70549832fb28e40907f510191368ece746d6b3a5"
+    },
     "dart-add-unit-test": {
       "source": "dart-lang/skills",
       "sourceType": "github",
@@ -234,6 +246,12 @@
       "sourceType": "github",
       "skillPath": "SKILL.md",
       "computedHash": "8c5b3f57e6b89650def1134b2995f766b19bae63c7670329fa972a0049403c4f"
+    },
+    "material-3": {
+      "source": "hamen/material-3-skill",
+      "sourceType": "github",
+      "skillPath": "skills/material-3/SKILL.md",
+      "computedHash": "eb072deb6fb42a9e3ce1853ffd8420adb99dfbe1d6327bc22c5ad47edb77f56c"
     },
     "mobile-app-ui-design": {
       "source": "ceorkm/mobile-app-ui-design",

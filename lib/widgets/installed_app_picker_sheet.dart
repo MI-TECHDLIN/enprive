@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../core/theme/enprive_colors.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
+
+import '../core/theme/enprive_theme.dart';
 import '../domain/permissions/permission_comparator.dart';
 import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
-import 'enprive_duotone_icon.dart';
+import 'deni_animated_mascot.dart';
+import 'm3e/enprive_m3e_components.dart';
 
 class SelectedAppInspectionChoice {
   final String subjectTitle;
@@ -21,7 +23,7 @@ class SelectedAppInspectionChoice {
   });
 }
 
-/// Clean, parent-friendly Installed App Picker Sheet.
+/// Material 3 Expressive Installed App Picker Sheet.
 /// Queries Android `PackageManager` strictly on-device (`listLaunchableApps`
 /// and `inspectSelectedApp`). Installed app lists never leave the phone.
 class InstalledAppPickerSheet extends StatefulWidget {
@@ -42,10 +44,11 @@ class InstalledAppPickerSheet extends StatefulWidget {
     required String eduTrackPolicyText,
     required String calmMathPolicyText,
   }) {
+    final scheme = EnpriveM3ETheme.of(context).colorScheme;
     return showModalBottomSheet<SelectedAppInspectionChoice>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: EnpriveColors.paper,
+      backgroundColor: scheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
@@ -72,11 +75,18 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
   List<InstalledAppEntry> _installedApps = const [];
   bool _isLoadingApps = true;
   String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadInstalledApps();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadInstalledApps() async {
@@ -89,7 +99,8 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
   }
 
   Future<void> _inspectRealInstalledApp(InstalledAppEntry app) async {
-    final snapshot = await widget.bridge.inspectAppSnapshot(app.packageName) ??
+    final snapshot =
+        await widget.bridge.inspectAppSnapshot(app.packageName) ??
         AppPermissionSnapshot(
           packageName: app.packageName,
           appName: app.appName,
@@ -118,12 +129,18 @@ We do not collect personal identifiers, precise location data, microphone audio,
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final semantics = context.enpriveSemantics;
+
     final filteredApps = _installedApps.where((a) {
       if (_searchQuery.trim().isEmpty) return true;
       final q = _searchQuery.toLowerCase();
       return a.appName.toLowerCase().contains(q) ||
           a.packageName.toLowerCase().contains(q);
     }).toList();
+
+    final visibleApps = filteredApps.take(25).toList();
 
     return SafeArea(
       child: Column(
@@ -138,7 +155,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: EnpriveColors.ink.withValues(alpha: 0.14),
+                      color: scheme.outlineVariant,
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
@@ -149,21 +166,26 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     Expanded(
                       child: Text(
                         l10n.btnCheckApp,
-                        style: Theme.of(context).textTheme.headlineLarge,
+                        style: m3e.typography.emphasized.headlineMedium
+                            .copyWith(
+                              color: scheme.onSurface,
+                            ),
                       ),
                     ),
                     IconButton(
                       tooltip: l10n.tooltipClose,
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(LucideIcons.x),
+                      icon: Icon(
+                        LucideIcons.x,
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
                 Text(
                   l10n.checkAppSheetSubtitle,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: EnpriveColors.inkSecondary,
+                  style: m3e.typeScale.bodyMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -174,13 +196,11 @@ We do not collect personal identifiers, precise location data, microphone audio,
             child: ListView(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
               children: [
-                // 1. Sample Classroom Apps (B3 Soft Choice Card Grid)
+                // 1. Sample Classroom Apps (M3E Bento Choice Grid)
                 Text(
                   l10n.trySampleKidsApp,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: EnpriveColors.ink,
+                  style: m3e.typography.emphasized.titleMedium.copyWith(
+                    color: scheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -190,9 +210,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       child: _SampleAppChoiceCard(
                         title: 'EduTrack',
                         subtitle: l10n.sampleEduTrackSubtitle,
-                        iconSvg: Ph.graduation_cap_duotone,
-                        iconBg: EnpriveColors.stateReviewRecommendedBg,
-                        iconFg: EnpriveColors.stateReviewRecommendedFg,
+                        icon: LucideIcons.graduationCap,
+                        badgePair: semantics.reviewRecommended,
                         onTap: () {
                           Navigator.pop(
                             context,
@@ -212,9 +231,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       child: _SampleAppChoiceCard(
                         title: 'CalmMath',
                         subtitle: l10n.sampleCalmMathSubtitle,
-                        iconSvg: Ph.calculator_duotone,
-                        iconBg: EnpriveColors.stateNoConcernBg,
-                        iconFg: EnpriveColors.stateNoConcernFg,
+                        icon: LucideIcons.calculator,
+                        badgePair: semantics.noConcern,
                         onTap: () {
                           Navigator.pop(
                             context,
@@ -236,107 +254,95 @@ We do not collect personal identifiers, precise location data, microphone audio,
                 // 2. Installed Apps on This Phone
                 Text(
                   l10n.appsOnThisPhone,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: EnpriveColors.ink,
+                  style: m3e.typography.emphasized.titleMedium.copyWith(
+                    color: scheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 10),
 
-                TextField(
-                  onChanged: (val) => setState(() => _searchQuery = val),
-                  decoration: InputDecoration(
-                    hintText: l10n.hintSearchApps,
-                    prefixIcon: const Icon(LucideIcons.search, size: 19),
-                    filled: true,
-                    fillColor: EnpriveColors.surfaceMuted,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
+                M3ESearchBar(
+                  controller: _searchController,
+                  margin: 0,
+                  focusedMargin: 0,
+                  hintText: l10n.hintSearchApps,
+                  leading: Icon(
+                    LucideIcons.search,
+                    size: 19,
+                    color: scheme.onSurfaceVariant,
                   ),
+                  showClearButton: true,
+                  onChanged: (val) => setState(() => _searchQuery = val),
                 ),
                 const SizedBox(height: 14),
 
                 if (_isLoadingApps)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Center(child: CircularProgressIndicator()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 28),
+                    child: Center(
+                      child: M3ELoadingIndicator(
+                        size: 36,
+                        color: scheme.primary,
+                      ),
+                    ),
                   )
-                else if (filteredApps.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: EnpriveColors.surface,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      l10n.noMatchingApps,
-                      style: const TextStyle(color: EnpriveColors.inkSecondary),
-                    ),
+                else if (visibleApps.isEmpty)
+                  EnpriveCompanionCard(
+                    pose: DeniPose.thinking,
+                    lodTier: DeniLodTier.compact,
+                    mascotSize: 64,
+                    title: l10n.appsOnThisPhone,
+                    message: l10n.noMatchingApps,
                   )
                 else
-                  Material(
-                    color: EnpriveColors.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      children:
-                          filteredApps.take(25).toList().asMap().entries.map((e) {
-                        final idx = e.key;
-                        final app = e.value;
-                        return Column(
-                          children: [
-                            if (idx > 0)
-                              Divider(
-                                height: 1,
-                                indent: 68,
-                                endIndent: 20,
-                                color:
-                                    EnpriveColors.ink.withValues(alpha: 0.06),
-                              ),
-                            ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 4,
-                              ),
-                              onTap: () => _inspectRealInstalledApp(app),
-                              leading: Container(
+                  Column(
+                    children: [
+                      for (var idx = 0; idx < visibleApps.length; idx++) ...[
+                        if (idx > 0) const SizedBox(height: 4),
+                        EnpriveSegmentedCardTile(
+                          index: idx,
+                          totalCount: visibleApps.length,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          onTap: () =>
+                              _inspectRealInstalledApp(visibleApps[idx]),
+                          child: Row(
+                            children: [
+                              Container(
                                 width: 42,
                                 height: 42,
+                                alignment: Alignment.center,
                                 decoration: BoxDecoration(
-                                  color: EnpriveColors.surfaceMuted,
+                                  color: semantics.onDevice.background,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const EnpriveDuotoneIcon(
-                                  Ph.squares_four_duotone,
-                                  color: EnpriveColors.tealStrong,
+                                child: Icon(
+                                  LucideIcons.layoutGrid,
+                                  color: semantics.onDevice.foreground,
                                   size: 20,
                                 ),
                               ),
-                              title: Text(
-                                app.appName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 15,
-                                  color: EnpriveColors.ink,
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Text(
+                                  visibleApps[idx].appName,
+                                  style: m3e.typography.emphasized.bodyLarge
+                                      .copyWith(
+                                        color: scheme.onSurface,
+                                      ),
                                 ),
                               ),
-                              trailing: const Icon(
+                              Icon(
                                 LucideIcons.chevronRight,
-                                color: EnpriveColors.inkSecondary,
+                                color: scheme.onSurfaceVariant,
                                 size: 18,
                               ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                    ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
               ],
             ),
@@ -350,63 +356,28 @@ We do not collect personal identifiers, precise location data, microphone audio,
 class _SampleAppChoiceCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final String iconSvg;
-  final Color iconBg;
-  final Color iconFg;
+  final IconData icon;
+  final SemanticColorPair badgePair;
   final VoidCallback onTap;
 
   const _SampleAppChoiceCard({
     required this.title,
     required this.subtitle,
-    required this.iconSvg,
-    required this.iconBg,
-    required this.iconFg,
+    required this.icon,
+    required this.badgePair,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: EnpriveColors.surface,
-      borderRadius: BorderRadius.circular(22),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: EnpriveDuotoneIcon(iconSvg, color: iconFg, size: 22),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: EnpriveColors.ink,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  color: EnpriveColors.inkSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return EnpriveBentoChoiceCard(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      accentColor: badgePair.foreground,
+      accentBackground: badgePair.background,
+      accentBorder: badgePair.border.withValues(alpha: 0.4),
+      onPressed: onTap,
     );
   }
 }

@@ -1,0 +1,202 @@
+import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+import '../../core/theme/enprive_theme.dart';
+import 'enprive_material_card_surface.dart';
+
+/// Collapsible verbatim quotation & SHA-256 archival container designed for
+/// `WhyThisFindingSheet` and detailed policy clause inspection.
+///
+/// Automatically collapses to a compact 1-line bar when [autoCollapseTrigger]
+/// transitions from `false` to `true` (keeping the answer in view without
+/// losing access to the exact cited evidence).
+class EnpriveCollapsibleQuoteBox extends StatefulWidget {
+  final String quote;
+  final String badgeLabel;
+  final String headerLabel;
+  final String? sha256Digest;
+  final bool initiallyExpanded;
+  final bool autoCollapseTrigger;
+
+  const EnpriveCollapsibleQuoteBox({
+    super.key,
+    required this.quote,
+    this.badgeLabel = 'Q1',
+    this.headerLabel = 'Exact Policy Excerpt',
+    this.sha256Digest,
+    this.initiallyExpanded = true,
+    this.autoCollapseTrigger = false,
+  });
+
+  @override
+  State<EnpriveCollapsibleQuoteBox> createState() =>
+      _EnpriveCollapsibleQuoteBoxState();
+}
+
+class _EnpriveCollapsibleQuoteBoxState
+    extends State<EnpriveCollapsibleQuoteBox> {
+  late bool _isExpanded = widget.initiallyExpanded;
+
+  @override
+  void didUpdateWidget(covariant EnpriveCollapsibleQuoteBox oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.autoCollapseTrigger &&
+        widget.autoCollapseTrigger &&
+        _isExpanded) {
+      setState(() => _isExpanded = false);
+    }
+  }
+
+  void _toggleExpanded() {
+    setState(() => _isExpanded = !_isExpanded);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final surfaces = context.enpriveSurfaces;
+    final typeExt = context.enpriveType;
+    final motion = context.enpriveMotion;
+
+    return EnpriveMaterialCardSurface(
+      variant: EnpriveCardVariant.archival,
+      backgroundColor: surfaces.quoteSurface,
+      borderRadius: BorderRadius.circular(20),
+      lipHeight: 2.5,
+      padding: EdgeInsets.zero,
+      child: Stack(
+        children: [
+          PositionedDirectional(
+            top: 14,
+            bottom: 14,
+            start: 10,
+            width: 3.5,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: scheme.primary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkWell(
+                  onTap: _toggleExpanded,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 30,
+                          height: 30,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: scheme.secondaryContainer,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            widget.badgeLabel,
+                            style: m3e.typography.emphasized.labelSmall
+                                .copyWith(
+                                  color: scheme.onSecondaryContainer,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            widget.headerLabel,
+                            style: m3e.typography.emphasized.titleSmall
+                                .copyWith(color: scheme.onSurface),
+                          ),
+                        ),
+                        AnimatedRotation(
+                          turns: _isExpanded ? 0.5 : 0.0,
+                          duration: motion.effectiveDuration(
+                            context,
+                            motion.spatialFast,
+                          ),
+                          curve: motion.effectiveCurve(
+                            context,
+                            motion.emphasizedCurve,
+                          ),
+                          child: Icon(
+                            LucideIcons.chevronDown,
+                            size: 18,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                AnimatedSize(
+                  duration: motion.effectiveDuration(
+                    context,
+                    motion.effectsDefault,
+                  ),
+                  curve: motion.effectiveCurve(
+                    context,
+                    motion.emphasizedCurve,
+                  ),
+                  child: _isExpanded
+                      ? Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.fromLTRB(16, 2, 16, 14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '“${widget.quote}”',
+                                style: typeExt.policyQuotation.copyWith(
+                                  color: scheme.onSurface,
+                                ),
+                              ),
+                              if (widget.sha256Digest != null &&
+                                  widget.sha256Digest!.isNotEmpty) ...[
+                                const SizedBox(height: 10),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: surfaces.card.withValues(
+                                      alpha: 0.72,
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: surfaces.hairlineBorder,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'SHA-256 · ${widget.sha256Digest}',
+                                    style: typeExt.sha256Hash.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                      fontSize: 11.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

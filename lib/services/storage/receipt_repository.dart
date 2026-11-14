@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
@@ -152,23 +153,27 @@ class UserPreferencesSnapshot {
   final ExplanationDepth explanationDepth;
   final String languageCode;
   final bool hasCompletedOnboarding;
+  final ThemeMode themeMode;
 
   const UserPreferencesSnapshot({
     this.explanationDepth = ExplanationDepth.balanced,
     this.languageCode = 'en',
     this.hasCompletedOnboarding = true,
+    this.themeMode = ThemeMode.system,
   });
 
   UserPreferencesSnapshot copyWith({
     ExplanationDepth? explanationDepth,
     String? languageCode,
     bool? hasCompletedOnboarding,
+    ThemeMode? themeMode,
   }) {
     return UserPreferencesSnapshot(
       explanationDepth: explanationDepth ?? this.explanationDepth,
       languageCode: languageCode ?? this.languageCode,
       hasCompletedOnboarding:
           hasCompletedOnboarding ?? this.hasCompletedOnboarding,
+      themeMode: themeMode ?? this.themeMode,
     );
   }
 }
@@ -178,6 +183,7 @@ class UserPreferencesRepository {
   static const String _keyLanguageCode = 'enprive_pref_language_code';
   static const String _keyHasCompletedOnboarding =
       'enprive_pref_completed_onboarding';
+  static const String _keyThemeMode = 'enprive_pref_theme_mode';
 
   UserPreferencesSnapshot _cached = const UserPreferencesSnapshot();
 
@@ -188,6 +194,7 @@ class UserPreferencesRepository {
       final lang = prefs.getString(_keyLanguageCode) ?? 'en';
       final completedOnboarding =
           prefs.getBool(_keyHasCompletedOnboarding) ?? false;
+      final themeStr = prefs.getString(_keyThemeMode) ?? 'system';
       _cached = UserPreferencesSnapshot(
         explanationDepth: ExplanationDepth.values.firstWhere(
           (d) => d.name == depthStr,
@@ -195,6 +202,10 @@ class UserPreferencesRepository {
         ),
         languageCode: lang,
         hasCompletedOnboarding: completedOnboarding,
+        themeMode: ThemeMode.values.firstWhere(
+          (m) => m.name == themeStr,
+          orElse: () => ThemeMode.system,
+        ),
       );
     } catch (_) {
       // Return in-memory cached snapshot if SharedPreferences is unavailable
@@ -206,11 +217,13 @@ class UserPreferencesRepository {
     ExplanationDepth? explanationDepth,
     String? languageCode,
     bool? hasCompletedOnboarding,
+    ThemeMode? themeMode,
   }) async {
     _cached = _cached.copyWith(
       explanationDepth: explanationDepth,
       languageCode: languageCode,
       hasCompletedOnboarding: hasCompletedOnboarding,
+      themeMode: themeMode,
     );
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -225,6 +238,9 @@ class UserPreferencesRepository {
           _keyHasCompletedOnboarding,
           hasCompletedOnboarding,
         );
+      }
+      if (themeMode != null) {
+        await prefs.setString(_keyThemeMode, themeMode.name);
       }
     } catch (_) {
       // Keep updated _cached in memory

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 
-import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_theme.dart';
 import '../domain/privacy/pii_redactor.dart';
 import '../domain/review/review_coordinator.dart';
@@ -14,10 +14,12 @@ import 'cloud_consent_sheet.dart';
 import 'deni_animated_mascot.dart';
 import 'enprive_duotone_icon.dart';
 import 'enprive_provenance_chip.dart';
+import 'm3e/enprive_m3e_components.dart';
 
-/// Brilliant B30-inspired Evidence Work Card + Docked "Ask Deni" Sheet.
-/// Eliminates multi-box clutter in favor of a single cohesive work card
-/// (`b30-lesson-check.png`) with highlighted verbatim quote and 3 clear rows.
+/// Material 3 Expressive Evidence Work Card + Docked "Ask Deni" Sheet:
+/// - M3E wavy progress indicator in top bar
+/// - Unified `M3ECard` evidence work card with collapsible `SourceSerif4` quote stage
+/// - Interactive preset question pills + Deni Compact LOD (`56dp`) docked bar
 class WhyThisFindingSheet extends StatefulWidget {
   final VerifiedFinding finding;
   final String snapshotText;
@@ -42,10 +44,11 @@ class WhyThisFindingSheet extends StatefulWidget {
     required ReviewCoordinator coordinator,
     bool cloudConsentGrantedForSession = false,
   }) {
+    final surfaces = context.enpriveSurfaces;
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: EnpriveColors.surface,
+      backgroundColor: surfaces.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
@@ -73,6 +76,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
   DeniPose _deniPose = DeniPose.explaining;
   bool _isAskingDeni = false;
   bool _isConsentSheetOpen = false;
+  bool _isQuoteCollapsed = false;
   DeniExplanation? _deniExplanation;
   int _selectedQuestionIndex = 0;
 
@@ -94,6 +98,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
     setState(() {
       _selectedQuestionIndex = questionIndex;
       _isAskingDeni = true;
+      _isQuoteCollapsed = true;
       _deniPose = DeniPose.thinking;
     });
 
@@ -205,434 +210,495 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n =
-        AppLocalizations.of(context) ??
-        lookupAppLocalizations(
-          Localizations.maybeLocaleOf(context) ?? const Locale('en'),
-        );
-    final languageCode =
-        Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
-    final presetQuestions = [
-      l10n.presetQuestionMeaning,
-      l10n.presetQuestionOptOut,
-      l10n.presetQuestionUnknown,
-    ];
-    final activeQuestion = presetQuestions[_selectedQuestionIndex];
-    final finding = widget.finding;
-    final isVerified = finding.isVerified;
+    return EnpriveM3EBridgeScope.ensure(
+      context,
+      child: Builder(
+        builder: (context) {
+          final l10n =
+              AppLocalizations.of(context) ??
+              lookupAppLocalizations(
+                Localizations.maybeLocaleOf(context) ?? const Locale('en'),
+              );
+          final languageCode =
+              Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
+          final presetQuestions = [
+            l10n.presetQuestionMeaning,
+            l10n.presetQuestionOptOut,
+            l10n.presetQuestionUnknown,
+          ];
+          final activeQuestion = presetQuestions[_selectedQuestionIndex];
+          final finding = widget.finding;
+          final isVerified = finding.isVerified;
 
-    return SafeArea(
-      child: Column(
-        children: [
-          // Minimal B30 Top Bar: × close + segmented progress bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 20, 8),
-            child: Row(
+          final m3e = EnpriveM3ETheme.of(context);
+          final scheme = m3e.colorScheme;
+          final surfaces = context.enpriveSurfaces;
+          final semantics = context.enpriveSemantics;
+          final typeExt = context.enpriveType;
+          final reducedMotion = EnpriveMotionTokens.isReducedMotion(context);
+
+          return SafeArea(
+            child: Column(
               children: [
-                IconButton(
-                  tooltip: l10n.tooltipClose,
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(LucideIcons.x, size: 22),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 168),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(999),
-                        child: LinearProgressIndicator(
-                          value: _deniExplanation != null ? 1.0 : 0.65,
-                          minHeight: 7,
-                          backgroundColor: EnpriveColors.surfaceMuted,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            EnpriveColors.teal,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-              children: [
-                // Instruction / Title (Brilliant B30 top sentence)
-                Text(
-                  finding.title,
-                  style: Theme.of(context).textTheme.headlineLarge
-                      ?.copyWith(fontSize: 24),
-                ),
-                const SizedBox(height: 16),
-
-                // Single Unified Evidence Work Card (Brilliant B30 central card)
-                Container(
-                  decoration: BoxDecoration(
-                    color: EnpriveColors.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: EnpriveColors.ink.withValues(alpha: 0.12),
-                      width: 1.5,
-                    ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                // Top Bar: Close + M3E Wavy Progress Indicator
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 20, 8),
+                  child: Row(
                     children: [
-                      // Card Header Row (status dot + label on left, category chip on right)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 14,
+                      IconButton(
+                        tooltip: l10n.tooltipClose,
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(
+                          LucideIcons.x,
+                          size: 22,
+                          color: scheme.onSurface,
                         ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: Wrap(
-                            alignment: WrapAlignment.spaceBetween,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: BoxDecoration(
-                                      color: isVerified
-                                          ? EnpriveColors.teal
-                                          : EnpriveColors.inkSecondary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      finding.status ==
-                                              EvidenceStatus.deviceObserved
-                                          ? l10n.statusDeviceObserved
-                                          : (isVerified
-                                                ? l10n.statusSourceMatched
-                                                : l10n.statusUnverified),
-                                      style: const TextStyle(
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.w800,
-                                        color: EnpriveColors.ink,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 168),
+                            child: reducedMotion
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(999),
+                                    child: LinearProgressIndicator(
+                                      value: _deniExplanation != null
+                                          ? 1.0
+                                          : 0.65,
+                                      minHeight: 7,
+                                      backgroundColor: surfaces.cardMuted,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        scheme.primary,
                                       ),
                                     ),
+                                  )
+                                : M3EProgressIndicator.linearWavy(
+                                    value: _deniExplanation != null
+                                        ? 1.0
+                                        : 0.65,
+                                    color: scheme.primary,
+                                    trackColor: surfaces.cardMuted,
                                   ),
-                                ],
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: EnpriveColors.surfaceMuted,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  _categoryLabel(l10n, finding.category),
-                                  style: const TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: EnpriveColors.inkSecondary,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
-                        ),
-                      ),
-
-                      // Highlighted Policy Excerpt Stage (middle canvas of B30 card)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        color: EnpriveColors.quoteSurface,
-                        child: finding.contextWindow != null
-                            ? RichText(
-                                text: TextSpan(
-                                  style: const TextStyle(
-                                    fontFamily: EnpriveTheme.quoteFontFamily,
-                                    fontSize: 15.5,
-                                    height: 1.55,
-                                    color: EnpriveColors.inkSecondary,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: finding.contextWindow!.before,
-                                    ),
-                                    TextSpan(
-                                      text: finding.contextWindow!.matched,
-                                      style: TextStyle(
-                                        color: EnpriveColors.ink,
-                                        fontWeight: FontWeight.w700,
-                                        backgroundColor: EnpriveColors.apricot
-                                            .withValues(alpha: 0.28),
-                                      ),
-                                    ),
-                                    TextSpan(
-                                      text: finding.contextWindow!.after,
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : Text(
-                                '“${finding.exactExcerpt}”',
-                                style: const TextStyle(
-                                  fontFamily: EnpriveTheme.quoteFontFamily,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.5,
-                                  color: EnpriveColors.ink,
-                                ),
-                              ),
-                      ),
-
-                      // Clean 3-Row Breakdown inside the card (Meaning · Device · Unknown)
-                      Padding(
-                        padding: const EdgeInsets.all(18),
-                        child: Column(
-                          children: [
-                            _CompactEvidenceRow(
-                              iconSvg: Ph.lightbulb_duotone,
-                              iconColor: EnpriveColors.tealStrong,
-                              label: l10n.labelInPlainLanguage,
-                              body: finding.explanation,
-                            ),
-                            Divider(
-                              height: 24,
-                              color: EnpriveColors.ink.withValues(alpha: 0.08),
-                            ),
-                            _CompactEvidenceRow(
-                              iconSvg: Ph.device_mobile_duotone,
-                              iconColor: EnpriveColors.chipOnDeviceFg,
-                              label: l10n.labelOnThisPhone,
-                              body: finding.whatAndroidReports,
-                            ),
-                            if (finding.unknowns.isNotEmpty) ...[
-                              Divider(
-                                height: 24,
-                                color: EnpriveColors.ink.withValues(
-                                  alpha: 0.08,
-                                ),
-                              ),
-                              _CompactEvidenceRow(
-                                iconSvg: Ph.question_duotone,
-                                iconColor:
-                                    EnpriveColors.stateReviewRecommendedFg,
-                                label: l10n.labelWhatRemainsUnknown,
-                                body: finding.unknowns.first,
-                              ),
-                            ],
-                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 20),
-
-                // Question Chips (B30 interactive blocks below the card)
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: presetQuestions.asMap().entries.map((entry) {
-                    final idx = entry.key;
-                    final q = entry.value;
-                    final isSelected =
-                        idx == _selectedQuestionIndex &&
-                        _deniExplanation != null;
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: (_isAskingDeni || _isConsentSheetOpen)
-                          ? null
-                          : () => _askDeni(idx, q, languageCode),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 160),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? EnpriveColors.teal.withValues(alpha: 0.12)
-                              : EnpriveColors.surface,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isSelected
-                                ? EnpriveColors.teal
-                                : EnpriveColors.ink.withValues(alpha: 0.14),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Text(
-                          q,
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: isSelected
-                                ? EnpriveColors.tealStrong
-                                : EnpriveColors.ink,
-                          ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                    children: [
+                      Text(
+                        finding.title,
+                        style: m3e.typography.emphasized.headlineSmall.copyWith(
+                          color: scheme.onSurface,
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
+                      const SizedBox(height: 16),
 
-                if (_isAskingDeni) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: EnpriveColors.paper,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: AnalysisLiveProcessView(
-                      stream: widget.coordinator.analysisEvents,
-                      initialLabel: l10n.readingCitedClause,
-                      compact: true,
-                    ),
-                  ),
-                ] else if (_deniExplanation != null) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: EnpriveColors.paper,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: double.infinity,
-                          child: Wrap(
-                            alignment: WrapAlignment.spaceBetween,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              Text(
-                                l10n.deniAnswerTitle,
-                                style: const TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: EnpriveColors.tealStrong,
+                      // Unified Tactile M3E Evidence Work Card
+                      EnpriveMaterialCardSurface(
+                        variant: EnpriveCardVariant.elevated,
+                        backgroundColor: surfaces.card,
+                        borderRadius: BorderRadius.circular(EnpriveRadii.xl),
+                        lipHeight: 3.0,
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Card Header Row
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 14,
+                              ),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: Wrap(
+                                  alignment: WrapAlignment.spaceBetween,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          width: 10,
+                                          height: 10,
+                                          decoration: BoxDecoration(
+                                            color: isVerified
+                                                ? semantics.onDevice.icon
+                                                : scheme.onSurfaceVariant,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            finding.status ==
+                                                    EvidenceStatus
+                                                        .deviceObserved
+                                                ? l10n.statusDeviceObserved
+                                                : (isVerified
+                                                      ? l10n.statusSourceMatched
+                                                      : l10n.statusUnverified),
+                                            style: m3e.typeScale.labelLarge
+                                                .copyWith(
+                                                  fontWeight: FontWeight.w800,
+                                                  color: scheme.onSurface,
+                                                ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: surfaces.cardMuted,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        _categoryLabel(l10n, finding.category),
+                                        style: m3e.typeScale.labelSmall
+                                            .copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              color: scheme.onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              EnpriveProvenanceChip(
-                                source: _deniExplanation!.inferenceSource,
+                            ),
+
+                            // Collapsible Highlighted Policy Excerpt Stage with left archival spine
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _isQuoteCollapsed = !_isQuoteCollapsed;
+                                });
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: surfaces.quoteSurface,
+                                  border: Border.symmetric(
+                                    horizontal: BorderSide(
+                                      color: surfaces.hairlineBorder,
+                                    ),
+                                  ),
+                                ),
+                                child: Stack(
+                                  children: [
+                                    PositionedDirectional(
+                                      top: 0,
+                                      bottom: 0,
+                                      start: 0,
+                                      width: 4,
+                                      child: ColoredBox(
+                                        color: isVerified
+                                            ? semantics.onDevice.icon
+                                            : surfaces.strongBorder,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding:
+                                          const EdgeInsetsDirectional.fromSTEB(
+                                            24,
+                                            20,
+                                            20,
+                                            20,
+                                          ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (finding.contextWindow != null &&
+                                              !_isQuoteCollapsed)
+                                            RichText(
+                                              text: TextSpan(
+                                                style: typeExt.policyQuotation
+                                                    .copyWith(
+                                                      color: scheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                                children: [
+                                                  TextSpan(
+                                                    text: finding
+                                                        .contextWindow!
+                                                        .before,
+                                                  ),
+                                                  TextSpan(
+                                                    text: finding
+                                                        .contextWindow!
+                                                        .matched,
+                                                    style: TextStyle(
+                                                      color: scheme.onSurface,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      backgroundColor: semantics
+                                                          .reviewRecommended
+                                                          .background,
+                                                    ),
+                                                  ),
+                                                  TextSpan(
+                                                    text: finding
+                                                        .contextWindow!
+                                                        .after,
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          else
+                                            Text(
+                                              '“${finding.exactExcerpt}”',
+                                              maxLines:
+                                                  _isQuoteCollapsed ? 1 : null,
+                                              overflow: _isQuoteCollapsed
+                                                  ? TextOverflow.ellipsis
+                                                  : TextOverflow.visible,
+                                              style: typeExt.policyQuotation
+                                                  .copyWith(
+                                                    color: scheme.onSurface,
+                                                  ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
+                            ),
+
+                            // Clean 3-Row Segmented Breakdown inside the card
+                            Padding(
+                              padding: const EdgeInsets.all(18),
+                              child: Column(
+                                children: [
+                                  _CompactEvidenceRow(
+                                    iconSvg: Ph.lightbulb_duotone,
+                                    iconColor: semantics.onDevice.icon,
+                                    label: l10n.labelInPlainLanguage,
+                                    body: finding.explanation,
+                                  ),
+                                  const SizedBox(height: 14),
+                                  _CompactEvidenceRow(
+                                    iconSvg: Ph.device_mobile_duotone,
+                                    iconColor: semantics.inCloud.icon,
+                                    label: l10n.labelOnThisPhone,
+                                    body: finding.whatAndroidReports,
+                                  ),
+                                  if (finding.unknowns.isNotEmpty) ...[
+                                    const SizedBox(height: 14),
+                                    _CompactEvidenceRow(
+                                      iconSvg: Ph.question_duotone,
+                                      iconColor:
+                                          semantics.reviewRecommended.icon,
+                                      label: l10n.labelWhatRemainsUnknown,
+                                      body: finding.unknowns.first,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Preset Question Pills
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: presetQuestions.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final q = entry.value;
+                          final isSelected =
+                              idx == _selectedQuestionIndex &&
+                              _deniExplanation != null;
+                          return EnpriveMaterialCardSurface(
+                            variant: isSelected
+                                ? EnpriveCardVariant.selected
+                                : EnpriveCardVariant.elevated,
+                            selected: isSelected,
+                            backgroundColor: isSelected
+                                ? semantics.onDevice.background
+                                : surfaces.card,
+                            accentColor: scheme.primary,
+                            borderRadius: BorderRadius.circular(14),
+                            lipHeight: 2.5,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            onPressed: (_isAskingDeni || _isConsentSheetOpen)
+                                ? null
+                                : () => _askDeni(idx, q, languageCode),
+                            child: Text(
+                              q,
+                              style: m3e.typeScale.labelLarge.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: isSelected
+                                    ? semantics.onDevice.foreground
+                                    : scheme.onSurface,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+
+                      if (_isAskingDeni) ...[
+                        const SizedBox(height: 16),
+                        EnpriveMaterialCardSurface(
+                          variant: EnpriveCardVariant.tonal,
+                          backgroundColor: surfaces.canvas,
+                          borderRadius: BorderRadius.circular(EnpriveRadii.md),
+                          lipHeight: 2.0,
+                          padding: const EdgeInsets.all(14),
+                          child: AnalysisLiveProcessView(
+                            stream: widget.coordinator.analysisEvents,
+                            initialLabel: l10n.readingCitedClause,
+                            compact: true,
+                          ),
+                        ),
+                      ] else if (_deniExplanation != null) ...[
+                        const SizedBox(height: 16),
+                        EnpriveMaterialCardSurface(
+                          variant: EnpriveCardVariant.elevated,
+                          backgroundColor: surfaces.canvas,
+                          borderRadius: BorderRadius.circular(EnpriveRadii.lg),
+                          lipHeight: 3.0,
+                          padding: const EdgeInsets.all(18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: double.infinity,
+                                child: Wrap(
+                                  alignment: WrapAlignment.spaceBetween,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    Text(
+                                      l10n.deniAnswerTitle,
+                                      style: m3e.typeScale.labelLarge.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                        color: semantics.onDevice.foreground,
+                                      ),
+                                    ),
+                                    EnpriveProvenanceChip(
+                                      source: _deniExplanation!.inferenceSource,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _deniExplanation!.answer,
+                                style: m3e.typeScale.bodyMedium.copyWith(
+                                  height: 1.48,
+                                  color: scheme.onSurface,
+                                ),
+                              ),
+                              if (_deniExplanation!.processSteps.isNotEmpty ||
+                                  _deniExplanation!.thoughtSummary != null ||
+                                  _deniExplanation!.thoughtSignature !=
+                                      null) ...[
+                                const SizedBox(height: 12),
+                                AnalysisSavedTraceCard(
+                                  processSteps: _deniExplanation!.processSteps,
+                                  thoughtSummary:
+                                      _deniExplanation!.thoughtSummary,
+                                  thoughtSignature:
+                                      _deniExplanation!.thoughtSignature,
+                                  title: l10n.stepsAndReasoning,
+                                  compact: true,
+                                ),
+                              ],
                             ],
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _deniExplanation!.answer,
-                          style: const TextStyle(
-                            fontSize: 14.5,
-                            height: 1.48,
-                            color: EnpriveColors.ink,
-                          ),
-                        ),
-                        if (_deniExplanation!.processSteps.isNotEmpty ||
-                            _deniExplanation!.thoughtSummary != null ||
-                            _deniExplanation!.thoughtSignature != null) ...[
-                          const SizedBox(height: 12),
-                          AnalysisSavedTraceCard(
-                            processSteps: _deniExplanation!.processSteps,
-                            thoughtSummary: _deniExplanation!.thoughtSummary,
-                            thoughtSignature:
-                                _deniExplanation!.thoughtSignature,
-                            title: l10n.stepsAndReasoning,
-                            compact: true,
-                          ),
-                        ],
                       ],
+                    ],
+                  ),
+                ),
+
+                // Docked Bottom Bar: Deni Compact LOD (56dp) + Tactile Pill CTA
+                Container(
+                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 16),
+                  decoration: BoxDecoration(
+                    color: surfaces.card,
+                    border: Border(
+                      top: BorderSide(color: surfaces.hairlineBorder),
                     ),
                   ),
-                ],
-              ],
-            ),
-          ),
-
-          // Docked Bottom Bar (Exact B30 Pattern: Deni on left + Dark Pill CTA on right)
-          Container(
-            padding: const EdgeInsets.fromLTRB(24, 10, 24, 16),
-            decoration: BoxDecoration(
-              color: EnpriveColors.surface,
-              border: Border(
-                top: BorderSide(
-                  color: EnpriveColors.ink.withValues(alpha: 0.06),
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                DeniAnimatedMascot(
-                  size: 56,
-                  pose: _deniPose,
-                  onTap: (_isAskingDeni || _isConsentSheetOpen)
-                      ? null
-                      : () => _askDeni(
-                            _selectedQuestionIndex,
-                            activeQuestion,
-                            languageCode,
-                          ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: SizedBox(
-                    height: 54,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: EnpriveColors.ctaInk,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                      onPressed: _isAskingDeni
-                          ? null
-                          : () {
-                              if (_deniExplanation == null) {
-                                _askDeni(
+                  child: Row(
+                    children: [
+                      DeniAnimatedMascot(
+                        size: 56,
+                        pose: _deniPose,
+                        onTap: (_isAskingDeni || _isConsentSheetOpen)
+                            ? null
+                            : () => _askDeni(
                                   _selectedQuestionIndex,
                                   activeQuestion,
                                   languageCode,
-                                );
-                              } else {
-                                Navigator.pop(context);
-                              }
-                            },
-                      child: Text(
-                        _deniExplanation == null
-                            ? l10n.btnAskDeni
-                            : l10n.btnDone,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
+                                ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: SizedBox(
+                          height: 54,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: surfaces.tactilePrimaryBg,
+                              foregroundColor: surfaces.tactilePrimaryFg,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                            onPressed: _isAskingDeni
+                                ? null
+                                : () {
+                                    if (_deniExplanation == null) {
+                                      _askDeni(
+                                        _selectedQuestionIndex,
+                                        activeQuestion,
+                                        languageCode,
+                                      );
+                                    } else {
+                                      Navigator.pop(context);
+                                    }
+                                  },
+                            child: Text(
+                              _deniExplanation == null
+                                  ? l10n.btnAskDeni
+                                  : l10n.btnDone,
+                              style: m3e.typeScale.titleMedium.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: surfaces.tactilePrimaryFg,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -653,6 +719,9 @@ class _CompactEvidenceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -660,7 +729,7 @@ class _CompactEvidenceRow extends StatelessWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.10),
+            color: iconColor.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(10),
           ),
           child: EnpriveDuotoneIcon(iconSvg, size: 17, color: iconColor),
@@ -672,19 +741,17 @@ class _CompactEvidenceRow extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 12.5,
+                style: m3e.typeScale.labelMedium.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: EnpriveColors.inkSecondary,
+                  color: scheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 3),
               Text(
                 body,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: m3e.typeScale.bodyMedium.copyWith(
                   height: 1.45,
-                  color: EnpriveColors.ink,
+                  color: scheme.onSurface,
                 ),
               ),
             ],
