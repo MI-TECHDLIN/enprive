@@ -18,9 +18,9 @@
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
 - **Current `main` HEAD**: `a5c69d1`
-- **Active Feature Branch**: `feature/phase-a-privacy-boundary` (branched from `feature/splash-and-deni-icon` @ `4bbdc28`; Phase A privacy boundary restoration + closure hardening completed, awaiting manual GCP/physical-device verification before PR/Phase B)
+- **Active Feature Branch**: `feature/m3-expressive-rebrand` (branched from `feature/phase-a-privacy-boundary` @ `c902d16`; complete Stage 0–4 Material 3 Expressive (`material_3_expressive: 1.2.1`) design-system replacement and Deni 3-tier LOD completed and verified)
 - **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 24 November 2026)
-- **Next Queued Action**: Run manual live Firebase/GCP Cloud Logging audit on `enprive-hybrid-ai` and physical Android AICore/App Check verification; obtain closure sign-off before opening Phase A PR or starting Phase B.
+- **Next Queued Action**: Review `feature/m3-expressive-rebrand` (Stages 0–4) for merge into `feature/phase-a-privacy-boundary` / `main`, and run manual live Firebase/GCP Cloud Logging audit on `enprive-hybrid-ai` and physical Android AICore/App Check verification before Phase B.
 
 ---
 
@@ -825,6 +825,31 @@
   - `flutter build apk --debug`: **Built and installed `app-debug.apk` on `emulator-5554`**; verified live Light & Dark screenshots (`stage3_01` through `stage3_06`).
 - **Next Immediate Action & Recommended Model**:
   - Proceed to **Stage 4 — Full Legacy Cleanup, Final Accessibility/Locale Verification & Rebrand Sign-off** after user review of Stage 3.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 23 — Stage 4 Full Legacy Cleanup, Final Accessibility/Locale Verification & Rebrand Sign-off (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop Stage 3 commit `93bea44`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`SKILL.md`, `components.md`, `layout.md`, `theming.md`, `android-conventions.md`)
+  - `hamen/material-3-skill` (`SKILL.md`, `component-catalog.md`, `typography-and-shape.md`, `color-system.md`)
+  - `.agents/skills/svg-mascot-animator/SKILL.md` & `.agents/skills/mobile-app-ui-design/SKILL.md`
+  - All 8 visual inspiration boards in `mobile ui and ux inspration/` (never staged or committed per `AGENTS.md` Rule 2.3)
+- **What Was Built**:
+  - **1. Legacy UI Dependency Cleanup (`pubspec.yaml` & `pubspec.lock`)**:
+    - Removed unused legacy third-party UI dependencies (`loading_animation_widget: ^1.3.0`, `animated_status_card: ^0.0.1`, `beautiful_timeline: ^0.1.0`) from `pubspec.yaml` now that all progress indicators, status cards, and process timelines are rendered with `material_3_expressive: 1.2.1` (`M3EProgressIndicator`, `M3ECard`, and `AnalysisProcessTrace`).
+  - **2. Static Architectural Boundary Audit (`test/theme_and_deni_lod_test.dart`)**:
+    - Added an automated static source-code audit test verifying that **zero** `.dart` files in `lib/` outside `lib/core/theme/` and `lib/widgets/deni_animated_mascot.dart` (mascot SVG vector palette) import `enprive_colors.dart` or reference `EnpriveColors.*`.
+  - **3. 200% Text Scaling, Reduced Motion & Arabic RTL Dark-Mode Verification (`test/theme_and_deni_lod_test.dart`)**:
+    - Added end-to-end Stage 4 accessibility and localization widget tests verifying `ReviewResultScreen` and `ReceiptsScreen` at `TextScaler.linear(2.0)`, `disableAnimations: true`, and `Locale('ar')` (RTL) in Dark Mode (`ThemeMode.dark`) with zero layout overflows or exceptions.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **51/51 passed (100%)**.
+- **Next Immediate Action & Recommended Model**:
+  - Complete M3E Rebrand (`Stages 0–4`) ready for final review, PR creation, or merge into `feature/phase-a-privacy-boundary` / `main`.
   - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
 
 ---

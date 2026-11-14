@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:enprive/core/theme/enprive_colors.dart';
 import 'package:enprive/core/theme/enprive_theme.dart';
 import 'package:enprive/domain/review/review_coordinator.dart';
 import 'package:enprive/domain/review/review_models.dart';
+import 'package:enprive/l10n/app_localizations.dart';
 import 'package:enprive/main.dart';
 import 'package:enprive/screens/design_system_preview_screen.dart';
 import 'package:enprive/screens/receipts_screen.dart';
@@ -754,6 +757,161 @@ void main() {
         await tester.tap(find.byTooltip('Search'));
         await tester.pump(const Duration(milliseconds: 200));
         expect(find.byType(M3ESearchBar), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  });
+
+  group('Stage 4 — Full Legacy Cleanup, 200% Text Scale, Reduced Motion & RTL Sign-Off', () {
+    test(
+      'Zero application screens or widgets outside lib/core/theme/ and Deni custom painter import static enprive_colors.dart',
+      () {
+        final libDir = Directory('lib');
+        final dartFiles = libDir
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'));
+
+        final allowedPaths = <String>{
+          'lib/core/theme/enprive_colors.dart',
+          'lib/core/theme/enprive_tokens.dart',
+          'lib/core/theme/enprive_theme.dart',
+          'lib/core/theme/enprive_m3e_theme.dart',
+          'lib/widgets/deni_animated_mascot.dart',
+        };
+
+        for (final file in dartFiles) {
+          final normalizedPath = file.path.replaceAll('\\', '/');
+          if (allowedPaths.contains(normalizedPath)) continue;
+          final contents = file.readAsStringSync();
+          expect(
+            contents.contains('enprive_colors.dart'),
+            isFalse,
+            reason:
+                '$normalizedPath must not import static enprive_colors.dart; use M3ETheme and Enprive ThemeExtensions.',
+          );
+          expect(
+            contents.contains('EnpriveColors.'),
+            isFalse,
+            reason:
+                '$normalizedPath must not reference static EnpriveColors.*; use M3ETheme and Enprive ThemeExtensions.',
+          );
+        }
+      },
+    );
+
+    testWidgets(
+      'ReviewResultScreen, WhyThisFindingSheet, and ReceiptsScreen render cleanly at 200% text scale, reduced motion, and Arabic RTL in Dark Mode',
+      (WidgetTester tester) async {
+        final coordinator = ReviewCoordinator();
+        const finding = VerifiedFinding(
+          id: 'f_stage4',
+          title: 'Background Location Tracking',
+          category: FindingCategory.tracking,
+          severity: FindingSeverity.high,
+          exactExcerpt:
+              'Collects precise GPS coordinates while running in the background.',
+          explanation: 'Reads GPS location even when the screen is off.',
+          whatPolicySays: 'Discloses background GPS collection.',
+          whatAndroidReports: 'ACCESS_BACKGROUND_LOCATION requested.',
+          unknowns: ['Geofence retention period is unspecified.'],
+          status: EvidenceStatus.sourceMatched,
+        );
+
+        final receipt = PolicyReviewReceipt(
+          id: 'rcpt_stage4',
+          subjectTitle: 'EduTrack Classroom',
+          sourceLabel: 'Sample Profile',
+          createdAt: DateTime(2026, 11, 14, 16, 0),
+          overallState: ReviewOverallState.reviewRecommended,
+          inferenceSource: InferenceSource.offlineDeterministic,
+          summary:
+              'Review recommended: background location tracking clause identified.',
+          calibratedDisclaimer:
+              ReviewCoordinator.calibratedDefaultDisclaimer,
+          snapshotText:
+              'Collects precise GPS coordinates while running in the background.',
+          snapshotDigest: '998877665544',
+          findings: const [finding],
+        );
+
+        final activeData = EnpriveM3ETheme.darkThemeData;
+        await tester.pumpWidget(
+          MediaQuery(
+            data: const MediaQueryData(
+              textScaler: TextScaler.linear(2.0),
+              disableAnimations: true,
+            ),
+            child: M3EMaterialApp(
+              data: activeData,
+              typeface: EnpriveM3ETheme.typefaceConfig,
+              autoTheming: false,
+              dynamicColoring: false,
+              initialTheme: activeData.brightness,
+              theme: EnpriveM3ETheme.lightThemeData.toThemeData(),
+              darkTheme: EnpriveM3ETheme.darkThemeData.toThemeData(),
+              locale: const Locale('ar'),
+              localizationsDelegates: EnpriveM3ETheme.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              appBuilder: (context, child) => EnpriveM3EBridgeScope(
+                themeMode: ThemeMode.dark,
+                child: MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    textScaler: const TextScaler.linear(2.0),
+                    disableAnimations: true,
+                  ),
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              ),
+              home: ReviewResultScreen(
+                receipt: receipt,
+                coordinator: coordinator,
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+
+        await tester.pumpWidget(
+          MediaQuery(
+            data: const MediaQueryData(
+              textScaler: TextScaler.linear(2.0),
+              disableAnimations: true,
+            ),
+            child: M3EMaterialApp(
+              data: activeData,
+              typeface: EnpriveM3ETheme.typefaceConfig,
+              autoTheming: false,
+              dynamicColoring: false,
+              initialTheme: activeData.brightness,
+              theme: EnpriveM3ETheme.lightThemeData.toThemeData(),
+              darkTheme: EnpriveM3ETheme.darkThemeData.toThemeData(),
+              locale: const Locale('ar'),
+              localizationsDelegates: EnpriveM3ETheme.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              appBuilder: (context, child) => EnpriveM3EBridgeScope(
+                themeMode: ThemeMode.dark,
+                child: MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    textScaler: const TextScaler.linear(2.0),
+                    disableAnimations: true,
+                  ),
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              ),
+              home: Scaffold(
+                body: ReceiptsScreen(
+                  receipts: [receipt],
+                  coordinator: coordinator,
+                  onDeleteReceipt: (_) {},
+                  onStartReviewRequested: () {},
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
         expect(tester.takeException(), isNull);
       },
     );
