@@ -892,6 +892,40 @@
 
 ---
 
+### Iteration 25 — Editorial Stacked Receipt Card Redesign & Search Header Polish (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop commit `002dab2`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`SKILL.md`, `components.md` strict single-action card discipline & contrast-paired role usage, `theming.md` Light + Dark Screen Check parity)
+  - `hamen/material-3-skill` (`component-catalog.md`, `typography-and-shape.md`)
+  - `.agents/skills/mobile-app-ui-design/SKILL.md` (anti-clutter visual hierarchy, stepped cardstock card stack, restrained monochrome surfaces with single decisive CTA)
+  - `.agents/skills/flutter-add-widget-test/SKILL.md` & `.agents/skills/dart-run-static-analysis/SKILL.md`
+  - User-uploaded stepped stacked-card editorial UI reference (`media_1794688592689_54609d9b.jpg`) + `mobile ui and ux inspration/`
+- **What Was Built**:
+  - **1. Editorial Stacked-Card Redesign of `EnpriveReceiptCard` (`lib/widgets/m3e/enprive_receipt_card.dart`)**:
+    - Replaced both the legacy 3-band HTML-like divider card and an interim heavier Bento-nested draft with a compact, full-width 3-sheet stepped archival receipt deck (`Stack` of two inset peeking cardstock edges + crisp `22dp` `EnpriveMaterialCardSurface` top face, zero internal pastel boxes, zero `SHA-256` hash clutter).
+    - Top bar pairs the full source & tabular timestamp (`metaLine`, displaying cleanly without ellipsis) with a quiet ghost `LucideIcons.trash2` delete `IconButton` (`48dp` padded touch target).
+    - Middle editorial band pairs bold `titleLarge` app title and 2-line concise summary with a minimalist 3-step vertical posture meter (`_VerticalPostureMeter`: `┃ • •` monochrome ink capsule + muted dots encoding `reviewRecommended`, `insufficientEvidence`, or `noConcern`).
+    - Inset `1dp` `surfaces.hairlineBorder` separator anchors a bare high-contrast (`>= 8:1`) semantic shield glyph, localized verdict label + `Findings · Verified` tabular count (`findingsLabel` / `verifiedLabel`), and a decisive spring-morphing `M3EButton` (`Open receipt`) using `surfaces.tactilePrimaryBg` / `surfaces.tactilePrimaryFg` + `M3EButtonMotion.expressiveSpatialPress` (`borderRadius: 999` -> `14`).
+    - Responsive `LayoutBuilder` stacks the footer cleanly into a full-width column above `1.25x` text scale or `< 260dp` width.
+  - **2. Receipts Screen Header & Localization Wiring (`lib/screens/receipts_screen.dart`)**:
+    - Framed the top-right Search `IconButton` in a `44x44dp` tonal rounded `14dp` container (`48dp` padded target) and passed localized `l10n.statFindings` and `l10n.statVerified` into `EnpriveReceiptCard`.
+  - **3. Widget Test Coverage (`test/m3e_custom_cards_test.dart`)**:
+    - Added a dedicated widget test verifying `EnpriveReceiptCard` renders localized verdict and `2 Findings · 1 Verified` counts, omits `SHA-256` clutter, handles Open & Delete taps cleanly, and overflows zero widgets under Dark Mode + `TextScaler.linear(2.0)` + Arabic RTL (`Locale('ar')`).
+- **Challenges & Root-Cause Fixes**:
+  - **1. `material_ui` vs `flutter/material` `MaterialTapTargetSize` Collision**: Removed `MaterialTapTargetSize` import mismatch from `M3EButtonDecoration` (`material_3_expressive` imports `material_ui`), keeping standard `M3EButton` default padded hit targets cleanly while applying `MaterialTapTargetSize.padded` directly on Flutter's `IconButton`.
+  - **2. Iterative Visual Refinement From Emulator Inspection**: Initial multi-box Bento prototype exceeded 50% viewport height and felt overly busy with pastel inner cards + SHA-256 badges, while an interim footer layout truncated `"PM"` on `Classroom Sample · Nov 14 9:30 PM`. Adopted user's stacked-card editorial feedback, moved `metaLine` into the wide top row and `Findings · Verified` beneath the verdict label, and verified crisp rendering across both Light (`Warm Paper`) and Dark (`Obsidian Slate`) emulator captures.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **57/57 passed (100%)** (`pii_redactor_test`, `evidence_validator_test`, `permission_comparator_test`, `widget_test`, `theme_and_deni_lod_test`, `m3e_custom_cards_test`).
+  - `flutter build apk --debug`: Built cleanly (`app-debug.apk`), installed on `Pixel_9` (`emulator-5554`), and visually inspected both Light and Dark Mode `ReceiptsScreen` captures.
+- **Next Immediate Action & Recommended Model**:
+  - Review `feature/m3-expressive-rebrand` changes for PR / merge into `feature/phase-a-privacy-boundary` / `main`.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Manual Device & GCP Verification + Phase A Review**

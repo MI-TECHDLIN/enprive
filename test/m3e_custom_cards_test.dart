@@ -335,6 +335,77 @@ void main() {
       },
     );
 
+    testWidgets(
+      'EnpriveReceiptCard renders compact verdict/metrics dock without SHA-256 clutter in Dark Mode + 200% Scale + RTL',
+      (WidgetTester tester) async {
+        const unverifiedFinding = VerifiedFinding(
+          id: 'finding_2',
+          title: 'Retention Duration Missing',
+          category: FindingCategory.retention,
+          severity: FindingSeverity.low,
+          exactExcerpt: '',
+          explanation: 'No specific deletion timeframe stated.',
+          whatPolicySays: 'Vague retention wording.',
+          whatAndroidReports: 'No permission mismatch.',
+          unknowns: ['Exact retention window'],
+          status: EvidenceStatus.unverified,
+        );
+        final receipt = PolicyReviewReceipt(
+          id: 'rcpt_bento_test',
+          subjectTitle: 'EduTrack Classroom',
+          sourceLabel: 'Installed App',
+          createdAt: DateTime(2026, 11, 14, 15, 20),
+          overallState: ReviewOverallState.reviewRecommended,
+          inferenceSource: InferenceSource.onDevice,
+          summary: 'Shares analytics ID and GPS telemetry with embedded SDKs.',
+          calibratedDisclaimer: ReviewCoordinator.calibratedDefaultDisclaimer,
+          snapshotText: sampleFinding.exactExcerpt,
+          snapshotDigest: 'a1b2c3d4e5f6',
+          findings: const [sampleFinding, unverifiedFinding],
+        );
+
+        var opened = false;
+        var deleted = false;
+
+        await tester.pumpWidget(
+          _wrapInM3EApp(
+            mode: ThemeMode.dark,
+            locale: const Locale('ar'),
+            textScale: 2.0,
+            disableAnimations: true,
+            child: EnpriveReceiptCard(
+              receipt: receipt,
+              stateBadgeLabel: 'Review recommended',
+              metaLine: 'Installed App · Nov 14, 15:20',
+              openLabel: 'Open receipt',
+              deleteTooltip: 'Delete receipt',
+              findingsLabel: 'Findings',
+              verifiedLabel: 'Verified',
+              onOpen: () => opened = true,
+              onDelete: () => deleted = true,
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('EduTrack Classroom'), findsOneWidget);
+        expect(find.text('Review recommended'), findsOneWidget);
+        expect(find.text('2 Findings · 1 Verified'), findsOneWidget);
+        expect(find.textContaining('SHA-256'), findsNothing);
+        expect(tester.takeException(), isNull);
+
+        await tester.ensureVisible(find.text('Open receipt'));
+        await tester.tap(find.text('Open receipt'));
+        await tester.pump();
+        expect(opened, isTrue);
+
+        await tester.ensureVisible(find.byTooltip('Delete receipt'));
+        await tester.tap(find.byTooltip('Delete receipt'));
+        await tester.pump();
+        expect(deleted, isTrue);
+      },
+    );
+
     test('EnpriveFindingM3ECard enforces single-action rule (onTapCard XOR onAskDeni)', () {
       expect(
         () => EnpriveFindingM3ECard(

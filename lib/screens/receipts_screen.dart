@@ -127,10 +127,28 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                             }
                           });
                         },
+                        style: IconButton.styleFrom(
+                          backgroundColor: _isSearching
+                              ? scheme.primaryContainer
+                              : context.enpriveSurfaces.card,
+                          foregroundColor: _isSearching
+                              ? scheme.onPrimaryContainer
+                              : scheme.onSurface,
+                          fixedSize: const Size(44, 44),
+                          tapTargetSize: MaterialTapTargetSize.padded,
+                          padding: EdgeInsets.zero,
+                          side: BorderSide(
+                            color: _isSearching
+                                ? scheme.primary.withValues(alpha: 0.25)
+                                : context.enpriveSurfaces.hairlineBorder,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
                         icon: Icon(
                           _isSearching ? LucideIcons.x : LucideIcons.search,
-                          size: 20,
-                          color: scheme.onSurface,
+                          size: 19,
                         ),
                       ),
                     ],
@@ -289,6 +307,8 @@ class _M3EReceiptCard extends StatelessWidget {
       metaLine: '${receipt.sourceLabel} · $formattedDate',
       openLabel: l10n.btnOpenReceipt,
       deleteTooltip: l10n.btnDelete,
+      findingsLabel: l10n.statFindings,
+      verifiedLabel: l10n.statVerified,
       onOpen: onOpen,
       onDelete: onDelete,
     );
