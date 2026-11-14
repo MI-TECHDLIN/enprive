@@ -9,4 +9,5 @@ export 'enprive_material_card_surface.dart';
 export 'enprive_metric_tile_card.dart';
 export 'enprive_quote_card.dart';
 export 'enprive_receipt_card.dart';
+export 'enprive_review_hero_card.dart';
 export 'enprive_segmented_m3e_group.dart';

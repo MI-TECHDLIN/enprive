@@ -926,6 +926,35 @@
 
 ---
 
+## Iteration 26 — Review Result Hero Posture Card Redesign (`EnpriveReviewHeroCard`) & Live Light/Dark Verification
+
+- **Date**: 2026-11-14
+- **Branch**: `feature/m3-expressive-rebrand` (based on `fc7199d`)
+- **Base Commit Before Iteration**: `fc7199d`
+- **Active Model**: Antigravity Coding Agent
+- **Summary of Changes**:
+  - Created [`EnpriveReviewHeroCard`](lib/widgets/m3e/enprive_review_hero_card.dart) and exported it via [`enprive_m3e_components.dart`](lib/widgets/m3e/enprive_m3e_components.dart), replacing the full-bleed pastel scaffold hero stage and boxed 3-stat row on `ReviewResultScreen` with a crisp M3 Expressive hero posture summary card inspired by the left reference card aesthetic:
+    - Neutral `EnpriveMaterialCardSurface` cardstock framing an inset organic emerald-teal mesh header (`_OrganicTealMeshPainter` built purely from theme context tokens without static `enprive_colors.dart` imports) and top-end calibrated posture badge (`Review recommended` / `No concern identified` / `Insufficient evidence`).
+    - Overlapping `84dp` Deni portrait medallion (`DeniAnimatedMascot(size: 70)` -> `DeniLodTier.standard`, tap hit-tested inside `Stack` bounds and respecting `disableAnimations`).
+    - Identity header (`subjectTitle` + `${sourceLabel} · ${formattedDate}`) paired with a compact `M3EButton` `Source` snapshot pill and `40dp` circular read-aloud toggle button, responsive `Wrap` stacking at `> 1.28x` text scale.
+    - Inset horizontal hairline divider anchoring a borderless 3-column tabular metric row (`Findings`, `Verified`, and `OS Granted` / `Unverified`).
+    - Full-width tactile pill CTA (`_HeroArrowPillButton`) with leading RTL-aware circular arrow badge (`Ask Deni` when findings exist, `Save to Receipts` / `Saved to Receipts` when savable with zero findings, or `View reviewed policy snapshot` on already-saved zero-finding receipts).
+  - Refactored [`ReviewResultScreen`](lib/screens/review_result_screen.dart) onto `surfaces.canvas` (`Warm Paper` / `Obsidian Slate`), removed the duplicate docked bottom bar and boxed `_M3EStatTile` row, placed conditional Bookmark saving in the top navigation bar when `onSaveReceipt != null`, and kept calibrated summary/disclaimer text, `AnalysisSavedTraceCard`, segmented `Findings`, and `WhyThisFindingSheet` intact.
+  - Added widget tests in [`test/m3e_custom_cards_test.dart`](test/m3e_custom_cards_test.dart) covering `EnpriveReviewHeroCard` Light/Dark rendering, callback interactions (`onSourceAction`, `onVoiceAction`, `onMascotTap`, `onPrimaryCta`), reduced motion, `TextScaler.linear(2.0)`, and Arabic RTL (`Locale('ar')`).
+- **Challenges & Root-Cause Fixes**:
+  - **1. Subtitle Ellipsis Clipping Beside Action Controls**: In initial emulator captures, `Classroom Sample · Nov 14` truncated to `Classroom Sample · Nov...` beside `[Source]` and the voice button. Reduced `Source` pill horizontal padding (`13dp`), tightened `Wrap` spacing (`6dp`), and tuned subtitle typography (`bodySmall`, `13sp`, `w500`, `maxLines: 2`), eliminating truncation cleanly.
+  - **2. Light-Mode Mesh Contrast vs Muddy White Washout**: Blending `semantics.onDevice.background` with `surfaces.card` washed the lower-right mesh bloom smoky grey in Light Mode. Shifted the Light-Mode stops strictly onto `semantics.onDevice.icon` + `semantics.onDevice.background` blends for a luminous botanical mineral-teal gradient without importing `enprive_colors.dart`.
+  - **3. `MaterialLocalizations.maybeOf` & `DeniPose` Lookup**: Fixed `Localizations.of<MaterialLocalizations>(context, MaterialLocalizations)` date formatting on `ReviewResultScreen` and verified `DeniPose.explaining` in hero widget tests.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **58/58 passed (100%)** (`pii_redactor_test`, `evidence_validator_test`, `permission_comparator_test`, `widget_test`, `theme_and_deni_lod_test`, `m3e_custom_cards_test`).
+  - `flutter build apk --debug`: Built cleanly (`build/app/outputs/flutter-apk/app-debug.apk`), installed on `Pixel_9` (`emulator-5554`), and visually inspected refined Light and Dark Mode captures (`hero_result_light.png`, `hero_result_dark.png`).
+- **Next Immediate Action & Recommended Model**:
+  - Review `feature/m3-expressive-rebrand` changes for PR / merge into `feature/phase-a-privacy-boundary` / `main`.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Manual Device & GCP Verification + Phase A Review**

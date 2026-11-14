@@ -66,17 +66,16 @@ void main() {
     title: 'Precision Location Collected',
     category: FindingCategory.tracking,
     severity: FindingSeverity.medium,
-    exactExcerpt:
-        'We collect GPS telemetry in the background to personalize local offers.',
-    explanation: 'Tracks location even when you are not actively using the app.',
+    exactExcerpt: 'We collect GPS telemetry in the background to personalize local offers.',
+    explanation:
+        'Tracks location even when you are not actively using the app.',
     whatPolicySays: 'Discloses background GPS telemetry collection.',
     whatAndroidReports: 'ACCESS_BACKGROUND_LOCATION granted.',
     unknowns: ['Exact retention window not specified'],
     status: EvidenceStatus.sourceMatched,
     contextWindow: (
       before: 'Section 3 · Telemetry. ',
-      matched:
-          'We collect GPS telemetry in the background to personalize local offers.',
+      matched: 'We collect GPS telemetry in the background to personalize local offers.',
       after: ' Opt out in system settings.',
     ),
   );
@@ -125,10 +124,7 @@ void main() {
           pressedShell.margin,
           const EdgeInsets.only(top: 4.0, bottom: 0.0),
         );
-        expect(
-          pressedDecoration.borderRadius,
-          BorderRadius.circular(19),
-        );
+        expect(pressedDecoration.borderRadius, BorderRadius.circular(19));
 
         await gesture.up();
         await tester.pumpAndSettle();
@@ -476,6 +472,108 @@ void main() {
         expect(last.borderRadius.topLeft.x, 6.0);
         expect(last.borderRadius.bottomLeft.x, 22.0);
         expect(EnpriveRadii.lg, 20.0);
+      },
+    );
+
+    testWidgets(
+      'EnpriveReviewHeroCard renders Light/Dark editorial hero banner, borderless metrics, and interactive arrow CTA cleanly including 200% Arabic RTL',
+      (WidgetTester tester) async {
+        var sourceTapped = false;
+        var voiceTapped = false;
+        var ctaTapped = false;
+        var mascotTapped = false;
+
+        await tester.pumpWidget(
+          _wrapInM3EApp(
+            mode: ThemeMode.light,
+            child: EnpriveReviewHeroCard(
+              subjectTitle: 'EduTrack Classroom',
+              subtitle: 'Classroom Sample · Nov 14',
+              overallState: ReviewOverallState.reviewRecommended,
+              stateBadgeLabel: 'Review recommended',
+              findingsCountValue: '2',
+              findingsLabel: 'Findings',
+              verifiedCountValue: '2',
+              verifiedLabel: 'Verified',
+              secondaryMetricValue: '1',
+              secondaryMetricLabel: 'OS Granted',
+              hasPermissionReport: true,
+              mascotPose: DeniPose.explaining,
+              sourceActionLabel: 'Source',
+              sourceActionTooltip: 'View reviewed policy snapshot',
+              onSourceAction: () => sourceTapped = true,
+              isSpeaking: false,
+              voiceTooltip: 'Read summary aloud',
+              onVoiceAction: () => voiceTapped = true,
+              primaryCtaLabel: 'Ask Deni',
+              onPrimaryCta: () => ctaTapped = true,
+              onMascotTap: () => mascotTapped = true,
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.byType(EnpriveReviewHeroCard), findsOneWidget);
+        expect(find.byType(DeniAnimatedMascot), findsOneWidget);
+        expect(find.text('EduTrack Classroom'), findsOneWidget);
+        expect(find.text('Review recommended'), findsOneWidget);
+        expect(find.text('Findings'), findsOneWidget);
+        expect(find.text('Verified'), findsOneWidget);
+        expect(find.text('OS Granted'), findsOneWidget);
+
+        await tester.tap(find.text('Source'));
+        await tester.pump();
+        expect(sourceTapped, isTrue);
+
+        await tester.tap(find.byTooltip('Read summary aloud'));
+        await tester.pump();
+        expect(voiceTapped, isTrue);
+
+        await tester.tap(find.byType(DeniAnimatedMascot));
+        await tester.pump();
+        expect(mascotTapped, isTrue);
+
+        await tester.tap(find.text('Ask Deni'));
+        await tester.pump();
+        expect(ctaTapped, isTrue);
+        expect(tester.takeException(), isNull);
+
+        // Dark mode + Arabic RTL + 200% text scaling + reduced motion
+        await tester.pumpWidget(
+          _wrapInM3EApp(
+            mode: ThemeMode.dark,
+            locale: const Locale('ar'),
+            textScale: 2.0,
+            disableAnimations: true,
+            child: EnpriveReviewHeroCard(
+              subjectTitle: 'تطبيق EduTrack المدرسي التعليمي',
+              subtitle: 'عينة الفصل الدراسي · ١٤ نوفمبر',
+              overallState: ReviewOverallState.noConcern,
+              stateBadgeLabel: 'لا توجد مخاوف محددة',
+              findingsCountValue: '0',
+              findingsLabel: 'النتائج',
+              verifiedCountValue: '0',
+              verifiedLabel: 'موثقة',
+              secondaryMetricValue: '0',
+              secondaryMetricLabel: 'أذونات النظام',
+              hasPermissionReport: false,
+              mascotPose: DeniPose.celebrating,
+              sourceActionLabel: 'المصدر',
+              sourceActionTooltip: 'عرض نسخة السياسة',
+              onSourceAction: () {},
+              isSpeaking: true,
+              voiceTooltip: 'إيقاف القراءة',
+              onVoiceAction: () {},
+              primaryCtaLabel: 'حفظ في الإيصالات',
+              onPrimaryCta: () {},
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.byType(EnpriveReviewHeroCard), findsOneWidget);
+        expect(find.byType(DeniAnimatedMascot), findsOneWidget);
+        expect(tester.takeException(), isNull);
       },
     );
   });
