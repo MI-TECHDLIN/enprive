@@ -50,6 +50,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chipLocationUnavailable => 'Место обработки недоступно';
 
   @override
+  String get chipOfflineDeterministic => 'Локальная офлайн-проверка';
+
+  @override
+  String get chipUnknown => 'Источник обработки неизвестен';
+
+  @override
   String get statusSourceMatched => 'Цитата подтверждена';
 
   @override
@@ -227,6 +233,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter => 'Знайте, на что вы соглашаетесь.';
+
+  @override
+  String get splashQuote => 'Знайте, на что вы соглашаетесь';
 
   @override
   String get onboardingStep1Question =>

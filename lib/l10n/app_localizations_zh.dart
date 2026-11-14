@@ -46,6 +46,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chipLocationUnavailable => '处理位置不可用';
 
   @override
+  String get chipOfflineDeterministic => '离线本地扫描';
+
+  @override
+  String get chipUnknown => '处理来源未知';
+
+  @override
   String get statusSourceMatched => '原文已匹配';
 
   @override
@@ -214,6 +220,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter => '清楚了解你正在同意的内容。';
+
+  @override
+  String get splashQuote => '清楚了解你正在同意的内容';
 
   @override
   String get onboardingStep1Question => '你希望我如何解释\n隐私条款？';

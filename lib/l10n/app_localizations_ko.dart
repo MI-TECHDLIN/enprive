@@ -49,6 +49,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chipLocationUnavailable => '처리 위치 불명';
 
   @override
+  String get chipOfflineDeterministic => '오프라인 로컬 스캔';
+
+  @override
+  String get chipUnknown => '처리 출처를 알 수 없음';
+
+  @override
   String get statusSourceMatched => '원문 일치 확인';
 
   @override
@@ -218,6 +224,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter => '무엇에 동의하는지 알고 선택하세요.';
+
+  @override
+  String get splashQuote => '무엇에 동의하는지 알고 선택하세요';
 
   @override
   String get onboardingStep1Question => '약관을 어떤 방식으로\n설명해 드릴까요?';

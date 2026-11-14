@@ -11,11 +11,13 @@ class ReviewExecutionResult {
   final PolicyReviewReceipt? receipt;
   final bool needsCloudConsentOrManual;
   final String? errorReason;
+  final String? redactedPreview;
 
   const ReviewExecutionResult._({
     this.receipt,
     required this.needsCloudConsentOrManual,
     this.errorReason,
+    this.redactedPreview,
   });
 
   factory ReviewExecutionResult.completed(PolicyReviewReceipt receipt) {
@@ -25,10 +27,14 @@ class ReviewExecutionResult {
     );
   }
 
-  factory ReviewExecutionResult.requiresConsentChoice({String? reason}) {
+  factory ReviewExecutionResult.requiresConsentChoice({
+    String? reason,
+    String? redactedPreview,
+  }) {
     return ReviewExecutionResult._(
       needsCloudConsentOrManual: true,
       errorReason: reason,
+      redactedPreview: redactedPreview,
     );
   }
 }
@@ -122,33 +128,18 @@ class ReviewCoordinator {
 
     try {
       if (forceLocalManualScan) {
-        _recordAndEmitStep(
+        return _completeDeterministicPolicyScan(
           requestId: reqId,
           steps: processSteps,
           stage: 'local_clause_scan',
-          label: 'Running on-device clause scan',
-          inferenceSource: 'ON_DEVICE',
-        );
-        _recordAndEmitStep(
-          requestId: reqId,
-          steps: processSteps,
-          stage: 'verifying_evidence',
-          label: appPermissions != null
-              ? 'Matching verbatim quotes & phone permissions'
-              : 'Matching verbatim quotes in policy',
-          inferenceSource: 'ON_DEVICE',
-          isCompleted: true,
-        );
-        final receipt = buildDeterministicLocalReceipt(
+          label: 'Running offline local clause scan',
           subjectTitle: subjectTitle,
           sourceLabel: sourceLabel,
           policyText: trimmed,
-          source: InferenceSource.onDevice,
-          processSteps: List<String>.unmodifiable(processSteps),
+          appPermissions: appPermissions,
+          thoughtSummary: streamedThought,
+          thoughtSignature: streamedSignature,
           languageCode: languageCode,
-        );
-        return ReviewExecutionResult.completed(
-          _attachPermissionComparison(receipt, appPermissions),
         );
       }
 
@@ -156,8 +147,25 @@ class ReviewCoordinator {
       // stay strictly on this phone and NEVER enter AI prompts.
       final isComprehensive = PiiRedactor.isComprehensivePolicy(trimmed);
 
-      // 1. Try local on-device inference first unless policy is comprehensive.
-      if (!isComprehensive && !cloudConsent) {
+      // 1. Strict Privacy Boundary: without explicit cloudConsent, only ONLY_ON_DEVICE
+      // is permitted for concise text. Any failure or comprehensive length pauses for
+      // explicit user consent — never silently escalating to cloud.
+      if (!cloudConsent) {
+        if (isComprehensive) {
+          _recordAndEmitStep(
+            requestId: reqId,
+            steps: processSteps,
+            stage: 'on_device_consent_required',
+            label: 'Policy exceeds on-device limit — waiting for your choice',
+          );
+          final preview = PiiRedactor.redact(trimmed).redactedText;
+          return ReviewExecutionResult.requiresConsentChoice(
+            reason:
+                'This policy is too detailed for on-device AI processing.',
+            redactedPreview: preview,
+          );
+        }
+
         _recordAndEmitStep(
           requestId: reqId,
           steps: processSteps,
@@ -176,38 +184,17 @@ class ReviewCoordinator {
 
         if (localResult.status == HybridStatus.success &&
             localResult.structuredOutput != null) {
-          final thought = localResult.thoughtSummary ?? streamedThought;
-          final signature = localResult.thoughtSignature ?? streamedSignature;
-          if (thought != null) {
-            processSteps.add('Captured policy reasoning');
-          }
-          if (signature != null) {
-            processSteps.add('Captured thought signature');
-          }
-          _recordAndEmitStep(
+          return _completeBridgePolicyReceipt(
             requestId: reqId,
             steps: processSteps,
-            stage: 'verifying_evidence',
-            label: appPermissions != null
-                ? 'Matching verbatim quotes & phone permissions'
-                : 'Matching verbatim quotes in policy',
-            thoughtSummary: thought,
-            thoughtSignature: signature,
-            inferenceSource: localResult.inferenceSource,
-            isCompleted: true,
-          );
-          final receipt = _parseAndValidateBridgeOutput(
             subjectTitle: subjectTitle,
             sourceLabel: sourceLabel,
             snapshotText: trimmed,
             bridgeResult: localResult,
-            processSteps: List<String>.unmodifiable(processSteps),
-            thoughtSummary: thought,
-            thoughtSignature: signature,
+            appPermissions: appPermissions,
+            streamedThought: streamedThought,
+            streamedSignature: streamedSignature,
             languageCode: languageCode,
-          );
-          return ReviewExecutionResult.completed(
-            _attachPermissionComparison(receipt, appPermissions),
           );
         }
 
@@ -215,20 +202,18 @@ class ReviewCoordinator {
           requestId: reqId,
           steps: processSteps,
           stage: 'on_device_unavailable',
-          label: 'Preparing privacy-scrubbed check',
+          label: 'On-device AI unavailable — waiting for your choice',
         );
-      } else {
-        _recordAndEmitStep(
-          requestId: reqId,
-          steps: processSteps,
-          stage: 'routing_comprehensive',
-          label: 'Long policy — preparing privacy-scrubbed check',
+        final preview = PiiRedactor.redact(trimmed).redactedText;
+        return ReviewExecutionResult.requiresConsentChoice(
+          reason: localResult.message ??
+              'On-device AI is unavailable on this phone right now.',
+          redactedPreview: preview,
         );
       }
 
-      // 2. When on-device inference is unavailable or policy has comprehensive details,
-      // replace personal details with placeholders on-device and send the scrubbed text
-      // through Firebase AI Logic protected by App Check (limited-use tokens).
+      // 2. Explicit cloudConsent granted for this check: scrub PII strictly for
+      // data minimization, then invoke App Check protected ONLY_IN_CLOUD inference.
       final redaction = PiiRedactor.redact(trimmed);
       _recordAndEmitStep(
         requestId: reqId,
@@ -251,82 +236,143 @@ class ReviewCoordinator {
         task: 'summarise_concerns',
         text: redaction.redactedText,
         cloudConsent: true,
-        requestedMode: 'PREFER_ON_DEVICE',
+        requestedMode: 'ONLY_IN_CLOUD',
         languageCode: languageCode,
       );
 
       if (cloudResult.status == HybridStatus.success &&
           cloudResult.structuredOutput != null) {
-        final thought = cloudResult.thoughtSummary ?? streamedThought;
-        final signature = cloudResult.thoughtSignature ?? streamedSignature;
-        if (thought != null) {
-          processSteps.add('Streamed model thoughts');
-        }
-        if (signature != null) {
-          processSteps.add('Verified thought signature');
-        }
-        _recordAndEmitStep(
+        return _completeBridgePolicyReceipt(
           requestId: '${reqId}_appcheck',
           steps: processSteps,
-          stage: 'verifying_evidence',
-          label: appPermissions != null
-              ? 'Matching verbatim quotes & phone permissions'
-              : 'Matching verbatim quotes in policy',
-          thoughtSummary: thought,
-          thoughtSignature: signature,
-          inferenceSource: cloudResult.inferenceSource,
-          isCompleted: true,
-        );
-        final receipt = _parseAndValidateBridgeOutput(
           subjectTitle: subjectTitle,
           sourceLabel: sourceLabel,
           snapshotText: trimmed,
           redactedSnapshotText: redaction.redactedText,
           bridgeResult: cloudResult,
-          processSteps: List<String>.unmodifiable(processSteps),
-          thoughtSummary: thought,
-          thoughtSignature: signature,
+          appPermissions: appPermissions,
+          streamedThought: streamedThought,
+          streamedSignature: streamedSignature,
           languageCode: languageCode,
-        );
-        return ReviewExecutionResult.completed(
-          _attachPermissionComparison(receipt, appPermissions),
+          thoughtStepLabel: 'Streamed model thoughts',
+          signatureStepLabel: 'Verified thought signature',
         );
       }
 
-      // 3. Offline / no-network safety net: run deterministic on-device clause scan.
-      _recordAndEmitStep(
+      // 3. Offline / network failure safety net after explicit cloud consent:
+      // run deterministic local clause scan and record OFFLINE_DETERMINISTIC.
+      return _completeDeterministicPolicyScan(
         requestId: reqId,
         steps: processSteps,
         stage: 'offline_fallback',
-        label: 'Scanning policy clauses on this phone',
-        inferenceSource: 'ON_DEVICE',
-      );
-      _recordAndEmitStep(
-        requestId: reqId,
-        steps: processSteps,
-        stage: 'verifying_evidence',
-        label: appPermissions != null
-            ? 'Matching verbatim quotes & phone permissions'
-            : 'Matching verbatim quotes in policy',
-        inferenceSource: 'ON_DEVICE',
-        isCompleted: true,
-      );
-      final fallbackReceipt = buildDeterministicLocalReceipt(
+        label: 'Scanning policy clauses offline on this phone',
         subjectTitle: subjectTitle,
         sourceLabel: sourceLabel,
         policyText: trimmed,
-        source: InferenceSource.onDevice,
-        processSteps: List<String>.unmodifiable(processSteps),
+        appPermissions: appPermissions,
         thoughtSummary: streamedThought,
         thoughtSignature: streamedSignature,
         languageCode: languageCode,
       );
-      return ReviewExecutionResult.completed(
-        _attachPermissionComparison(fallbackReceipt, appPermissions),
-      );
     } finally {
       await sub.cancel();
     }
+  }
+
+  ReviewExecutionResult _completeBridgePolicyReceipt({
+    required String requestId,
+    required List<String> steps,
+    required String subjectTitle,
+    required String sourceLabel,
+    required String snapshotText,
+    String? redactedSnapshotText,
+    required HybridAnalysisResult bridgeResult,
+    required AppPermissionSnapshot? appPermissions,
+    required String? streamedThought,
+    required String? streamedSignature,
+    required String languageCode,
+    String thoughtStepLabel = 'Captured policy reasoning',
+    String signatureStepLabel = 'Captured thought signature',
+  }) {
+    final thought = bridgeResult.thoughtSummary ?? streamedThought;
+    final signature = bridgeResult.thoughtSignature ?? streamedSignature;
+    if (thought != null) {
+      steps.add(thoughtStepLabel);
+    }
+    if (signature != null) {
+      steps.add(signatureStepLabel);
+    }
+    _recordAndEmitStep(
+      requestId: requestId,
+      steps: steps,
+      stage: 'verifying_evidence',
+      label: appPermissions != null
+          ? 'Matching verbatim quotes & phone permissions'
+          : 'Matching verbatim quotes in policy',
+      thoughtSummary: thought,
+      thoughtSignature: signature,
+      inferenceSource: bridgeResult.inferenceSource,
+      isCompleted: true,
+    );
+    final receipt = _parseAndValidateBridgeOutput(
+      subjectTitle: subjectTitle,
+      sourceLabel: sourceLabel,
+      snapshotText: snapshotText,
+      redactedSnapshotText: redactedSnapshotText,
+      bridgeResult: bridgeResult,
+      processSteps: List<String>.unmodifiable(steps),
+      thoughtSummary: thought,
+      thoughtSignature: signature,
+      languageCode: languageCode,
+    );
+    return ReviewExecutionResult.completed(
+      _attachPermissionComparison(receipt, appPermissions),
+    );
+  }
+
+  ReviewExecutionResult _completeDeterministicPolicyScan({
+    required String requestId,
+    required List<String> steps,
+    required String stage,
+    required String label,
+    required String subjectTitle,
+    required String sourceLabel,
+    required String policyText,
+    required AppPermissionSnapshot? appPermissions,
+    String? thoughtSummary,
+    String? thoughtSignature,
+    required String languageCode,
+  }) {
+    _recordAndEmitStep(
+      requestId: requestId,
+      steps: steps,
+      stage: stage,
+      label: label,
+      inferenceSource: 'OFFLINE_DETERMINISTIC',
+    );
+    _recordAndEmitStep(
+      requestId: requestId,
+      steps: steps,
+      stage: 'verifying_evidence',
+      label: appPermissions != null
+          ? 'Matching verbatim quotes & phone permissions'
+          : 'Matching verbatim quotes in policy',
+      inferenceSource: 'OFFLINE_DETERMINISTIC',
+      isCompleted: true,
+    );
+    final receipt = buildDeterministicLocalReceipt(
+      subjectTitle: subjectTitle,
+      sourceLabel: sourceLabel,
+      policyText: policyText,
+      source: InferenceSource.offlineDeterministic,
+      processSteps: List<String>.unmodifiable(steps),
+      thoughtSummary: thoughtSummary,
+      thoughtSignature: thoughtSignature,
+      languageCode: languageCode,
+    );
+    return ReviewExecutionResult.completed(
+      _attachPermissionComparison(receipt, appPermissions),
+    );
   }
 
   PolicyReviewReceipt _attachPermissionComparison(
@@ -378,12 +424,13 @@ class ReviewCoordinator {
     required String question,
     required String snapshotText,
     bool cloudConsent = false,
+    bool forceLocalManualFallback = false,
     String languageCode = 'en',
     String? intentHint,
   }) async {
     final reqId = 'deni_${DateTime.now().millisecondsSinceEpoch}';
     final compositeInput =
-        'Question: $question\nQuoted Clause: "${finding.exactExcerpt}"\n\n$snapshotText';
+        'Question: ${question.trim()}\nQuoted Clause: "${finding.exactExcerpt.trim()}"\n\n${snapshotText.trim()}';
     final processSteps = <String>[];
     String? streamedThought;
     String? streamedSignature;
@@ -402,8 +449,43 @@ class ReviewCoordinator {
     });
 
     try {
+      if (forceLocalManualFallback) {
+        return _buildDeterministicDeniExplanation(
+          requestId: reqId,
+          steps: processSteps,
+          finding: finding,
+          question: question,
+          intentHint: intentHint,
+          thoughtSummary: streamedThought,
+          thoughtSignature: streamedSignature,
+        );
+      }
+
+      final defaultUnknown = finding.unknowns.isNotEmpty
+          ? finding.unknowns.first
+          : 'The policy text does not state how often this occurs in practice.';
+
       HybridAnalysisResult? res;
-      if (!PiiRedactor.isComprehensivePolicy(compositeInput) && !cloudConsent) {
+      if (!cloudConsent) {
+        if (PiiRedactor.isComprehensivePolicy(compositeInput)) {
+          _recordAndEmitStep(
+            requestId: reqId,
+            steps: processSteps,
+            stage: 'on_device_consent_required',
+            label: 'Policy excerpt exceeds on-device limit — waiting for your choice',
+          );
+          final scrubbed = PiiRedactor.redact(compositeInput);
+          return DeniExplanation.requiresConsentChoice(
+            question: question,
+            whatPolicySays: finding.whatPolicySays,
+            unknownBoundary: defaultUnknown,
+            consentReason:
+                'This finding excerpt is too detailed for on-device AI processing.',
+            redactedPreview: scrubbed.redactedText,
+            processSteps: List<String>.unmodifiable(processSteps),
+          );
+        }
+
         _recordAndEmitStep(
           requestId: reqId,
           steps: processSteps,
@@ -419,26 +501,32 @@ class ReviewCoordinator {
           requestedMode: 'ONLY_ON_DEVICE',
           languageCode: languageCode,
         );
-        if (localRes.status == HybridStatus.success) {
+        final localAnswer =
+            (localRes.structuredOutput?['answer'] as String?)?.trim();
+        if (localRes.status == HybridStatus.success &&
+            localRes.structuredOutput != null &&
+            localAnswer != null &&
+            localAnswer.isNotEmpty) {
           res = localRes;
         } else {
           _recordAndEmitStep(
             requestId: reqId,
             steps: processSteps,
             stage: 'on_device_unavailable',
-            label: 'Preparing privacy-scrubbed explanation',
+            label: 'On-device AI unavailable — waiting for your choice',
+          );
+          final scrubbed = PiiRedactor.redact(compositeInput);
+          return DeniExplanation.requiresConsentChoice(
+            question: question,
+            whatPolicySays: finding.whatPolicySays,
+            unknownBoundary: defaultUnknown,
+            consentReason: localRes.message ??
+                'On-device AI could not answer from this device right now.',
+            redactedPreview: scrubbed.redactedText,
+            processSteps: List<String>.unmodifiable(processSteps),
           );
         }
       } else {
-        _recordAndEmitStep(
-          requestId: reqId,
-          steps: processSteps,
-          stage: 'routing_comprehensive',
-          label: 'Preparing App Check explanation request',
-        );
-      }
-
-      if (res == null || res.status != HybridStatus.success) {
         final scrubbed = PiiRedactor.redact(compositeInput);
         _recordAndEmitStep(
           requestId: reqId,
@@ -460,7 +548,7 @@ class ReviewCoordinator {
           task: 'explain_finding',
           text: scrubbed.redactedText,
           cloudConsent: true,
-          requestedMode: 'PREFER_ON_DEVICE',
+          requestedMode: 'ONLY_IN_CLOUD',
           languageCode: languageCode,
         );
       }
@@ -495,13 +583,8 @@ class ReviewCoordinator {
                 (out['whatPolicySays'] as String?)?.trim() ??
                 finding.whatPolicySays,
             unknownBoundary:
-                (out['unknownBoundary'] as String?)?.trim() ??
-                (finding.unknowns.isNotEmpty
-                    ? finding.unknowns.first
-                    : 'The policy text does not state how often this occurs in practice.'),
-            inferenceSource: res.inferenceSource == 'IN_CLOUD'
-                ? InferenceSource.inCloud
-                : InferenceSource.onDevice,
+                (out['unknownBoundary'] as String?)?.trim() ?? defaultUnknown,
+            inferenceSource: parseInferenceSource(res.inferenceSource),
             processSteps: List<String>.unmodifiable(processSteps),
             thoughtSummary: thought,
             thoughtSignature: signature,
@@ -509,49 +592,70 @@ class ReviewCoordinator {
         }
       }
 
-      // Question-aware grounded response when offline or without AICore
-      _recordAndEmitStep(
+      return _buildDeterministicDeniExplanation(
         requestId: reqId,
         steps: processSteps,
-        stage: 'offline_fallback',
-        label: 'Answering directly from verified quote',
-        inferenceSource: 'ON_DEVICE',
-        isCompleted: true,
-      );
-      final qLower = question.toLowerCase();
-      final isOptOutQuestion =
-          intentHint == 'opt_out' ||
-          qLower.contains('turn this off') ||
-          qLower.contains('opt out');
-      final isUnknownQuestion =
-          intentHint == 'unknown' || qLower.contains('unknown');
-      final String groundedAnswer;
-      if (isOptOutQuestion) {
-        groundedAnswer =
-            'Look for a toggle in the app’s settings or Android App Permissions, '
-            'and check whether a parent or school admin must request deletion. '
-            'The quoted line does not show a one-tap opt-out.';
-      } else if (isUnknownQuestion) {
-        groundedAnswer = finding.unknowns.isNotEmpty
-            ? finding.unknowns.first
-            : 'This policy text does not prove how often data leaves the phone in practice.';
-      } else {
-        groundedAnswer = finding.explanation;
-      }
-
-      return DeniExplanation(
+        finding: finding,
         question: question,
-        answer: groundedAnswer,
-        whatPolicySays: 'Policy quote: “${finding.exactExcerpt}”',
-        unknownBoundary: finding.unknowns.isNotEmpty ? finding.unknowns.first : 'The policy text alone cannot show whether the app transmits this data right now.',
-        inferenceSource: InferenceSource.onDevice,
-        processSteps: List<String>.unmodifiable(processSteps),
+        intentHint: intentHint,
         thoughtSummary: streamedThought,
         thoughtSignature: streamedSignature,
       );
     } finally {
       await sub.cancel();
     }
+  }
+
+  DeniExplanation _buildDeterministicDeniExplanation({
+    required String requestId,
+    required List<String> steps,
+    required VerifiedFinding finding,
+    required String question,
+    String? intentHint,
+    String? thoughtSummary,
+    String? thoughtSignature,
+  }) {
+    _recordAndEmitStep(
+      requestId: requestId,
+      steps: steps,
+      stage: 'offline_fallback',
+      label: 'Answering directly from verified quote',
+      inferenceSource: 'OFFLINE_DETERMINISTIC',
+      isCompleted: true,
+    );
+    final qLower = question.toLowerCase();
+    final isOptOutQuestion =
+        intentHint == 'opt_out' ||
+        qLower.contains('turn this off') ||
+        qLower.contains('opt out');
+    final isUnknownQuestion =
+        intentHint == 'unknown' || qLower.contains('unknown');
+    final String groundedAnswer;
+    if (isOptOutQuestion) {
+      groundedAnswer =
+          'Look for a toggle in the app’s settings or Android App Permissions, '
+          'and check whether a parent or school admin must request deletion. '
+          'The quoted line does not show a one-tap opt-out.';
+    } else if (isUnknownQuestion) {
+      groundedAnswer = finding.unknowns.isNotEmpty
+          ? finding.unknowns.first
+          : 'This policy text does not prove how often data leaves the phone in practice.';
+    } else {
+      groundedAnswer = finding.explanation;
+    }
+
+    return DeniExplanation(
+      question: question,
+      answer: groundedAnswer,
+      whatPolicySays: 'Policy quote: “${finding.exactExcerpt}”',
+      unknownBoundary: finding.unknowns.isNotEmpty
+          ? finding.unknowns.first
+          : 'The policy text alone cannot show whether the app transmits this data right now.',
+      inferenceSource: InferenceSource.offlineDeterministic,
+      processSteps: List<String>.unmodifiable(steps),
+      thoughtSummary: thoughtSummary,
+      thoughtSignature: thoughtSignature,
+    );
   }
 
   PolicyReviewReceipt _parseAndValidateBridgeOutput({
@@ -664,11 +768,7 @@ class ReviewCoordinator {
       overallState = ReviewOverallState.noConcern;
     }
 
-    final sourceChip = switch (bridgeResult.inferenceSource.toUpperCase()) {
-      'IN_CLOUD' => InferenceSource.inCloud,
-      'ON_DEVICE' => InferenceSource.onDevice,
-      _ => InferenceSource.locationUnavailable,
-    };
+    final sourceChip = parseInferenceSource(bridgeResult.inferenceSource);
 
     return PolicyReviewReceipt(
       id: bridgeResult.requestId,
@@ -873,7 +973,7 @@ class ReviewCoordinator {
       snapshotDigest: EvidenceValidator.computeSnapshotDigest(snapshotText),
       createdAt: DateTime.now(),
       overallState: ReviewOverallState.insufficientEvidence,
-      inferenceSource: InferenceSource.onDevice,
+      inferenceSource: InferenceSource.unknown,
       summary: reason,
       calibratedDisclaimer: _localizedDisclaimerFor(languageCode),
       findings: const [],

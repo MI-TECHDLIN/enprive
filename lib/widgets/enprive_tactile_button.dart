@@ -79,22 +79,29 @@ class _EnpriveTactileButtonState extends State<EnpriveTactileButton> {
             ],
           ),
           child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (widget.leading != null) ...[
-                  widget.leading!,
-                  const SizedBox(width: 8),
-                ],
-                Text(
-                  widget.label,
-                  style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.leading != null) ...[
+                      widget.leading!,
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      widget.label,
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

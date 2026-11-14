@@ -49,6 +49,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get chipLocationUnavailable => 'Local de processamento indisponível';
 
   @override
+  String get chipOfflineDeterministic => 'Verificação local offline';
+
+  @override
+  String get chipUnknown => 'Origem do processamento desconhecida';
+
+  @override
   String get statusSourceMatched => 'Trecho confirmado';
 
   @override
@@ -225,6 +231,9 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get onboardingIntroFooter =>
       'Saiba exatamente com o que você está concordando.';
+
+  @override
+  String get splashQuote => 'Saiba exatamente com o que você está concordando';
 
   @override
   String get onboardingStep1Question =>

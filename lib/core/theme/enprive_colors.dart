@@ -39,6 +39,9 @@ abstract final class EnpriveColors {
   static const Color chipInCloudFg = Color(0xFF2B4C8C);
   static const Color chipInCloudBg = Color(0xFFE6EEFB);
 
+  static const Color chipOfflineFg = Color(0xFF5C4110);
+  static const Color chipOfflineBg = Color(0xFFF5EDE0);
+
   static const Color chipUnknownFg = Color(0xFF4A5263);
   static const Color chipUnknownBg = Color(0xFFEEF0F4);
 }

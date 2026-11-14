@@ -49,6 +49,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get chipLocationUnavailable => 'प्रोसेसिंग स्थान उपलब्ध नहीं';
 
   @override
+  String get chipOfflineDeterministic => 'ऑफ़लाइन स्थानीय स्कैन';
+
+  @override
+  String get chipUnknown => 'प्रोसेसिंग स्रोत अज्ञात';
+
+  @override
   String get statusSourceMatched => 'मूल पाठ से मेल';
 
   @override
@@ -224,6 +230,9 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get onboardingIntroFooter =>
       'जानिए कि आप किस बात की सहमति दे रहे हैं।';
+
+  @override
+  String get splashQuote => 'जानिए कि आप किस बात की सहमति दे रहे हैं';
 
   @override
   String get onboardingStep1Question => 'मैं गोपनीयता शर्तों को\nकैसे समझाऊँ?';

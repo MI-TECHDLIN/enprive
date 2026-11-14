@@ -49,6 +49,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chipLocationUnavailable => 'موقع المعالجة غير متاح';
 
   @override
+  String get chipOfflineDeterministic => 'فحص محلي دون اتصال';
+
+  @override
+  String get chipUnknown => 'مصدر المعالجة غير معروف';
+
+  @override
   String get statusSourceMatched => 'مطابق للنص الأصلي';
 
   @override
@@ -227,6 +233,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter => 'اعرف تمامًا ما توافق عليه.';
+
+  @override
+  String get splashQuote => 'اعرف تمامًا ما توافق عليه';
 
   @override
   String get onboardingStep1Question => 'كيف تفضل أن أشرح\nشروط الخصوصية؟';

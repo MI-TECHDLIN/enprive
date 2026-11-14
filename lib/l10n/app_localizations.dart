@@ -190,6 +190,18 @@ abstract class AppLocalizations {
   /// **'Processing location unavailable'**
   String get chipLocationUnavailable;
 
+  /// No description provided for @chipOfflineDeterministic.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline local scan'**
+  String get chipOfflineDeterministic;
+
+  /// No description provided for @chipUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing source unknown'**
+  String get chipUnknown;
+
   /// No description provided for @statusSourceMatched.
   ///
   /// In en, this message translates to:
@@ -507,6 +519,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Know what you\'re agreeing to.'**
   String get onboardingIntroFooter;
+
+  /// No description provided for @splashQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Know what you\'re agreeing to'**
+  String get splashQuote;
 
   /// No description provided for @onboardingStep1Question.
   ///

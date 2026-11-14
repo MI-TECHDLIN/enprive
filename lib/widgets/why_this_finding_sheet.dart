@@ -4,10 +4,13 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_theme.dart';
+import '../domain/privacy/pii_redactor.dart';
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
+import '../services/platform/hybrid_ai_bridge.dart';
 import 'analysis_process_trace.dart';
+import 'cloud_consent_sheet.dart';
 import 'deni_animated_mascot.dart';
 import 'enprive_duotone_icon.dart';
 import 'enprive_provenance_chip.dart';
@@ -69,37 +72,123 @@ class WhyThisFindingSheet extends StatefulWidget {
 class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
   DeniPose _deniPose = DeniPose.explaining;
   bool _isAskingDeni = false;
+  bool _isConsentSheetOpen = false;
   DeniExplanation? _deniExplanation;
   int _selectedQuestionIndex = 0;
+
+  String _intentHintForIndex(int questionIndex) {
+    return switch (questionIndex) {
+      1 => 'opt_out',
+      2 => 'unknown',
+      _ => 'meaning',
+    };
+  }
 
   Future<void> _askDeni(
     int questionIndex,
     String question,
     String languageCode,
   ) async {
+    if (_isAskingDeni || _isConsentSheetOpen) return;
+    final hint = _intentHintForIndex(questionIndex);
     setState(() {
       _selectedQuestionIndex = questionIndex;
       _isAskingDeni = true;
       _deniPose = DeniPose.thinking;
     });
 
-    final explanation = await widget.coordinator.askDeniAboutFinding(
-      finding: widget.finding,
-      question: question,
-      snapshotText: widget.snapshotText,
-      cloudConsent: widget.cloudConsentGrantedForSession,
-      languageCode: languageCode,
-      intentHint: switch (questionIndex) {
-        1 => 'opt_out',
-        2 => 'unknown',
-        _ => 'meaning',
-      },
-    );
+    final DeniExplanation explanation;
+    try {
+      explanation = await widget.coordinator.askDeniAboutFinding(
+        finding: widget.finding,
+        question: question,
+        snapshotText: widget.snapshotText,
+        cloudConsent: widget.cloudConsentGrantedForSession,
+        languageCode: languageCode,
+        intentHint: hint,
+      );
+    } on HybridOperationCancelledException {
+      if (mounted) {
+        setState(() {
+          _isAskingDeni = false;
+          _deniPose = DeniPose.explaining;
+        });
+      }
+      return;
+    }
 
+    if (!mounted) return;
+    if (!explanation.requiresCloudConsent) {
+      setState(() {
+        _isAskingDeni = false;
+        _deniExplanation = explanation;
+        _deniPose = DeniPose.explaining;
+      });
+      return;
+    }
+
+    setState(() {
+      _isAskingDeni = false;
+      _isConsentSheetOpen = true;
+      _deniPose = DeniPose.support;
+    });
+
+    final CloudConsentDecision decision;
+    try {
+      decision = await CloudConsentSheet.show(
+        context,
+        subjectTitle: widget.finding.title,
+        policyText: explanation.redactedPreview ??
+            PiiRedactor.redact(widget.snapshotText).redactedText,
+        deviceReason: explanation.consentReason,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isConsentSheetOpen = false;
+        });
+      } else {
+        _isConsentSheetOpen = false;
+      }
+    }
+    if (!mounted) return;
+
+    if (decision == CloudConsentDecision.cancelled) {
+      setState(() {
+        _deniPose = DeniPose.explaining;
+      });
+      return;
+    }
+
+    setState(() {
+      _isAskingDeni = true;
+      _deniPose = DeniPose.thinking;
+    });
+
+    final DeniExplanation resolved;
+    try {
+      resolved = await widget.coordinator.askDeniAboutFinding(
+        finding: widget.finding,
+        question: question,
+        snapshotText: widget.snapshotText,
+        cloudConsent: decision == CloudConsentDecision.useCloudOnce,
+        forceLocalManualFallback: decision == CloudConsentDecision.reviewLocally,
+        languageCode: languageCode,
+        intentHint: hint,
+      );
+    } on HybridOperationCancelledException {
+      if (mounted) {
+        setState(() {
+          _isAskingDeni = false;
+          _deniPose = DeniPose.explaining;
+        });
+      }
+      return;
+    }
     if (!mounted) return;
     setState(() {
       _isAskingDeni = false;
-      _deniExplanation = explanation;
+      _deniExplanation = resolved;
       _deniPose = DeniPose.explaining;
     });
   }
@@ -201,51 +290,65 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                           horizontal: 18,
                           vertical: 14,
                         ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                color: isVerified
-                                    ? EnpriveColors.teal
-                                    : EnpriveColors.inkSecondary,
-                                shape: BoxShape.circle,
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: isVerified
+                                          ? EnpriveColors.teal
+                                          : EnpriveColors.inkSecondary,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      finding.status ==
+                                              EvidenceStatus.deviceObserved
+                                          ? l10n.statusDeviceObserved
+                                          : (isVerified
+                                                ? l10n.statusSourceMatched
+                                                : l10n.statusUnverified),
+                                      style: const TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: EnpriveColors.ink,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              finding.status == EvidenceStatus.deviceObserved
-                                  ? l10n.statusDeviceObserved
-                                  : (isVerified
-                                        ? l10n.statusSourceMatched
-                                        : l10n.statusUnverified),
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w800,
-                                color: EnpriveColors.ink,
-                              ),
-                            ),
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: EnpriveColors.surfaceMuted,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                _categoryLabel(l10n, finding.category),
-                                style: const TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: EnpriveColors.inkSecondary,
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: EnpriveColors.surfaceMuted,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  _categoryLabel(l10n, finding.category),
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: EnpriveColors.inkSecondary,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
 
@@ -351,7 +454,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                         _deniExplanation != null;
                     return InkWell(
                       borderRadius: BorderRadius.circular(14),
-                      onTap: _isAskingDeni
+                      onTap: (_isAskingDeni || _isConsentSheetOpen)
                           ? null
                           : () => _askDeni(idx, q, languageCode),
                       child: AnimatedContainer(
@@ -413,21 +516,27 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              l10n.deniAnswerTitle,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w800,
-                                color: EnpriveColors.tealStrong,
+                        SizedBox(
+                          width: double.infinity,
+                          child: Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              Text(
+                                l10n.deniAnswerTitle,
+                                style: const TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: EnpriveColors.tealStrong,
+                                ),
                               ),
-                            ),
-                            const Spacer(),
-                            EnpriveProvenanceChip(
-                              source: _deniExplanation!.inferenceSource,
-                            ),
-                          ],
+                              EnpriveProvenanceChip(
+                                source: _deniExplanation!.inferenceSource,
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -475,11 +584,13 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                 DeniAnimatedMascot(
                   size: 56,
                   pose: _deniPose,
-                  onTap: () => _askDeni(
-                    _selectedQuestionIndex,
-                    activeQuestion,
-                    languageCode,
-                  ),
+                  onTap: (_isAskingDeni || _isConsentSheetOpen)
+                      ? null
+                      : () => _askDeni(
+                            _selectedQuestionIndex,
+                            activeQuestion,
+                            languageCode,
+                          ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+
 import '../core/theme/enprive_colors.dart';
 import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
@@ -74,7 +75,8 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context) ??
+    final l10n =
+        AppLocalizations.of(context) ??
         lookupAppLocalizations(
           Localizations.maybeLocaleOf(context) ?? const Locale('en'),
         );
@@ -86,10 +88,10 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
             ModelDownloadStatus.downloadable => l10n.modelDownloadableMsg,
             ModelDownloadStatus.unavailable ||
             ModelDownloadStatus.failed ||
-            null =>
-              l10n.localScannerDefaultMsg,
+            null => l10n.localScannerDefaultMsg,
           };
-    final isReady = _capability?.isSupported == true &&
+    final isReady =
+        _capability?.isSupported == true &&
         _capability?.modelStatus == ModelDownloadStatus.available;
 
     return Container(
@@ -174,7 +176,9 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
                       child: _isPreparing
                           ? const Padding(
                               padding: EdgeInsets.all(12.0),
-                              child: CircularProgressIndicator(strokeWidth: 2.5),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
                             )
                           : EnpriveDuotoneIcon(
                               isReady
@@ -195,8 +199,8 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
                             _isPreparing
                                 ? l10n.preparingPrivateAnalysis
                                 : (isReady
-                                    ? l10n.onDeviceAiReadyTitle
-                                    : l10n.localScannerActiveTitle),
+                                      ? l10n.onDeviceAiReadyTitle
+                                      : l10n.localScannerActiveTitle),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
@@ -223,9 +227,8 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
               Text(
                 l10n.privateAnalysisTitle,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontSize: 24,
-                    ),
+                style: Theme.of(context).textTheme.headlineLarge
+                    ?.copyWith(fontSize: 24),
               ),
               const SizedBox(height: 8),
               Text(

@@ -111,5 +111,46 @@ void main() {
       list = await repo.loadReceipts();
       expect(list, isEmpty);
     });
+
+    test(
+      'serializes offlineDeterministic and maps unrecognized inferenceSource JSON to unknown while preserving legacy locationUnavailable',
+      () {
+        final offlineReceipt = PolicyReviewReceipt(
+          id: 'rcpt_offline',
+          subjectTitle: 'CalmMath',
+          sourceLabel: 'Manual Scan',
+          snapshotText: 'Stored locally.',
+          snapshotDigest: '1234abcd',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1731440000000),
+          overallState: ReviewOverallState.noConcern,
+          inferenceSource: InferenceSource.offlineDeterministic,
+          summary: 'No concerns.',
+          calibratedDisclaimer:
+              'No concern identified in the reviewed evidence. This is not a safety certification.',
+          findings: const [],
+        );
+
+        final roundtrip =
+            PolicyReviewReceipt.fromJson(offlineReceipt.toJson());
+        expect(roundtrip.inferenceSource, InferenceSource.offlineDeterministic);
+
+        final unknownJson = offlineReceipt.toJson()
+          ..['inferenceSource'] = 'UNRECOGNIZED_BACKEND';
+        final decodedUnknown = PolicyReviewReceipt.fromJson(unknownJson);
+        expect(decodedUnknown.inferenceSource, InferenceSource.unknown);
+
+        final missingJson = offlineReceipt.toJson()..remove('inferenceSource');
+        final decodedMissing = PolicyReviewReceipt.fromJson(missingJson);
+        expect(decodedMissing.inferenceSource, InferenceSource.unknown);
+
+        final legacyLocationJson = offlineReceipt.toJson()
+          ..['inferenceSource'] = 'locationUnavailable';
+        final decodedLegacy = PolicyReviewReceipt.fromJson(legacyLocationJson);
+        expect(
+          decodedLegacy.inferenceSource,
+          InferenceSource.locationUnavailable,
+        );
+      },
+    );
   });
 }

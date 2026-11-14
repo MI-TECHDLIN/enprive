@@ -49,6 +49,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chipLocationUnavailable => 'Processing location unavailable';
 
   @override
+  String get chipOfflineDeterministic => 'Offline local scan';
+
+  @override
+  String get chipUnknown => 'Processing source unknown';
+
+  @override
   String get statusSourceMatched => 'Source matched';
 
   @override
@@ -223,6 +229,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter => 'Know what you\'re agreeing to.';
+
+  @override
+  String get splashQuote => 'Know what you\'re agreeing to';
 
   @override
   String get onboardingStep1Question => 'How should I explain\nprivacy terms?';

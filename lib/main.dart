@@ -11,6 +11,7 @@ import 'package:lucide_icons_flutter/lucide_icons_500.dart';
 import 'core/theme/enprive_colors.dart';
 import 'core/theme/enprive_theme.dart';
 import 'domain/permissions/permission_comparator.dart';
+import 'domain/privacy/pii_redactor.dart';
 import 'domain/review/review_coordinator.dart';
 import 'domain/review/review_models.dart';
 import 'l10n/app_localizations.dart';
@@ -19,11 +20,12 @@ import 'screens/onboarding_flow_screen.dart';
 import 'screens/receipts_screen.dart';
 import 'screens/review_result_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/splash_screen.dart';
 import 'services/platform/hybrid_ai_bridge.dart';
 import 'services/storage/receipt_repository.dart';
+import 'widgets/cloud_consent_sheet.dart';
 import 'widgets/deni_animated_mascot.dart';
 import 'widgets/enprive_duotone_icon.dart';
-import 'widgets/enprive_provenance_chip.dart';
 import 'widgets/enprive_tactile_button.dart';
 import 'widgets/installed_app_picker_sheet.dart';
 import 'widgets/language_picker_sheet.dart';
@@ -37,7 +39,14 @@ void main() {
 }
 
 class EnpriveApp extends StatefulWidget {
-  const EnpriveApp({super.key});
+  final bool showSplashOnLaunch;
+  final Duration splashDuration;
+
+  const EnpriveApp({
+    super.key,
+    this.showSplashOnLaunch = true,
+    this.splashDuration = const Duration(milliseconds: 1400),
+  });
 
   @override
   State<EnpriveApp> createState() => _EnpriveAppState();
@@ -64,7 +73,12 @@ class _EnpriveAppState extends State<EnpriveApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: HomeScreen(currentLocale: _locale, onLocaleChange: _setLocale),
+      home: HomeScreen(
+        currentLocale: _locale,
+        onLocaleChange: _setLocale,
+        showSplashOnLaunch: widget.showSplashOnLaunch,
+        splashDuration: widget.splashDuration,
+      ),
     );
   }
 }
@@ -72,11 +86,15 @@ class _EnpriveAppState extends State<EnpriveApp> {
 class HomeScreen extends StatefulWidget {
   final Locale currentLocale;
   final ValueChanged<Locale> onLocaleChange;
+  final bool showSplashOnLaunch;
+  final Duration splashDuration;
 
   const HomeScreen({
     super.key,
     required this.currentLocale,
     required this.onLocaleChange,
+    this.showSplashOnLaunch = true,
+    this.splashDuration = const Duration(milliseconds: 1400),
   });
 
   @override
@@ -105,12 +123,16 @@ We do not collect personal identifiers, precise location data, microphone audio,
   final UserPreferencesRepository _prefsRepo = UserPreferencesRepository();
   DeviceCapability? _deviceCapability;
   bool _isRunningReview = false;
+  bool _isConsentSheetOpen = false;
   String _activeReviewTitle = 'Privacy Policy';
   bool _isCloudReviewInFlight = false;
   DeniPose _activePose = DeniPose.idle;
   int _selectedTabIndex = 0;
   ExplanationDepth _explanationDepth = ExplanationDepth.balanced;
   final List<PolicyReviewReceipt> _savedReceipts = [];
+  late bool _isSplashVisible = widget.showSplashOnLaunch;
+  bool _pendingFirstRunOnboarding = false;
+  String? _pendingIncomingText;
 
   @override
   void initState() {
@@ -132,6 +154,34 @@ We do not collect personal identifiers, precise location data, microphone audio,
     }
   }
 
+  void _completeSplash() {
+    if (!_isSplashVisible || !mounted) return;
+    setState(() => _isSplashVisible = false);
+
+    if (_pendingIncomingText != null) {
+      final text = _pendingIncomingText!;
+      _pendingIncomingText = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _activePose = DeniPose.thinking);
+        final l10n = AppLocalizations.of(context);
+        if (l10n != null) {
+          _showPasteModal(context, l10n, initialText: text);
+        }
+      });
+      return;
+    }
+
+    if (_pendingFirstRunOnboarding) {
+      _pendingFirstRunOnboarding = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          unawaited(_openOnboardingFlow());
+        }
+      });
+    }
+  }
+
   Future<void> _initializeDeviceAndIntent() async {
     final storedReceipts = await _receiptRepo.loadReceipts();
     final prefs = await _prefsRepo.load();
@@ -147,7 +197,11 @@ We do not collect personal identifiers, precise location data, microphone audio,
         widget.onLocaleChange(savedLocale);
       }
       if (!prefs.hasCompletedOnboarding) {
-        unawaited(_openOnboardingFlow());
+        if (_isSplashVisible) {
+          _pendingFirstRunOnboarding = true;
+        } else {
+          unawaited(_openOnboardingFlow());
+        }
       }
     }
 
@@ -225,6 +279,12 @@ We do not collect personal identifiers, precise location data, microphone audio,
     final incomingText = await _bridge.getInitialSelectedText();
     if (!mounted || incomingText == null || incomingText.isEmpty) return;
 
+    if (_isSplashVisible) {
+      _pendingIncomingText = incomingText;
+      _completeSplash();
+      return;
+    }
+
     setState(() {
       _activePose = DeniPose.thinking;
     });
@@ -253,7 +313,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
     bool cloudConsent = false,
     bool forceLocalManualScan = false,
   }) async {
-    if (_isRunningReview) return;
+    if (_isRunningReview || _isConsentSheetOpen) return;
     setState(() {
       _isRunningReview = true;
       _activeReviewTitle = subjectTitle;
@@ -261,23 +321,91 @@ We do not collect personal identifiers, precise location data, microphone audio,
       _activePose = DeniPose.thinking;
     });
 
-    final outcome = await _coordinator.runPolicyReview(
-      subjectTitle: subjectTitle,
-      sourceLabel: sourceLabel,
-      policyText: policyText,
-      appPermissions: appPermissions,
-      cloudConsent: cloudConsent,
-      forceLocalManualScan: forceLocalManualScan,
-      languageCode: widget.currentLocale.languageCode,
-    );
+    final ReviewExecutionResult outcome;
+    try {
+      outcome = await _coordinator.runPolicyReview(
+        subjectTitle: subjectTitle,
+        sourceLabel: sourceLabel,
+        policyText: policyText,
+        appPermissions: appPermissions,
+        cloudConsent: cloudConsent,
+        forceLocalManualScan: forceLocalManualScan,
+        languageCode: widget.currentLocale.languageCode,
+      );
+    } on HybridOperationCancelledException {
+      if (mounted) {
+        setState(() {
+          _isRunningReview = false;
+          _isCloudReviewInFlight = false;
+          _activePose = DeniPose.idle;
+        });
+      }
+      return;
+    }
 
     if (!mounted) return;
     setState(() {
       _isRunningReview = false;
+      _isCloudReviewInFlight = false;
     });
 
     final receipt = outcome.receipt;
-    if (receipt == null) return;
+    if (receipt == null) {
+      if (outcome.needsCloudConsentOrManual) {
+        setState(() {
+          _isConsentSheetOpen = true;
+          _activePose = DeniPose.support;
+        });
+        final CloudConsentDecision decision;
+        try {
+          decision = await CloudConsentSheet.show(
+            context,
+            subjectTitle: subjectTitle,
+            policyText: outcome.redactedPreview ??
+                PiiRedactor.redact(policyText).redactedText,
+            deviceReason: outcome.errorReason,
+          );
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isConsentSheetOpen = false;
+            });
+          } else {
+            _isConsentSheetOpen = false;
+          }
+        }
+        if (!mounted) return;
+        switch (decision) {
+          case CloudConsentDecision.useCloudOnce:
+            await _executePolicyReview(
+              subjectTitle: subjectTitle,
+              sourceLabel: sourceLabel,
+              policyText: policyText,
+              appPermissions: appPermissions,
+              cloudConsent: true,
+            );
+            return;
+          case CloudConsentDecision.reviewLocally:
+            await _executePolicyReview(
+              subjectTitle: subjectTitle,
+              sourceLabel: sourceLabel,
+              policyText: policyText,
+              appPermissions: appPermissions,
+              forceLocalManualScan: true,
+            );
+            return;
+          case CloudConsentDecision.cancelled:
+            setState(() {
+              _activePose = DeniPose.idle;
+            });
+            return;
+        }
+      }
+      setState(() {
+        _activePose = DeniPose.idle;
+      });
+      return;
+    }
 
     setState(() {
       _activePose = switch (receipt.overallState) {
@@ -292,8 +420,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
         builder: (_) => ReviewResultScreen(
           receipt: receipt,
           coordinator: _coordinator,
-          cloudConsentGrantedForSession:
-              receipt.inferenceSource == InferenceSource.inCloud,
+          cloudConsentGrantedForSession: false,
           onSaveReceipt: _saveReceipt,
         ),
       ),
@@ -325,24 +452,32 @@ We do not collect personal identifiers, precise location data, microphone audio,
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final activeLang = enpriveLanguageByCode(widget.currentLocale.languageCode);
+    final disableAnimations =
+        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
-    return Scaffold(
+    final mainScaffold = Scaffold(
       extendBody: true,
       appBar: AppBar(
         titleSpacing: 24,
         title: Row(
           children: [
             Container(
-              width: 32,
-              height: 32,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
-                color: EnpriveColors.teal,
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: EnpriveColors.ink.withValues(alpha: 0.12),
+                  width: 1,
+                ),
               ),
-              child: const EnpriveDuotoneIcon(
-                Ph.shield_check_duotone,
-                color: Colors.white,
-                size: 19,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(9),
+                child: Image.asset(
+                  'assets/images/enprive_logo.png',
+                  fit: BoxFit.cover,
+                  excludeFromSemantics: true,
+                ),
               ),
             ),
             const SizedBox(width: 10),
@@ -452,6 +587,31 @@ We do not collect personal identifiers, precise location data, microphone audio,
         onSelect: (index) => setState(() => _selectedTabIndex = index),
       ),
     );
+
+    return Stack(
+      children: [
+        ExcludeSemantics(
+          excluding: _isSplashVisible,
+          child: IgnorePointer(
+            ignoring: _isSplashVisible,
+            child: mainScaffold,
+          ),
+        ),
+        AnimatedSwitcher(
+          duration: disableAnimations
+              ? Duration.zero
+              : const Duration(milliseconds: 320),
+          switchOutCurve: Curves.easeOutCubic,
+          child: _isSplashVisible
+              ? EnpriveSplashScreen(
+                  key: const ValueKey<String>('enprive_splash'),
+                  displayDuration: widget.splashDuration,
+                  onCompleted: _completeSplash,
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
   }
 
   Widget _buildHomeTab(
@@ -542,7 +702,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     constraints.maxWidth < 340 || textScale > 1.35;
                 final cardHeight = stackVertically
                     ? (220 * textScale).clamp(220.0, 420.0)
-                    : 208.0;
+                    : 218.0;
                 final entryAnim = disableAnimations
                     ? EntryAnimationType.none
                     : EntryAnimationType.slideUp;

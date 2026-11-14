@@ -50,6 +50,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chipLocationUnavailable => 'Ubicación de análisis no disponible';
 
   @override
+  String get chipOfflineDeterministic => 'Análisis local sin conexión';
+
+  @override
+  String get chipUnknown => 'Origen de procesamiento desconocido';
+
+  @override
   String get statusSourceMatched => 'Texto verificado';
 
   @override
@@ -227,6 +233,9 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get onboardingIntroFooter =>
       'Sabe exactamente a qué das tu consentimiento.';
+
+  @override
+  String get splashQuote => 'Sabe exactamente a qué das tu consentimiento';
 
   @override
   String get onboardingStep1Question =>

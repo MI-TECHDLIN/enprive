@@ -49,6 +49,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chipLocationUnavailable => '処理場所を確認できません';
 
   @override
+  String get chipOfflineDeterministic => 'オフラインのローカルスキャン';
+
+  @override
+  String get chipUnknown => '処理元が不明です';
+
+  @override
   String get statusSourceMatched => '原文一致を確認';
 
   @override
@@ -218,6 +224,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter => '何に同意しているのか、きちんと知ることから。';
+
+  @override
+  String get splashQuote => '何に同意しているのか、きちんと知ることから';
 
   @override
   String get onboardingStep1Question => 'プライバシー規約を\nどのように説明しましょうか？';

@@ -50,6 +50,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chipLocationUnavailable => 'Lieu de traitement indisponible';
 
   @override
+  String get chipOfflineDeterministic => 'Analyse locale hors ligne';
+
+  @override
+  String get chipUnknown => 'Source de traitement inconnue';
+
+  @override
   String get statusSourceMatched => 'Extrait vérifié';
 
   @override
@@ -226,6 +232,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter => 'Sachez ce que vous acceptez.';
+
+  @override
+  String get splashQuote => 'Sachez ce que vous acceptez';
 
   @override
   String get onboardingStep1Question =>

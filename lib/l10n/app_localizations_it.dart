@@ -51,6 +51,12 @@ class AppLocalizationsIt extends AppLocalizations {
       'Posizione di elaborazione non disponibile';
 
   @override
+  String get chipOfflineDeterministic => 'Scansione locale offline';
+
+  @override
+  String get chipUnknown => 'Origine di elaborazione sconosciuta';
+
+  @override
   String get statusSourceMatched => 'Testo confermato';
 
   @override
@@ -227,6 +233,9 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter => 'Sappi sempre a cosa stai acconsentendo.';
+
+  @override
+  String get splashQuote => 'Sappi sempre a cosa stai acconsentendo';
 
   @override
   String get onboardingStep1Question =>
