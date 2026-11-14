@@ -8,8 +8,8 @@ import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/deni_animated_mascot.dart';
-import '../widgets/enprive_provenance_chip.dart';
 import '../widgets/enprive_tactile_button.dart';
+import '../widgets/m3e/enprive_m3e_components.dart';
 import 'review_result_screen.dart';
 
 enum _ReceiptFilter {
@@ -274,171 +274,23 @@ class _M3EReceiptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final surfaces = context.enpriveSurfaces;
-    final semantics = context.enpriveSemantics;
-    final typeExt = context.enpriveType;
-
     final isConcern =
         receipt.overallState == ReviewOverallState.reviewRecommended;
-    final statePair = isConcern
-        ? semantics.reviewRecommended
-        : semantics.noConcern;
-    final stateLabel =
-        isConcern ? l10n.stateReviewRecommended : l10n.stateNoConcern;
+    final stateLabel = isConcern
+        ? l10n.stateReviewRecommended
+        : (receipt.overallState == ReviewOverallState.insufficientEvidence
+              ? l10n.statusUnverified
+              : l10n.stateNoConcern);
     final formattedDate = _formatReceiptTimestamp(context, receipt.createdAt);
 
-    return Column(
-      children: [
-        // Main Archival Receipt M3ECard
-        M3ECard(
-          color: surfaces.card,
-          elevation: 0,
-          borderRadius: BorderRadius.circular(EnpriveRadii.xl),
-          padding: const EdgeInsets.all(20),
-          onPressed: onOpen,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statePair.background,
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: statePair.border),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            color: statePair.icon,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          stateLabel,
-                          style: m3e.typeScale.labelSmall.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: statePair.foreground,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    formattedDate,
-                    style: m3e.typeScale.labelSmall.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                receipt.subjectTitle,
-                style: m3e.typography.emphasized.titleLarge.copyWith(
-                  color: scheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                receipt.summary,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: typeExt.policyQuotation.copyWith(
-                  fontSize: 14,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 12),
-              EnpriveProvenanceChip(source: receipt.inferenceSource),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Semantic Action Strip (Open / Delete pill bars)
-        Row(
-          children: [
-            Expanded(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: onOpen,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: semantics.inCloud.background,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: semantics.inCloud.border),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        l10n.btnOpenReceipt,
-                        style: m3e.typeScale.labelLarge.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: semantics.inCloud.foreground,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Icon(
-                        LucideIcons.externalLink,
-                        size: 15,
-                        color: semantics.inCloud.foreground,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: onDelete,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: semantics.highConcern.background,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: semantics.highConcern.border),
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      l10n.btnDelete,
-                      style: m3e.typeScale.labelLarge.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: semantics.highConcern.foreground,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      LucideIcons.trash2,
-                      size: 15,
-                      color: semantics.highConcern.foreground,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
+    return EnpriveReceiptCard(
+      receipt: receipt,
+      stateBadgeLabel: stateLabel,
+      metaLine: '${receipt.sourceLabel} · $formattedDate',
+      openLabel: l10n.btnOpenReceipt,
+      deleteTooltip: l10n.btnDelete,
+      onOpen: onOpen,
+      onDelete: onDelete,
     );
   }
 }

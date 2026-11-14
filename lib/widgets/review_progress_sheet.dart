@@ -8,6 +8,7 @@ import '../core/theme/enprive_theme.dart';
 import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import 'analysis_process_trace.dart';
+import 'm3e/enprive_m3e_components.dart';
 
 /// Live 4-stage Material 3 Expressive milestone progress card shown while a
 /// policy or app review runs.
@@ -123,10 +124,11 @@ class _ReviewProgressCardState extends State<ReviewProgressCard> {
     final modePair =
         _isInCloudActive ? semantics.inCloud : semantics.onDevice;
 
-    return M3ECard(
-      color: surfaces.card,
+    return EnpriveMaterialCardSurface(
+      variant: EnpriveCardVariant.elevated,
+      backgroundColor: surfaces.card,
       borderRadius: BorderRadius.circular(28),
-      border: BorderSide(color: surfaces.hairlineBorder, width: 1.5),
+      lipHeight: 3.0,
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

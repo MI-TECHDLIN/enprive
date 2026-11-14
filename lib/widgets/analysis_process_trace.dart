@@ -9,6 +9,7 @@ import '../core/theme/enprive_theme.dart';
 import '../core/theme/enprive_tokens.dart';
 import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
+import 'm3e/enprive_m3e_components.dart';
 
 String formatThoughtSignaturePreview(String signature) {
   final trimmed = signature.trim();
@@ -172,14 +173,12 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
             child: lineText,
           );
 
-    return Container(
-      width: double.infinity,
+    return EnpriveMaterialCardSurface(
+      variant: EnpriveCardVariant.tonal,
+      backgroundColor: surfaces.container,
+      borderRadius: BorderRadius.circular(18),
+      lipHeight: 2.0,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: surfaces.container.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: surfaces.hairlineBorder),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -332,16 +331,14 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      width: double.infinity,
+    return EnpriveMaterialCardSurface(
+      variant: widget.compact
+          ? EnpriveCardVariant.tonal
+          : EnpriveCardVariant.elevated,
+      backgroundColor: widget.compact ? surfaces.container : surfaces.card,
+      borderRadius: BorderRadius.circular(widget.compact ? 18 : 22),
+      lipHeight: widget.compact ? 2.0 : 3.0,
       padding: EdgeInsets.all(widget.compact ? 12 : 16),
-      decoration: BoxDecoration(
-        color: widget.compact
-            ? surfaces.container.withValues(alpha: 0.85)
-            : surfaces.card,
-        borderRadius: BorderRadius.circular(widget.compact ? 16 : 22),
-        border: Border.all(color: surfaces.hairlineBorder),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -474,21 +471,15 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                 Column(
                   children: [
                     for (var i = 0; i < widget.processSteps.length; i++) ...[
-                      if (i > 0) const SizedBox(height: 3),
-                      Container(
-                        width: double.infinity,
+                      if (i > 0) const SizedBox(height: 4),
+                      EnpriveSegmentedCardTile(
+                        index: i,
+                        totalCount: widget.processSteps.length,
+                        backgroundColor: scheme.surfaceContainerLow,
+                        lipHeight: 1.5,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: scheme.surfaceContainerLow,
-                          borderRadius: EnpriveRadii.groupedCardRadius(
-                            index: i,
-                            count: widget.processSteps.length,
-                            outer: 16,
-                            inner: 4,
-                          ),
                         ),
                         child: Row(
                           children: [

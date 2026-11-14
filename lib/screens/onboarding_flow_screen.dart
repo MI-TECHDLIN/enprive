@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../core/theme/enprive_theme.dart';
 import '../l10n/app_localizations.dart';
@@ -9,6 +8,7 @@ import '../services/storage/receipt_repository.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/language_picker_sheet.dart';
+import '../widgets/m3e/enprive_m3e_components.dart';
 
 class OnboardingFlowResult {
   final ExplanationDepth explanationDepth;
@@ -319,39 +319,46 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 14,
-            crossAxisSpacing: 14,
-            childAspectRatio: 0.94,
-            children: [
-              _M3EGridChoiceCard(
-                icon: LucideIcons.sun,
-                badgePair: semantics.reviewRecommended,
-                title: l10n.depthQuickMultiline,
-                isSelected: _selectedDepth == ExplanationDepth.simple,
-                onTap: () =>
-                    setState(() => _selectedDepth = ExplanationDepth.simple),
-              ),
-              _M3EGridChoiceCard(
-                icon: LucideIcons.scale,
-                badgePair: semantics.noConcern,
-                title: l10n.depthBalancedMultiline,
-                isSelected: _selectedDepth == ExplanationDepth.balanced,
-                onTap: () =>
-                    setState(() => _selectedDepth = ExplanationDepth.balanced),
-              ),
-              _M3EGridChoiceCard(
-                icon: LucideIcons.bookOpen,
-                badgePair: semantics.inCloud,
-                title: l10n.depthFullMultiline,
-                isSelected: _selectedDepth == ExplanationDepth.detailed,
-                onTap: () =>
-                    setState(() => _selectedDepth = ExplanationDepth.detailed),
-              ),
-            ],
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _M3EGridChoiceCard(
+                    icon: LucideIcons.sun,
+                    badgePair: semantics.reviewRecommended,
+                    title: l10n.depthQuickMultiline,
+                    isSelected: _selectedDepth == ExplanationDepth.simple,
+                    onTap: () =>
+                        setState(() => _selectedDepth = ExplanationDepth.simple),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: _M3EGridChoiceCard(
+                    icon: LucideIcons.scale,
+                    badgePair: semantics.noConcern,
+                    title: l10n.depthBalancedMultiline,
+                    isSelected: _selectedDepth == ExplanationDepth.balanced,
+                    onTap: () => setState(
+                      () => _selectedDepth = ExplanationDepth.balanced,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: _M3EGridChoiceCard(
+              icon: LucideIcons.bookOpen,
+              badgePair: semantics.inCloud,
+              title: l10n.depthFull,
+              isSelected: _selectedDepth == ExplanationDepth.detailed,
+              onTap: () =>
+                  setState(() => _selectedDepth = ExplanationDepth.detailed),
+            ),
           ),
         ],
       ),
@@ -395,10 +402,11 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
               pose: DeniPose.celebrating,
             ),
           ),
-          M3ECard(
-            color: surfaces.card,
+          EnpriveMaterialCardSurface(
+            variant: EnpriveCardVariant.elevated,
+            backgroundColor: surfaces.card,
             borderRadius: BorderRadius.circular(28),
-            border: BorderSide(color: surfaces.hairlineBorder),
+            lipHeight: 3.0,
             padding: const EdgeInsets.all(22),
             child: Column(
               children: [
@@ -445,47 +453,18 @@ class _M3EGridChoiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
+    final scheme = EnpriveM3ETheme.of(context).colorScheme;
     final semantics = context.enpriveSemantics;
-    final surfaces = context.enpriveSurfaces;
 
-    return M3ECard(
-      color: isSelected ? semantics.onDevice.background : surfaces.card,
-      borderRadius: BorderRadius.circular(24),
-      border: BorderSide(
-        color: isSelected ? scheme.primary : surfaces.hairlineBorder,
-        width: isSelected ? 2 : 1,
-      ),
-      padding: const EdgeInsets.all(16),
+    return EnpriveBentoChoiceCard(
+      title: title,
+      icon: icon,
+      accentColor: isSelected ? scheme.primary : badgePair.foreground,
+      accentBackground:
+          isSelected ? semantics.onDevice.background : badgePair.background,
+      accentBorder: badgePair.border.withValues(alpha: 0.45),
+      selected: isSelected,
       onPressed: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 54,
-            height: 54,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: badgePair.background,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Icon(icon, size: 26, color: badgePair.foreground),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: m3e.typography.emphasized.titleSmall.copyWith(
-              fontSize: 15,
-              height: 1.22,
-              color: isSelected
-                  ? semantics.onDevice.foreground
-                  : scheme.onSurface,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

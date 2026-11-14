@@ -7,6 +7,7 @@ import '../domain/permissions/permission_comparator.dart';
 import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import 'deni_animated_mascot.dart';
+import 'm3e/enprive_m3e_components.dart';
 
 class SelectedAppInspectionChoice {
   final String subjectTitle;
@@ -131,7 +132,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
     final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
     final semantics = context.enpriveSemantics;
-    final surfaces = context.enpriveSurfaces;
 
     final filteredApps = _installedApps.where((a) {
       if (_searchQuery.trim().isEmpty) return true;
@@ -286,76 +286,59 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     ),
                   )
                 else if (visibleApps.isEmpty)
-                  M3ECard(
-                    color: surfaces.card,
-                    borderRadius: BorderRadius.circular(24),
-                    border: BorderSide(color: surfaces.hairlineBorder),
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      children: [
-                        const DeniAnimatedMascot(
-                          size: 64,
-                          pose: DeniPose.thinking,
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(
-                            l10n.noMatchingApps,
-                            style: m3e.typeScale.bodyMedium.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  EnpriveCompanionCard(
+                    pose: DeniPose.thinking,
+                    lodTier: DeniLodTier.compact,
+                    mascotSize: 64,
+                    title: l10n.appsOnThisPhone,
+                    message: l10n.noMatchingApps,
                   )
                 else
                   Column(
                     children: [
                       for (var idx = 0; idx < visibleApps.length; idx++) ...[
-                        if (idx > 0) const SizedBox(height: 3),
-                        Material(
-                          color: surfaces.card,
-                          borderRadius: EnpriveRadii.groupedCardRadius(
-                            index: idx,
-                            count: visibleApps.length,
-                            outer: 22,
-                            inner: 4,
+                        if (idx > 0) const SizedBox(height: 4),
+                        EnpriveSegmentedCardTile(
+                          index: idx,
+                          totalCount: visibleApps.length,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
                           ),
-                          clipBehavior: Clip.antiAlias,
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            onTap: () =>
-                                _inspectRealInstalledApp(visibleApps[idx]),
-                            leading: Container(
-                              width: 42,
-                              height: 42,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: semantics.onDevice.background,
-                                borderRadius: BorderRadius.circular(12),
+                          onTap: () =>
+                              _inspectRealInstalledApp(visibleApps[idx]),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: semantics.onDevice.background,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  LucideIcons.layoutGrid,
+                                  color: semantics.onDevice.foreground,
+                                  size: 20,
+                                ),
                               ),
-                              child: Icon(
-                                LucideIcons.layoutGrid,
-                                color: semantics.onDevice.foreground,
-                                size: 20,
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Text(
+                                  visibleApps[idx].appName,
+                                  style: m3e.typography.emphasized.bodyLarge
+                                      .copyWith(
+                                        color: scheme.onSurface,
+                                      ),
+                                ),
                               ),
-                            ),
-                            title: Text(
-                              visibleApps[idx].appName,
-                              style: m3e.typography.emphasized.bodyLarge
-                                  .copyWith(
-                                    color: scheme.onSurface,
-                                  ),
-                            ),
-                            trailing: Icon(
-                              LucideIcons.chevronRight,
-                              color: scheme.onSurfaceVariant,
-                              size: 18,
-                            ),
+                              Icon(
+                                LucideIcons.chevronRight,
+                                color: scheme.onSurfaceVariant,
+                                size: 18,
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -387,55 +370,14 @@ class _SampleAppChoiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final surfaces = context.enpriveSurfaces;
-
-    return M3ECard(
-      color: surfaces.card,
-      borderRadius: BorderRadius.circular(24),
-      border: BorderSide(color: surfaces.hairlineBorder),
-      padding: const EdgeInsets.all(18),
+    return EnpriveBentoChoiceCard(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      accentColor: badgePair.foreground,
+      accentBackground: badgePair.background,
+      accentBorder: badgePair.border.withValues(alpha: 0.4),
       onPressed: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: badgePair.background,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: badgePair.foreground, size: 22),
-              ),
-              Icon(
-                LucideIcons.arrowUpRight,
-                size: 18,
-                color: scheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            title,
-            style: m3e.typography.emphasized.titleMedium.copyWith(
-              color: scheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: m3e.typeScale.bodySmall.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

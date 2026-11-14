@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../core/theme/enprive_theme.dart';
 import '../domain/permissions/permission_comparator.dart';
@@ -13,6 +12,7 @@ import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_duotone_icon.dart';
 import '../widgets/enprive_provenance_chip.dart';
 import '../widgets/enprive_tactile_button.dart';
+import '../widgets/m3e/enprive_m3e_components.dart';
 import '../widgets/why_this_finding_sheet.dart';
 
 /// Material 3 Expressive Evidence Result Screen:
@@ -186,10 +186,11 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                         ),
                       ),
                       const SizedBox(height: 14),
-                      M3ECard(
-                        color: innerSurfaces.card,
-                        elevation: 0,
+                      EnpriveMaterialCardSurface(
+                        variant: EnpriveCardVariant.elevated,
+                        backgroundColor: innerSurfaces.card,
                         borderRadius: BorderRadius.circular(EnpriveRadii.lg),
+                        lipHeight: 2.5,
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,17 +213,11 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      M3ECard(
-                        color: innerSurfaces.quoteSurface,
-                        elevation: 0,
+                      EnpriveQuoteCard(
+                        quote: receipt.snapshotText,
+                        sha256Digest: receipt.snapshotDigest,
                         borderRadius: BorderRadius.circular(EnpriveRadii.xl),
                         padding: const EdgeInsets.all(20),
-                        child: Text(
-                          receipt.snapshotText,
-                          style: typeExt.policyQuotation.copyWith(
-                            color: scheme.onSurface,
-                          ),
-                        ),
                       ),
                     ],
                   );
@@ -247,7 +242,6 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
           final scheme = m3e.colorScheme;
           final surfaces = context.enpriveSurfaces;
           final semantics = context.enpriveSemantics;
-          final typeExt = context.enpriveType;
           final (statePair, stateIcon, stateTitle, stateSubtitle) =
               _stateConfig(l10n, semantics);
 
@@ -496,19 +490,13 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                 const SizedBox(height: 12),
 
                                 if (receipt.findings.isEmpty)
-                                  M3ECard(
-                                    color: surfaces.quoteSurface,
-                                    elevation: 0,
+                                  EnpriveQuoteCard(
+                                    quote: receipt.snapshotText,
+                                    sha256Digest: receipt.snapshotDigest,
                                     borderRadius: BorderRadius.circular(
                                       EnpriveRadii.lg,
                                     ),
                                     padding: const EdgeInsets.all(20),
-                                    child: Text(
-                                      receipt.snapshotText,
-                                      style: typeExt.policyQuotation.copyWith(
-                                        color: scheme.onSurface,
-                                      ),
-                                    ),
                                   )
                                 else
                                   ...receipt.findings.asMap().entries.map(
@@ -674,45 +662,17 @@ class _M3EStatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final typeExt = context.enpriveType;
-
-    return M3ECard(
-      color: semanticPair.background,
-      elevation: 0,
-      borderRadius: BorderRadius.circular(EnpriveRadii.lg),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 22,
-            height: 22,
-            child: EnpriveDuotoneIcon(
-              iconSvg,
-              size: 22,
-              color: semanticPair.icon,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: typeExt.tabularMetricLarge.copyWith(
-              fontSize: 22,
-              color: semanticPair.foreground,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: m3e.typeScale.labelSmall.copyWith(
-              fontWeight: FontWeight.w700,
-              color: semanticPair.foreground,
-            ),
-          ),
-        ],
+    final numVal = int.tryParse(value) ?? 0;
+    return EnpriveMetricTileCard(
+      value: value,
+      label: label,
+      accentColor: semanticPair.foreground,
+      accentBackground: semanticPair.background,
+      meterFraction: numVal > 0 ? 1.0 : 0.35,
+      iconWidget: EnpriveDuotoneIcon(
+        iconSvg,
+        size: 17,
+        color: semanticPair.icon,
       ),
     );
   }
@@ -733,123 +693,35 @@ class _M3EFindingCard extends StatelessWidget {
     required this.onTap,
   });
 
-  String _categoryIconSvg(FindingCategory category) {
+  String _categoryLabel(FindingCategory category) {
     return switch (category) {
-      FindingCategory.dataCollection => Ph.folder_lock_duotone,
-      FindingCategory.sharing => Ph.share_network_duotone,
-      FindingCategory.tracking => Ph.map_pin_duotone,
-      FindingCategory.retention => Ph.clock_counter_clockwise_duotone,
-      FindingCategory.parentalConsent => Ph.users_three_duotone,
+      FindingCategory.dataCollection => l10n.categoryDataCollection,
+      FindingCategory.sharing => l10n.categorySharing,
+      FindingCategory.tracking => l10n.categoryTracking,
+      FindingCategory.retention => l10n.categoryRetention,
+      FindingCategory.parentalConsent => l10n.categoryParentalControls,
     };
   }
 
   @override
   Widget build(BuildContext context) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final surfaces = context.enpriveSurfaces;
-    final semantics = context.enpriveSemantics;
-    final typeExt = context.enpriveType;
     final isVerified = finding.isVerified;
-    final radius = EnpriveRadii.groupedCardRadius(
-      index: index,
-      count: totalCount,
-    );
+    final String verifyLabel = finding.status == EvidenceStatus.deviceObserved
+        ? l10n.observedOnPhoneLabel
+        : (isVerified
+              ? l10n.quoteVerifiedLabel
+              : l10n.unverifiedClaimLabel);
 
-    return M3ECard(
-      color: surfaces.card,
-      elevation: 0,
-      borderRadius: radius,
-      padding: const EdgeInsets.all(18),
-      onPressed: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: semantics.onDevice.background,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: EnpriveDuotoneIcon(
-                  _categoryIconSvg(finding.category),
-                  size: 20,
-                  color: semantics.onDevice.icon,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      finding.title,
-                      style: m3e.typeScale.titleMedium.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: scheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      finding.status == EvidenceStatus.deviceObserved
-                          ? l10n.observedOnPhoneLabel
-                          : (isVerified
-                                ? l10n.quoteVerifiedLabel
-                                : l10n.unverifiedClaimLabel),
-                      style: m3e.typeScale.labelSmall.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: isVerified
-                            ? semantics.onDevice.foreground
-                            : scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                isVerified ? LucideIcons.circleCheck : LucideIcons.circleHelp,
-                size: 19,
-                color: isVerified
-                    ? semantics.noConcern.foreground
-                    : scheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            finding.explanation,
-            style: m3e.typeScale.bodyMedium.copyWith(
-              height: 1.45,
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
-            decoration: BoxDecoration(
-              color: surfaces.quoteSurface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: surfaces.hairlineBorder),
-            ),
-            child: Text(
-              '“${finding.exactExcerpt}”',
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: typeExt.policyQuotation.copyWith(
-                fontSize: 14,
-                color: scheme.onSurface,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return EnpriveFindingM3ECard(
+      finding: finding,
+      index: index,
+      totalCount: totalCount,
+      categoryLabel: _categoryLabel(finding.category),
+      severityLabel: finding.severity == FindingSeverity.high
+          ? l10n.stateReviewRecommended
+          : null,
+      verificationLabel: verifyLabel,
+      onTapCard: onTap,
     );
   }
 }
@@ -867,58 +739,69 @@ class _M3EPermissionListCard extends StatelessWidget {
     final surfaces = context.enpriveSurfaces;
     final semantics = context.enpriveSemantics;
 
-    return M3ECard(
-      color: surfaces.card,
-      elevation: 0,
-      borderRadius: BorderRadius.circular(EnpriveRadii.xl),
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ...report.items.asMap().entries.map((entry) {
-            final idx = entry.key;
-            final item = entry.value;
-            final isMismatch =
-                item.alignmentState ==
-                PermissionAlignmentState.undisclosedInPolicy;
-            return Column(
-              children: [
-                if (idx > 0)
-                  Divider(
-                    height: 20,
-                    color: surfaces.hairlineBorder,
-                  ),
-                Row(
+    return Column(
+      children: [
+        for (var idx = 0; idx < report.items.length; idx++) ...[
+          if (idx > 0) const SizedBox(height: 4),
+          Builder(
+            builder: (context) {
+              final item = report.items[idx];
+              final isMismatch =
+                  item.alignmentState ==
+                  PermissionAlignmentState.undisclosedInPolicy;
+              final Color iconBg = isMismatch
+                  ? semantics.reviewRecommended.background
+                  : (item.isGranted
+                        ? semantics.onDevice.background
+                        : surfaces.cardMuted);
+              final Color iconFg = isMismatch
+                  ? semantics.reviewRecommended.foreground
+                  : (item.isGranted
+                        ? semantics.onDevice.foreground
+                        : scheme.onSurfaceVariant);
+
+              return EnpriveSegmentedCardTile(
+                index: idx,
+                totalCount: report.items.length,
+                lipHeight: 1.5,
+                child: Row(
                   children: [
-                    Icon(
-                      isMismatch
-                          ? LucideIcons.triangleAlert
-                          : (item.isGranted
-                                ? LucideIcons.circleCheck
-                                : LucideIcons.circleMinus),
-                      size: 18,
-                      color: isMismatch
-                          ? semantics.reviewRecommended.foreground
-                          : (item.isGranted
-                                ? semantics.onDevice.foreground
-                                : scheme.onSurfaceVariant),
+                    Container(
+                      width: 34,
+                      height: 34,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: iconBg,
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Icon(
+                        isMismatch
+                            ? LucideIcons.triangleAlert
+                            : (item.isGranted
+                                  ? LucideIcons.circleCheck
+                                  : LucideIcons.circleMinus),
+                        size: 17,
+                        color: iconFg,
+                      ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             item.friendlyName,
-                            style: m3e.typeScale.titleSmall.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: scheme.onSurface,
-                            ),
+                            style: m3e.typography.emphasized.titleSmall
+                                .copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: scheme.onSurface,
+                                ),
                           ),
+                          const SizedBox(height: 2),
                           Text(
                             item.parentExplanation,
                             style: m3e.typeScale.bodySmall.copyWith(
-                              height: 1.35,
+                              height: 1.38,
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
@@ -927,11 +810,11 @@ class _M3EPermissionListCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ],
-            );
-          }),
+              );
+            },
+          ),
         ],
-      ),
+      ],
     );
   }
 }

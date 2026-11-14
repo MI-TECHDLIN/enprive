@@ -7,6 +7,7 @@ import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import 'deni_animated_mascot.dart';
 import 'enprive_tactile_button.dart';
+import 'm3e/enprive_m3e_components.dart';
 
 /// Material 3 Expressive Private Analysis Readiness Sheet pairing Deni at
 /// `LOD 2 · 84dp` (`DeniLodTier.standard`) with an M3E status card and
@@ -147,10 +148,11 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
                 ),
               ),
 
-              M3ECard(
-                color: surfaces.card,
+              EnpriveMaterialCardSurface(
+                variant: EnpriveCardVariant.elevated,
+                backgroundColor: surfaces.card,
                 borderRadius: BorderRadius.circular(24),
-                border: BorderSide(color: surfaces.hairlineBorder),
+                lipHeight: 3.0,
                 padding: const EdgeInsets.all(20),
                 child: Row(
                   children: [

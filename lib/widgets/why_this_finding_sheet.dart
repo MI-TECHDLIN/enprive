@@ -14,6 +14,7 @@ import 'cloud_consent_sheet.dart';
 import 'deni_animated_mascot.dart';
 import 'enprive_duotone_icon.dart';
 import 'enprive_provenance_chip.dart';
+import 'm3e/enprive_m3e_components.dart';
 
 /// Material 3 Expressive Evidence Work Card + Docked "Ask Deni" Sheet:
 /// - M3E wavy progress indicator in top bar
@@ -299,17 +300,13 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Unified M3E Evidence Work Card
-                      Container(
-                        decoration: BoxDecoration(
-                          color: surfaces.card,
-                          borderRadius: BorderRadius.circular(EnpriveRadii.xl),
-                          border: Border.all(
-                            color: surfaces.hairlineBorder,
-                            width: 1.5,
-                          ),
-                        ),
-                        clipBehavior: Clip.antiAlias,
+                      // Unified Tactile M3E Evidence Work Card
+                      EnpriveMaterialCardSurface(
+                        variant: EnpriveCardVariant.elevated,
+                        backgroundColor: surfaces.card,
+                        borderRadius: BorderRadius.circular(EnpriveRadii.xl),
+                        lipHeight: 3.0,
+                        padding: EdgeInsets.zero,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -382,7 +379,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                               ),
                             ),
 
-                            // Collapsible Highlighted Policy Excerpt Stage
+                            // Collapsible Highlighted Policy Excerpt Stage with left archival spine
                             InkWell(
                               onTap: () {
                                 setState(() {
@@ -391,61 +388,97 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                               },
                               child: Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.all(20),
-                                color: surfaces.quoteSurface,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                decoration: BoxDecoration(
+                                  color: surfaces.quoteSurface,
+                                  border: Border.symmetric(
+                                    horizontal: BorderSide(
+                                      color: surfaces.hairlineBorder,
+                                    ),
+                                  ),
+                                ),
+                                child: Stack(
                                   children: [
-                                    if (finding.contextWindow != null &&
-                                        !_isQuoteCollapsed)
-                                      RichText(
-                                        text: TextSpan(
-                                          style: typeExt.policyQuotation
-                                              .copyWith(
-                                                color: scheme.onSurfaceVariant,
-                                              ),
-                                          children: [
-                                            TextSpan(
-                                              text: finding
-                                                  .contextWindow!
-                                                  .before,
-                                            ),
-                                            TextSpan(
-                                              text: finding
-                                                  .contextWindow!
-                                                  .matched,
-                                              style: TextStyle(
-                                                color: scheme.onSurface,
-                                                fontWeight: FontWeight.w700,
-                                                backgroundColor: semantics
-                                                    .reviewRecommended
-                                                    .background,
-                                              ),
-                                            ),
-                                            TextSpan(
-                                              text:
-                                                  finding.contextWindow!.after,
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    else
-                                      Text(
-                                        '“${finding.exactExcerpt}”',
-                                        maxLines: _isQuoteCollapsed ? 1 : null,
-                                        overflow: _isQuoteCollapsed
-                                            ? TextOverflow.ellipsis
-                                            : TextOverflow.visible,
-                                        style: typeExt.policyQuotation.copyWith(
-                                          color: scheme.onSurface,
-                                        ),
+                                    PositionedDirectional(
+                                      top: 0,
+                                      bottom: 0,
+                                      start: 0,
+                                      width: 4,
+                                      child: ColoredBox(
+                                        color: isVerified
+                                            ? semantics.onDevice.icon
+                                            : surfaces.strongBorder,
                                       ),
+                                    ),
+                                    Padding(
+                                      padding:
+                                          const EdgeInsetsDirectional.fromSTEB(
+                                            24,
+                                            20,
+                                            20,
+                                            20,
+                                          ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (finding.contextWindow != null &&
+                                              !_isQuoteCollapsed)
+                                            RichText(
+                                              text: TextSpan(
+                                                style: typeExt.policyQuotation
+                                                    .copyWith(
+                                                      color: scheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                                children: [
+                                                  TextSpan(
+                                                    text: finding
+                                                        .contextWindow!
+                                                        .before,
+                                                  ),
+                                                  TextSpan(
+                                                    text: finding
+                                                        .contextWindow!
+                                                        .matched,
+                                                    style: TextStyle(
+                                                      color: scheme.onSurface,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      backgroundColor: semantics
+                                                          .reviewRecommended
+                                                          .background,
+                                                    ),
+                                                  ),
+                                                  TextSpan(
+                                                    text: finding
+                                                        .contextWindow!
+                                                        .after,
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          else
+                                            Text(
+                                              '“${finding.exactExcerpt}”',
+                                              maxLines:
+                                                  _isQuoteCollapsed ? 1 : null,
+                                              overflow: _isQuoteCollapsed
+                                                  ? TextOverflow.ellipsis
+                                                  : TextOverflow.visible,
+                                              style: typeExt.policyQuotation
+                                                  .copyWith(
+                                                    color: scheme.onSurface,
+                                                  ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
                             ),
 
-                            // Clean 3-Row Breakdown inside the card
+                            // Clean 3-Row Segmented Breakdown inside the card
                             Padding(
                               padding: const EdgeInsets.all(18),
                               child: Column(
@@ -456,10 +489,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                                     label: l10n.labelInPlainLanguage,
                                     body: finding.explanation,
                                   ),
-                                  Divider(
-                                    height: 24,
-                                    color: surfaces.hairlineBorder,
-                                  ),
+                                  const SizedBox(height: 14),
                                   _CompactEvidenceRow(
                                     iconSvg: Ph.device_mobile_duotone,
                                     iconColor: semantics.inCloud.icon,
@@ -467,10 +497,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                                     body: finding.whatAndroidReports,
                                   ),
                                   if (finding.unknowns.isNotEmpty) ...[
-                                    Divider(
-                                      height: 24,
-                                      color: surfaces.hairlineBorder,
-                                    ),
+                                    const SizedBox(height: 14),
                                     _CompactEvidenceRow(
                                       iconSvg: Ph.question_duotone,
                                       iconColor:
@@ -498,37 +525,31 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                           final isSelected =
                               idx == _selectedQuestionIndex &&
                               _deniExplanation != null;
-                          return InkWell(
+                          return EnpriveMaterialCardSurface(
+                            variant: isSelected
+                                ? EnpriveCardVariant.selected
+                                : EnpriveCardVariant.elevated,
+                            selected: isSelected,
+                            backgroundColor: isSelected
+                                ? semantics.onDevice.background
+                                : surfaces.card,
+                            accentColor: scheme.primary,
                             borderRadius: BorderRadius.circular(14),
-                            onTap: (_isAskingDeni || _isConsentSheetOpen)
+                            lipHeight: 2.5,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            onPressed: (_isAskingDeni || _isConsentSheetOpen)
                                 ? null
                                 : () => _askDeni(idx, q, languageCode),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 160),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
+                            child: Text(
+                              q,
+                              style: m3e.typeScale.labelLarge.copyWith(
+                                fontWeight: FontWeight.w700,
                                 color: isSelected
-                                    ? semantics.onDevice.background
-                                    : surfaces.card,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? scheme.primary
-                                      : surfaces.hairlineBorder,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Text(
-                                q,
-                                style: m3e.typeScale.labelLarge.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: isSelected
-                                      ? semantics.onDevice.foreground
-                                      : scheme.onSurface,
-                                ),
+                                    ? semantics.onDevice.foreground
+                                    : scheme.onSurface,
                               ),
                             ),
                           );
@@ -537,10 +558,11 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
 
                       if (_isAskingDeni) ...[
                         const SizedBox(height: 16),
-                        M3ECard(
-                          color: surfaces.canvas,
-                          elevation: 0,
+                        EnpriveMaterialCardSurface(
+                          variant: EnpriveCardVariant.tonal,
+                          backgroundColor: surfaces.canvas,
                           borderRadius: BorderRadius.circular(EnpriveRadii.md),
+                          lipHeight: 2.0,
                           padding: const EdgeInsets.all(14),
                           child: AnalysisLiveProcessView(
                             stream: widget.coordinator.analysisEvents,
@@ -550,10 +572,11 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                         ),
                       ] else if (_deniExplanation != null) ...[
                         const SizedBox(height: 16),
-                        M3ECard(
-                          color: surfaces.canvas,
-                          elevation: 0,
+                        EnpriveMaterialCardSurface(
+                          variant: EnpriveCardVariant.elevated,
+                          backgroundColor: surfaces.canvas,
                           borderRadius: BorderRadius.circular(EnpriveRadii.lg),
+                          lipHeight: 3.0,
                           padding: const EdgeInsets.all(18),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

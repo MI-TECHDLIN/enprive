@@ -4,19 +4,15 @@ import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../../core/theme/enprive_theme.dart';
 import '../enprive_provenance_chip.dart';
+import 'enprive_material_card_surface.dart';
 
 /// Asymmetric 2-column Material 3 Expressive Bento posture summary widget
-/// inspired by the `_.jpeg` (Asymmetric Bento Metric) and `colo.jpeg` (Dark
-/// Bento Grid) reference boards.
+/// inspired by `_.jpeg`, `colo.jpeg`, and Enprive's tactile button language.
 ///
-/// - **Left Tall Card (`28dp` radius)**: Provenance badge, oversized tabular
-///   metric (`tabularMetricLarge`), calibrated summary copy, and
-///   [M3EProgressIndicator.linearWavy] (respecting reduced motion).
-/// - **Right Stacked Cards (`24dp` radius)**:
-///   - Top card: Engine / readiness status with optional [M3ELoadingIndicator]
-///     morphing polygon (`28dp`).
-///   - Bottom card: Semantic flag/attention tile with AAA-contrasted
-///     [SemanticColorPair] and optional tap handler.
+/// Pairs one dominant tabular-metric posture card with two stacked tonal tiles,
+/// each framed inside [EnpriveMaterialCardSurface] (`1.5dp` border + `2.5dp`
+/// physical bottom lip) with accessible semantic contrast across Light and Dark
+/// themes.
 class EnpriveBentoPostureCard extends StatelessWidget {
   final InferenceSource source;
   final String primaryMetricValue;
@@ -29,9 +25,7 @@ class EnpriveBentoPostureCard extends StatelessWidget {
   final String bottomTileTitle;
   final String bottomTileSubtitle;
   final int flagCount;
-  final VoidCallback? onPrimaryTap;
-  final VoidCallback? onTopTileTap;
-  final VoidCallback? onBottomTileTap;
+  final VoidCallback? onFlagsTap;
 
   const EnpriveBentoPostureCard({
     super.key,
@@ -46,126 +40,92 @@ class EnpriveBentoPostureCard extends StatelessWidget {
     required this.bottomTileTitle,
     required this.bottomTileSubtitle,
     this.flagCount = 0,
-    this.onPrimaryTap,
-    this.onTopTileTap,
-    this.onBottomTileTap,
+    this.onFlagsTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final m3e = M3ETheme.of(context);
+    final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
-    final semantics = context.enpriveSemantics;
     final typeExt = context.enpriveType;
-    final reducedMotion = EnpriveMotionTokens.isReducedMotion(context);
+    final semantics = context.enpriveSemantics;
+    final surfaces = context.enpriveSurfaces;
 
-    final provenancePair = switch (source) {
-      InferenceSource.onDevice => semantics.onDevice,
-      InferenceSource.inCloud => semantics.inCloud,
-      InferenceSource.offlineDeterministic => semantics.offlineFallback,
-      InferenceSource.unknown ||
-      InferenceSource.locationUnavailable =>
-        semantics.unknown,
-    };
-
-    final provenanceLabel = switch (source) {
-      InferenceSource.onDevice => 'ON-DEVICE',
-      InferenceSource.inCloud => 'IN THE CLOUD',
-      InferenceSource.offlineDeterministic => 'OFFLINE SCAN',
-      InferenceSource.unknown ||
-      InferenceSource.locationUnavailable =>
-        'SOURCE UNKNOWN',
-    };
-
-    final flagSemanticPair = flagCount == 0
-        ? semantics.noConcern
-        : (flagCount >= 3
-              ? semantics.highConcern
-              : semantics.reviewRecommended);
+    final SemanticColorPair bottomPair = flagCount > 0
+        ? semantics.reviewRecommended
+        : semantics.noConcern;
 
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Left Tall Bento Card
+          // Dominant asymmetric primary posture card
           Expanded(
-            flex: 11,
-            child: M3ECard(
-              color: scheme.surfaceContainerLow,
+            flex: 6,
+            child: EnpriveMaterialCardSurface(
+              variant: EnpriveCardVariant.elevated,
+              backgroundColor: surfaces.card,
               borderRadius: BorderRadius.circular(28),
+              lipHeight: 2.5,
               padding: const EdgeInsets.all(18),
-              onPressed: onPrimaryTap,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: provenancePair.background,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          provenanceLabel,
-                          style: m3e.typography.emphasized.labelSmall.copyWith(
-                            color: provenancePair.foreground,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        source == InferenceSource.inCloud
-                            ? LucideIcons.cloudCheck
-                            : LucideIcons.shieldCheck,
-                        size: 20,
-                        color: scheme.primary,
-                      ),
-                    ],
-                  ),
+                  EnpriveProvenanceChip(source: source),
                   const SizedBox(height: 14),
                   Text(
                     primaryMetricValue,
                     style: typeExt.tabularMetricLarge.copyWith(
-                      fontSize: 42,
+                      color: scheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$primaryMetricTitle\n$primaryMetricSubtitle',
-                    style: m3e.typeScale.labelMedium.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      height: 1.35,
+                    primaryMetricTitle,
+                    style: m3e.typography.emphasized.titleMedium.copyWith(
+                      color: scheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 2),
+                  Text(
+                    primaryMetricSubtitle,
+                    style: m3e.typeScale.bodySmall.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   M3EProgressIndicator.linearWavy(
                     value: progressValue.clamp(0.0, 1.0),
                     color: scheme.primary,
                     trackColor: scheme.surfaceContainerHighest,
-                    waveSpeed: reducedMotion ? 0 : 28.0,
+                    semanticsLabel: primaryMetricTitle,
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          // Right Stacked Semantic Tiles
+          const SizedBox(width: 10),
+          // Right column: two stacked tonal/semantic tactile tiles
           Expanded(
-            flex: 10,
+            flex: 5,
             child: Column(
               children: [
                 Expanded(
-                  child: M3ECard(
-                    color: semantics.onDevice.background,
-                    borderRadius: BorderRadius.circular(24),
+                  child: EnpriveMaterialCardSurface(
+                    variant: EnpriveCardVariant.tonal,
+                    backgroundColor: semantics.onDevice.background,
+                    borderColor: semantics.onDevice.border,
+                    accentColor: semantics.onDevice.foreground,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(22),
+                      topRight: Radius.circular(22),
+                      bottomLeft: Radius.circular(8),
+                      bottomRight: Radius.circular(8),
+                    ),
+                    lipHeight: 2.0,
                     padding: const EdgeInsets.all(14),
-                    onPressed: onTopTileTap,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -173,7 +133,7 @@ class EnpriveBentoPostureCard extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Flexible(
+                            Expanded(
                               child: Text(
                                 topTileTitle,
                                 maxLines: 1,
@@ -184,44 +144,54 @@ class EnpriveBentoPostureCard extends StatelessWidget {
                                     ),
                               ),
                             ),
-                            if (isTopTileLoading && !reducedMotion)
+                            const SizedBox(width: 6),
+                            if (isTopTileLoading)
                               SizedBox(
-                                width: 28,
-                                height: 28,
+                                width: 24,
+                                height: 24,
                                 child: M3ELoadingIndicator(
-                                  size: 28,
+                                  size: 24,
                                   color: semantics.onDevice.foreground,
                                 ),
                               )
                             else
                               Icon(
-                                LucideIcons.sparkles,
+                                LucideIcons.cpu,
                                 size: 18,
-                                color: semantics.onDevice.foreground,
+                                color: semantics.onDevice.icon,
                               ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Text(
                           topTileSubtitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: m3e.typeScale.labelSmall.copyWith(
                             color: semantics.onDevice.foreground,
-                            height: 1.3,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 6),
                 Expanded(
-                  child: M3ECard(
-                    color: flagSemanticPair.background,
-                    borderRadius: BorderRadius.circular(24),
+                  child: EnpriveMaterialCardSurface(
+                    variant: EnpriveCardVariant.tonal,
+                    backgroundColor: bottomPair.background,
+                    borderColor: bottomPair.border,
+                    accentColor: bottomPair.foreground,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      topRight: Radius.circular(8),
+                      bottomLeft: Radius.circular(22),
+                      bottomRight: Radius.circular(22),
+                    ),
+                    lipHeight: onFlagsTap != null ? 3.0 : 2.5,
                     padding: const EdgeInsets.all(14),
-                    onPressed: onBottomTileTap,
+                    onPressed: onFlagsTap,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -229,32 +199,32 @@ class EnpriveBentoPostureCard extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Flexible(
+                            Expanded(
                               child: Text(
                                 bottomTileTitle,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: m3e.typography.emphasized.titleMedium
-                                    .copyWith(
-                                      color: flagSemanticPair.foreground,
-                                    ),
+                                    .copyWith(color: bottomPair.foreground),
                               ),
                             ),
                             Icon(
-                              LucideIcons.arrowUpRight,
+                              flagCount > 0
+                                  ? LucideIcons.triangleAlert
+                                  : LucideIcons.circleCheck,
                               size: 18,
-                              color: flagSemanticPair.foreground,
+                              color: bottomPair.icon,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Text(
                           bottomTileSubtitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: m3e.typeScale.labelSmall.copyWith(
-                            color: flagSemanticPair.foreground,
-                            height: 1.3,
+                            color: bottomPair.foreground,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],

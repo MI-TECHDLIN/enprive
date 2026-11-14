@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../core/theme/enprive_theme.dart';
 import '../l10n/app_localizations.dart';
@@ -12,6 +11,7 @@ import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_duotone_icon.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/language_picker_sheet.dart';
+import '../widgets/m3e/enprive_m3e_components.dart';
 import '../widgets/private_readiness_sheet.dart';
 import 'design_system_preview_screen.dart';
 
@@ -292,10 +292,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       : DeniPose.support),
                           ),
                         ),
-                        M3ECard(
-                          color: surfaces.card,
-                          elevation: 0,
+                        EnpriveMaterialCardSurface(
+                          variant: EnpriveCardVariant.elevated,
+                          backgroundColor: surfaces.card,
                           borderRadius: BorderRadius.circular(EnpriveRadii.xl),
+                          lipHeight: 3.0,
                           padding: const EdgeInsets.all(20),
                           child: Column(
                             children: [
@@ -377,17 +378,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Row(
                     children: ExplanationDepth.values.map((depth) {
                       final isSelected = widget.explanationDepth == depth;
-                      final (iconSvg, label) = switch (depth) {
+                      final (iconData, label) = switch (depth) {
                         ExplanationDepth.simple => (
-                          Ph.sparkle_duotone,
+                          LucideIcons.sparkles,
                           l10n.depthQuick,
                         ),
                         ExplanationDepth.balanced => (
-                          Ph.scales_duotone,
+                          LucideIcons.scale,
                           l10n.depthBalanced,
                         ),
                         ExplanationDepth.detailed => (
-                          Ph.book_open_duotone,
+                          LucideIcons.bookOpen,
                           l10n.depthFull,
                         ),
                       };
@@ -398,69 +399,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ? 10.0
                                 : 0.0,
                           ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(
-                              EnpriveRadii.lg,
-                            ),
-                            onTap: () =>
+                          child: EnpriveBentoChoiceCard.compactOption(
+                            title: label,
+                            icon: iconData,
+                            selected: isSelected,
+                            onPressed: () =>
                                 widget.onExplanationDepthChanged(depth),
-                            child: AnimatedContainer(
-                              duration: context.motionTokens.effectiveDuration(
-                                context,
-                                context.motionTokens.effectsFast,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 18,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? surfaces.card
-                                    : surfaces.cardMuted,
-                                borderRadius: BorderRadius.circular(
-                                  EnpriveRadii.lg,
-                                ),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? scheme.primary
-                                      : surfaces.hairlineBorder,
-                                  width: isSelected ? 2.0 : 1.0,
-                                ),
-                              ),
-                              child: Column(
-                                children: [
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? semantics.onDevice.background
-                                          : surfaces.card,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: EnpriveDuotoneIcon(
-                                      iconSvg,
-                                      size: 20,
-                                      color: isSelected
-                                          ? semantics.onDevice.icon
-                                          : scheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    label,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: m3e.typeScale.labelLarge.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      color: isSelected
-                                          ? scheme.onSurface
-                                          : scheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
                           ),
                         ),
                       );
@@ -490,72 +434,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             padding: EdgeInsetsDirectional.only(
                               end: index < 2 ? 10.0 : 0.0,
                             ),
-                            child: InkWell(
+                            child: EnpriveBentoChoiceCard.compactOption(
                               key: Key('theme_mode_option_${entry.$1.name}'),
-                              borderRadius: BorderRadius.circular(
-                                EnpriveRadii.lg,
-                              ),
-                              onTap: () =>
+                              title: entry.$3,
+                              icon: entry.$2,
+                              selected: widget.currentThemeMode == entry.$1,
+                              onPressed: () =>
                                   widget.onThemeModeChanged?.call(entry.$1),
-                              child: AnimatedContainer(
-                                duration: context.motionTokens
-                                    .effectiveDuration(
-                                      context,
-                                      context.motionTokens.effectsFast,
-                                    ),
-                                constraints: const BoxConstraints(
-                                  minHeight: EnpriveSpacing.minTouchTarget,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 14,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: widget.currentThemeMode == entry.$1
-                                      ? surfaces.card
-                                      : surfaces.cardMuted,
-                                  borderRadius: BorderRadius.circular(
-                                    EnpriveRadii.lg,
-                                  ),
-                                  border: Border.all(
-                                    color: widget.currentThemeMode == entry.$1
-                                        ? scheme.primary
-                                        : surfaces.hairlineBorder,
-                                    width: widget.currentThemeMode == entry.$1
-                                        ? 2.0
-                                        : 1.0,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      entry.$2,
-                                      size: 16,
-                                      color: widget.currentThemeMode == entry.$1
-                                          ? semantics.onDevice.icon
-                                          : scheme.onSurfaceVariant,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Flexible(
-                                      child: Text(
-                                        entry.$3,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: m3e.typeScale.labelLarge
-                                            .copyWith(
-                                              fontWeight: FontWeight.w800,
-                                              color:
-                                                  widget.currentThemeMode ==
-                                                      entry.$1
-                                                  ? scheme.onSurface
-                                                  : scheme.onSurfaceVariant,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                             ),
                           ),
                         ),
@@ -564,7 +449,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   const SizedBox(height: 28),
 
-                  // 4. Preferences Group (M3E Segmented Containment)
+                  // 4. Preferences Group (M3E Tactile Segmented Containment)
                   Text(
                     l10n.preferencesSection,
                     style: m3e.typography.emphasized.titleMedium.copyWith(
@@ -576,23 +461,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Column(
                     children: prefRows.asMap().entries.map((entry) {
                       final idx = entry.key;
-                      final radius = EnpriveRadii.groupedCardRadius(
-                        index: idx,
-                        count: prefRows.length,
-                      );
                       return Padding(
                         padding: EdgeInsets.only(
                           bottom: idx < prefRows.length - 1 ? 4.0 : 0.0,
                         ),
-                        child: M3ECard(
-                          color: surfaces.card,
-                          elevation: 0,
-                          borderRadius: radius,
+                        child: EnpriveSegmentedCardTile(
+                          index: idx,
+                          totalCount: prefRows.length,
+                          lipHeight: 2.0,
                           padding: EdgeInsets.zero,
                           child: Material(
                             color: Colors.transparent,
-                            borderRadius: radius,
-                            clipBehavior: Clip.antiAlias,
                             child: entry.value,
                           ),
                         ),

@@ -24,6 +24,7 @@ import 'widgets/deni_animated_mascot.dart';
 import 'widgets/enprive_tactile_button.dart';
 import 'widgets/installed_app_picker_sheet.dart';
 import 'widgets/language_picker_sheet.dart';
+import 'widgets/m3e/enprive_m3e_components.dart';
 import 'widgets/review_progress_sheet.dart';
 
 void main() {
@@ -802,13 +803,14 @@ We do not collect personal identifiers, precise location data, microphone audio,
             const SizedBox(height: 12),
             _WhatWeCheckSegmentedGroup(l10n: l10n),
 
-            // 6. Recently Reviewed (Segmented M3E Cards)
+            // 6. Recently Reviewed (Tactile Segmented M3E Cards)
             if (_savedReceipts.isNotEmpty) ...[
               const SizedBox(height: 28),
-              M3ECard(
-                color: surfaces.card,
+              EnpriveMaterialCardSurface(
+                variant: EnpriveCardVariant.elevated,
+                backgroundColor: surfaces.card,
                 borderRadius: BorderRadius.circular(28),
-                border: BorderSide(color: surfaces.hairlineBorder),
+                lipHeight: 3.0,
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -858,87 +860,74 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
                       return Padding(
                         padding: EdgeInsets.only(top: idx > 0 ? 4 : 0),
-                        child: Material(
-                          color: scheme.surfaceContainerLow,
-                          borderRadius: EnpriveRadii.groupedCardRadius(
-                            index: idx,
-                            count: count,
-                            outer: 18,
-                            inner: 4,
+                        child: EnpriveSegmentedCardTile(
+                          index: idx,
+                          totalCount: count,
+                          backgroundColor: scheme.surfaceContainerLow,
+                          lipHeight: 2.0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
                           ),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => ReviewResultScreen(
-                                    receipt: receipt,
-                                    coordinator: _coordinator,
-                                  ),
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => ReviewResultScreen(
+                                  receipt: receipt,
+                                  coordinator: _coordinator,
                                 ),
-                              );
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
                               ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: badgePair.background,
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                  child: Icon(
-                                      isConcern
-                                          ? LucideIcons.triangleAlert
-                                          : LucideIcons.circleCheck,
-                                      color: badgePair.foreground,
-                                      size: 21,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          receipt.subjectTitle,
-                                          style: m3e
-                                              .typography
-                                              .emphasized
-                                              .titleSmall
-                                              .copyWith(
-                                                fontSize: 15,
-                                                color: scheme.onSurface,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          l10n.verifiedClausesCount(
-                                            receipt.sourceMatchedCount,
+                            );
+                          },
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: badgePair.background,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Icon(
+                                  isConcern
+                                      ? LucideIcons.triangleAlert
+                                      : LucideIcons.circleCheck,
+                                  color: badgePair.foreground,
+                                  size: 21,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      receipt.subjectTitle,
+                                      style: m3e.typography.emphasized.titleSmall
+                                          .copyWith(
+                                            fontSize: 15,
+                                            color: scheme.onSurface,
                                           ),
-                                          style: m3e.typeScale.bodySmall
-                                              .copyWith(
-                                                color: scheme.onSurfaceVariant,
-                                              ),
-                                        ),
-                                      ],
                                     ),
-                                  ),
-                                  Icon(
-                                    LucideIcons.chevronRight,
-                                    size: 18,
-                                    color: scheme.onSurfaceVariant,
-                                  ),
-                                ],
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      l10n.verifiedClausesCount(
+                                        receipt.sourceMatchedCount,
+                                      ),
+                                      style: m3e.typeScale.bodySmall.copyWith(
+                                        color: scheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
+                              Icon(
+                                LucideIcons.chevronRight,
+                                size: 18,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -1279,84 +1268,17 @@ class _SampleAppM3EBentoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final surfaces = context.enpriveSurfaces;
-    final typeExt = context.enpriveType;
-
-    return M3ECard(
-      color: surfaces.card,
-      borderRadius: BorderRadius.circular(24),
-      border: BorderSide(color: surfaces.hairlineBorder),
-      padding: const EdgeInsets.all(16),
+    return EnpriveBentoChoiceCard(
+      title: title,
+      metricHighlight: value,
+      metricHighlightColor: semanticPair.foreground,
+      subtitle: subtitle,
+      footerTag: trendBadge,
+      icon: icon,
+      accentColor: semanticPair.foreground,
+      accentBackground: semanticPair.background,
+      accentBorder: semanticPair.border.withValues(alpha: 0.45),
       onPressed: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: semanticPair.background,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, size: 21, color: semanticPair.foreground),
-              ),
-              Icon(
-                LucideIcons.arrowUpRight,
-                size: 18,
-                color: scheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            title,
-            style: m3e.typography.emphasized.titleSmall.copyWith(
-              color: scheme.onSurface,
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: typeExt.tabularMetricMedium.copyWith(
-              fontSize: 22,
-              color: semanticPair.foreground,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: m3e.typeScale.bodySmall.copyWith(
-              color: scheme.onSurfaceVariant,
-              height: 1.35,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-            decoration: BoxDecoration(
-              color: semanticPair.background,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              trendBadge,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: m3e.typography.emphasized.labelSmall.copyWith(
-                fontSize: 10.5,
-                color: semanticPair.foreground,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -1402,20 +1324,13 @@ class _WhatWeCheckSegmentedGroup extends StatelessWidget {
     return Column(
       children: [
         for (var i = 0; i < checks.length; i++) ...[
-          if (i > 0) const SizedBox(height: 3),
-          Container(
-            width: double.infinity,
+          if (i > 0) const SizedBox(height: 4),
+          EnpriveSegmentedCardTile(
+            index: i,
+            totalCount: checks.length,
+            backgroundColor: surfaces.card,
+            lipHeight: 1.5,
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: surfaces.card,
-              borderRadius: EnpriveRadii.groupedCardRadius(
-                index: i,
-                count: checks.length,
-                outer: 22,
-                inner: 4,
-              ),
-              border: Border.all(color: surfaces.hairlineBorder),
-            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

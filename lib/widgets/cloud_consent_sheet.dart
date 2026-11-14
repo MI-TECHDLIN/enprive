@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../core/theme/enprive_theme.dart';
 import '../domain/privacy/pii_redactor.dart';
 import '../l10n/app_localizations.dart';
 import 'deni_animated_mascot.dart';
 import 'enprive_tactile_button.dart';
+import 'm3e/enprive_m3e_components.dart';
 
 enum CloudConsentDecision {
   useCloudOnce,
@@ -65,8 +65,6 @@ class CloudConsentSheet extends StatelessWidget {
     final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
     final semantics = context.enpriveSemantics;
-    final surfaces = context.enpriveSurfaces;
-    final typeExt = context.enpriveType;
 
     final scrubbedPreview = PiiRedactor.redact(policyText).redactedText.trim();
     final trimmedReason = deviceReason?.trim();
@@ -111,76 +109,26 @@ class CloudConsentSheet extends StatelessWidget {
                 pose: DeniPose.support,
               ),
             ),
-            M3ECard(
-              color: surfaces.quoteSurface,
+            EnpriveQuoteCard(
+              statusLabel: subjectTitle,
+              quote: scrubbedPreview,
+              selectable: true,
+              spineColor: semantics.inCloud.icon,
               borderRadius: BorderRadius.circular(24),
-              border: BorderSide(color: surfaces.hairlineBorder),
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: semantics.inCloud.background,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          LucideIcons.cloudCheck,
-                          size: 19,
-                          color: semantics.inCloud.foreground,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          subjectTitle,
-                          style: m3e.typography.emphasized.titleSmall.copyWith(
-                            fontSize: 15,
-                            color: scheme.onSurface,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 160),
-                    child: SingleChildScrollView(
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: SelectableText(
-                          scrubbedPreview,
-                          style: typeExt.policyQuotation.copyWith(
-                            fontSize: 13.5,
-                            height: 1.45,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              padding: const EdgeInsets.fromLTRB(16, 18, 18, 18),
             ),
             if (trimmedReason != null && trimmedReason.isNotEmpty) ...[
               const SizedBox(height: 14),
-              Container(
-                width: double.infinity,
+              EnpriveMaterialCardSurface(
+                variant: EnpriveCardVariant.tonal,
+                backgroundColor: semantics.unknown.background,
+                borderColor: semantics.unknown.border.withValues(alpha: 0.65),
+                accentColor: semantics.unknown.foreground,
+                borderRadius: BorderRadius.circular(16),
+                lipHeight: 2.0,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: semantics.unknown.background,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: semantics.unknown.border.withValues(alpha: 0.45),
-                  ),
                 ),
                 child: Row(
                   children: [

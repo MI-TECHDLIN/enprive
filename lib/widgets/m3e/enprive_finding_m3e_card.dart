@@ -4,20 +4,15 @@ import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../../core/theme/enprive_theme.dart';
 import '../../domain/review/review_models.dart';
+import 'enprive_material_card_surface.dart';
 
-/// Expressive segmented or standalone finding card inspired by the "Music OS"
-/// and `_ (3).jpeg` reference boards.
+/// Tactile Material 3 Expressive segmented finding card inspired by the
+/// "Music OS" and `_ (3).jpeg` boards.
 ///
-/// Features:
-/// - Segmented outer/inner radii via [EnpriveRadii.groupedCardRadius] when part
-///   of a vertical finding group.
-/// - Circular index badge (`01`, `02`) in tabular numerals.
-/// - AAA-contrasted semantic severity pill (`Review Recommended`, `High Concern`,
-///   `No Concern Identified`, `Unverified Claim`).
-/// - Deterministic source-alignment badge (`QUOTE MATCHED` vs `UNVERIFIED`).
-/// - Embedded verbatim quotation callout (`SourceSerif4` italic) + optional
-///   `SHA-256` snippet (`JetBrainsMono`).
-/// - Tactile "Ask Deni · Why this matters" M3E action button.
+/// Combines segmented outer/inner corner radii (`22dp` outer / `6dp` inner
+/// seam), circular tabular index badge, AAA severity & quote-verification
+/// indicators, embedded Warm Paper / Slate quotation well (`3.0dp` left spine),
+/// and strict single-action compliance (`onTapCard` OR `onAskDeni`, never both).
 class EnpriveFindingM3ECard extends StatelessWidget {
   final VerifiedFinding finding;
   final int index;
@@ -25,6 +20,11 @@ class EnpriveFindingM3ECard extends StatelessWidget {
   final String? sha256Preview;
   final String askDeniLabel;
   final VoidCallback? onAskDeni;
+  final VoidCallback? onTapCard;
+  final String? categoryLabel;
+  final String? severityLabel;
+  final String? verificationLabel;
+  final String? inspectHintLabel;
 
   const EnpriveFindingM3ECard({
     super.key,
@@ -34,187 +34,312 @@ class EnpriveFindingM3ECard extends StatelessWidget {
     this.sha256Preview,
     this.askDeniLabel = 'Ask Deni · Why this matters',
     this.onAskDeni,
-  });
+    this.onTapCard,
+    this.categoryLabel,
+    this.severityLabel,
+    this.verificationLabel,
+    this.inspectHintLabel,
+  }) : assert(
+         onTapCard == null || onAskDeni == null,
+         'EnpriveFindingM3ECard follows android-design single-action rule: supply either onTapCard or onAskDeni, never both.',
+       );
 
   @override
   Widget build(BuildContext context) {
-    final m3e = M3ETheme.of(context);
+    final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
     final semantics = context.enpriveSemantics;
     final surfaces = context.enpriveSurfaces;
     final typeExt = context.enpriveType;
 
-    final isVerified = finding.isVerified;
+    final SemanticColorPair severityPair = switch (finding.severity) {
+      FindingSeverity.high => semantics.highConcern,
+      FindingSeverity.medium => semantics.reviewRecommended,
+      FindingSeverity.low => semantics.onDevice,
+    };
 
-    final severityPair = !isVerified
-        ? semantics.highConcern
-        : switch (finding.severity) {
-            FindingSeverity.high => semantics.highConcern,
-            FindingSeverity.medium => semantics.reviewRecommended,
-            FindingSeverity.low => semantics.noConcern,
-          };
+    final bool isVerified =
+        finding.status == EvidenceStatus.sourceMatched ||
+        finding.status == EvidenceStatus.deviceObserved;
+    final SemanticColorPair verifyPair = isVerified
+        ? semantics.onDevice
+        : semantics.unknown;
 
-    final severityLabel = !isVerified
-        ? 'Unverified Claim'
-        : switch (finding.severity) {
-            FindingSeverity.high => 'High Concern',
-            FindingSeverity.medium => 'Review Recommended',
-            FindingSeverity.low => 'Low / Informational',
-          };
+    final BorderRadius cardRadius = EnpriveRadii.groupedCardRadius(
+      index: index,
+      count: totalCount,
+      outer: 22,
+      inner: 6,
+    );
 
-    final borderRadius = totalCount > 1
-        ? EnpriveRadii.groupedCardRadius(index: index, count: totalCount)
-        : BorderRadius.circular(24);
+    final String? effectiveSeverityText =
+        severityLabel ??
+        (onTapCard == null
+            ? switch (finding.severity) {
+                FindingSeverity.high => 'HIGH CONCERN',
+                FindingSeverity.medium => 'REVIEW ADVISED',
+                FindingSeverity.low => 'LOW',
+              }
+            : null);
 
-    final indexBadgeText = (index + 1).toString().padLeft(2, '0');
+    final String effectiveVerificationText =
+        verificationLabel ??
+        (isVerified ? 'QUOTE MATCHED' : 'UNVERIFIED');
 
-    return M3ECard(
-      color: surfaces.card,
-      borderRadius: borderRadius,
-      border: BorderSide(color: surfaces.hairlineBorder),
-      padding: const EdgeInsets.all(18),
+    final bool hasActionCardTap = onTapCard != null;
+
+    return EnpriveMaterialCardSurface(
+      variant: EnpriveCardVariant.elevated,
+      backgroundColor: surfaces.card,
+      borderRadius: cardRadius,
+      lipHeight: hasActionCardTap ? 3.5 : 2.5,
+      padding: const EdgeInsets.all(16),
+      onPressed: onTapCard,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row: Circular index badge + Severity pill + Source verification badge
+          // Top row: Circular index badge + category pill + open affordance
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 34,
-                height: 34,
+                width: 30,
+                height: 30,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHigh,
+                  color: severityPair.background,
                   shape: BoxShape.circle,
+                  border: Border.all(color: severityPair.border),
                 ),
                 child: Text(
-                  indexBadgeText,
+                  (index + 1).toString().padLeft(2, '0'),
                   style: m3e.typography.emphasized.labelMedium.copyWith(
-                    color: scheme.onSurface,
+                    color: severityPair.foreground,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: severityPair.background,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: severityPair.border.withValues(alpha: 0.45),
-                  ),
-                ),
-                child: Text(
-                  severityLabel,
-                  style: m3e.typography.emphasized.labelSmall.copyWith(
-                    color: severityPair.foreground,
-                  ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: (categoryLabel != null &&
+                          categoryLabel!.trim().isNotEmpty)
+                      ? _MetaPill(
+                          label: categoryLabel!,
+                          background: surfaces.cardMuted,
+                          foreground: scheme.onSurfaceVariant,
+                          borderColor: surfaces.hairlineBorder,
+                        )
+                      : const SizedBox.shrink(),
                 ),
               ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
+              if (hasActionCardTap) ...[
+                const SizedBox(width: 6),
+                Container(
+                  width: 30,
+                  height: 30,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: surfaces.cardMuted,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    LucideIcons.arrowUpRight,
+                    size: 15,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
-                decoration: BoxDecoration(
-                  color: isVerified
-                      ? semantics.noConcern.background
-                      : semantics.highConcern.background,
-                  borderRadius: BorderRadius.circular(999),
+              ],
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              if (effectiveSeverityText != null &&
+                  effectiveSeverityText.trim().isNotEmpty)
+                _MetaPill(
+                  label: effectiveSeverityText,
+                  background: severityPair.background,
+                  foreground: severityPair.foreground,
+                  borderColor: severityPair.border,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isVerified
-                          ? LucideIcons.fileCheck2
-                          : LucideIcons.triangleAlert,
-                      size: 13,
-                      color: isVerified
-                          ? semantics.noConcern.foreground
-                          : semantics.highConcern.foreground,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      isVerified ? 'QUOTE MATCHED' : 'UNVERIFIED',
-                      style: m3e.typography.emphasized.labelSmall.copyWith(
-                        fontSize: 10.5,
-                        color: isVerified
-                            ? semantics.noConcern.foreground
-                            : semantics.highConcern.foreground,
-                      ),
-                    ),
-                  ],
-                ),
+              _MetaPill(
+                icon: isVerified
+                    ? LucideIcons.circleCheck
+                    : LucideIcons.circleHelp,
+                label: effectiveVerificationText,
+                background: verifyPair.background,
+                foreground: verifyPair.foreground,
+                borderColor: verifyPair.border,
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
-          // Title & Plain-Language Explanation
+          // Emphasized finding title & plain-English explanation
           Text(
             finding.title,
             style: m3e.typography.emphasized.titleMedium.copyWith(
+              fontWeight: FontWeight.w800,
               color: scheme.onSurface,
-              height: 1.25,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             finding.explanation,
             style: m3e.typeScale.bodyMedium.copyWith(
+              height: 1.44,
               color: scheme.onSurfaceVariant,
-              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Embedded Warm Paper / Obsidian archival quotation strip
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: surfaces.quoteSurface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: surfaces.hairlineBorder),
+              ),
+              child: Stack(
+                children: [
+                  PositionedDirectional(
+                    top: 11,
+                    bottom: 11,
+                    start: 10,
+                    width: 3.5,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: isVerified
+                            ? severityPair.icon
+                            : surfaces.strongBorder,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      21,
+                      11,
+                      12,
+                      11,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '“${finding.exactExcerpt}”',
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: typeExt.policyQuotation.copyWith(
+                            fontSize: 13.5,
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                        if (sha256Preview != null &&
+                            sha256Preview!.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            'SHA-256 · $sha256Preview',
+                            style: typeExt.sha256Hash.copyWith(
+                              fontSize: 11,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
-          // Verbatim Evidence Quote Callout
-          if (finding.exactExcerpt.trim().isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: surfaces.quoteCallout,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: surfaces.hairlineBorder),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '“${finding.exactExcerpt.trim()}”',
-                    style: typeExt.policyQuotation,
+          if (inspectHintLabel != null &&
+              inspectHintLabel!.trim().isNotEmpty &&
+              hasActionCardTap) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Icon(
+                  LucideIcons.fileSearch,
+                  size: 14,
+                  color: scheme.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  inspectHintLabel!,
+                  style: m3e.typography.emphasized.labelSmall.copyWith(
+                    color: scheme.primary,
                   ),
-                  if (sha256Preview != null && sha256Preview!.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      'SHA-256 · $sha256Preview',
-                      style: typeExt.sha256Hash,
-                    ),
-                  ],
-                ],
-              ),
+                ),
+              ],
             ),
           ],
 
           if (onAskDeni != null) ...[
-            const SizedBox(height: 14),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
               child: M3EButton.tonal(
-                onPressed: onAskDeni,
                 size: M3EButtonSize.sm,
-                icon: const Icon(LucideIcons.sparkles, size: 16),
+                icon: const Icon(LucideIcons.messageCircleQuestionMark, size: 17),
                 label: Text(askDeniLabel),
+                onPressed: onAskDeni,
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MetaPill extends StatelessWidget {
+  final IconData? icon;
+  final String label;
+  final Color background;
+  final Color foreground;
+  final Color borderColor;
+
+  const _MetaPill({
+    this.icon,
+    required this.label,
+    required this.background,
+    required this.foreground,
+    required this.borderColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final m3e = EnpriveM3ETheme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: borderColor.withValues(alpha: 0.7)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 12, color: foreground),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: m3e.typography.emphasized.labelSmall.copyWith(
+              color: foreground,
+              fontSize: 11,
+            ),
+          ),
         ],
       ),
     );

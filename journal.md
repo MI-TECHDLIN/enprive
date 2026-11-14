@@ -854,6 +854,44 @@
 
 ---
 
+### Iteration 24 — Custom Material 3 Expressive Tactile Card Family & Full Screen Migration (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop commit `b9c83a9`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`SKILL.md`, `components.md` single-action card rule & zero internal card scrolling, `layout.md`, `theming.md` Screen Check Light + Dark parity)
+  - `hamen/material-3-skill` (`SKILL.md`, `component-catalog.md`, `typography-and-shape.md`, `color-system.md`)
+  - `.agents/skills/mobile-app-ui-design/SKILL.md` (Bento asymmetric composition, tabular metric hierarchy, optical nested icon wells, dual-cue selection)
+  - `.agents/skills/flutter-add-widget-test/SKILL.md` & `.agents/skills/dart-run-static-analysis/SKILL.md`
+  - Visual inspiration boards under `mobile ui and ux inspration/` (kept uncommitted per `AGENTS.md` Rule 2.3)
+- **What Was Built**:
+  - **1. Shared Material Tactile Card Foundation (`lib/widgets/m3e/enprive_material_card_surface.dart`)**:
+    - Built `EnpriveCardVariant` (`elevated`, `tonal`, `archival`, `outlined`, `selected`) and `EnpriveMaterialCardSurface` wrapping real `M3ECard` inside a crisp `1.5dp`/`2.0dp` outline + solid `0dp`-blur bottom tactile lip (`topMargin + currentLip == restingLip` for zero layout jump), press-state corner tightening (`-5dp`), harmonized lip shading (`resolveLipColor`), and full `MediaQuery.maybeDisableAnimationsOf(context)` reduced-motion compliance.
+  - **2. Bespoke Typed Card Components (`lib/widgets/m3e/`)**:
+    - Added `EnpriveBentoChoiceCard` (`lib/widgets/m3e/enprive_bento_choice_card.dart`) & `.compactOption`: tactile Bento option card and 3-up compact selector with optional `metricHighlight`, optical nested icon squircle, soft corner watermark icon, trailing action/check circle, and dual-cue selection.
+    - Added `EnpriveMetricTileCard` (`lib/widgets/m3e/enprive_metric_tile_card.dart`): `tabularMetricLarge` counter, whispering label, optical icon well, and bottom posture progress bar.
+    - Added `EnpriveQuoteCard` (`lib/widgets/m3e/enprive_quote_card.dart`): Warm Paper / Obsidian Slate archival evidence card using `Stack` + `PositionedDirectional` rounded inset bookmark spine (`3.5dp`), `contextWindow` clause highlight or `SelectableText` with zero internal scroll views, and `Flexible` SHA-256 footer pill.
+    - Added `EnpriveCompanionCard` (`lib/widgets/m3e/enprive_companion_card.dart`) & updated `EnpriveDeniStageCard`: supports `EnpriveCompanionLayout.inline` (alcove) and `.peeking` (top-edge overlap) with `DeniAnimatedMascot`.
+    - Added `EnpriveReceiptCard` (`lib/widgets/m3e/enprive_receipt_card.dart`): posture header strip, `EnpriveProvenanceChip`, tabular timestamp/source meta, summary, and footer strip with `M3EButton.tonal` Open + `48×48dp` danger-tinted Delete button.
+    - Upgraded `EnpriveFindingM3ECard`, `EnpriveCollapsibleQuoteBox`, `EnpriveBentoPostureCard`, `EnpriveSegmentedCardTile` / `EnpriveSegmentedM3EGroup` (`22dp` outer / `6dp` inner radii, `4dp` gap, zero horizontal `Divider` lines), and exported all 12 modules via `lib/widgets/m3e/enprive_m3e_components.dart`.
+  - **3. Full Screen, Sheet & Catalog Migration**:
+    - Migrated all card surfaces across `lib/main.dart`, `lib/screens/review_result_screen.dart`, `lib/screens/receipts_screen.dart`, `lib/screens/settings_screen.dart`, `lib/screens/onboarding_flow_screen.dart` (upgraded Step 2 depth selection to a balanced `2+1` asymmetric Bento layout), `lib/widgets/installed_app_picker_sheet.dart`, `lib/widgets/cloud_consent_sheet.dart` (removed inner scrollable quote box in favor of direct `EnpriveQuoteCard(selectable: true)` inside the sheet scroll container), `lib/widgets/why_this_finding_sheet.dart`, `lib/widgets/private_readiness_sheet.dart`, `lib/widgets/review_progress_sheet.dart`, `lib/widgets/analysis_process_trace.dart`, and added Section 5 (`Custom Material 3 Expressive Card Family`) to `lib/screens/design_system_preview_screen.dart`.
+  - **4. Dedicated Custom Card Test Suite (`test/m3e_custom_cards_test.dart`)**:
+    - Added 5 widget tests verifying tactile lip depression, corner radius morphing, reduced motion, dual-cue selection across Light/Dark, Dark + 200% text scale + Arabic RTL rendering on Metric/Quote/Companion/Receipt cards, `EnpriveFindingM3ECard` single-action assertion (`onTapCard` XOR `onAskDeni`), and segmented `22dp`/`6dp` corner radii.
+- **Challenges & Root-Cause Fixes**:
+  - **1. Outer `AnimatedContainer` vs `M3ECard` Internal Container**: `EnpriveMaterialCardSurface` composes an outer `AnimatedContainer` tactile shell around `M3ECard` (which itself renders an internal `AnimatedContainer`); scoped widget test finders via `find.descendant(..., matching: find.byType(AnimatedContainer)).first`.
+  - **2. `M3ELoadingIndicator` Sizing & Intrinsic Conflict**: `M3ELoadingIndicator` enforces outer bounds in `24.0–240.0` and rejects unconstrained `IntrinsicHeight`; wrapped indicator in explicit `SizedBox(width: 24, height: 24)` inside `EnpriveBentoPostureCard` and replaced `IntrinsicHeight` archival spines in `EnpriveQuoteCard`, `EnpriveCollapsibleQuoteBox`, `EnpriveFindingM3ECard`, and `WhyThisFindingSheet` with `Stack` + `PositionedDirectional`.
+  - **3. Visual Polish from Live Emulator Screen Check**: Live screenshot inspection caught slight outer-corner spine pinching on rounded quote boxes, vertical 3-line pill stacking on `EnpriveFindingM3ECard`, and an orphan half-width grid cell on Onboarding Step 2; inset the rounded bookmark spines (`top/bottom` inset + `borderRadius: 2`), gave status pills their own full-width wrap row, and upgraded Onboarding Step 2 to a `2+1` asymmetric Bento layout.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **56/56 passed (100%)** (`test/pii_redactor_test.dart`, `test/evidence_validator_test.dart`, `test/permission_comparator_test.dart`, `test/widget_test.dart`, `test/theme_and_deni_lod_test.dart`, `test/m3e_custom_cards_test.dart`).
+  - `flutter build apk --debug`: Built and installed on `emulator-5554`; visually inspected Light & Dark Mode screenshots across Home, Receipts, Review Result (metrics + findings + WhyThisFindingSheet), Settings, Onboarding (`2+1` Bento + Readiness), and Section 5 Custom Card Catalog.
+- **Next Immediate Action & Recommended Model**:
+  - Complete M3E Rebrand + Custom Material Tactile Card System on `feature/m3-expressive-rebrand` ready for PR / merge review into `feature/phase-a-privacy-boundary` / `main`.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Manual Device & GCP Verification + Phase A Review**

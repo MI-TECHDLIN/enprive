@@ -3,10 +3,13 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../core/theme/enprive_theme.dart';
+import '../domain/review/review_coordinator.dart';
+import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_provenance_chip.dart';
 import '../widgets/enprive_tactile_button.dart';
+import '../widgets/m3e/enprive_m3e_components.dart';
 
 /// Standalone Stage 0 `M3EMaterialApp` wrapper for isolated proof-of-concept
 /// booting and widget verification.
@@ -798,6 +801,103 @@ class _DesignSystemPreviewScreenState extends State<DesignSystemPreviewScreen> {
                   const EnpriveTactileButton(
                     label: 'Disabled Tactile State (WCAG AA)',
                     onPressed: null,
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // 6. Custom Tactile Material Card Family
+                  Text(
+                    '5. Custom Material 3 Expressive Card Family',
+                    style: m3e.typography.emphasized.titleMedium.copyWith(
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: EnpriveBentoChoiceCard(
+                          title: 'Sample Bento',
+                          metricHighlight: '06',
+                          metricHighlightColor: semantics.onDevice.foreground,
+                          subtitle: 'Grounded 3.5dp lip + morph',
+                          footerTag: 'ON-DEVICE',
+                          icon: LucideIcons.shieldCheck,
+                          onPressed: () {},
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: EnpriveBentoChoiceCard(
+                          title: 'Selected Bento',
+                          subtitle: 'Dual-cue fill + 2dp border',
+                          footerTag: 'ACTIVE',
+                          icon: LucideIcons.sparkles,
+                          selected: true,
+                          onPressed: () {},
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: EnpriveMetricTileCard(
+                          value: '04',
+                          label: 'Verified Clauses',
+                          icon: LucideIcons.quote,
+                          accentColor: semantics.noConcern.foreground,
+                          accentBackground: semantics.noConcern.background,
+                          meterFraction: 1.0,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: EnpriveMetricTileCard(
+                          value: '01',
+                          label: 'Review Item',
+                          icon: LucideIcons.triangleAlert,
+                          accentColor: semantics.reviewRecommended.foreground,
+                          accentBackground:
+                              semantics.reviewRecommended.background,
+                          meterFraction: 0.45,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  EnpriveQuoteCard(
+                    statusLabel: 'Source matched',
+                    categoryLabel: 'Third-party sharing',
+                    spineColor: semantics.onDevice.icon,
+                    quote:
+                        'We only retain diagnostic crash logs to keep the classroom workspace reliable.',
+                    sha256Digest: '8f4b2e9c10a74d3b6e12c9805f1a3d7e',
+                  ),
+                  const SizedBox(height: 12),
+                  EnpriveReceiptCard(
+                    receipt: PolicyReviewReceipt(
+                      id: 'preview_rcpt',
+                      subjectTitle: 'EduTrack Classroom',
+                      sourceLabel: 'Sample Profile',
+                      createdAt: DateTime(2026, 11, 14, 10, 30),
+                      overallState: ReviewOverallState.reviewRecommended,
+                      inferenceSource: InferenceSource.onDevice,
+                      summary:
+                          'Discloses ad telemetry identifier alongside microphone classroom notes.',
+                      calibratedDisclaimer:
+                          ReviewCoordinator.calibratedDefaultDisclaimer,
+                      snapshotText: 'Sample archival snapshot excerpt.',
+                      snapshotDigest: '8f4b2e9c10a7',
+                      findings: const [],
+                    ),
+                    stateBadgeLabel: 'Review recommended',
+                    metaLine: 'Sample Profile · Nov 14',
+                    openLabel: 'Open receipt',
+                    deleteTooltip: 'Delete',
+                    onOpen: () {},
+                    onDelete: () {},
                   ),
                 ],
               ),
