@@ -794,6 +794,41 @@
 
 ---
 
+### Iteration 22 — Stage 3 Review Result, Ask Deni (`WhyThisFindingSheet`), Receipts & Settings M3E Migration (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop Stage 2 commit `cddb45a`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`SKILL.md`, `components.md`, `layout.md`, `theming.md`, `android-conventions.md`)
+  - `hamen/material-3-skill` (`SKILL.md`, `component-catalog.md`, `typography-and-shape.md`, `color-system.md`)
+  - `.agents/skills/svg-mascot-animator/SKILL.md` & `.agents/skills/mobile-app-ui-design/SKILL.md`
+  - All 8 visual inspiration boards in `mobile ui and ux inspration/` (never staged or committed per `AGENTS.md` Rule 2.3)
+- **What Was Built**:
+  - **1. Standalone Test Harness Bridge (`lib/core/theme/enprive_m3e_theme.dart`)**:
+    - Added `EnpriveM3EBridgeScope.ensure(BuildContext context, {required Widget child})` so screens and modal bottom sheets rendered inside standalone `MaterialApp` test harnesses automatically mount `M3ETheme`, `modern.Theme`, and `MaterialUiCompatibilityBridge` with zero overhead when already inside `M3EMaterialApp`.
+  - **2. Review Result Screen (`lib/screens/review_result_screen.dart`)**:
+    - Migrated `ReviewResultScreen` from static `EnpriveColors.*` to `EnpriveM3ETheme.of(context)`, `context.enpriveSemantics`, `context.enpriveSurfaces`, and `context.enpriveType`.
+    - Upgraded the state-tinted hero stage with Deni Standard LOD (`84dp`), AAA semantic state pill (`semantics.reviewRecommended`, `semantics.noConcern`, `semantics.insufficientEvidence`), and `m3e.typography.emphasized.headlineMedium`.
+    - Replaced `_PastelStatTile` with `_M3EStatTile` (`M3ECard` with `tabularMetricLarge` counters), `_CleanFindingCard` with segmented `_M3EFindingCard` (`M3ECard` + `EnpriveRadii.groupedCardRadius` + `SourceSerif4` italic quote callout), and `_CleanPermissionListCard` with `_M3EPermissionListCard` (`M3ECard`).
+    - Upgraded `_showSnapshotReceiptSheet` with `M3ECard` metadata (`typeExt.sha256Hash`) and `M3ECard` policy snapshot (`typeExt.policyQuotation`).
+  - **3. Ask Deni Sheet (`lib/widgets/why_this_finding_sheet.dart`)**:
+    - Migrated `WhyThisFindingSheet` to `EnpriveM3EBridgeScope.ensure`, `M3EProgressIndicator.linearWavy` (with reduced-motion fallback), unified `M3ECard` evidence work card, auto-collapsible `SourceSerif4` policy quote stage (`_isQuoteCollapsed`), `M3ECard` live process & answer cards, and Deni Compact LOD (`56dp`) docked bar.
+  - **4. Receipts Archive Screen (`lib/screens/receipts_screen.dart`)**:
+    - Migrated `ReceiptsScreen` to `M3ESearchBar`, `M3EChip` filter chips (`All · Review · No concern`), and `_M3EReceiptCard` (`M3ECard` with AAA state badge, `SourceSerif4` summary, `EnpriveProvenanceChip`, and AAA-contrasted `semantics.inCloud` / `semantics.highConcern` action strip).
+  - **5. Settings Screen (`lib/screens/settings_screen.dart`)**:
+    - Removed remaining `EnpriveColors.*` references, upgraded the Deni companion status card to `M3ECard`, and converted the `Preferences` group to segmented `M3ECard` containment (`EnpriveRadii.groupedCardRadius`).
+- **Challenges & Root-Cause Fixes**:
+  - **`ListTile` Material Ancestor Assertion inside `M3ECard`**: Because `M3ECard` paints its background via a `DecoratedBox`/`modern.Material`, placing a `legacy.ListTile` directly inside `M3ECard` triggered Flutter's `ListTile` splash visibility assertion. Fixed by wrapping `entry.value` inside `Material(color: Colors.transparent, borderRadius: radius, clipBehavior: Clip.antiAlias, ...)` inside each segmented `M3ECard`.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **49/49 passed (100%)**.
+  - `flutter build apk --debug`: **Built and installed `app-debug.apk` on `emulator-5554`**; verified live Light & Dark screenshots (`stage3_01` through `stage3_06`).
+- **Next Immediate Action & Recommended Model**:
+  - Proceed to **Stage 4 — Full Legacy Cleanup, Final Accessibility/Locale Verification & Rebrand Sign-off** after user review of Stage 3.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **Manual Device & GCP Verification + Phase A Review**

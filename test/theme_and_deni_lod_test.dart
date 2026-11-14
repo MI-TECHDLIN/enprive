@@ -1,8 +1,11 @@
 import 'package:enprive/core/theme/enprive_colors.dart';
 import 'package:enprive/core/theme/enprive_theme.dart';
+import 'package:enprive/domain/review/review_coordinator.dart';
 import 'package:enprive/domain/review/review_models.dart';
 import 'package:enprive/main.dart';
 import 'package:enprive/screens/design_system_preview_screen.dart';
+import 'package:enprive/screens/receipts_screen.dart';
+import 'package:enprive/screens/review_result_screen.dart';
 import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/services/storage/receipt_repository.dart';
 import 'package:enprive/widgets/analysis_process_trace.dart';
@@ -11,6 +14,7 @@ import 'package:enprive/widgets/enprive_provenance_chip.dart';
 import 'package:enprive/widgets/installed_app_picker_sheet.dart';
 import 'package:enprive/widgets/m3e/enprive_m3e_components.dart';
 import 'package:enprive/widgets/review_progress_sheet.dart';
+import 'package:enprive/widgets/why_this_finding_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -631,6 +635,125 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         expect(find.byType(DeniAnimatedMascot), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  });
+
+  group('Stage 3 — Review Result, Ask Deni, Receipts & Settings M3E Migration', () {
+    testWidgets(
+      'ReviewResultScreen, WhyThisFindingSheet, and ReceiptsScreen render M3E cards, M3EChip filters, and M3ESearchBar cleanly in Dark Mode',
+      (WidgetTester tester) async {
+        final coordinator = ReviewCoordinator();
+        const finding = VerifiedFinding(
+          id: 'f_stage3',
+          title: 'Microphone Recording Disclosed',
+          category: FindingCategory.dataCollection,
+          severity: FindingSeverity.medium,
+          exactExcerpt:
+              'Voice fluency exercises record audio clips for teacher review.',
+          explanation: 'Audio clips are recorded during reading fluency tasks.',
+          whatPolicySays: 'Discloses audio recording for teacher review.',
+          whatAndroidReports: 'RECORD_AUDIO requested.',
+          unknowns: ['Retention duration after grading is not specified.'],
+          status: EvidenceStatus.sourceMatched,
+        );
+
+        final receipt = PolicyReviewReceipt(
+          id: 'rcpt_stage3',
+          subjectTitle: 'EduTrack Classroom',
+          sourceLabel: 'Sample Profile',
+          createdAt: DateTime(2026, 11, 14, 15, 30),
+          overallState: ReviewOverallState.reviewRecommended,
+          inferenceSource: InferenceSource.onDevice,
+          summary:
+              'Review recommended: audio recording and sharing clauses identified.',
+          calibratedDisclaimer:
+              ReviewCoordinator.calibratedDefaultDisclaimer,
+          snapshotText:
+              'Voice fluency exercises record audio clips for teacher review.',
+          snapshotDigest: 'a1b2c3d4e5f6',
+          findings: const [finding],
+        );
+
+        final activeData = EnpriveM3ETheme.darkThemeData;
+        await tester.pumpWidget(
+          M3EMaterialApp(
+            data: activeData,
+            typeface: EnpriveM3ETheme.typefaceConfig,
+            autoTheming: false,
+            dynamicColoring: false,
+            initialTheme: activeData.brightness,
+            theme: EnpriveM3ETheme.lightThemeData.toThemeData(),
+            darkTheme: EnpriveM3ETheme.darkThemeData.toThemeData(),
+            localizationsDelegates: EnpriveM3ETheme.localizationsDelegates,
+            appBuilder: (context, child) => EnpriveM3EBridgeScope(
+              themeMode: ThemeMode.dark,
+              child: child ?? const SizedBox.shrink(),
+            ),
+            home: ReviewResultScreen(
+              receipt: receipt,
+              coordinator: coordinator,
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('EduTrack Classroom'), findsOneWidget);
+        expect(find.text('Microphone Recording Disclosed'), findsOneWidget);
+        expect(find.byType(M3ECard), findsWidgets);
+
+        // Open WhyThisFindingSheet by tapping the finding card
+        final findingCardFinder = find.text('Microphone Recording Disclosed');
+        await tester.ensureVisible(findingCardFinder);
+        await tester.tap(findingCardFinder);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+
+        expect(find.byType(WhyThisFindingSheet), findsOneWidget);
+        await tester.drag(find.byType(ListView), const Offset(0, -250));
+        await tester.pump();
+        expect(find.text('What does this mean for my child?'), findsOneWidget);
+
+        // Close WhyThisFindingSheet modal route before pumping ReceiptsScreen
+        Navigator.of(tester.element(find.byType(WhyThisFindingSheet))).pop();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+
+        // Now pump ReceiptsScreen in Dark Mode and test M3EChip filter + M3ESearchBar
+        await tester.pumpWidget(
+          M3EMaterialApp(
+            data: activeData,
+            typeface: EnpriveM3ETheme.typefaceConfig,
+            autoTheming: false,
+            dynamicColoring: false,
+            initialTheme: activeData.brightness,
+            theme: EnpriveM3ETheme.lightThemeData.toThemeData(),
+            darkTheme: EnpriveM3ETheme.darkThemeData.toThemeData(),
+            localizationsDelegates: EnpriveM3ETheme.localizationsDelegates,
+            appBuilder: (context, child) => EnpriveM3EBridgeScope(
+              themeMode: ThemeMode.dark,
+              child: child ?? const SizedBox.shrink(),
+            ),
+            home: Scaffold(
+              body: ReceiptsScreen(
+                receipts: [receipt],
+                coordinator: coordinator,
+                onDeleteReceipt: (_) {},
+                onStartReviewRequested: () {},
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.byType(M3EChip), findsNWidgets(3));
+        expect(find.text('EduTrack Classroom'), findsOneWidget);
+
+        // Toggle M3ESearchBar open
+        await tester.tap(find.byTooltip('Search'));
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(find.byType(M3ESearchBar), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );

@@ -350,6 +350,20 @@ class EnpriveM3EBridgeScope extends StatelessWidget {
     required this.child,
   });
 
+  /// Ensures `M3ETheme`, `modern.Theme`, and `EnpriveTheme` extensions are
+  /// present in the widget tree even when a screen or sheet is pumped inside a
+  /// standalone `MaterialApp` test harness.
+  static Widget ensure(BuildContext context, {required Widget child}) {
+    if (M3ETheme.maybeOf(context) != null) {
+      return child;
+    }
+    final isDark = legacy.Theme.of(context).brightness == Brightness.dark;
+    return EnpriveM3EBridgeScope(
+      themeMode: isDark ? legacy.ThemeMode.dark : legacy.ThemeMode.light,
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final platformBrightness =
