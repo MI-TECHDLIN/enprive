@@ -50,6 +50,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chipLocationUnavailable => 'Lieu de traitement indisponible';
 
   @override
+  String get chipOfflineDeterministic => 'Analyse locale hors ligne';
+
+  @override
+  String get chipUnknown => 'Source de traitement inconnue';
+
+  @override
   String get statusSourceMatched => 'Extrait vérifié';
 
   @override

@@ -29,7 +29,9 @@ import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderF
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -361,8 +363,8 @@ class MainActivity : FlutterActivity() {
                         return@setMethodCallHandler
                     }
 
-                    // Enforce privacy constraint: without cloud consent, strictly block ONLY_IN_CLOUD requests
-                    if (!cloudConsent && requestedMode == "ONLY_IN_CLOUD") {
+                    // Enforce privacy constraint: without cloud consent, strictly block non-ONLY_ON_DEVICE requests
+                    if (!HybridAiPolicy.isRequestPermitted(cloudConsent, requestedMode)) {
                         result.success(mapOf(
                             "schemaVersion" to schemaVersion,
                             "requestId" to requestId,
@@ -375,40 +377,50 @@ class MainActivity : FlutterActivity() {
                     }
 
                     lifecycleScope.launch(Dispatchers.IO) {
-                        try {
-                            val inferenceMode = when {
-                                !cloudConsent -> InferenceMode.ONLY_ON_DEVICE
-                                requestedMode == "ONLY_IN_CLOUD" -> InferenceMode.ONLY_IN_CLOUD
-                                else -> InferenceMode.PREFER_ON_DEVICE
-                            }
+                        var replySubmitted = false
+                        HybridAiPolicy.executeSingleOperation(
+                            onRun = {
+                                val inferenceMode =
+                                    HybridAiPolicy.resolveInferenceMode(cloudConsent, requestedMode)
+                                val modelName = "gemini-3.8-flash"
 
-                            val ai = Firebase.ai(
-                                backend = GenerativeBackend.googleAI(),
-                                useLimitedUseAppCheckTokens = true
-                            )
+                                val ai = Firebase.ai(
+                                    backend = GenerativeBackend.googleAI(),
+                                    useLimitedUseAppCheckTokens = true
+                                )
 
-                            fun createModel(includeThoughts: Boolean) = ai.generativeModel(
-                                modelName = "gemini-3.8-flash",
-                                generationConfig = generationConfig {
-                                    responseMimeType = "application/json"
-                                    temperature = 0.1f
-                                    if (includeThoughts) {
-                                        thinkingConfig = thinkingConfig {
-                                            this.includeThoughts = true
-                                            thinkingLevel = ThinkingLevel.LOW
+                                fun createModel(includeThoughts: Boolean) = run {
+                                    val config = generationConfig {
+                                        responseMimeType = "application/json"
+                                        temperature = 0.1f
+                                        if (includeThoughts) {
+                                            thinkingConfig = thinkingConfig {
+                                                this.includeThoughts = true
+                                                thinkingLevel = HybridAiPolicy.CLOUD_THINKING_LEVEL
+                                            }
                                         }
                                     }
-                                },
-                                onDeviceConfig = OnDeviceConfig(
-                                    mode = inferenceMode,
-                                    maxOutputTokens = 1024,
-                                    temperature = 0.1f,
-                                    topK = 20,
-                                    seed = null,
-                                    candidateCount = 1,
-                                    modelOption = OnDeviceModelOption.PREVIEW
-                                )
-                            )
+                                if (HybridAiPolicy.shouldAttachOnDeviceConfig(inferenceMode)) {
+                                    ai.generativeModel(
+                                        modelName = modelName,
+                                        generationConfig = config,
+                                        onDeviceConfig = OnDeviceConfig(
+                                            mode = inferenceMode,
+                                            maxOutputTokens = 1024,
+                                            temperature = 0.1f,
+                                            topK = 20,
+                                            seed = null,
+                                            candidateCount = 1,
+                                            modelOption = OnDeviceModelOption.PREVIEW
+                                        )
+                                    )
+                                } else {
+                                    ai.generativeModel(
+                                        modelName = modelName,
+                                        generationConfig = config
+                                    )
+                                }
+                            }
 
                             val systemPrompt = if (task == "explain_finding") {
                                 """
@@ -483,25 +495,15 @@ class MainActivity : FlutterActivity() {
                                 }
                             }
 
-                            fun mapSource(src: InferenceSource?): String = when (src) {
-                                InferenceSource.ON_DEVICE -> "ON_DEVICE"
-                                InferenceSource.IN_CLOUD -> "IN_CLOUD"
-                                else -> if (cloudConsent) "IN_CLOUD" else "ON_DEVICE"
-                            }
-
                             suspend fun collectStream(enableThoughts: Boolean) {
                                 pushStreamEvent(
                                     stage = "model_stream_started",
-                                    label = if (cloudConsent) {
-                                        "Streaming reasoning via App Check"
-                                    } else {
-                                        "Reading policy text on this phone"
-                                    },
-                                    sourceStr = if (inferenceMode == InferenceMode.ONLY_ON_DEVICE) "ON_DEVICE" else null
+                                    label = HybridAiPolicy.initialStreamLabel(inferenceMode),
+                                    sourceStr = HybridAiPolicy.initialStreamSource(inferenceMode)
                                 )
                                 createModel(enableThoughts).generateContentStream(prompt).collect { chunk ->
                                     lastInferenceSource = chunk.inferenceSource
-                                    val srcLabel = mapSource(lastInferenceSource)
+                                    val srcLabel = HybridAiPolicy.mapInferenceSource(lastInferenceSource)
                                     var chunkAddedThought = false
                                     var chunkAddedSignature = false
 
@@ -538,10 +540,10 @@ class MainActivity : FlutterActivity() {
                                             } else {
                                                 "streaming_thoughts"
                                             },
-                                            label = if (srcLabel == "IN_CLOUD") {
-                                                "Streaming reasoning & thought signature"
-                                            } else {
-                                                "Streaming reasoning on this phone"
+                                            label = when (srcLabel) {
+                                                "IN_CLOUD" -> "Streaming reasoning & thought signature"
+                                                "ON_DEVICE" -> "Streaming reasoning on this phone"
+                                                else -> "Streaming model reasoning"
                                             },
                                             sourceStr = srcLabel
                                         )
@@ -549,23 +551,20 @@ class MainActivity : FlutterActivity() {
                                 }
                             }
 
-                            val preferThoughts = inferenceMode != InferenceMode.ONLY_ON_DEVICE
-                            try {
-                                collectStream(preferThoughts)
-                            } catch (e: Exception) {
-                                val isUnavailable = e.javaClass.simpleName.contains("NotAvailable", ignoreCase = true) ||
-                                        (e.message?.contains("not available", ignoreCase = true) == true)
-                                val hasAnyOutput = thoughtBuilder.isNotEmpty() || answerBuilder.isNotEmpty()
-                                if (preferThoughts && !isUnavailable && !hasAnyOutput) {
-                                    Log.i(TAG, "Retrying stream without thinkingConfig: ${e.message}")
-                                    collectStream(false)
-                                } else {
-                                    throw e
+                            // Execute strictly once via shared policy guard; never retry pre-output failures.
+                            HybridAiPolicy.executeSingleGenerationAttempt(
+                                cloudConsent = cloudConsent,
+                                requestedMode = requestedMode,
+                                modelName = modelName,
+                                thinkingLevel = HybridAiPolicy.CLOUD_THINKING_LEVEL,
+                                onBlocked = { reason -> throw SecurityException(reason) },
+                                onAttempt = { _, enableThoughts ->
+                                    collectStream(enableThoughts)
                                 }
-                            }
+                            )
 
                             val responseText = answerBuilder.toString().trim().ifEmpty { "{}" }
-                            val actualSource = mapSource(lastInferenceSource)
+                            val actualSource = HybridAiPolicy.mapInferenceSource(lastInferenceSource)
                             val finalThoughtSummary = thoughtBuilder.toString().trim().ifEmpty { null }
                             val finalSignature = signatures.lastOrNull()
 
@@ -588,6 +587,7 @@ class MainActivity : FlutterActivity() {
                             }
 
                             withContext(Dispatchers.Main) {
+                                replySubmitted = true
                                 result.success(mapOf(
                                     "schemaVersion" to schemaVersion,
                                     "requestId" to requestId,
@@ -599,25 +599,42 @@ class MainActivity : FlutterActivity() {
                                     "thoughtSignatures" to signatures.toList()
                                 ))
                             }
-                        } catch (e: Exception) {
-                            val isUnavailable = e.javaClass.simpleName.contains("NotAvailable", ignoreCase = true) ||
-                                    (e.message?.contains("not available", ignoreCase = true) == true)
-                            if (isUnavailable) {
-                                Log.i(TAG, "On-device model unavailable on this hardware/emulator; prompting user choice.")
-                            } else {
-                                Log.w(TAG, "Inference note: ${e.message}")
+                        },
+                        onCancel = { ce ->
+                                if (!replySubmitted) {
+                                    withContext(NonCancellable + Dispatchers.Main) {
+                                        replySubmitted = true
+                                        try {
+                                            result.error(
+                                                "CANCELLED",
+                                                ce.message ?: "Analysis cancelled.",
+                                                null
+                                            )
+                                        } catch (_: Exception) {
+                                            // Flutter engine may already be detached on cancellation.
+                                        }
+                                    }
+                                }
+                            },
+                            onFailure = { info, _ ->
+                                if (info.isUnavailable) {
+                                    Log.i(TAG, "On-device model unavailable on this hardware/emulator; prompting user choice.")
+                                } else {
+                                    Log.w(TAG, "Inference note: ${info.message}")
+                                }
+                                withContext(Dispatchers.Main) {
+                                    replySubmitted = true
+                                    result.success(mapOf(
+                                        "schemaVersion" to schemaVersion,
+                                        "requestId" to requestId,
+                                        "status" to info.status,
+                                        "inferenceSource" to "UNKNOWN",
+                                        "errorCode" to info.errorCode,
+                                        "message" to info.message
+                                    ))
+                                }
                             }
-                            withContext(Dispatchers.Main) {
-                                result.success(mapOf(
-                                    "schemaVersion" to schemaVersion,
-                                    "requestId" to requestId,
-                                    "status" to if (isUnavailable) "unavailable" else "failed",
-                                    "inferenceSource" to "UNKNOWN",
-                                    "errorCode" to (e.javaClass.simpleName),
-                                    "message" to (e.message ?: "Analysis unavailable on this device")
-                                ))
-                            }
-                        }
+                        )
                     }
                 }
 

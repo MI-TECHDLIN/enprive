@@ -12,6 +12,8 @@
   "chipOnDevice": "在此设备上",
   "chipInCloud": "云端分析",
   "chipLocationUnavailable": "处理位置不可用",
+  "chipOfflineDeterministic": "离线本地扫描",
+  "chipUnknown": "处理来源未知",
   "statusSourceMatched": "原文已匹配",
   "statusDeviceObserved": "设备端已观察",
   "statusInterpretation": "解读说明",

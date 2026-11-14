@@ -12,6 +12,8 @@
   "chipOnDevice": "On this device",
   "chipInCloud": "In the cloud",
   "chipLocationUnavailable": "Processing location unavailable",
+  "chipOfflineDeterministic": "Offline local scan",
+  "chipUnknown": "Processing source unknown",
   "statusSourceMatched": "Source matched",
   "statusDeviceObserved": "Device observed",
   "statusInterpretation": "Interpretation",

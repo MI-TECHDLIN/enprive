@@ -12,6 +12,8 @@
   "chipOnDevice": "이 기기에서 분석",
   "chipInCloud": "클라우드 분석",
   "chipLocationUnavailable": "처리 위치 불명",
+  "chipOfflineDeterministic": "오프라인 로컬 스캔",
+  "chipUnknown": "처리 출처를 알 수 없음",
   "statusSourceMatched": "원문 일치 확인",
   "statusDeviceObserved": "기기에서 확인됨",
   "statusInterpretation": "요약 설명",

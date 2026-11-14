@@ -50,6 +50,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get chipLocationUnavailable => 'Verarbeitungsort nicht verfügbar';
 
   @override
+  String get chipOfflineDeterministic => 'Lokaler Offline-Scan';
+
+  @override
+  String get chipUnknown => 'Verarbeitungsquelle unbekannt';
+
+  @override
   String get statusSourceMatched => 'Zitat bestätigt';
 
   @override

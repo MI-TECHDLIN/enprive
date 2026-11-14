@@ -46,6 +46,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chipLocationUnavailable => '处理位置不可用';
 
   @override
+  String get chipOfflineDeterministic => '离线本地扫描';
+
+  @override
+  String get chipUnknown => '处理来源未知';
+
+  @override
   String get statusSourceMatched => '原文已匹配';
 
   @override

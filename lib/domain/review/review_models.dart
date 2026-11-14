@@ -125,6 +125,9 @@ class DeniExplanation {
   final List<String> processSteps;
   final String? thoughtSummary;
   final String? thoughtSignature;
+  final bool requiresCloudConsent;
+  final String? consentReason;
+  final String? redactedPreview;
 
   const DeniExplanation({
     required this.question,
@@ -135,7 +138,33 @@ class DeniExplanation {
     this.processSteps = const [],
     this.thoughtSummary,
     this.thoughtSignature,
+    this.requiresCloudConsent = false,
+    this.consentReason,
+    this.redactedPreview,
   });
+
+  /// Creates an explanation outcome indicating on-device AI could not handle
+  /// the request and explicit user consent is required before any cloud call.
+  factory DeniExplanation.requiresConsentChoice({
+    required String question,
+    required String whatPolicySays,
+    required String unknownBoundary,
+    required String consentReason,
+    required String redactedPreview,
+    List<String> processSteps = const [],
+  }) {
+    return DeniExplanation(
+      question: question,
+      answer: '',
+      whatPolicySays: whatPolicySays,
+      unknownBoundary: unknownBoundary,
+      inferenceSource: InferenceSource.unknown,
+      processSteps: processSteps,
+      requiresCloudConsent: true,
+      consentReason: consentReason,
+      redactedPreview: redactedPreview,
+    );
+  }
 }
 
 class PolicyReviewReceipt {
@@ -229,10 +258,7 @@ class PolicyReviewReceipt {
         (s) => s.name == json['overallState'],
         orElse: () => ReviewOverallState.insufficientEvidence,
       ),
-      inferenceSource: InferenceSource.values.firstWhere(
-        (s) => s.name == json['inferenceSource'],
-        orElse: () => InferenceSource.onDevice,
-      ),
+      inferenceSource: parseInferenceSource(json['inferenceSource'] as String?),
       summary: json['summary'] as String? ?? '',
       calibratedDisclaimer: json['calibratedDisclaimer'] as String? ??
           'No concern identified in the reviewed evidence. This is not a safety certification.',

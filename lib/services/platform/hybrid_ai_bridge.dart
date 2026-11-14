@@ -1,6 +1,23 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
 
+/// Raised when an AI generation or platform call is cancelled (parent, child,
+/// or timeout cancellation). Propagates cleanly without retrying or falling back
+/// to a deterministic offline result.
+class HybridOperationCancelledException implements Exception {
+  final String requestId;
+  final String message;
+
+  const HybridOperationCancelledException({
+    required this.requestId,
+    this.message = 'Operation cancelled.',
+  });
+
+  @override
+  String toString() =>
+      'HybridOperationCancelledException($requestId): $message';
+}
+
 enum HybridStatus {
   success,
   unavailable,
@@ -291,7 +308,8 @@ class HybridAiBridge {
   }
 
   /// Sends text for hybrid evaluation.
-  /// If [cloudConsent] is false, native code strictly enforces ONLY_ON_DEVICE.
+  /// If [cloudConsent] is false, non-local modes are rejected immediately and
+  /// native code strictly enforces ONLY_ON_DEVICE.
   Future<HybridAnalysisResult> analyseText({
     required String requestId,
     required String task,
@@ -301,9 +319,22 @@ class HybridAiBridge {
     String? sourceSnapshotId,
     String languageCode = 'en',
   }) async {
+    if (!cloudConsent &&
+        requestedMode != null &&
+        requestedMode != 'ONLY_ON_DEVICE') {
+      return HybridAnalysisResult(
+        schemaVersion: 1,
+        requestId: requestId,
+        status: HybridStatus.unavailable,
+        inferenceSource: 'UNKNOWN',
+        errorCode: 'CLOUD_CONSENT_REQUIRED',
+        message: 'Cloud consent not granted. Analysis restricted to on-device.',
+      );
+    }
+
     try {
       final effectiveMode =
-          requestedMode ?? (cloudConsent ? 'PREFER_ON_DEVICE' : 'ONLY_ON_DEVICE');
+          requestedMode ?? (cloudConsent ? 'ONLY_IN_CLOUD' : 'ONLY_ON_DEVICE');
       final res = await _channel.invokeMethod<Map>('analyseText', {
         'schemaVersion': 1,
         'requestId': requestId,
@@ -324,8 +355,24 @@ class HybridAiBridge {
           message: 'Empty response from analysis engine.',
         );
       }
+      final rawStatus = (res['status'] as String?)?.trim().toLowerCase();
+      final rawErrorCode = res['errorCode'] as String?;
+      if (rawStatus == 'cancelled' ||
+          rawStatus == 'canceled' ||
+          _isCancellationCode(rawErrorCode)) {
+        throw HybridOperationCancelledException(
+          requestId: requestId,
+          message: (res['message'] as String?) ?? 'Analysis cancelled.',
+        );
+      }
       return HybridAnalysisResult.fromMap(res);
     } on PlatformException catch (e) {
+      if (_isCancellationCode(e.code)) {
+        throw HybridOperationCancelledException(
+          requestId: requestId,
+          message: e.message ?? 'Analysis cancelled.',
+        );
+      }
       return HybridAnalysisResult(
         schemaVersion: 1,
         requestId: requestId,
@@ -344,6 +391,18 @@ class HybridAiBridge {
         message: 'On-device AI bridge unavailable in this environment.',
       );
     }
+  }
+
+  static bool _isCancellationCode(String? code) {
+    if (code == null) return false;
+    return switch (code.trim().toUpperCase()) {
+      'CANCELLED' ||
+      'CANCELED' ||
+      'CANCELLATIONEXCEPTION' ||
+      'TIMEOUTCANCELLATIONEXCEPTION' ||
+      'JOBCANCELLATIONEXCEPTION' => true,
+      _ => false,
+    };
   }
 
   /// Queries launchable apps installed on this Android device via local

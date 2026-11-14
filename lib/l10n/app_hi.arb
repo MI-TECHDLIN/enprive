@@ -12,6 +12,8 @@
   "chipOnDevice": "इस डिवाइस पर",
   "chipInCloud": "क्लाउड में",
   "chipLocationUnavailable": "प्रोसेसिंग स्थान उपलब्ध नहीं",
+  "chipOfflineDeterministic": "ऑफ़लाइन स्थानीय स्कैन",
+  "chipUnknown": "प्रोसेसिंग स्रोत अज्ञात",
   "statusSourceMatched": "मूल पाठ से मेल",
   "statusDeviceObserved": "डिवाइस पर देखा गया",
   "statusInterpretation": "व्याख्या",

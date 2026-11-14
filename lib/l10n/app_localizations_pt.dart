@@ -49,6 +49,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get chipLocationUnavailable => 'Local de processamento indisponível';
 
   @override
+  String get chipOfflineDeterministic => 'Verificação local offline';
+
+  @override
+  String get chipUnknown => 'Origem do processamento desconhecida';
+
+  @override
   String get statusSourceMatched => 'Trecho confirmado';
 
   @override

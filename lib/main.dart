@@ -11,6 +11,7 @@ import 'package:lucide_icons_flutter/lucide_icons_500.dart';
 import 'core/theme/enprive_colors.dart';
 import 'core/theme/enprive_theme.dart';
 import 'domain/permissions/permission_comparator.dart';
+import 'domain/privacy/pii_redactor.dart';
 import 'domain/review/review_coordinator.dart';
 import 'domain/review/review_models.dart';
 import 'l10n/app_localizations.dart';
@@ -22,9 +23,9 @@ import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/platform/hybrid_ai_bridge.dart';
 import 'services/storage/receipt_repository.dart';
+import 'widgets/cloud_consent_sheet.dart';
 import 'widgets/deni_animated_mascot.dart';
 import 'widgets/enprive_duotone_icon.dart';
-import 'widgets/enprive_provenance_chip.dart';
 import 'widgets/enprive_tactile_button.dart';
 import 'widgets/installed_app_picker_sheet.dart';
 import 'widgets/language_picker_sheet.dart';
@@ -122,6 +123,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
   final UserPreferencesRepository _prefsRepo = UserPreferencesRepository();
   DeviceCapability? _deviceCapability;
   bool _isRunningReview = false;
+  bool _isConsentSheetOpen = false;
   String _activeReviewTitle = 'Privacy Policy';
   bool _isCloudReviewInFlight = false;
   DeniPose _activePose = DeniPose.idle;
@@ -311,7 +313,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
     bool cloudConsent = false,
     bool forceLocalManualScan = false,
   }) async {
-    if (_isRunningReview) return;
+    if (_isRunningReview || _isConsentSheetOpen) return;
     setState(() {
       _isRunningReview = true;
       _activeReviewTitle = subjectTitle;
@@ -319,23 +321,91 @@ We do not collect personal identifiers, precise location data, microphone audio,
       _activePose = DeniPose.thinking;
     });
 
-    final outcome = await _coordinator.runPolicyReview(
-      subjectTitle: subjectTitle,
-      sourceLabel: sourceLabel,
-      policyText: policyText,
-      appPermissions: appPermissions,
-      cloudConsent: cloudConsent,
-      forceLocalManualScan: forceLocalManualScan,
-      languageCode: widget.currentLocale.languageCode,
-    );
+    final ReviewExecutionResult outcome;
+    try {
+      outcome = await _coordinator.runPolicyReview(
+        subjectTitle: subjectTitle,
+        sourceLabel: sourceLabel,
+        policyText: policyText,
+        appPermissions: appPermissions,
+        cloudConsent: cloudConsent,
+        forceLocalManualScan: forceLocalManualScan,
+        languageCode: widget.currentLocale.languageCode,
+      );
+    } on HybridOperationCancelledException {
+      if (mounted) {
+        setState(() {
+          _isRunningReview = false;
+          _isCloudReviewInFlight = false;
+          _activePose = DeniPose.idle;
+        });
+      }
+      return;
+    }
 
     if (!mounted) return;
     setState(() {
       _isRunningReview = false;
+      _isCloudReviewInFlight = false;
     });
 
     final receipt = outcome.receipt;
-    if (receipt == null) return;
+    if (receipt == null) {
+      if (outcome.needsCloudConsentOrManual) {
+        setState(() {
+          _isConsentSheetOpen = true;
+          _activePose = DeniPose.support;
+        });
+        final CloudConsentDecision decision;
+        try {
+          decision = await CloudConsentSheet.show(
+            context,
+            subjectTitle: subjectTitle,
+            policyText: outcome.redactedPreview ??
+                PiiRedactor.redact(policyText).redactedText,
+            deviceReason: outcome.errorReason,
+          );
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isConsentSheetOpen = false;
+            });
+          } else {
+            _isConsentSheetOpen = false;
+          }
+        }
+        if (!mounted) return;
+        switch (decision) {
+          case CloudConsentDecision.useCloudOnce:
+            await _executePolicyReview(
+              subjectTitle: subjectTitle,
+              sourceLabel: sourceLabel,
+              policyText: policyText,
+              appPermissions: appPermissions,
+              cloudConsent: true,
+            );
+            return;
+          case CloudConsentDecision.reviewLocally:
+            await _executePolicyReview(
+              subjectTitle: subjectTitle,
+              sourceLabel: sourceLabel,
+              policyText: policyText,
+              appPermissions: appPermissions,
+              forceLocalManualScan: true,
+            );
+            return;
+          case CloudConsentDecision.cancelled:
+            setState(() {
+              _activePose = DeniPose.idle;
+            });
+            return;
+        }
+      }
+      setState(() {
+        _activePose = DeniPose.idle;
+      });
+      return;
+    }
 
     setState(() {
       _activePose = switch (receipt.overallState) {
@@ -350,8 +420,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
         builder: (_) => ReviewResultScreen(
           receipt: receipt,
           coordinator: _coordinator,
-          cloudConsentGrantedForSession:
-              receipt.inferenceSource == InferenceSource.inCloud,
+          cloudConsentGrantedForSession: false,
           onSaveReceipt: _saveReceipt,
         ),
       ),
@@ -633,7 +702,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     constraints.maxWidth < 340 || textScale > 1.35;
                 final cardHeight = stackVertically
                     ? (220 * textScale).clamp(220.0, 420.0)
-                    : 208.0;
+                    : 218.0;
                 final entryAnim = disableAnimations
                     ? EntryAnimationType.none
                     : EntryAnimationType.slideUp;

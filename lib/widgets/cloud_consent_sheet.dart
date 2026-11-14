@@ -3,6 +3,7 @@ import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_theme.dart';
+import '../domain/privacy/pii_redactor.dart';
 import '../l10n/app_localizations.dart';
 import 'deni_animated_mascot.dart';
 import 'enprive_duotone_icon.dart';
@@ -54,10 +55,12 @@ class CloudConsentSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final previewSnippet = policyText.length > 180
-        ? '${policyText.substring(0, 180).trim()}…'
-        : policyText.trim();
+    final l10n = AppLocalizations.of(context) ??
+        lookupAppLocalizations(
+          Localizations.maybeLocaleOf(context) ?? const Locale('en'),
+        );
+    final scrubbedPreview = PiiRedactor.redact(policyText).redactedText.trim();
+    final trimmedReason = deviceReason?.trim();
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -80,7 +83,7 @@ class CloudConsentSheet extends StatelessWidget {
                 ),
                 const Spacer(),
                 IconButton(
-                  tooltip: 'Close',
+                  tooltip: l10n.tooltipClose,
                   onPressed: () =>
                       Navigator.pop(context, CloudConsentDecision.cancelled),
                   icon: const Icon(LucideIcons.x),
@@ -138,21 +141,60 @@ class CloudConsentSheet extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    '“$previewSnippet”',
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: EnpriveTheme.quoteFontFamily,
-                      fontSize: 13.5,
-                      height: 1.45,
-                      color: EnpriveColors.inkSecondary,
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 160),
+                    child: SingleChildScrollView(
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: SelectableText(
+                          scrubbedPreview,
+                          style: const TextStyle(
+                            fontFamily: EnpriveTheme.quoteFontFamily,
+                            fontSize: 13.5,
+                            height: 1.45,
+                            color: EnpriveColors.inkSecondary,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            if (trimmedReason != null && trimmedReason.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: EnpriveColors.chipUnknownBg,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      LucideIcons.info,
+                      size: 16,
+                      color: EnpriveColors.chipUnknownFg,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        trimmedReason,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          height: 1.35,
+                          color: EnpriveColors.chipUnknownFg,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 22),
 
             // Centered B19 Headline & Subtitle
             Text(

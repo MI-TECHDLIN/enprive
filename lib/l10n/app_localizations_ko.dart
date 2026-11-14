@@ -49,6 +49,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chipLocationUnavailable => '처리 위치 불명';
 
   @override
+  String get chipOfflineDeterministic => '오프라인 로컬 스캔';
+
+  @override
+  String get chipUnknown => '처리 출처를 알 수 없음';
+
+  @override
   String get statusSourceMatched => '원문 일치 확인';
 
   @override

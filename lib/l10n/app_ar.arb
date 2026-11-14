@@ -12,6 +12,8 @@
   "chipOnDevice": "على هذا الجهاز",
   "chipInCloud": "في السحابة",
   "chipLocationUnavailable": "موقع المعالجة غير متاح",
+  "chipOfflineDeterministic": "فحص محلي دون اتصال",
+  "chipUnknown": "مصدر المعالجة غير معروف",
   "statusSourceMatched": "مطابق للنص الأصلي",
   "statusDeviceObserved": "مرصود على الجهاز",
   "statusInterpretation": "توضيح",

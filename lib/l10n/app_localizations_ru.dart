@@ -50,6 +50,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chipLocationUnavailable => 'Место обработки недоступно';
 
   @override
+  String get chipOfflineDeterministic => 'Локальная офлайн-проверка';
+
+  @override
+  String get chipUnknown => 'Источник обработки неизвестен';
+
+  @override
   String get statusSourceMatched => 'Цитата подтверждена';
 
   @override

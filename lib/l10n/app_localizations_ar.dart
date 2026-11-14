@@ -49,6 +49,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chipLocationUnavailable => 'موقع المعالجة غير متاح';
 
   @override
+  String get chipOfflineDeterministic => 'فحص محلي دون اتصال';
+
+  @override
+  String get chipUnknown => 'مصدر المعالجة غير معروف';
+
+  @override
   String get statusSourceMatched => 'مطابق للنص الأصلي';
 
   @override

@@ -12,6 +12,8 @@
   "chipOnDevice": "На этом устройстве",
   "chipInCloud": "В облаке",
   "chipLocationUnavailable": "Место обработки недоступно",
+  "chipOfflineDeterministic": "Локальная офлайн-проверка",
+  "chipUnknown": "Источник обработки неизвестен",
   "statusSourceMatched": "Цитата подтверждена",
   "statusDeviceObserved": "Обнаружено на устройстве",
   "statusInterpretation": "Пояснение",

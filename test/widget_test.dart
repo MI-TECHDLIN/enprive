@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:enprive/domain/review/review_coordinator.dart';
 import 'package:enprive/domain/review/review_models.dart';
 import 'package:enprive/l10n/app_localizations.dart';
@@ -13,7 +14,20 @@ import 'package:enprive/screens/splash_screen.dart';
 import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/services/storage/receipt_repository.dart';
 import 'package:enprive/widgets/analysis_process_trace.dart';
+import 'package:enprive/widgets/cloud_consent_sheet.dart';
+import 'package:enprive/widgets/enprive_provenance_chip.dart';
 import 'package:enprive/widgets/review_progress_sheet.dart';
+import 'package:enprive/widgets/why_this_finding_sheet.dart';
+
+Future<void> _flushBridgeAndPump(WidgetTester tester) async {
+  await tester.pump();
+  await tester.runAsync(
+    () => Future<void>.delayed(const Duration(milliseconds: 20)),
+  );
+  for (var i = 0; i < 6; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -525,6 +539,455 @@ void main() {
           .progressStepCounter(1, 4);
       expect(find.text(arCounter), findsOneWidget);
       expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'EnpriveProvenanceChip renders all five provenance variants accurately',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const Scaffold(
+            body: Column(
+              children: [
+                EnpriveProvenanceChip(source: InferenceSource.onDevice),
+                EnpriveProvenanceChip(source: InferenceSource.inCloud),
+                EnpriveProvenanceChip(
+                  source: InferenceSource.offlineDeterministic,
+                ),
+                EnpriveProvenanceChip(source: InferenceSource.unknown),
+                EnpriveProvenanceChip(
+                  source: InferenceSource.locationUnavailable,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('On this device'), findsOneWidget);
+      expect(find.text('In the cloud'), findsOneWidget);
+      expect(find.text('Offline local scan'), findsOneWidget);
+      expect(find.text('Processing source unknown'), findsOneWidget);
+      expect(find.text('Processing location unavailable'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'CloudConsentSheet displays complete untruncated scrubbed PII preview and deviceReason',
+    (WidgetTester tester) async {
+      final longTail = '${'Detailed classroom diagnostics clause. ' * 6}'
+          'FINAL_VERIFIED_CLAUSE_END_MARKER';
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: CloudConsentSheet(
+              subjectTitle: 'EduTrack Classroom',
+              policyText:
+                  'Parent: Maya Lin (maya@school.edu, +1 415-555-0199). $longTail',
+              deviceReason: 'On-device AI unavailable right now.',
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('On-device AI unavailable right now.'), findsOneWidget);
+      final previewWidget = tester.widget<SelectableText>(
+        find.descendant(
+          of: find.byType(CloudConsentSheet),
+          matching: find.byType(SelectableText),
+        ),
+      );
+      expect(
+        previewWidget.data,
+        equals(
+          'Parent: [PERSON] ([EMAIL], [PHONE]). $longTail',
+        ),
+      );
+      expect(find.textContaining('[PERSON]'), findsOneWidget);
+      expect(find.textContaining('[EMAIL]'), findsOneWidget);
+      expect(find.textContaining('[PHONE]'), findsOneWidget);
+      expect(
+        find.textContaining('FINAL_VERIFIED_CLAUSE_END_MARKER'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Maya Lin'), findsNothing);
+      expect(find.textContaining('maya@school.edu'), findsNothing);
+      expect(find.textContaining('415-555-0199'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'Home review opens CloudConsentSheet when on-device AI is unavailable, blocks unconsented cloud, and supports local scan & explicit cloud choice',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(430, 932);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      SharedPreferences.setMockInitialValues({
+        'enprive_pref_completed_onboarding': true,
+      });
+
+      final analyseCalls = <Map<String, dynamic>>[];
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        const MethodChannel('com.enprive/hybrid_ai'),
+        (call) async {
+          recordedCalls.add(call);
+          if (call.method == 'getDeviceCapability') {
+            return {
+              'isSupported': false,
+              'modelStatus': 'UNAVAILABLE',
+              'modelCategory': 'NONE',
+              'apiLevel': 34,
+              'userMessage': 'Gemini Nano unavailable on emulator.',
+            };
+          }
+          if (call.method == 'getInitialSelectedText') {
+            return null;
+          }
+          if (call.method == 'listLaunchableApps') {
+            return const [];
+          }
+          if (call.method == 'analyseText') {
+            final args = Map<String, dynamic>.from(call.arguments as Map);
+            analyseCalls.add(args);
+            if (args['cloudConsent'] != true) {
+              return {
+                'schemaVersion': 1,
+                'requestId': args['requestId'],
+                'status': 'unavailable',
+                'inferenceSource': 'UNKNOWN',
+                'message': 'On-device model unavailable on emulator.',
+              };
+            }
+            return {
+              'schemaVersion': 1,
+              'requestId': args['requestId'],
+              'status': 'success',
+              'inferenceSource': 'IN_CLOUD',
+              'structuredOutput': {
+                'overall_state': 'NO_CONCERN',
+                'summary': 'Reviewed via consented cloud check.',
+                'concerns': const [],
+                'calibratedDisclaimer':
+                    ReviewCoordinator.calibratedDefaultDisclaimer,
+              },
+            };
+          }
+          return null;
+        },
+      );
+
+      await tester.pumpWidget(
+        const EnpriveApp(
+          showSplashOnLaunch: false,
+          splashDuration: Duration.zero,
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump();
+
+      // Dismiss splash or onboarding cleanly if visible
+      if (find.text('enprive').evaluate().isNotEmpty) {
+        await tester.tap(find.text('enprive'), warnIfMissed: false);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+      if (find.text('Continue').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Continue'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+
+      // 1. Trigger concise CalmMath Kids sample -> tries ONLY_ON_DEVICE once,
+      // fails on unavailable Nano, and opens CloudConsentSheet without any cloud call
+      final calmMathFinder = find.text('CalmMath Kids');
+      await Scrollable.ensureVisible(
+        tester.element(calmMathFinder),
+        alignment: 0.5,
+      );
+      await tester.pump();
+      await tester.tap(calmMathFinder);
+      await _flushBridgeAndPump(tester);
+
+      expect(analyseCalls.length, 1);
+      expect(analyseCalls.single['cloudConsent'], isFalse);
+      expect(analyseCalls.single['requestedMode'], 'ONLY_ON_DEVICE');
+      expect(find.byType(CloudConsentSheet), findsOneWidget);
+      expect(
+        find.text('On-device model unavailable on emulator.'),
+        findsOneWidget,
+      );
+
+      // 2. Cancel -> zero cloud calls occur
+      await tester.tap(
+        find.descendant(
+          of: find.byType(CloudConsentSheet),
+          matching: find.byTooltip('Close'),
+        ),
+      );
+      await _flushBridgeAndPump(tester);
+      expect(analyseCalls.length, 1);
+
+      // 3. Re-trigger and pick "Review on this phone" -> Offline local scan (still 0 cloud calls)
+      await Scrollable.ensureVisible(
+        tester.element(calmMathFinder),
+        alignment: 0.5,
+      );
+      await tester.pump();
+      await tester.tap(calmMathFinder);
+      await _flushBridgeAndPump(tester);
+      expect(analyseCalls.length, 2);
+      expect(analyseCalls[1]['cloudConsent'], isFalse);
+
+      final reviewOnPhoneBtn = find.text('Review on this phone');
+      await Scrollable.ensureVisible(
+        tester.element(reviewOnPhoneBtn),
+        alignment: 0.5,
+      );
+      await tester.pump();
+      await tester.tap(reviewOnPhoneBtn);
+      await _flushBridgeAndPump(tester);
+
+      expect(find.text('Offline local scan'), findsOneWidget);
+      expect(
+        analyseCalls.where((c) => c['cloudConsent'] == true),
+        isEmpty,
+      );
+
+      // Navigate back to Home
+      await tester.tap(find.byTooltip('Close').last);
+      await _flushBridgeAndPump(tester);
+
+      // 4. Trigger again and explicitly choose "Use cloud for this check"
+      await Scrollable.ensureVisible(
+        tester.element(calmMathFinder),
+        alignment: 0.5,
+      );
+      await tester.pump();
+      await tester.tap(calmMathFinder);
+      await _flushBridgeAndPump(tester);
+
+      final displayedHomePayload = tester
+          .widget<SelectableText>(
+            find.descendant(
+              of: find.byType(CloudConsentSheet),
+              matching: find.byType(SelectableText),
+            ),
+          )
+          .data;
+
+      final useCloudBtn = find.text('Use cloud for this check');
+      await Scrollable.ensureVisible(
+        tester.element(useCloudBtn),
+        alignment: 0.5,
+      );
+      await tester.pump();
+      await tester.tap(useCloudBtn);
+      await _flushBridgeAndPump(tester);
+
+      expect(find.text('In the cloud'), findsOneWidget);
+      final cloudCalls =
+          analyseCalls.where((c) => c['cloudConsent'] == true).toList();
+      expect(cloudCalls.length, 1);
+      expect(cloudCalls.single['requestedMode'], 'ONLY_IN_CLOUD');
+      expect(cloudCalls.single['text'], equals(displayedHomePayload));
+
+      // Navigate back to Home and verify comprehensive EduTrack pauses BEFORE
+      // even calling native analyseText (0 calls without consent)
+      await tester.tap(find.byTooltip('Close').last);
+      await _flushBridgeAndPump(tester);
+      final eduTrackFinder = find.text('EduTrack Classroom');
+      await Scrollable.ensureVisible(
+        tester.element(eduTrackFinder),
+        alignment: 0.5,
+      );
+      await tester.pump();
+      await tester.tap(eduTrackFinder);
+      await _flushBridgeAndPump(tester);
+      expect(find.byType(CloudConsentSheet), findsOneWidget);
+      expect(analyseCalls.length, 4);
+    },
+  );
+
+  testWidgets(
+    'WhyThisFindingSheet requires explicit CloudConsentSheet before cloud Deni call and enforces per-check consent',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(430, 932);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final analyseCalls = <Map<String, dynamic>>[];
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        const MethodChannel('com.enprive/hybrid_ai'),
+        (call) async {
+          if (call.method == 'analyseText') {
+            final args = Map<String, dynamic>.from(call.arguments as Map);
+            analyseCalls.add(args);
+            if (args['cloudConsent'] != true) {
+              return {
+                'schemaVersion': 1,
+                'requestId': args['requestId'],
+                'status': 'unavailable',
+                'inferenceSource': 'UNKNOWN',
+                'message': 'Nano cannot explain offline.',
+              };
+            }
+            return {
+              'schemaVersion': 1,
+              'requestId': args['requestId'],
+              'status': 'success',
+              'inferenceSource': 'IN_CLOUD',
+              'structuredOutput': {
+                'answer': 'Consented cloud explanation.',
+                'whatPolicySays': 'Shares ad IDs.',
+                'unknownBoundary': 'Opt-out scope not detailed.',
+              },
+            };
+          }
+          return null;
+        },
+      );
+
+      final coordinator = ReviewCoordinator();
+      const finding = VerifiedFinding(
+        id: 'f1',
+        title: 'Ad Tracking',
+        category: FindingCategory.tracking,
+        severity: FindingSeverity.medium,
+        exactExcerpt: 'Shares ad IDs.',
+        explanation: 'Default local explanation.',
+        whatPolicySays: 'Shares ad IDs.',
+        whatAndroidReports: 'Text-only review.',
+        unknowns: ['Opt-out scope not detailed.'],
+        status: EvidenceStatus.sourceMatched,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: WhyThisFindingSheet(
+              finding: finding,
+              snapshotText:
+                  'Parent: Sara Bell (sara@school.edu). Shares ad IDs.',
+              snapshotDigest: 'digest_1',
+              coordinator: coordinator,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // 1. Tap preset question -> tries ONLY_ON_DEVICE -> pauses with CloudConsentSheet
+      final q1Finder = find.text('What does this mean for my child?');
+      await Scrollable.ensureVisible(
+        tester.element(q1Finder),
+        alignment: 0.5,
+      );
+      await tester.pump();
+      await tester.tap(q1Finder);
+      await _flushBridgeAndPump(tester);
+
+      expect(analyseCalls.length, 1);
+      expect(analyseCalls.single['cloudConsent'], isFalse);
+      expect(find.byType(CloudConsentSheet), findsOneWidget);
+      expect(find.text('Nano cannot explain offline.'), findsOneWidget);
+
+      // 2. Choose "Review on this phone" -> deterministic offline answer, 0 cloud calls
+      final reviewOnPhoneBtn = find.text('Review on this phone');
+      await Scrollable.ensureVisible(
+        tester.element(reviewOnPhoneBtn),
+        alignment: 0.5,
+      );
+      await tester.pump();
+      await tester.tap(reviewOnPhoneBtn);
+      await _flushBridgeAndPump(tester);
+
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      await tester.pump();
+
+      expect(find.text('Deni’s Answer'), findsOneWidget);
+      expect(find.text('Offline local scan'), findsOneWidget);
+      expect(
+        analyseCalls.where((c) => c['cloudConsent'] == true),
+        isEmpty,
+      );
+
+      // 3. Ask another question and approve "Use cloud for this check"
+      final q2Finder = find.text('What is still unknown here?');
+      await Scrollable.ensureVisible(
+        tester.element(q2Finder),
+        alignment: 0.5,
+      );
+      await tester.pump();
+      await tester.tap(q2Finder);
+      await _flushBridgeAndPump(tester);
+      expect(find.byType(CloudConsentSheet), findsOneWidget);
+
+      final displayedDeniPayload = tester
+          .widget<SelectableText>(
+            find.descendant(
+              of: find.byType(CloudConsentSheet),
+              matching: find.byType(SelectableText),
+            ),
+          )
+          .data;
+
+      final useCloudBtn = find.text('Use cloud for this check');
+      await Scrollable.ensureVisible(
+        tester.element(useCloudBtn),
+        alignment: 0.5,
+      );
+      await tester.pump();
+      await tester.tap(useCloudBtn);
+      await _flushBridgeAndPump(tester);
+
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      await tester.pump();
+
+      expect(find.text('Consented cloud explanation.'), findsOneWidget);
+      expect(find.text('In the cloud'), findsOneWidget);
+      final cloudCalls =
+          analyseCalls.where((c) => c['cloudConsent'] == true).toList();
+      expect(cloudCalls.length, 1);
+      expect(cloudCalls.single['requestedMode'], 'ONLY_IN_CLOUD');
+      expect(cloudCalls.single['text'], equals(displayedDeniPayload));
+      expect(cloudCalls.single['text'], isNot(contains('Sara Bell')));
+      expect(cloudCalls.single['text'], isNot(contains('sara@school.edu')));
+
+      // 4. Subsequent question still requires explicit consent (per-check gate)
+      final q3Finder = find.text('Can we turn this off or opt out?');
+      await Scrollable.ensureVisible(
+        tester.element(q3Finder),
+        alignment: 0.5,
+      );
+      await tester.pump();
+      await tester.tap(q3Finder);
+      await _flushBridgeAndPump(tester);
+      expect(find.byType(CloudConsentSheet), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(CloudConsentSheet),
+          matching: find.byTooltip('Close'),
+        ),
+      );
+      await _flushBridgeAndPump(tester);
+      expect(
+        analyseCalls.where((c) => c['cloudConsent'] == true).length,
+        1,
+      );
     },
   );
 }

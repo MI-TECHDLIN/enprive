@@ -18,9 +18,9 @@
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
 - **Current `main` HEAD**: `a5c69d1`
-- **Active Feature Branch**: `feature/splash-and-deni-icon` (branched from `feature/onboarding-and-process-text-flow` @ `24c880a`; Editorial Splash Screen, Card-Free Onboarding Step 0, Deni `A1` + smile `ip-as-logo` app icon, Home AppBar logo, and `docs/architecture/` AI Prompt Management Investigation + `scout-discover.md` completed)
+- **Active Feature Branch**: `feature/phase-a-privacy-boundary` (branched from `feature/splash-and-deni-icon` @ `4bbdc28`; Phase A privacy boundary restoration + closure hardening completed, awaiting manual GCP/physical-device verification before PR/Phase B)
 - **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 24 November 2026)
-- **Next Queued Action**: Review `docs/architecture/scout-discover.md` and `docs/architecture/ai-prompt-migration-plan.md` Final Decision Report; resolve Phase A consent/logging prerequisites or consolidate `feature/splash-and-deni-icon` into `main`
+- **Next Queued Action**: Run manual live Firebase/GCP Cloud Logging audit on `enprive-hybrid-ai` and physical Android AICore/App Check verification; obtain closure sign-off before opening Phase A PR or starting Phase B.
 
 ---
 
@@ -564,11 +564,140 @@
 
 ---
 
+### Iteration 14 — Phase A: Privacy Boundary Restoration (`feature/phase-a-privacy-boundary`)
+- **Date**: 2026-11-13
+- **Branch / Base Commit**: `feature/phase-a-privacy-boundary` (branched from `feature/splash-and-deni-icon` @ `4bbdc28`)
+- **What Was Built**:
+  - **Eliminated Silent Cloud Escalation & Wired Per-Check Consent Gate**:
+    - Removed automatic `cloudConsent: true` / `PREFER_ON_DEVICE` escalations in `ReviewCoordinator.runPolicyReview` and `ReviewCoordinator.askDeniAboutFinding` (`lib/domain/review/review_coordinator.dart`). Unconsented comprehensive policies (`PiiRedactor.isComprehensivePolicy`) and unavailable/failed `ONLY_ON_DEVICE` checks now pause with `ReviewExecutionResult.requiresConsentChoice` / `DeniExplanation.requiresConsentChoice` (containing scrubbed `redactedPreview` and `consentReason`).
+    - Explicitly consented cloud executions pass `requestedMode: 'ONLY_IN_CLOUD'`; PII redaction (`PiiRedactor.redact`) applies strictly for data minimization after consent and preview scrubbing, never as a substitute for consent.
+    - Hardened `HybridAiBridge.analyseText` (`lib/services/platform/hybrid_ai_bridge.dart`) to reject non-`ONLY_ON_DEVICE` modes immediately in Dart with `CLOUD_CONSENT_REQUIRED` when `cloudConsent == false`.
+    - Wired `CloudConsentSheet.show` (`lib/widgets/cloud_consent_sheet.dart`) into both Home/policy review (`lib/main.dart`) and Deni finding explanation (`lib/widgets/why_this_finding_sheet.dart`), resetting `_isCloudReviewInFlight = false` cleanly on completion and enforcing per-check consent (`cloudConsentGrantedForSession: false`).
+  - **Provenance & Localization Fidelity (`OFFLINE_DETERMINISTIC` & `UNKNOWN`)**:
+    - Added `InferenceSource.offlineDeterministic` plus shared `parseInferenceSource(String? raw)` (`lib/widgets/enprive_provenance_chip.dart`) and amber theme tokens `chipOfflineFg` / `chipOfflineBg` (`lib/core/theme/enprive_colors.dart`).
+    - Added `chipOfflineDeterministic` across all 12 `.arb` files (`lib/l10n/app_{en,ar,de,es,fr,hi,it,ja,ko,pt,ru,zh}.arb`) and regenerated `lib/l10n/app_localizations*.dart`.
+    - Updated `ReviewCoordinator` deterministic fallbacks and `PolicyReviewReceipt.fromJson` (`lib/domain/review/review_models.dart`) so offline clause/finding scans record `InferenceSource.offlineDeterministic` and unrecognized/`UNKNOWN`/missing provenance maps to `InferenceSource.locationUnavailable`.
+  - **Native Android Kotlin Consent & Provenance Guard (`MainActivity.kt`, `HybridAiPolicy.kt`)**:
+    - Extracted testable `HybridAiPolicy` (`android/app/src/main/kotlin/com/example/enprive/HybridAiPolicy.kt`) and enforced `HybridAiPolicy.isRequestPermitted`, `resolveInferenceMode`, `shouldAttachOnDeviceConfig` (omits `OnDeviceConfig` when `ONLY_IN_CLOUD`), and `mapInferenceSource` (`UNKNOWN` when unestablished) in `MainActivity.kt` while keeping `useLimitedUseAppCheckTokens = true`.
+    - Added `testImplementation("junit:junit:4.13.2")` in `android/app/build.gradle.kts` and unit tests in `android/app/src/test/kotlin/com/example/enprive/HybridAiPolicyTest.kt`.
+  - **Layout Overflow Fixes & Regression Tests**:
+    - Fixed `WhyThisFindingSheet` row overflows via `Wrap`, widened `HomeScreen` `AnimatedStatusCard` non-stacked `cardHeight` from `208.0` to `218.0`, and wrapped `EnpriveTactileButton` label row in `FittedBox(fit: BoxFit.scaleDown)` with horizontal padding (`lib/widgets/enprive_tactile_button.dart`).
+    - Added unit and widget regression tests across `test/review_coordinator_test.dart`, `test/receipt_repository_test.dart`, and `test/widget_test.dart`.
+- **Requirement #8 Investigation — Cloud Logging Prompt/Response Retention**:
+  - Host environment has no `gcloud` CLI installed (`gcloud: not found`), `firebase` is not on default `PATH`, and cached `firebase-tools` (`15.36.0`) exposes no Cloud Logging or Firebase AI Monitoring inspection subcommands (`--help` checked). Project `.firebaserc` points to `enprive-hybrid-ai` and `firebase.json` is `{}`.
+  - Live Google Cloud Logging `_Default` sink exclusion filter (`resource.type="firebasevertexai.googleapis.com/Client"`) and AI Monitoring trace capture settings remain unverified from this host and must be checked in Google Cloud Console / Firebase Console prior to cloud template rollout.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **36/36 tests passed**.
+  - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks`: **BUILD SUCCESSFUL**, `HybridAiPolicyTest` **5/5 passed, 0 skipped, 0 failed**. (Note: unfiltered `./gradlew testDebugUnitTest` earlier hit third-party `:shared_preferences_android:testDebugUnitTest` `SharedPreferencesTest > classMethod` Java 17 vs Robolectric SDK 36 failure outside app test scope.)
+  - `flutter build apk --debug`: **Built `build/app/outputs/flutter-apk/app-debug.apk`** cleanly.
+- **Next Immediate Action & Recommended Model**:
+  - Stop at Phase A boundary; review changes and verify live GCP/Firebase Cloud Logging exclusion filter + physical Android AICore/Gemini Nano hardware before authorizing Phase B (no Server Prompt Templates or Remote Config added yet).
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 15 — Phase A Closure Review & Hardening (`feature/phase-a-privacy-boundary`)
+- **Date**: 2026-11-13
+- **Branch / Base Commit**: `feature/phase-a-privacy-boundary` (uncommitted working tree atop `4bbdc28`)
+- **What Was Audited & Fixed**:
+  - **1. Explicit `InferenceSource.unknown` Provenance State**:
+    - Replaced the mapping of `'UNKNOWN'` / missing / unrecognized inference sources from `InferenceSource.locationUnavailable` to explicit `InferenceSource.unknown` across `lib/widgets/enprive_provenance_chip.dart` (`InferenceSource.unknown`, `parseInferenceSource`, and chip rendering), `lib/domain/review/review_models.dart` (`DeniExplanation.requiresConsentChoice`), and `lib/domain/review/review_coordinator.dart` (`_buildInsufficientReceipt`), while preserving legacy `'LOCATION_UNAVAILABLE'` / `'locationUnavailable'` deserialization.
+    - Added `"chipUnknown"` (`"Processing source unknown"`) across all 12 `.arb` files (`lib/l10n/app_{en,ar,de,es,fr,hi,it,ja,ko,pt,ru,zh}.arb`) and regenerated `lib/l10n/app_localizations*.dart` via `flutter gen-l10n`.
+  - **2. Displayed vs. Submitted Scrubbed Payload Correspondence**:
+    - Identified a closure defect in `lib/widgets/cloud_consent_sheet.dart` where `previewSnippet` truncated scrubbed payloads at `180` characters (`maxLines: 3, overflow: TextOverflow.ellipsis`) even though full `redactedText` was submitted to `ONLY_IN_CLOUD`.
+    - Removed the 180-character truncation and rendered the full `scrubbedPreview` inside a bounded scrollable `SelectableText` container (`maxHeight: 160`); trimmed `compositeInput` components in `ReviewCoordinator.askDeniAboutFinding` so displayed text in `CloudConsentSheet` matches `args['text']` submitted to `ONLY_IN_CLOUD` character-for-character (verified programmatically in `test/review_coordinator_test.dart` and `test/widget_test.dart`).
+  - **3. Consent Flow Re-Entrancy & Single-Cloud-Call Guards**:
+    - Added `_isConsentSheetOpen` re-entrancy guards in both `HomeScreen._executePolicyReview` (`lib/main.dart`) and `WhyThisFindingSheet._askDeni` (`lib/widgets/why_this_finding_sheet.dart`), and disabled `DeniAnimatedMascot.onTap` while `_isAskingDeni || _isConsentSheetOpen` so double-taps cannot queue duplicate consent dialogs or cloud calls when choosing "Use cloud for this check".
+  - **4. Regression Tests & Full Diff/Gradle Audit**:
+    - Updated `test/receipt_repository_test.dart`, `test/review_coordinator_test.dart`, and `test/widget_test.dart` to assert `InferenceSource.unknown`, legacy `locationUnavailable` deserialization, full untruncated `CloudConsentSheet` rendering (`> 200` chars), exact equality between displayed preview and submitted `ONLY_IN_CLOUD` payload, and single-call cloud execution.
+    - Confirmed zero skipped tests, no weakened privacy assertions, no unintended Gradle dependency/toolchain changes (only `junit:junit:4.13.2` `testImplementation` in `android/app/build.gradle.kts`), and zero Gemini Nano mislabeling on deterministic fallbacks.
+- **Verification**:
+  - `flutter gen-l10n`: **Exited 0**.
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **36/36 tests passed** (`0` failed, `0` skipped).
+  - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks`: **BUILD SUCCESSFUL**, `HybridAiPolicyTest`: **5/5 passed, 0 skipped, 0 failed**.
+  - `flutter build apk --debug`: **Built `build/app/outputs/flutter-apk/app-debug.apk` cleanly**.
+- **Next Immediate Action & Recommended Model**:
+  - Complete live GCP Cloud Logging audit (`enprive-hybrid-ai`) and physical-device verification checklist before Phase A sign-off or Phase B authorization.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 16 — Phase A `generateContentStream` Retry Defect Remediation (`feature/phase-a-privacy-boundary`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/phase-a-privacy-boundary` (preserving all pre-existing uncommitted Phase A working-tree changes atop `4bbdc28`)
+- **What Was Fixed**:
+  - **Root Cause**: In `android/app/src/main/kotlin/com/example/enprive/MainActivity.kt`, `collectStream(preferThoughts)` wrapped its cloud stream invocation in a generic `catch (e: Exception)` block checking `if (preferThoughts && !isUnavailable && !hasAnyOutput)`. Because `isUnavailable` only matched `"NotAvailable"` / `"not available"`, every other pre-output exception — including HTTP 429 (`QuotaExceededException`), Airplane-mode/DNS failures, App Check failures, auth errors, timeouts, cancellations, and generic model errors — fell through to `collectStream(false)` and triggered a second `generateContentStream(prompt)` invocation (36 native streaming attempts across 18 failed consented bursts).
+  - **Upfront Thinking Configuration & Single-Invocation Enforcement (`HybridAiPolicy.kt`, `MainActivity.kt`)**:
+    - Added `HybridAiPolicy.ThinkingPolicyDecision`, `HybridAiPolicy.supportsThinkingLevel`, `HybridAiPolicy.resolveThinkingPolicy`, `HybridAiPolicy.SingleGenerationGuard`, and `HybridAiPolicy.executeSingleGenerationAttempt` in `android/app/src/main/kotlin/com/example/enprive/HybridAiPolicy.kt`.
+    - Resolved `thinkingConfig` compatibility strictly **before** submitting any request (`ENABLE_THINKING_LEVEL` only for `InferenceMode.ONLY_IN_CLOUD` with supported Gemini 3+ text models such as `gemini-3.8-flash`; omitted up front when optional on on-device/hybrid or non-Gemini-3 models; rejected preflight when `requireThinking = true` and compatibility cannot be established).
+    - Replaced `MainActivity.kt`'s `try { collectStream(preferThoughts) } catch (...) { collectStream(false) }` retry loop with a single-attempt call through `HybridAiPolicy.executeSingleGenerationAttempt`, propagating failures cleanly once with `inferenceSource = "UNKNOWN"` and `status = "failed"` / `"unavailable"` (plus clean rethrow when `CancellationException` occurs on an inactive coroutine scope).
+  - **Regression Coverage (`HybridAiPolicyTest.kt`, `test/review_coordinator_test.dart`)**:
+    - Expanded `HybridAiPolicyTest.kt` to **13 JVM unit tests** (`0` real Firebase calls) asserting exact model-generation invocation counts (`1` on success, HTTP 429 quota, Airplane mode/DNS, App Check failure, auth/timeout/cancellation/generic errors, or unexpected backend thinking rejection; `0` on cancelled consent or strict preflight rejection).
+    - Expanded `test/review_coordinator_test.dart` (`ReviewCoordinator Hybrid & Evidence Tests`) verifying `1` native bridge call without silent retry on HTTP 429, Airplane mode, App Check, unsupported thinking config, and generic errors (recording `InferenceSource.offlineDeterministic`, never `InferenceSource.onDevice`), `1` call on cloud success (`InferenceSource.inCloud`), and `0` cloud calls on cancelled consent / offline fallback.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **38/38 passed** (`0` failed, `0` skipped).
+  - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks`: **BUILD SUCCESSFUL**, `HybridAiPolicyTest`: **13/13 passed, 0 failed, 0 skipped**.
+  - `flutter build apk --debug`: **Built `build/app/outputs/flutter-apk/app-debug.apk` cleanly**.
+- **Next Immediate Action & Recommended Model**:
+  - Complete physical Android verification of single-attempt cloud quota/network behavior while preserving Phase A privacy/UI boundaries before Phase B.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 17 — Retry Remediation Edge-Case Audit (`feature/phase-a-privacy-boundary`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/phase-a-privacy-boundary` (preserving all pre-existing uncommitted Phase A working-tree changes atop `4bbdc28`)
+- **What Was Audited & Fixed**:
+  - **1. Unconditional `CancellationException` Propagation (Kotlin & Dart)**:
+    - Confirmed the prior `if (e is CancellationException && !isActive) throw e` check in `MainActivity.kt` could swallow child-operation or `withTimeout` (`TimeoutCancellationException`) cancellation while the parent `lifecycleScope` coroutine remained active, misclassifying cancellation as an ordinary `"failed"` error eligible for deterministic fallback.
+    - Added `HybridAiPolicy.TerminalFailureInfo` and `HybridAiPolicy.executeSingleOperation(...)` in `android/app/src/main/kotlin/com/example/enprive/HybridAiPolicy.kt`, and wired `MainActivity.kt` through `executeSingleOperation(...)` so **every** `CancellationException` invokes `onCancel` (sending `result.error("CANCELLED", ...)` via `NonCancellable + Dispatchers.Main` when no reply has been submitted yet) and unconditionally rethrows **before** `catch (e: Exception)` error mapping.
+    - Added `HybridOperationCancelledException` in `lib/services/platform/hybrid_ai_bridge.dart` so native `'CANCELLED'` / `'CANCELED'` / cancellation error codes throw and propagate directly out of `HybridAiBridge.analyseText` and `ReviewCoordinator` (`runPolicyReview`, `askDeniAboutFinding`) without becoming `InferenceSource.offlineDeterministic` fallbacks or triggering a second cloud request. Added clean `on HybridOperationCancelledException` state reset handlers in `lib/main.dart` and `lib/widgets/why_this_finding_sheet.dart`.
+  - **2. Per-Operation `SingleGenerationGuard` Lifetime & Concurrency**:
+    - Confirmed `SingleGenerationGuard` is instantiated per call (`guard: SingleGenerationGuard = SingleGenerationGuard()`) inside `HybridAiPolicy.executeSingleGenerationAttempt(...)` with zero Activity-wide or global singleton state.
+    - Verified via JVM tests (`HybridAiPolicyTest.kt`) that concurrent duplicate entry (8 threads racing via `CountDownLatch`) allows strictly `1` execution and rejects `7`, sequential duplicate entry rejects the 2nd attempt, and independent sequential/concurrent operations do not block one another (`test/review_coordinator_test.dart` also verifies independent sequential cloud operations).
+  - **3. Thinking Configuration Compatibility (`gemini-3.8-flash` & `OMIT_THINKING_CONFIG`)**:
+    - Verified `MainActivity.kt` uses `HybridAiPolicy.CLOUD_THINKING_LEVEL` (`ThinkingLevel.LOW`, never unsupported `ThinkingLevel.MINIMAL`) for `gemini-3.8-flash` in `ONLY_IN_CLOUD`.
+    - Renamed `ThinkingPolicyDecision.DISABLE_THINKING_CONFIG` to `ThinkingPolicyDecision.OMIT_THINKING_CONFIG` (reflecting that Gemini 3.x models always use dynamic thinking and omitting explicit `thinkingConfig` does not disable thinking) and added `HybridAiPolicy.isThinkingLevelSupported(modelName, thinkingLevel)` enforcing upfront rejection of `ThinkingLevel.MINIMAL` on `gemini-3.8*` / `gemini-3.7*`.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **39/39 passed** (`0` failed, `0` skipped).
+  - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks --console=plain`: **BUILD SUCCESSFUL**, `HybridAiPolicyTest`: **15/15 passed, 0 failed, 0 skipped**.
+  - `flutter build apk --debug`: **Built `build/app/outputs/flutter-apk/app-debug.apk` cleanly**.
+- **Next Immediate Action & Recommended Model**:
+  - Complete manual physical Android device & GCP Cloud Logging audit for Phase A sign-off (Phase B not started).
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 18 — Material 3 Rebrand Audit, Supplemental M3E/HCT Evaluation & Deni LOD Specification (`feature/phase-a-privacy-boundary`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/phase-a-privacy-boundary` (read-only design audit & architecture evaluation atop `4bbdc28` + uncommitted Iterations 14–17)
+- **What Was Investigated & Specified**:
+  - **1. Full Material 3 Design-System Audit & 14-Screen Emulator Capture (`enprive-m3-design-system-audit.md`)**:
+    - Audited `lib/core/theme/enprive_colors.dart`, `lib/core/theme/enprive_theme.dart`, `lib/main.dart`, all 5 screens, and all 11 widgets; captured 14 live Android emulator (`sdk_gphone64_arm64`) screenshots across Onboarding, Home, InstalledAppPickerSheet, PasteModal, CloudConsentSheet, ReviewResultScreen, WhyThisFindingSheet (Ask Deni), ReceiptsScreen, and SettingsScreen.
+    - Identified core UX/theme bottlenecks: `ReviewResultScreen` requires ~600dp of scrolling before Finding #1; `WhyThisFindingSheet` renders streamed answers below the fold without collapsing the static clause box or scrolling into view; 268 static `EnpriveColors.*` references bypass `Theme.of(context)`; and `DeniAnimatedMascot` renders full-size external floating props at `48–64dp`.
+  - **2. Supplemental `material_3_expressive` (`1.2.1`), `material_color_utilities` (`0.13.0`), and Design Skills Evaluation (`enprive-m3e-and-mascot-specification.md`)**:
+    - Inspected `material_3_expressive` (`1.2.1`) and `material_color_utilities` (`0.13.0`) against Flutter `3.47.9` / Dart `3.13.7`, plus the `charliesbot/android-design` and `hamen/material-3-skill` references and all 8 visual inspiration files in `mobile ui and ux inspration/`.
+    - Approved **Option A**: Native Flutter Material 3 (`package:flutter/material.dart`) + Custom `ThemeExtension`s (`EnpriveSemanticColors`, `EnpriveSurfaceTokens`, `EnpriveMotionTokens`, `EnpriveTypographyExtension`) + Direct `material_color_utilities` HCT palettes & `Blend.harmonize`, avoiding a global `package:material_ui` migration.
+    - Specified the **3-Tier Deni LOD Architecture** (`LOD 1: 48–64dp` compact, `LOD 2: 68–112dp` standard companion, `LOD 3: 116dp+` hero) for **Concept C (The Protective Pebble with Paper Tab)** with strict non-certification visual trust guardrails.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **39/39 passed**.
+  - `cd android && ./gradlew :app:testDebugUnitTest --console=plain`: **BUILD SUCCESSFUL**, `HybridAiPolicyTest`: **15/15 passed**.
+- **Next Immediate Action & Recommended Model**:
+  - Commit the verified Phase A + Audit baseline (`Iterations 14–18`) on `feature/phase-a-privacy-boundary`, branch `feature/m3-expressive-rebrand`, and execute **Design Phase 1 — Theme Foundation and Deni LOD**.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
-1. **Review Investigation & Final Decision Report (`docs/architecture/`)**
-   - **Assigned Model**: Human Product/Tech Lead Review
-   - **Scope**: Approve `ADOPT WITH MODIFICATIONS` plan before Phase A (`CloudConsentSheet` + `OfflineDeterministic`) and Phase B/C (`LocalPromptRegistry` + `enprive-finding-explanation-cloud-v1-0-0` POC).
-2. **Final Release & PR Consolidation (`main` merge & APK verification)**
-   - **Assigned Model**: **Gemini 4 Argon / Hydrogen**
-   - **Scope**: Merge feature branch chain (`feature/onboarding-and-process-text-flow` -> `feature/splash-and-deni-icon` -> `main`), verify release/debug APK build, and prepare #BuildHybridAI 2026 submission walkthrough.
+1. **Manual Device & GCP Verification + Phase A Review**
+   - **Assigned Model**: Human Product/Tech Lead Verification
+   - **Scope**: Verify `enprive-hybrid-ai` Google Cloud Logging `_Default` sink exclusion filter / AI Monitoring settings in Console, plus test physical Android device AICore Gemini Nano & App Check `ONLY_IN_CLOUD` execution before authorizing Phase B.
+2. **Phase B/C Planning (`LocalPromptRegistry` & POC Server Prompt Template)**
+   - **Assigned Model**: **Gemini 4 Argon / Claude Opus 5.5**
+   - **Scope**: Begin Phase B only after explicit user authorization on clean Phase A base.

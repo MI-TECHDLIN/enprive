@@ -12,6 +12,8 @@
   "chipOnDevice": "Su questo dispositivo",
   "chipInCloud": "Nel cloud",
   "chipLocationUnavailable": "Posizione di elaborazione non disponibile",
+  "chipOfflineDeterministic": "Scansione locale offline",
+  "chipUnknown": "Origine di elaborazione sconosciuta",
   "statusSourceMatched": "Testo confermato",
   "statusDeviceObserved": "Rilevato sul dispositivo",
   "statusInterpretation": "Interpretazione",

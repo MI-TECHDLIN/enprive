@@ -50,6 +50,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chipLocationUnavailable => 'Ubicación de análisis no disponible';
 
   @override
+  String get chipOfflineDeterministic => 'Análisis local sin conexión';
+
+  @override
+  String get chipUnknown => 'Origen de procesamiento desconocido';
+
+  @override
   String get statusSourceMatched => 'Texto verificado';
 
   @override

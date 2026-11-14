@@ -49,6 +49,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chipLocationUnavailable => 'Processing location unavailable';
 
   @override
+  String get chipOfflineDeterministic => 'Offline local scan';
+
+  @override
+  String get chipUnknown => 'Processing source unknown';
+
+  @override
   String get statusSourceMatched => 'Source matched';
 
   @override

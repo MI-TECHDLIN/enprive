@@ -7,7 +7,27 @@ import 'enprive_duotone_icon.dart';
 enum InferenceSource {
   onDevice,
   inCloud,
+  offlineDeterministic,
+  unknown,
   locationUnavailable,
+}
+
+/// Normalizes native bridge provenance strings and persisted enum names into
+/// [InferenceSource], defaulting any missing, `'UNKNOWN'`, or unrecognized
+/// value to [InferenceSource.unknown].
+InferenceSource parseInferenceSource(String? raw) {
+  final normalized = raw?.trim().toUpperCase();
+  return switch (normalized) {
+    'ON_DEVICE' || 'ONDEVICE' => InferenceSource.onDevice,
+    'IN_CLOUD' || 'INCLOUD' => InferenceSource.inCloud,
+    'OFFLINE_DETERMINISTIC' ||
+    'OFFLINEDETERMINISTIC' =>
+      InferenceSource.offlineDeterministic,
+    'LOCATION_UNAVAILABLE' ||
+    'LOCATIONUNAVAILABLE' =>
+      InferenceSource.locationUnavailable,
+    _ => InferenceSource.unknown,
+  };
 }
 
 class EnpriveProvenanceChip extends StatelessWidget {
@@ -39,6 +59,18 @@ class EnpriveProvenanceChip extends StatelessWidget {
           EnpriveColors.chipInCloudFg,
           Ph.cloud_check_duotone,
           l10n.chipInCloud,
+        ),
+      InferenceSource.offlineDeterministic => (
+          EnpriveColors.chipOfflineBg,
+          EnpriveColors.chipOfflineFg,
+          Ph.shield_check_duotone,
+          l10n.chipOfflineDeterministic,
+        ),
+      InferenceSource.unknown => (
+          EnpriveColors.chipUnknownBg,
+          EnpriveColors.chipUnknownFg,
+          Ph.question_duotone,
+          l10n.chipUnknown,
         ),
       InferenceSource.locationUnavailable => (
           EnpriveColors.chipUnknownBg,

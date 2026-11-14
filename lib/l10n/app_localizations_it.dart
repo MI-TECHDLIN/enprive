@@ -51,6 +51,12 @@ class AppLocalizationsIt extends AppLocalizations {
       'Posizione di elaborazione non disponibile';
 
   @override
+  String get chipOfflineDeterministic => 'Scansione locale offline';
+
+  @override
+  String get chipUnknown => 'Origine di elaborazione sconosciuta';
+
+  @override
   String get statusSourceMatched => 'Testo confermato';
 
   @override

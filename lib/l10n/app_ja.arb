@@ -12,6 +12,8 @@
   "chipOnDevice": "このデバイス上",
   "chipInCloud": "クラウドで分析",
   "chipLocationUnavailable": "処理場所を確認できません",
+  "chipOfflineDeterministic": "オフラインのローカルスキャン",
+  "chipUnknown": "処理元が不明です",
   "statusSourceMatched": "原文一致を確認",
   "statusDeviceObserved": "端末上で確認",
   "statusInterpretation": "わかりやすい説明",

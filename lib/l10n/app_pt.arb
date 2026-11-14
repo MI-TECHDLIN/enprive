@@ -12,6 +12,8 @@
   "chipOnDevice": "Neste dispositivo",
   "chipInCloud": "Na nuvem",
   "chipLocationUnavailable": "Local de processamento indisponível",
+  "chipOfflineDeterministic": "Verificação local offline",
+  "chipUnknown": "Origem do processamento desconhecida",
   "statusSourceMatched": "Trecho confirmado",
   "statusDeviceObserved": "Observado no dispositivo",
   "statusInterpretation": "Interpretação",
