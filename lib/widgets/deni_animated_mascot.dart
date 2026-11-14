@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../core/theme/enprive_colors.dart';
+import '../core/theme/enprive_tokens.dart';
 
 enum DeniPose {
   idle,
@@ -12,19 +13,37 @@ enum DeniPose {
   celebrating,
 }
 
-/// Interactive sculpted vector mascot for Deni (Concept C: The Protective Pebble).
+/// Three-tier Level-of-Detail (LOD) system for Deni (Concept C):
+/// - [compact] (`48–64dp`): Crisp silhouette, slightly bolder facial features &
+///   crown paper tab, suppresses large external floating cards so Deni's face
+///   is never obscured at small avatar sizes.
+/// - [standard] (`68–112dp`): Balanced companion with connected primary prop
+///   positioned strictly outside the facial zone and within safe canvas bounds.
+/// - [hero] (`116dp+`): Full multi-prop choreography, secondary callouts, and
+///   ambient radial stage lighting.
+enum DeniLodTier {
+  compact,
+  standard,
+  hero,
+}
+
+/// Interactive sculpted vector mascot for Deni (Concept C: The Protective Pebble
+/// with Paper Tab).
+///
 /// Built on the `svg-mascot-animator` rigging & physics specification:
 /// - Grounded bottom-centre pivot so squash/stretch never drags through the floor
 /// - Area-interpolated deformation: `sx = pow(sy, -0.55)` (`squash(sy, preserve=0.55)`)
 /// - Damped spring step response (`ζ = 0.32, fₙ = 5.5 Hz`) on tap and pose transitions
 /// - 8% phase-lagged secondary follow-through on the folded cream paper slip
 /// - Height-coupled contact shadow (`shadowTrack`)
-/// - Physically connected hand-to-prop articulation across all 6 product states
+/// - Three-tier responsive LOD (`compact` 48–64dp, `standard` 68–112dp, `hero` 116dp+)
+/// - Non-certification trust guardrails: zero safety-certification shields or checkmarks
 class DeniAnimatedMascot extends StatefulWidget {
   final double size;
   final DeniPose pose;
   final VoidCallback? onTap;
   final bool showAmbientGlow;
+  final DeniLodTier? lodOverride;
 
   const DeniAnimatedMascot({
     super.key,
@@ -32,7 +51,21 @@ class DeniAnimatedMascot extends StatefulWidget {
     this.pose = DeniPose.idle,
     this.onTap,
     this.showAmbientGlow = true,
+    this.lodOverride,
   });
+
+  /// Resolves the canonical [DeniLodTier] for a given logical [size] in dp:
+  /// - `<= 66.0` -> [DeniLodTier.compact] (48–64dp tier)
+  /// - `< 116.0` -> [DeniLodTier.standard] (68–112dp tier)
+  /// - `>= 116.0` -> [DeniLodTier.hero] (116dp+ tier)
+  static DeniLodTier resolveTierForSize(double size) {
+    if (size <= 66.0) return DeniLodTier.compact;
+    if (size < 116.0) return DeniLodTier.standard;
+    return DeniLodTier.hero;
+  }
+
+  DeniLodTier get effectiveLodTier =>
+      lodOverride ?? resolveTierForSize(size);
 
   @override
   State<DeniAnimatedMascot> createState() => _DeniAnimatedMascotState();
@@ -74,8 +107,11 @@ class _DeniAnimatedMascotState extends State<DeniAnimatedMascot>
   void didUpdateWidget(covariant DeniAnimatedMascot oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.pose != widget.pose) {
-      // Trigger damped spring settle whenever pose changes (Status Confirmation)
-      _springController.forward(from: 0.0);
+      final reduceMotion =
+          MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+      if (!reduceMotion) {
+        _springController.forward(from: 0.0);
+      }
     }
   }
 
@@ -85,15 +121,22 @@ class _DeniAnimatedMascotState extends State<DeniAnimatedMascot>
     _blinkTimer?.cancel();
     _blinkTimer = Timer(delay, () async {
       if (!mounted) return;
-      await _blinkController.forward();
-      if (!mounted) return;
-      await _blinkController.reverse();
+      final reduceMotion =
+          MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+      if (!reduceMotion) {
+        await _blinkController.forward();
+        if (!mounted) return;
+        await _blinkController.reverse();
+      }
       _scheduleNextBlink();
     });
   }
 
   void _handleTap() {
-    _springController.forward(from: 0.0);
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (!reduceMotion) {
+      _springController.forward(from: 0.0);
+    }
     widget.onTap?.call();
   }
 
@@ -108,18 +151,29 @@ class _DeniAnimatedMascotState extends State<DeniAnimatedMascot>
 
   @override
   Widget build(BuildContext context) {
-    final bool reduceMotion = MediaQuery.of(context).disableAnimations;
+    final bool reduceMotion =
+        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final DeniLodTier lod = widget.effectiveLodTier;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final semantics = context.semanticColors;
+
+    final (double widthFactor, double heightFactor) = switch (lod) {
+      DeniLodTier.compact => (1.18, 1.16),
+      DeniLodTier.standard => (1.28, 1.22),
+      DeniLodTier.hero => (1.32, 1.24),
+    };
 
     return Semantics(
-      label: 'Deni, your privacy guide (${widget.pose.name} state)',
+      label:
+          'Deni, your privacy guide (${widget.pose.name} state, ${lod.name} detail)',
       button: widget.onTap != null,
       image: true,
       child: GestureDetector(
-        onTap: _handleTap,
+        onTap: widget.onTap != null ? _handleTap : null,
         behavior: HitTestBehavior.opaque,
         child: SizedBox(
-          width: widget.size * 1.32,
-          height: widget.size * 1.24,
+          width: widget.size * widthFactor,
+          height: widget.size * heightFactor,
           child: AnimatedBuilder(
             animation: Listenable.merge([
               _loopController,
@@ -140,7 +194,11 @@ class _DeniAnimatedMascotState extends State<DeniAnimatedMascot>
                   blink: blink,
                   springT: springT,
                   pose: widget.pose,
+                  lod: lod,
+                  isDark: isDark,
                   showAmbientGlow: widget.showAmbientGlow,
+                  primaryGlowColor: semantics.deniPrimaryGlow,
+                  secondaryGlowColor: semantics.deniSecondaryGlow,
                 ),
               );
             },
@@ -156,14 +214,22 @@ class _DeniRiggedActionPainter extends CustomPainter {
   final double blink;
   final double springT;
   final DeniPose pose;
+  final DeniLodTier lod;
+  final bool isDark;
   final bool showAmbientGlow;
+  final Color primaryGlowColor;
+  final Color secondaryGlowColor;
 
   _DeniRiggedActionPainter({
     required this.phase,
     required this.blink,
     required this.springT,
     required this.pose,
+    required this.lod,
+    required this.isDark,
     required this.showAmbientGlow,
+    required this.primaryGlowColor,
+    required this.secondaryGlowColor,
   });
 
   /// Area-interpolated squash/stretch from `svg-mascot-animator/references/physics.md`:
@@ -196,15 +262,15 @@ class _DeniRiggedActionPainter extends CustomPainter {
         return (0.0, (1.0 - 0.15 * crouch) + springDelta, 0.0);
       } else if (phase < 0.54) {
         final double u = (phase - 0.14) / 0.40;
-        final double jumpH = 4.0 * 0.13 * u * (1.0 - u);
+        final double jumpH = 4.0 * 0.12 * u * (1.0 - u);
         final double velMag = (1.0 - 2.0 * u).abs();
-        final double stretchY = 1.0 + 0.12 * velMag;
+        final double stretchY = 1.0 + 0.11 * velMag;
         final double airTilt = math.sin(u * math.pi) * 0.04;
         return (jumpH, stretchY + springDelta, airTilt);
       } else if (phase < 0.66) {
         final double u = (phase - 0.54) / 0.12;
         final double impact = math.sin(u * math.pi);
-        return (0.0, (1.0 - 0.18 * impact) + springDelta, 0.0);
+        return (0.0, (1.0 - 0.16 * impact) + springDelta, 0.0);
       } else {
         final double u = (phase - 0.66) / 0.34;
         final double settle =
@@ -219,10 +285,10 @@ class _DeniRiggedActionPainter extends CustomPainter {
     final double lift = (breatheSin * 0.5 + 0.5) * 0.022;
 
     final double tilt = switch (pose) {
-      DeniPose.listening => -0.045 + math.sin(phase * 4 * math.pi) * 0.038,
-      DeniPose.support => math.sin(phase * 2 * math.pi) * 0.040,
-      DeniPose.thinking => 0.030 + math.sin(phase * 2 * math.pi) * 0.022,
-      DeniPose.explaining => 0.022 + math.sin(phase * 2 * math.pi) * 0.018,
+      DeniPose.listening => -0.045 + math.sin(phase * 4 * math.pi) * 0.035,
+      DeniPose.support => math.sin(phase * 2 * math.pi) * 0.035,
+      DeniPose.thinking => 0.028 + math.sin(phase * 2 * math.pi) * 0.020,
+      DeniPose.explaining => 0.020 + math.sin(phase * 2 * math.pi) * 0.016,
       DeniPose.idle => math.sin(phase * 2 * math.pi) * 0.015,
       DeniPose.celebrating => 0.0,
     };
@@ -234,14 +300,25 @@ class _DeniRiggedActionPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final double w = size.width;
     final double h = size.height;
-    // Slightly left of centre when right-side props (thinking/explaining) are active
-    final double cx = (pose == DeniPose.thinking || pose == DeniPose.explaining)
-        ? w * 0.43
-        : w * 0.47;
-    final double groundY = h * 0.89;
+    final bool isCompact = lod == DeniLodTier.compact;
 
-    final double pw = w * 0.58;
-    final double ph = h * 0.64;
+    // In LOD 1 (compact 48-64dp), Deni is centered and fills a larger proportion
+    // of the avatar box so the face and crown paper tab read with maximum clarity.
+    // In LOD 2/3, Deni shifts slightly left when right-side props (thinking/explaining)
+    // are active so props never overlap the face or clip the right canvas edge.
+    final double cx = isCompact
+        ? w * 0.50
+        : ((pose == DeniPose.thinking || pose == DeniPose.explaining)
+              ? w * 0.41
+              : w * 0.48);
+    final double groundY = isCompact ? h * 0.90 : h * 0.89;
+
+    final double pw = isCompact
+        ? w * 0.65
+        : (lod == DeniLodTier.standard ? w * 0.55 : w * 0.57);
+    final double ph = isCompact
+        ? h * 0.68
+        : (lod == DeniLodTier.standard ? h * 0.63 : h * 0.64);
 
     final (double jumpHeightRatio, double sy, double bodyTilt) =
         _computeKinematics();
@@ -253,27 +330,30 @@ class _DeniRiggedActionPainter extends CustomPainter {
     final double laggedSin = math.sin(laggedPhase * 2 * math.pi);
     final double fastSin = math.sin(phase * 4 * math.pi);
 
-    // 1. Subtle Ambient Glow behind Deni
+    // 1. Subtle Ambient Glow behind Deni (Theme-aware for Light & Dark canvas)
     if (showAmbientGlow) {
       final Offset glowCenter = Offset(cx, groundY - ph * 0.5 - elevationPx);
+      final double glowRadius = isCompact ? w * 0.42 : w * 0.46;
       final glowPaint = Paint()
         ..shader = RadialGradient(
           colors: [
-            EnpriveColors.teal.withValues(alpha: 0.16),
-            EnpriveColors.apricot.withValues(alpha: 0.05),
+            primaryGlowColor,
+            secondaryGlowColor,
             Colors.transparent,
           ],
           stops: const [0.0, 0.58, 1.0],
         ).createShader(
-          Rect.fromCircle(center: glowCenter, radius: w * 0.46),
+          Rect.fromCircle(center: glowCenter, radius: glowRadius),
         );
-      canvas.drawCircle(glowCenter, w * 0.46, glowPaint);
+      canvas.drawCircle(glowCenter, glowRadius, glowPaint);
     }
 
     // 2. Contact Shadow Coupled Directly to Height (`shadow_track` from physics.md)
     final double heightFactor = (jumpHeightRatio / 0.14).clamp(0.0, 1.0);
     final double shadowScale = (1.0 - 0.42 * heightFactor) * (sx * 0.95);
-    final double shadowAlpha = (0.17 - 0.09 * heightFactor).clamp(0.05, 0.22);
+    final double baseShadowAlpha = isDark ? 0.34 : 0.17;
+    final double shadowAlpha =
+        (baseShadowAlpha - 0.09 * heightFactor).clamp(0.05, 0.40);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(cx, groundY),
@@ -281,7 +361,8 @@ class _DeniRiggedActionPainter extends CustomPainter {
         height: ph * 0.11 * shadowScale,
       ),
       Paint()
-        ..color = const Color(0xFF0E4A43).withValues(alpha: shadowAlpha)
+        ..color = (isDark ? Colors.black : const Color(0xFF0E4A43))
+            .withValues(alpha: shadowAlpha)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
     );
 
@@ -291,12 +372,13 @@ class _DeniRiggedActionPainter extends CustomPainter {
       canvas.drawOval(
         Rect.fromCenter(
           center: Offset(cx, groundY),
-          width: pw * (0.65 + 0.65 * ringU),
-          height: ph * (0.09 + 0.09 * ringU),
+          width: pw * (0.65 + 0.58 * ringU),
+          height: ph * (0.09 + 0.08 * ringU),
         ),
         Paint()
-          ..color = EnpriveColors.teal.withValues(alpha: (1.0 - ringU) * 0.35)
-          ..strokeWidth = 2.0
+          ..color = (isDark ? EnpriveColors.tealDarkAccent : EnpriveColors.teal)
+              .withValues(alpha: (1.0 - ringU) * 0.38)
+          ..strokeWidth = isCompact ? 1.5 : 2.0
           ..style = PaintingStyle.stroke,
       );
     }
@@ -312,8 +394,17 @@ class _DeniRiggedActionPainter extends CustomPainter {
     canvas.rotate(bodyTilt);
     canvas.translate(-cx, -bodyCenterY);
 
-    // 5. Background Flippers (only for poses where arms aren't articulated in foreground)
-    if (pose == DeniPose.idle || pose == DeniPose.celebrating) {
+    // 5. Background Flippers
+    if (isCompact) {
+      // In LOD 1 (compact), use clean side flippers for idle/thinking/explaining/celebrating
+      // so articulated arms never cross over or obscure Deni's face at 48-64dp!
+      if (pose == DeniPose.support) {
+        _drawSupportShoulders(canvas, cx, bodyCenterY, pw, ph);
+      } else {
+        _drawLeftFlipper(canvas, cx, bodyCenterY, pw, ph, laggedSin, fastSin);
+        _drawRightFlipper(canvas, cx, bodyCenterY, pw, ph, laggedSin, fastSin);
+      }
+    } else if (pose == DeniPose.idle || pose == DeniPose.celebrating) {
       _drawLeftFlipper(canvas, cx, bodyCenterY, pw, ph, laggedSin, fastSin);
       _drawRightFlipper(canvas, cx, bodyCenterY, pw, ph, laggedSin, fastSin);
     } else {
@@ -341,6 +432,17 @@ class _DeniRiggedActionPainter extends CustomPainter {
         stops: [0.0, 0.42, 0.78, 1.0],
       ).createShader(pebbleBounds);
     canvas.drawPath(pebblePath, bodyPaint);
+
+    // Subtle outer rim stroke in Dark Mode so the pebble silhouette pops against dark slate
+    if (isDark) {
+      canvas.drawPath(
+        pebblePath,
+        Paint()
+          ..color = const Color(0xFF4FD1C5).withValues(alpha: 0.28)
+          ..strokeWidth = isCompact ? 1.4 : 1.8
+          ..style = PaintingStyle.stroke,
+      );
+    }
 
     // Top-left ceramic rim light & bottom-right ambient occlusion crescent
     canvas.save();
@@ -384,26 +486,57 @@ class _DeniRiggedActionPainter extends CustomPainter {
     // 8. Face with Active Eye Scanning & Multi-Syllable Mouth Articulation
     _drawFace(canvas, cx, bodyCenterY, pw, ph, fastSin);
 
-    // 9. Foreground Articulated Hands & Connected Props per State
-    switch (pose) {
-      case DeniPose.thinking:
-        _drawThinkingScene(canvas, cx, bodyCenterY, pw, ph, laggedSin, fastSin);
-      case DeniPose.explaining:
-        _drawExplainingScene(
-            canvas, cx, bodyCenterY, pw, ph, laggedSin, fastSin);
-      case DeniPose.listening:
-        _drawListeningScene(
-            canvas, cx, bodyCenterY, pw, ph, laggedSin, fastSin);
-      case DeniPose.support:
+    // 9. Foreground Articulated Hands & Connected Props per State & LOD Tier
+    if (isCompact) {
+      // LOD 1 (48-64dp): Never cross the face with floating boards or arms.
+      if (pose == DeniPose.support) {
         _drawSupportClaspedHands(canvas, cx, bodyCenterY, pw, ph, laggedSin);
-      case DeniPose.idle:
-      case DeniPose.celebrating:
-        break;
+      } else if (pose == DeniPose.listening) {
+        _drawCompactListeningCups(canvas, cx, bodyCenterY, pw, ph);
+      }
+    } else {
+      switch (pose) {
+        case DeniPose.thinking:
+          _drawThinkingScene(
+            canvas,
+            cx,
+            bodyCenterY,
+            pw,
+            ph,
+            laggedSin,
+            fastSin,
+          );
+        case DeniPose.explaining:
+          _drawExplainingScene(
+            canvas,
+            cx,
+            bodyCenterY,
+            pw,
+            ph,
+            laggedSin,
+            fastSin,
+          );
+        case DeniPose.listening:
+          _drawListeningScene(
+            canvas,
+            cx,
+            bodyCenterY,
+            pw,
+            ph,
+            laggedSin,
+            fastSin,
+          );
+        case DeniPose.support:
+          _drawSupportClaspedHands(canvas, cx, bodyCenterY, pw, ph, laggedSin);
+        case DeniPose.idle:
+        case DeniPose.celebrating:
+          break;
+      }
     }
 
     canvas.restore();
 
-    // 10. Additional External Floating Badges / Sparkles
+    // 10. Additional External Floating Badges / Sparkles (scaled by LOD tier)
     _drawExternalBadges(
       canvas,
       cx,
@@ -511,8 +644,8 @@ class _DeniRiggedActionPainter extends CustomPainter {
     final double pivotY = cy + ph * 0.02;
     canvas.translate(pivotX, pivotY);
 
-    if (pose == DeniPose.idle) {
-      canvas.rotate(-0.82 + fastSin * 0.20);
+    if (pose == DeniPose.idle || pose == DeniPose.explaining) {
+      canvas.rotate(-0.78 + fastSin * 0.18);
       final Rect waveArm = Rect.fromCenter(
         center: Offset(pw * 0.06, -ph * 0.10),
         width: pw * 0.19,
@@ -541,8 +674,46 @@ class _DeniRiggedActionPainter extends CustomPainter {
             colors: [Color(0xFF36C0B0), Color(0xFF116B60)],
           ).createShader(cheerArm),
       );
+    } else {
+      canvas.rotate(-0.24 - laggedSin * 0.05);
+      final Rect restArm = Rect.fromCenter(
+        center: Offset(pw * 0.05, ph * 0.10),
+        width: pw * 0.18,
+        height: ph * 0.30,
+      );
+      canvas.drawOval(
+        restArm,
+        Paint()
+          ..shader = const LinearGradient(
+            colors: [Color(0xFF28AA9B), Color(0xFF0E6157)],
+          ).createShader(restArm),
+      );
     }
     canvas.restore();
+  }
+
+  void _drawCompactListeningCups(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double pw,
+    double ph,
+  ) {
+    for (final sign in [-1.0, 1.0]) {
+      final Rect cupRect = Rect.fromCenter(
+        center: Offset(cx + sign * pw * 0.50, cy - ph * 0.03),
+        width: pw * 0.14,
+        height: ph * 0.24,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(cupRect, Radius.circular(pw * 0.06)),
+        Paint()..color = const Color(0xFF152036),
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(cupRect.deflate(1.5), Radius.circular(pw * 0.05)),
+        Paint()..color = const Color(0xFFFFFBF4),
+      );
+    }
   }
 
   /// Helper to draw a sculpted 3D-shaded teal arm segment + rounded paw pad
@@ -555,7 +726,6 @@ class _DeniRiggedActionPainter extends CustomPainter {
     required double armThickness,
     required double pawRadius,
   }) {
-    // Soft arm drop shadow on body
     final Path shadowPath = Path()
       ..moveTo(shoulder.dx, shoulder.dy + 2)
       ..quadraticBezierTo(
@@ -574,7 +744,6 @@ class _DeniRiggedActionPainter extends CustomPainter {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
 
-    // Main sculpted teal arm stroke
     final Path armPath = Path()
       ..moveTo(shoulder.dx, shoulder.dy)
       ..quadraticBezierTo(
@@ -592,7 +761,6 @@ class _DeniRiggedActionPainter extends CustomPainter {
         ..style = PaintingStyle.stroke,
     );
 
-    // Upper rim highlight on arm
     canvas.drawPath(
       armPath,
       Paint()
@@ -602,7 +770,6 @@ class _DeniRiggedActionPainter extends CustomPainter {
         ..style = PaintingStyle.stroke,
     );
 
-    // Rounded paw base
     canvas.drawCircle(
       handCenter,
       pawRadius,
@@ -618,12 +785,11 @@ class _DeniRiggedActionPainter extends CustomPainter {
     );
   }
 
-  /// THINKING SCENE:
-  /// 1. Left hand taps chin thoughtfully.
-  /// 2. Floating policy document on right with sweeping laser bar.
-  /// 3. Right arm extends to physically GRIP the magnifying glass handle,
-  ///    with the paw fingers wrapping over the handle shaft as the lens magnifies
-  ///    the active clause line!
+  /// THINKING SCENE (LOD 2 & LOD 3):
+  /// - Left hand rests thoughtfully below the lower-left cheek (never covering
+  ///   mouth or eyes).
+  /// - Policy document + magnifier positioned to the right (`cx + pw * 0.58`)
+  ///   strictly outside Deni's facial area and within the right safe margin.
   void _drawThinkingScene(
     Canvas canvas,
     double cx,
@@ -634,31 +800,31 @@ class _DeniRiggedActionPainter extends CustomPainter {
     double fastSin,
   ) {
     final double scanProgress = math.sin(phase * 2 * math.pi) * 0.5 + 0.5;
-    final double sweepX = math.cos(phase * 2 * math.pi) * (pw * 0.035);
+    final double sweepX = math.cos(phase * 2 * math.pi) * (pw * 0.028);
 
-    // A. Left Hand: Thoughtful chin-tapping pose
-    final Offset leftShoulder = Offset(cx - pw * 0.38, cy + ph * 0.14);
-    final Offset leftElbow = Offset(cx - pw * 0.44, cy + ph * 0.24);
+    // A. Left Hand: Thoughtful lower-chin rest (kept below mouth Y so face is 100% clear)
+    final Offset leftShoulder = Offset(cx - pw * 0.38, cy + ph * 0.16);
+    final Offset leftElbow = Offset(cx - pw * 0.44, cy + ph * 0.28);
     final Offset chinHand = Offset(
-      cx - pw * 0.13,
-      cy + ph * 0.13 + (fastSin * 1.6),
+      cx - pw * 0.18,
+      cy + ph * 0.22 + (fastSin * 1.4),
     );
     _drawArticulatedArm(
       canvas: canvas,
       shoulder: leftShoulder,
       elbowControl: leftElbow,
       handCenter: chinHand,
-      armThickness: pw * 0.12,
-      pawRadius: pw * 0.072,
+      armThickness: pw * 0.115,
+      pawRadius: pw * 0.068,
     );
 
-    // B. Floating Policy Document on the Right
+    // B. Floating Policy Document on the Right (bounded inside w * 0.92)
+    final double docScale = lod == DeniLodTier.standard ? 0.92 : 1.0;
     final Rect docRect = Rect.fromCenter(
-      center: Offset(cx + pw * 0.62, cy - ph * 0.04),
-      width: pw * 0.38,
-      height: ph * 0.38,
+      center: Offset(cx + pw * 0.60, cy - ph * 0.04),
+      width: pw * 0.36 * docScale,
+      height: ph * 0.36 * docScale,
     );
-    // Document drop shadow
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         docRect.shift(const Offset(0, 3)),
@@ -680,14 +846,13 @@ class _DeniRiggedActionPainter extends CustomPainter {
         ..style = PaintingStyle.stroke,
     );
 
-    // Policy document header pill + 4 text lines
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(
-          docRect.left + 5,
-          docRect.top + 5,
+          docRect.left + 4,
+          docRect.top + 4,
           docRect.width * 0.55,
-          3.5,
+          3.2,
         ),
         const Radius.circular(2),
       ),
@@ -696,16 +861,15 @@ class _DeniRiggedActionPainter extends CustomPainter {
     for (int i = 0; i < 4; i++) {
       final double ly = docRect.top + docRect.height * (0.30 + i * 0.17);
       canvas.drawLine(
-        Offset(docRect.left + 5, ly),
-        Offset(docRect.right - (i == 3 ? 10 : 5), ly),
+        Offset(docRect.left + 4, ly),
+        Offset(docRect.right - (i == 3 ? 8 : 4), ly),
         Paint()
           ..color = EnpriveColors.ink.withValues(alpha: 0.26)
-          ..strokeWidth = 1.8
+          ..strokeWidth = 1.6
           ..strokeCap = StrokeCap.round,
       );
     }
 
-    // Sweeping emerald scan bar on the document
     final double scanLineY =
         docRect.top + docRect.height * (0.24 + 0.58 * scanProgress);
     canvas.drawLine(
@@ -713,82 +877,63 @@ class _DeniRiggedActionPainter extends CustomPainter {
       Offset(docRect.right - 2, scanLineY),
       Paint()
         ..color = EnpriveColors.teal
-        ..strokeWidth = 2.4
+        ..strokeWidth = 2.2
         ..strokeCap = StrokeCap.round,
     );
 
-    // C. Magnifying Glass Rig + Connected Right Arm & Gripping Paw
+    // C. Magnifying Glass Rig + Connected Right Arm (kept to the right of cheek)
     final Offset lensCenter = Offset(
-      cx + pw * 0.44 + sweepX,
-      scanLineY - ph * 0.02,
+      cx + pw * 0.48 + sweepX,
+      scanLineY - ph * 0.01,
     );
-    final double lensR = pw * 0.155;
+    final double lensR = pw * 0.14 * docScale;
 
-    // Handle vector pointing down-left from the lens rim toward Deni's right hand
-    const double handleAngle = 2.32; // ~133 degrees (down-left)
+    const double handleAngle = 2.32;
     final Offset dir = Offset(math.cos(handleAngle), math.sin(handleAngle));
     final Offset rimPoint = lensCenter + dir * lensR;
-    final Offset gripPoint = lensCenter + dir * (lensR * 1.58);
-    final Offset handlePommel = lensCenter + dir * (lensR * 2.05);
+    final Offset gripPoint = lensCenter + dir * (lensR * 1.55);
+    final Offset handlePommel = lensCenter + dir * (lensR * 1.98);
 
-    // 1. Draw Right Arm from Deni's shoulder directly to the handle's `gripPoint`
-    final Offset rightShoulder = Offset(cx + pw * 0.30, cy + ph * 0.15);
+    final Offset rightShoulder = Offset(cx + pw * 0.32, cy + ph * 0.16);
     final Offset rightElbow = Offset(
-      (rightShoulder.dx + gripPoint.dx) * 0.5 - pw * 0.02,
-      math.max(rightShoulder.dy, gripPoint.dy) + ph * 0.08,
+      (rightShoulder.dx + gripPoint.dx) * 0.5,
+      math.max(rightShoulder.dy, gripPoint.dy) + ph * 0.07,
     );
     _drawArticulatedArm(
       canvas: canvas,
       shoulder: rightShoulder,
       elbowControl: rightElbow,
       handCenter: gripPoint,
-      armThickness: pw * 0.125,
-      pawRadius: pw * 0.076,
+      armThickness: pw * 0.115,
+      pawRadius: pw * 0.070,
     );
 
-    // 2. Draw Magnifier Handle passing through the paw
-    // Brass ferrule collar at the lens rim
     canvas.drawLine(
       rimPoint,
       lensCenter + dir * (lensR * 1.24),
       Paint()
         ..color = EnpriveColors.apricot
-        ..strokeWidth = pw * 0.068
+        ..strokeWidth = pw * 0.062
         ..strokeCap = StrokeCap.round,
     );
-    // Deep-ink handle shaft
     canvas.drawLine(
       lensCenter + dir * (lensR * 1.20),
       handlePommel,
       Paint()
         ..color = const Color(0xFF152036)
-        ..strokeWidth = pw * 0.058
+        ..strokeWidth = pw * 0.054
         ..strokeCap = StrokeCap.round,
     );
 
-    // 3. Draw Deni's Overlapping Thumb / Finger Grip ON TOP of the handle shaft
-    // so the hand visibly wraps around and holds the tool!
     canvas.drawOval(
       Rect.fromCenter(
-        center: gripPoint + Offset(-pw * 0.015, -ph * 0.012),
-        width: pw * 0.11,
-        height: ph * 0.075,
+        center: gripPoint + Offset(-pw * 0.012, -ph * 0.010),
+        width: pw * 0.10,
+        height: ph * 0.068,
       ),
       Paint()..color = const Color(0xFF39C4B3),
     );
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: gripPoint + Offset(-pw * 0.015, -ph * 0.012),
-        width: pw * 0.11,
-        height: ph * 0.075,
-      ),
-      Paint()
-        ..color = const Color(0xFF0E6157)
-        ..strokeWidth = 1.2
-        ..style = PaintingStyle.stroke,
-    );
 
-    // 4. Draw Magnifying Glass Lens (with magnified clause lines inside!)
     final Path lensClip = Path()
       ..addOval(Rect.fromCircle(center: lensCenter, radius: lensR));
     canvas.save();
@@ -798,81 +943,41 @@ class _DeniRiggedActionPainter extends CustomPainter {
       lensR,
       Paint()..color = const Color(0xFFE6FAF7).withValues(alpha: 0.90),
     );
-    // Magnified zoomed-in policy clause lines inside the lens
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
           center: lensCenter,
-          width: lensR * 1.5,
-          height: lensR * 0.42,
+          width: lensR * 1.4,
+          height: lensR * 0.40,
         ),
         const Radius.circular(3),
       ),
       Paint()..color = EnpriveColors.apricot.withValues(alpha: 0.38),
     );
     canvas.drawLine(
-      Offset(lensCenter.dx - lensR * 0.65, lensCenter.dy - lensR * 0.25),
-      Offset(lensCenter.dx + lensR * 0.65, lensCenter.dy - lensR * 0.25),
-      Paint()
-        ..color = EnpriveColors.ink.withValues(alpha: 0.45)
-        ..strokeWidth = 2.4
-        ..strokeCap = StrokeCap.round,
-    );
-    canvas.drawLine(
-      Offset(lensCenter.dx - lensR * 0.70, lensCenter.dy),
-      Offset(lensCenter.dx + lensR * 0.70, lensCenter.dy),
+      Offset(lensCenter.dx - lensR * 0.65, lensCenter.dy),
+      Offset(lensCenter.dx + lensR * 0.65, lensCenter.dy),
       Paint()
         ..color = EnpriveColors.tealStrong
-        ..strokeWidth = 3.2
-        ..strokeCap = StrokeCap.round,
-    );
-    canvas.drawLine(
-      Offset(lensCenter.dx - lensR * 0.55, lensCenter.dy + lensR * 0.25),
-      Offset(lensCenter.dx + lensR * 0.45, lensCenter.dy + lensR * 0.25),
-      Paint()
-        ..color = EnpriveColors.ink.withValues(alpha: 0.45)
-        ..strokeWidth = 2.4
+        ..strokeWidth = 2.8
         ..strokeCap = StrokeCap.round,
     );
     canvas.restore();
 
-    // Outer metallic/ink lens frame + specular reflection arc
     canvas.drawCircle(
       lensCenter,
       lensR,
       Paint()
         ..color = const Color(0xFF152036)
-        ..strokeWidth = 2.8
-        ..style = PaintingStyle.stroke,
-    );
-    canvas.drawCircle(
-      lensCenter,
-      lensR * 0.88,
-      Paint()
-        ..color = EnpriveColors.teal.withValues(alpha: 0.55)
-        ..strokeWidth = 1.2
-        ..style = PaintingStyle.stroke,
-    );
-    canvas.drawArc(
-      Rect.fromCircle(center: lensCenter, radius: lensR * 0.72),
-      -2.45,
-      1.15,
-      false,
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.92)
-        ..strokeWidth = 2.0
-        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 2.4
         ..style = PaintingStyle.stroke,
     );
   }
 
-  /// EXPLAINING SCENE:
-  /// 1. Left hand gestures openly (warm teacher explanation).
-  /// 2. Large, high-contrast Evidence Quote Board on the right with 3 clauses,
-  ///    a quotation header badge, and an animated apricot highlight + check badge.
-  /// 3. Right arm + paw physically holds a Presentation Pointer Baton whose
-  ///    glowing tip touches and tracks the highlighted quote line on the board!
-  /// 4. Floating speech/quote bubble above Deni's left shoulder.
+  /// EXPLAINING SCENE (LOD 2 & LOD 3):
+  /// - Uses a non-certification Quote Excerpt Board (quotation bar in teal &
+  ///   apricot, no green "verified safe" dot).
+  /// - Kept strictly outside Deni's facial area and within safe bounds.
   void _drawExplainingScene(
     Canvas canvas,
     double cx,
@@ -882,39 +987,37 @@ class _DeniRiggedActionPainter extends CustomPainter {
     double laggedSin,
     double fastSin,
   ) {
-    // A. Left Hand: Expressive open-palm teacher gesture
-    final Offset leftShoulder = Offset(cx - pw * 0.38, cy + ph * 0.12);
-    final Offset leftElbow = Offset(cx - pw * 0.48, cy + ph * 0.18);
+    final Offset leftShoulder = Offset(cx - pw * 0.38, cy + ph * 0.14);
+    final Offset leftElbow = Offset(cx - pw * 0.46, cy + ph * 0.20);
     final Offset openHand = Offset(
-      cx - pw * 0.52,
-      cy + ph * 0.02 - (fastSin * 2.4),
+      cx - pw * 0.48,
+      cy + ph * 0.06 - (fastSin * 2.0),
     );
     _drawArticulatedArm(
       canvas: canvas,
       shoulder: leftShoulder,
       elbowControl: leftElbow,
       handCenter: openHand,
-      armThickness: pw * 0.12,
-      pawRadius: pw * 0.072,
+      armThickness: pw * 0.115,
+      pawRadius: pw * 0.068,
     );
 
-    // B. Floating Evidence Quote Board on the Right
-    final double cardBob = laggedSin * 1.8;
+    final double boardScale = lod == DeniLodTier.standard ? 0.90 : 1.0;
+    final double cardBob = laggedSin * 1.6;
     final Rect boardRect = Rect.fromCenter(
-      center: Offset(cx + pw * 0.64, cy - ph * 0.08 + cardBob),
-      width: pw * 0.44,
-      height: ph * 0.44,
+      center: Offset(cx + pw * 0.61, cy - ph * 0.06 + cardBob),
+      width: pw * 0.40 * boardScale,
+      height: ph * 0.40 * boardScale,
     );
 
-    // Board shadow & cream surface
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        boardRect.shift(const Offset(0, 3.5)),
+        boardRect.shift(const Offset(0, 3.0)),
         const Radius.circular(8),
       ),
       Paint()
         ..color = const Color(0xFF0E4A43).withValues(alpha: 0.20)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(boardRect, const Radius.circular(8)),
@@ -924,11 +1027,11 @@ class _DeniRiggedActionPainter extends CustomPainter {
       RRect.fromRectAndRadius(boardRect, const Radius.circular(8)),
       Paint()
         ..color = EnpriveColors.teal.withValues(alpha: 0.50)
-        ..strokeWidth = 1.6
+        ..strokeWidth = 1.5
         ..style = PaintingStyle.stroke,
     );
 
-    // Top header banner on the Evidence Board ("QUOTE VERIFIED")
+    // Non-certification Quote Header Banner (Teal + Apricot citation bar)
     final Rect headerRect = Rect.fromLTWH(
       boardRect.left + 4,
       boardRect.top + 4,
@@ -936,31 +1039,28 @@ class _DeniRiggedActionPainter extends CustomPainter {
       boardRect.height * 0.20,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(headerRect, const Radius.circular(5)),
+      RRect.fromRectAndRadius(headerRect, const Radius.circular(4)),
       Paint()..color = EnpriveColors.teal.withValues(alpha: 0.14),
     );
-    // Emerald verified dot in header
     canvas.drawCircle(
-      Offset(headerRect.left + 6, headerRect.center.dy),
-      2.6,
-      Paint()..color = EnpriveColors.stateNoConcernFg,
+      Offset(headerRect.left + 5.5, headerRect.center.dy),
+      2.2,
+      Paint()..color = EnpriveColors.apricot,
     );
     canvas.drawLine(
-      Offset(headerRect.left + 12, headerRect.center.dy),
-      Offset(headerRect.right - 6, headerRect.center.dy),
+      Offset(headerRect.left + 11, headerRect.center.dy),
+      Offset(headerRect.right - 5, headerRect.center.dy),
       Paint()
         ..color = EnpriveColors.tealStrong
-        ..strokeWidth = 2.0
+        ..strokeWidth = 1.8
         ..strokeCap = StrokeCap.round,
     );
 
-    // Determine which of the 2 main quote rows Deni is currently pointing at
     final double pointerWave = math.sin(phase * 2 * math.pi) * 0.5 + 0.5;
-    final double row1Y = boardRect.top + boardRect.height * 0.44;
+    final double row1Y = boardRect.top + boardRect.height * 0.45;
     final double row2Y = boardRect.top + boardRect.height * 0.72;
     final double activeRowY = row1Y + (row2Y - row1Y) * pointerWave;
 
-    // Highlight box following Deni's pointer across the evidence clauses
     final Rect highlightRect = Rect.fromCenter(
       center: Offset(boardRect.center.dx, activeRowY),
       width: boardRect.width - 8,
@@ -971,41 +1071,32 @@ class _DeniRiggedActionPainter extends CustomPainter {
       Paint()..color = EnpriveColors.apricot.withValues(alpha: 0.36),
     );
 
-    // Clause lines on the board
     canvas.drawLine(
-      Offset(boardRect.left + 7, row1Y),
-      Offset(boardRect.right - 7, row1Y),
+      Offset(boardRect.left + 6, row1Y),
+      Offset(boardRect.right - 6, row1Y),
       Paint()
         ..color = EnpriveColors.ink.withValues(alpha: 0.80)
-        ..strokeWidth = 2.2
+        ..strokeWidth = 2.0
         ..strokeCap = StrokeCap.round,
     );
     canvas.drawLine(
-      Offset(boardRect.left + 7, row2Y),
-      Offset(boardRect.right - 10, row2Y),
+      Offset(boardRect.left + 6, row2Y),
+      Offset(boardRect.right - 9, row2Y),
       Paint()
         ..color = EnpriveColors.tealStrong
-        ..strokeWidth = 2.2
+        ..strokeWidth = 2.0
         ..strokeCap = StrokeCap.round,
     );
 
-    // Pulsing target ring where pointer touches the board
-    final Offset pointerTip = Offset(boardRect.left + 6, activeRowY);
-    canvas.drawCircle(
-      pointerTip,
-      3.5 + (fastSin * 0.5 + 0.5) * 2.0,
-      Paint()..color = EnpriveColors.apricot.withValues(alpha: 0.45),
-    );
-
-    // C. Right Arm + Hand Holding the Presentation Pointer Baton
-    final Offset rightShoulder = Offset(cx + pw * 0.32, cy + ph * 0.12);
+    final Offset pointerTip = Offset(boardRect.left + 5, activeRowY);
+    final Offset rightShoulder = Offset(cx + pw * 0.33, cy + ph * 0.14);
     final Offset batonGrip = Offset(
-      cx + pw * 0.36,
-      activeRowY + ph * 0.12,
+      cx + pw * 0.37,
+      activeRowY + ph * 0.11,
     );
     final Offset rightElbow = Offset(
-      cx + pw * 0.33,
-      math.max(rightShoulder.dy, batonGrip.dy) + ph * 0.06,
+      cx + pw * 0.34,
+      math.max(rightShoulder.dy, batonGrip.dy) + ph * 0.05,
     );
 
     _drawArticulatedArm(
@@ -1013,38 +1104,26 @@ class _DeniRiggedActionPainter extends CustomPainter {
       shoulder: rightShoulder,
       elbowControl: rightElbow,
       handCenter: batonGrip,
-      armThickness: pw * 0.12,
-      pawRadius: pw * 0.074,
+      armThickness: pw * 0.115,
+      pawRadius: pw * 0.068,
     );
 
-    // Pointer Baton shaft extending from `batonGrip` to `pointerTip`
     canvas.drawLine(
       batonGrip,
       pointerTip,
       Paint()
         ..color = const Color(0xFF152036)
-        ..strokeWidth = 2.8
+        ..strokeWidth = 2.4
         ..strokeCap = StrokeCap.round,
     );
-    // Warm apricot pointer tip on the board
     canvas.drawCircle(
       pointerTip,
-      2.6,
+      2.4,
       Paint()..color = EnpriveColors.apricot,
-    );
-    // Deni's thumb wrapping over the baton grip
-    canvas.drawCircle(
-      batonGrip + const Offset(-1.5, -1.5),
-      pw * 0.045,
-      Paint()..color = const Color(0xFF39C4B3),
     );
   }
 
-  /// LISTENING SCENE:
-  /// 1. Over-the-crown Acoustic Headset Arc + Cushioned Left & Right Earcups.
-  /// 2. Right arm reaches up so Deni's paw physically cups/holds the right earcup!
-  /// 3. Left arm gestures toward a prominent Floating Voice Waveform Pill with
-  ///    5 dynamic equalizer bars + concentric soundwave ripples!
+  /// LISTENING SCENE (LOD 2 & LOD 3)
   void _drawListeningScene(
     Canvas canvas,
     double cx,
@@ -1057,7 +1136,6 @@ class _DeniRiggedActionPainter extends CustomPainter {
     final Offset leftCup = Offset(cx - pw * 0.50, cy - ph * 0.04);
     final Offset rightCup = Offset(cx + pw * 0.50, cy - ph * 0.04);
 
-    // A. Acoustic Headband Arc over Deni's crown
     final Path bandPath = Path()
       ..moveTo(leftCup.dx, leftCup.dy)
       ..cubicTo(
@@ -1072,12 +1150,11 @@ class _DeniRiggedActionPainter extends CustomPainter {
       bandPath,
       Paint()
         ..color = const Color(0xFF152036)
-        ..strokeWidth = pw * 0.048
+        ..strokeWidth = pw * 0.046
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke,
     );
 
-    // B. Left & Right Studio Earcups
     for (final cupCenter in [leftCup, rightCup]) {
       final Rect cupRect = Rect.fromCenter(
         center: cupCenter,
@@ -1102,35 +1179,35 @@ class _DeniRiggedActionPainter extends CustomPainter {
         ),
         Paint()
           ..color = EnpriveColors.teal
-          ..strokeWidth = 1.6
+          ..strokeWidth = 1.5
           ..style = PaintingStyle.stroke,
       );
     }
 
-    // C. Right Arm + Paw Physically Holding the Right Earcup (Studio Listener Pose!)
     final Offset rightShoulder = Offset(cx + pw * 0.34, cy + ph * 0.16);
-    final Offset rightElbow = Offset(cx + pw * 0.54, cy + ph * 0.14);
-    final Offset cupGrip = Offset(rightCup.dx - pw * 0.01, rightCup.dy + ph * 0.06);
+    final Offset rightElbow = Offset(cx + pw * 0.52, cy + ph * 0.14);
+    final Offset cupGrip =
+        Offset(rightCup.dx - pw * 0.01, rightCup.dy + ph * 0.06);
     _drawArticulatedArm(
       canvas: canvas,
       shoulder: rightShoulder,
       elbowControl: rightElbow,
       handCenter: cupGrip,
-      armThickness: pw * 0.12,
-      pawRadius: pw * 0.074,
+      armThickness: pw * 0.115,
+      pawRadius: pw * 0.070,
     );
 
-    // D. Left Arm Presenting the Floating Live Voice Equalizer Card
     final Offset leftShoulder = Offset(cx - pw * 0.34, cy + ph * 0.16);
     final Offset leftElbow = Offset(cx - pw * 0.44, cy + ph * 0.24);
-    final Offset leftHand = Offset(cx - pw * 0.36, cy + ph * 0.20 + laggedSin * 1.5);
+    final Offset leftHand =
+        Offset(cx - pw * 0.36, cy + ph * 0.20 + laggedSin * 1.5);
     _drawArticulatedArm(
       canvas: canvas,
       shoulder: leftShoulder,
       elbowControl: leftElbow,
       handCenter: leftHand,
-      armThickness: pw * 0.115,
-      pawRadius: pw * 0.068,
+      armThickness: pw * 0.110,
+      pawRadius: pw * 0.066,
     );
   }
 
@@ -1168,7 +1245,7 @@ class _DeniRiggedActionPainter extends CustomPainter {
     double ph,
     double laggedSin,
   ) {
-    final double handY = cy + ph * 0.22 + (laggedSin * 1.6);
+    final double handY = cy + ph * 0.23 + (laggedSin * 1.4);
     final double claspPulse = math.sin(phase * 4 * math.pi) * (pw * 0.012);
 
     canvas.drawOval(
@@ -1189,8 +1266,8 @@ class _DeniRiggedActionPainter extends CustomPainter {
       RRect.fromRectAndRadius(
         Rect.fromCenter(
           center: Offset.zero,
-          width: pw * 0.26,
-          height: ph * 0.14,
+          width: pw * 0.25,
+          height: ph * 0.135,
         ),
         Radius.circular(pw * 0.08),
       ),
@@ -1200,8 +1277,8 @@ class _DeniRiggedActionPainter extends CustomPainter {
         ).createShader(
           Rect.fromCenter(
             center: Offset.zero,
-            width: pw * 0.26,
-            height: ph * 0.14,
+            width: pw * 0.25,
+            height: ph * 0.135,
           ),
         ),
     );
@@ -1214,8 +1291,8 @@ class _DeniRiggedActionPainter extends CustomPainter {
       RRect.fromRectAndRadius(
         Rect.fromCenter(
           center: Offset.zero,
-          width: pw * 0.26,
-          height: ph * 0.14,
+          width: pw * 0.25,
+          height: ph * 0.135,
         ),
         Radius.circular(pw * 0.08),
       ),
@@ -1225,8 +1302,8 @@ class _DeniRiggedActionPainter extends CustomPainter {
         ).createShader(
           Rect.fromCenter(
             center: Offset.zero,
-            width: pw * 0.26,
-            height: ph * 0.14,
+            width: pw * 0.25,
+            height: ph * 0.135,
           ),
         ),
     );
@@ -1242,8 +1319,9 @@ class _DeniRiggedActionPainter extends CustomPainter {
     double laggedSin,
     double jumpHeightRatio,
   ) {
-    final double tabW = pw * 0.34;
-    final double tabH = ph * 0.24;
+    final bool isCompact = lod == DeniLodTier.compact;
+    final double tabW = pw * (isCompact ? 0.37 : 0.34);
+    final double tabH = ph * (isCompact ? 0.26 : 0.24);
     final double crownY = cy - ph * 0.46;
 
     canvas.save();
@@ -1337,30 +1415,31 @@ class _DeniRiggedActionPainter extends CustomPainter {
     double ph,
     double fastSin,
   ) {
+    final bool isCompact = lod == DeniLodTier.compact;
     final double eyeY = cy - ph * 0.05;
     final double eyeSpacing = pw * 0.24;
     final double leftEyeX = cx - eyeSpacing;
     final double rightEyeX = cx + eyeSpacing;
-    final double eyeRadius = pw * 0.072;
+    final double eyeRadius = pw * (isCompact ? 0.078 : 0.072);
 
     // 1. Soft Blurred Apricot Cheeks
     final Paint blushPaint = Paint()
       ..color = EnpriveColors.apricot.withValues(alpha: 0.58)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.5);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
 
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(leftEyeX - eyeRadius * 0.65, eyeY + eyeRadius * 1.45),
-        width: eyeRadius * 2.3,
-        height: eyeRadius * 1.35,
+        width: eyeRadius * 2.2,
+        height: eyeRadius * 1.30,
       ),
       blushPaint,
     );
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(rightEyeX + eyeRadius * 0.65, eyeY + eyeRadius * 1.45),
-        width: eyeRadius * 2.3,
-        height: eyeRadius * 1.35,
+        width: eyeRadius * 2.2,
+        height: eyeRadius * 1.30,
       ),
       blushPaint,
     );
@@ -1373,7 +1452,7 @@ class _DeniRiggedActionPainter extends CustomPainter {
     if (pose == DeniPose.celebrating || blink > 0.82) {
       final Paint arcPaint = Paint()
         ..color = const Color(0xFF152036)
-        ..strokeWidth = pw * 0.034
+        ..strokeWidth = pw * (isCompact ? 0.040 : 0.034)
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
 
@@ -1397,11 +1476,10 @@ class _DeniRiggedActionPainter extends CustomPainter {
         canvas.scale(1.0, openScaleY);
 
         if (pose == DeniPose.thinking) {
-          // Pupils track the magnifier lens on the right
-          final double scanX =
-              eyeRadius * 0.22 + math.sin(phase * 4 * math.pi) * (eyeRadius * 0.18);
+          final double scanX = eyeRadius * 0.22 +
+              math.sin(phase * 4 * math.pi) * (eyeRadius * 0.18);
           final double scanY =
-              math.sin(phase * 2 * math.pi) * (eyeRadius * 0.22);
+              math.sin(phase * 2 * math.pi) * (eyeRadius * 0.20);
           canvas.drawCircle(
             Offset.zero,
             eyeRadius * 1.06,
@@ -1418,7 +1496,8 @@ class _DeniRiggedActionPainter extends CustomPainter {
             Paint()..color = Colors.white,
           );
         } else if (pose == DeniPose.listening) {
-          final double nodY = math.sin(phase * 4 * math.pi) * (eyeRadius * 0.14);
+          final double nodY =
+              math.sin(phase * 4 * math.pi) * (eyeRadius * 0.14);
           canvas.drawCircle(
             Offset.zero,
             eyeRadius * 1.05,
@@ -1436,7 +1515,7 @@ class _DeniRiggedActionPainter extends CustomPainter {
           );
         } else {
           final double glanceX = pose == DeniPose.explaining
-              ? eyeRadius * 0.24
+              ? eyeRadius * 0.22
               : math.sin(phase * 2 * math.pi) * (eyeRadius * 0.08);
           canvas.drawCircle(Offset(glanceX, 0), eyeRadius, inkPaint);
           canvas.drawCircle(
@@ -1453,18 +1532,17 @@ class _DeniRiggedActionPainter extends CustomPainter {
     final double mouthY = eyeY + eyeRadius * 1.35;
     final Paint mouthStroke = Paint()
       ..color = const Color(0xFF152036)
-      ..strokeWidth = pw * 0.032
+      ..strokeWidth = pw * (isCompact ? 0.038 : 0.032)
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
     switch (pose) {
       case DeniPose.thinking:
-        // Focused "ooh / hmm" reading mouth
         canvas.drawOval(
           Rect.fromCenter(
             center: Offset(cx + pw * 0.02, mouthY + ph * 0.015),
-            width: pw * 0.058,
-            height: ph * 0.042,
+            width: pw * 0.062,
+            height: ph * 0.045,
           ),
           inkPaint,
         );
@@ -1476,8 +1554,8 @@ class _DeniRiggedActionPainter extends CustomPainter {
           RRect.fromRectAndRadius(
             Rect.fromCenter(
               center: Offset(cx, mouthY + ph * 0.012),
-              width: pw * (0.085 + 0.025 * talkOpen),
-              height: ph * (0.030 + 0.048 * talkOpen),
+              width: pw * (0.088 + 0.025 * talkOpen),
+              height: ph * (0.032 + 0.048 * talkOpen),
             ),
             const Radius.circular(8),
           ),
@@ -1508,7 +1586,9 @@ class _DeniRiggedActionPainter extends CustomPainter {
     }
   }
 
-  /// Story-driven external floating badges, soundwave pills & sparkles.
+  /// Story-driven external cues & sparkles scaled by [lod] so small avatars
+  /// (`LOD 1: 48–64dp`) remain clean and unobstructed while `LOD 2` & `LOD 3`
+  /// gain progressive richness.
   void _drawExternalBadges(
     Canvas canvas,
     double cx,
@@ -1518,133 +1598,145 @@ class _DeniRiggedActionPainter extends CustomPainter {
     double phase,
     double fastSin,
   ) {
+    final bool isCompact = lod == DeniLodTier.compact;
+    final bool isHero = lod == DeniLodTier.hero;
+
     switch (pose) {
       case DeniPose.thinking:
-        // Rising analytical thought bubbles above crown
-        final List<(double dx, double dy, double r, double offset)> bubbles = [
-          (pw * 0.30, -ph * 0.42, pw * 0.024, 0.0),
-          (pw * 0.42, -ph * 0.52, pw * 0.034, 0.33),
-          (pw * 0.54, -ph * 0.62, pw * 0.046, 0.66),
-        ];
+        final List<(double dx, double dy, double r, double offset)> bubbles =
+            isCompact
+            ? [
+                (pw * 0.42, -ph * 0.38, pw * 0.032, 0.0),
+                (pw * 0.52, -ph * 0.48, pw * 0.046, 0.35),
+              ]
+            : [
+                (pw * 0.30, -ph * 0.42, pw * 0.024, 0.0),
+                (pw * 0.42, -ph * 0.52, pw * 0.034, 0.33),
+                (pw * 0.54, -ph * 0.60, pw * 0.045, 0.66),
+              ];
         for (final b in bubbles) {
           final double anim = math.sin((phase + b.$4) * 2 * math.pi);
           canvas.drawCircle(
-            Offset(cx + b.$1, cy + b.$2 + anim * 2.5),
+            Offset(cx + b.$1, cy + b.$2 + anim * 2.0),
             b.$3,
             Paint()
-              ..color = EnpriveColors.teal.withValues(
-                alpha: (0.60 + 0.35 * anim).clamp(0.25, 0.95),
-              ),
+              ..color = (isDark
+                      ? EnpriveColors.tealDarkAccent
+                      : EnpriveColors.teal)
+                  .withValues(alpha: (0.65 + 0.30 * anim).clamp(0.30, 0.95)),
           );
         }
 
       case DeniPose.explaining:
-        // Floating Speech / Quotation Callout Bubble on top-left
-        final double bubbleBob = fastSin * 2.0;
-        final Rect speechRect = Rect.fromCenter(
-          center: Offset(cx - pw * 0.46, cy - ph * 0.36 + bubbleBob),
-          width: pw * 0.28,
-          height: ph * 0.18,
-        );
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(speechRect, const Radius.circular(8)),
-          Paint()..color = const Color(0xFFFFFBF4),
-        );
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(speechRect, const Radius.circular(8)),
-          Paint()
-            ..color = EnpriveColors.teal
-            ..strokeWidth = 1.5
-            ..style = PaintingStyle.stroke,
-        );
-        // Animated speech wave bars inside the callout bubble
-        for (int i = 0; i < 2; i++) {
-          final double barY =
-              speechRect.top + speechRect.height * (0.36 + i * 0.28);
-          canvas.drawLine(
-            Offset(speechRect.left + 5, barY),
-            Offset(speechRect.right - (i == 1 ? 8 : 5), barY),
-            Paint()
-              ..color = i == 0 ? EnpriveColors.tealStrong : EnpriveColors.apricot
-              ..strokeWidth = 2.0
-              ..strokeCap = StrokeCap.round,
+        // In LOD 1 (compact) and LOD 3 (hero), show a clean top-left speech pill
+        // outside the head silhouette; in LOD 2 (standard), the right-side quote
+        // board is the single focal prop so the canvas never feels crowded.
+        if (isCompact || isHero) {
+          final double bubbleBob = fastSin * (isCompact ? 1.2 : 2.0);
+          final Rect speechRect = Rect.fromCenter(
+            center: Offset(
+              cx - pw * (isCompact ? 0.44 : 0.45),
+              cy - ph * (isCompact ? 0.38 : 0.36) + bubbleBob,
+            ),
+            width: pw * (isCompact ? 0.24 : 0.27),
+            height: ph * (isCompact ? 0.16 : 0.18),
           );
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(speechRect, const Radius.circular(7)),
+            Paint()..color = const Color(0xFFFFFBF4),
+          );
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(speechRect, const Radius.circular(7)),
+            Paint()
+              ..color = EnpriveColors.teal
+              ..strokeWidth = 1.4
+              ..style = PaintingStyle.stroke,
+          );
+          for (int i = 0; i < 2; i++) {
+            final double barY =
+                speechRect.top + speechRect.height * (0.36 + i * 0.28);
+            canvas.drawLine(
+              Offset(speechRect.left + 4, barY),
+              Offset(speechRect.right - (i == 1 ? 6 : 4), barY),
+              Paint()
+                ..color =
+                    i == 0 ? EnpriveColors.tealStrong : EnpriveColors.apricot
+                ..strokeWidth = 1.8
+                ..strokeCap = StrokeCap.round,
+            );
+          }
         }
 
       case DeniPose.listening:
-        // 1. Prominent Floating Voice Waveform Pill on top-left with 5 dynamic bars
-        final Rect waveCard = Rect.fromCenter(
-          center: Offset(cx - pw * 0.44, cy - ph * 0.36 + fastSin * 1.5),
-          width: pw * 0.38,
-          height: ph * 0.22,
-        );
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            waveCard.shift(const Offset(0, 2.5)),
-            const Radius.circular(10),
-          ),
-          Paint()
-            ..color = const Color(0xFF0E4A43).withValues(alpha: 0.16)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
-        );
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(waveCard, const Radius.circular(10)),
-          Paint()..color = const Color(0xFFFFFBF4),
-        );
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(waveCard, const Radius.circular(10)),
-          Paint()
-            ..color = EnpriveColors.teal.withValues(alpha: 0.48)
-            ..strokeWidth = 1.4
-            ..style = PaintingStyle.stroke,
-        );
-
-        // 5-Bar Live Equalizer inside the Voice Waveform Card
-        for (int b = 0; b < 5; b++) {
-          final double pulse =
-              math.sin((phase * 6 * math.pi) + b * 0.95) * 0.5 + 0.5;
-          final double barH = waveCard.height * (0.24 + 0.52 * pulse);
-          final double bx =
-              waveCard.left + waveCard.width * (0.20 + b * 0.15);
-          canvas.drawLine(
-            Offset(bx, waveCard.center.dy + barH * 0.5),
-            Offset(bx, waveCard.center.dy - barH * 0.5),
-            Paint()
-              ..color = b.isEven
-                  ? EnpriveColors.tealStrong
-                  : EnpriveColors.apricot
-              ..strokeWidth = 2.4
-              ..strokeCap = StrokeCap.round,
+        // In Hero LOD (116dp+), show the full 5-bar voice waveform card on top-left
+        if (isHero) {
+          final Rect waveCard = Rect.fromCenter(
+            center: Offset(cx - pw * 0.42, cy - ph * 0.36 + fastSin * 1.5),
+            width: pw * 0.36,
+            height: ph * 0.21,
           );
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(waveCard, const Radius.circular(9)),
+            Paint()..color = const Color(0xFFFFFBF4),
+          );
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(waveCard, const Radius.circular(9)),
+            Paint()
+              ..color = EnpriveColors.teal.withValues(alpha: 0.48)
+              ..strokeWidth = 1.4
+              ..style = PaintingStyle.stroke,
+          );
+          for (int b = 0; b < 5; b++) {
+            final double pulse =
+                math.sin((phase * 6 * math.pi) + b * 0.95) * 0.5 + 0.5;
+            final double barH = waveCard.height * (0.24 + 0.50 * pulse);
+            final double bx =
+                waveCard.left + waveCard.width * (0.20 + b * 0.15);
+            canvas.drawLine(
+              Offset(bx, waveCard.center.dy + barH * 0.5),
+              Offset(bx, waveCard.center.dy - barH * 0.5),
+              Paint()
+                ..color = b.isEven
+                    ? EnpriveColors.tealStrong
+                    : EnpriveColors.apricot
+                ..strokeWidth = 2.2
+                ..strokeCap = StrokeCap.round,
+            );
+          }
         }
 
-        // 2. 3 Concentric Acoustic Wave Arcs radiating into Deni's right earcup
-        for (int i = 0; i < 3; i++) {
+        // Acoustic wave arcs radiating near Deni's right earcup (all LODs)
+        final int arcCount = isCompact ? 2 : 3;
+        for (int i = 0; i < arcCount; i++) {
           final double pulse =
               math.sin((phase * 4 * math.pi) - (i * 0.65)) * 0.5 + 0.5;
-          final double radius = pw * (0.14 + i * 0.075);
+          final double radius = pw * (0.13 + i * 0.068);
           canvas.drawArc(
             Rect.fromCircle(
-              center: Offset(cx + pw * 0.50, cy - ph * 0.04),
+              center: Offset(cx + pw * 0.48, cy - ph * 0.04),
               radius: radius,
             ),
-            -0.68,
-            1.35,
+            -0.65,
+            1.30,
             false,
             Paint()
-              ..color =
-                  EnpriveColors.teal.withValues(alpha: 0.28 + 0.58 * pulse)
-              ..strokeWidth = 2.4
+              ..color = (isDark
+                      ? EnpriveColors.tealDarkAccent
+                      : EnpriveColors.teal)
+                  .withValues(alpha: 0.28 + 0.55 * pulse)
+              ..strokeWidth = isCompact ? 1.8 : 2.2
               ..strokeCap = StrokeCap.round
               ..style = PaintingStyle.stroke,
           );
         }
 
       case DeniPose.support:
-        final double badgeBob = math.sin(phase * 2 * math.pi) * 3.0;
-        final Offset badgeCenter =
-            Offset(cx + pw * 0.52, cy - ph * 0.24 + badgeBob);
-        final double br = pw * 0.11;
+        final double badgeBob = math.sin(phase * 2 * math.pi) * 2.2;
+        final Offset badgeCenter = Offset(
+          cx + pw * (isCompact ? 0.46 : 0.50),
+          cy - ph * 0.24 + badgeBob,
+        );
+        final double br = pw * (isCompact ? 0.115 : 0.105);
 
         canvas.drawCircle(
           badgeCenter,
@@ -1656,19 +1748,19 @@ class _DeniRiggedActionPainter extends CustomPainter {
           br,
           Paint()
             ..color = EnpriveColors.apricot.withValues(alpha: 0.85)
-            ..strokeWidth = 1.8
+            ..strokeWidth = 1.6
             ..style = PaintingStyle.stroke,
         );
         final Path qArc = Path()
-          ..moveTo(badgeCenter.dx - br * 0.28, badgeCenter.dy - br * 0.22)
+          ..moveTo(badgeCenter.dx - br * 0.26, badgeCenter.dy - br * 0.20)
           ..quadraticBezierTo(
             badgeCenter.dx,
-            badgeCenter.dy - br * 0.62,
-            badgeCenter.dx + br * 0.28,
-            badgeCenter.dy - br * 0.20,
+            badgeCenter.dy - br * 0.58,
+            badgeCenter.dx + br * 0.26,
+            badgeCenter.dy - br * 0.18,
           )
           ..quadraticBezierTo(
-            badgeCenter.dx + br * 0.28,
+            badgeCenter.dx + br * 0.26,
             badgeCenter.dy,
             badgeCenter.dx,
             badgeCenter.dy + br * 0.12,
@@ -1677,34 +1769,36 @@ class _DeniRiggedActionPainter extends CustomPainter {
           qArc,
           Paint()
             ..color = EnpriveColors.ink
-            ..strokeWidth = 1.8
+            ..strokeWidth = 1.6
             ..strokeCap = StrokeCap.round
             ..style = PaintingStyle.stroke,
         );
         canvas.drawCircle(
-          Offset(badgeCenter.dx, badgeCenter.dy + br * 0.42),
-          1.4,
+          Offset(badgeCenter.dx, badgeCenter.dy + br * 0.40),
+          1.3,
           Paint()..color = EnpriveColors.ink,
         );
 
       case DeniPose.celebrating:
         _drawSparkle(
           canvas,
-          Offset(cx + pw * 0.50, cy - ph * 0.34),
-          pw * 0.080 * (0.75 + 0.25 * fastSin),
+          Offset(cx + pw * 0.46, cy - ph * 0.34),
+          pw * 0.076 * (0.75 + 0.25 * fastSin),
           const Color(0xFFE6B450),
         );
+        if (!isCompact) {
+          _drawSparkle(
+            canvas,
+            Offset(cx + pw * 0.55, cy - ph * 0.18),
+            pw * 0.048 * (0.75 - 0.25 * fastSin),
+            EnpriveColors.apricot,
+          );
+        }
         _drawSparkle(
           canvas,
-          Offset(cx + pw * 0.60, cy - ph * 0.18),
-          pw * 0.050 * (0.75 - 0.25 * fastSin),
-          EnpriveColors.apricot,
-        );
-        _drawSparkle(
-          canvas,
-          Offset(cx - pw * 0.50, cy - ph * 0.28),
-          pw * 0.058 * (0.75 - 0.25 * fastSin),
-          EnpriveColors.teal,
+          Offset(cx - pw * 0.46, cy - ph * 0.28),
+          pw * 0.056 * (0.75 - 0.25 * fastSin),
+          isDark ? EnpriveColors.tealDarkAccent : EnpriveColors.teal,
         );
 
       case DeniPose.idle:
@@ -1729,6 +1823,8 @@ class _DeniRiggedActionPainter extends CustomPainter {
         oldDelegate.blink != blink ||
         oldDelegate.springT != springT ||
         oldDelegate.pose != pose ||
+        oldDelegate.lod != lod ||
+        oldDelegate.isDark != isDark ||
         oldDelegate.showAmbientGlow != showAmbientGlow;
   }
 }

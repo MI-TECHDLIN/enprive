@@ -47,6 +47,9 @@ dependencies:
   beautiful_timeline: ^0.1.0
   lucide_icons_flutter: ^4.0.3
   iconify_flutter: ^0.0.7
+  material_3_expressive: 1.2.1
+  material_color_utilities: ^0.13.0
+  material_ui: ^1.11.0
 
 dev_dependencies:
   flutter_test:

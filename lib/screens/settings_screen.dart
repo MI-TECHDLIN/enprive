@@ -3,6 +3,7 @@ import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/theme/enprive_colors.dart';
+import '../core/theme/enprive_theme.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/enprive_languages.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
@@ -12,18 +13,20 @@ import '../widgets/enprive_duotone_icon.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/language_picker_sheet.dart';
 import '../widgets/private_readiness_sheet.dart';
+import 'design_system_preview_screen.dart';
 
-/// Settings & Private Analysis Readiness Screen crafted from Brilliant B19
-/// (`b19-permission-prime.png` — Deni peeking over a mock status card) and
-/// Brilliant B3 (`b03-question-cards.png` — soft grey choice cards).
+/// Settings & Private Analysis Readiness Screen with Material 3 Expressive
+/// token integration, System/Light/Dark appearance control, and 3-tier Deni LOD.
 class SettingsScreen extends StatefulWidget {
   final HybridAiBridge bridge;
   final DeviceCapability? capability;
   final ExplanationDepth explanationDepth;
   final Locale currentLocale;
+  final ThemeMode currentThemeMode;
   final int savedReceiptsCount;
   final ValueChanged<ExplanationDepth> onExplanationDepthChanged;
   final ValueChanged<Locale> onLocaleChanged;
+  final ValueChanged<ThemeMode>? onThemeModeChanged;
   final VoidCallback onRefreshCapability;
   final VoidCallback onClearAllReceipts;
   final VoidCallback? onReplayOnboarding;
@@ -34,9 +37,11 @@ class SettingsScreen extends StatefulWidget {
     required this.capability,
     required this.explanationDepth,
     required this.currentLocale,
+    this.currentThemeMode = ThemeMode.system,
     required this.savedReceiptsCount,
     required this.onExplanationDepthChanged,
     required this.onLocaleChanged,
+    this.onThemeModeChanged,
     required this.onRefreshCapability,
     required this.onClearAllReceipts,
     this.onReplayOnboarding,
@@ -74,11 +79,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     BuildContext context,
     AppLocalizations l10n,
   ) async {
+    final surfaces = context.surfaceTokens;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: EnpriveColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: surfaces.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(EnpriveRadii.xl),
+          side: BorderSide(color: surfaces.hairlineBorder),
+        ),
         title: Text(
           l10n.confirmClearReceiptsTitle,
           style: const TextStyle(fontWeight: FontWeight.w800),
@@ -92,9 +101,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(l10n.btnCancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: EnpriveColors.ctaInk,
-            ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(l10n.btnClear),
           ),
@@ -110,6 +116,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final activeLang = enpriveLanguageByCode(widget.currentLocale.languageCode);
+    final surfaces = context.surfaceTokens;
+    final semantics = context.semanticColors;
+    final colorScheme = context.colorScheme;
+    final isDark = context.isDarkMode;
+
     final cap = widget.capability;
     final isReady =
         cap?.isSupported == true &&
@@ -128,28 +139,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 20),
 
-            // 1. Brilliant B19 Pattern: Deni peeking over a clean status card
+            // 1. Deni Companion Status Card (LOD 2: 76dp standard companion)
+            // Uses calm `idle` when ready (never `celebrating` as a passive state)
             Center(
               child: Column(
                 children: [
                   Transform.translate(
                     offset: const Offset(0, 10),
                     child: DeniAnimatedMascot(
-                      size: 72,
+                      size: 76,
                       pose: _isCheckingModel
                           ? DeniPose.thinking
-                          : (isReady ? DeniPose.celebrating : DeniPose.idle),
+                          : (effectiveReady ? DeniPose.idle : DeniPose.support),
                     ),
                   ),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: EnpriveColors.surface,
-                      borderRadius: BorderRadius.circular(24),
+                      color: surfaces.card,
+                      borderRadius: BorderRadius.circular(EnpriveRadii.xl),
+                      border: Border.all(color: surfaces.hairlineBorder),
                       boxShadow: [
                         BoxShadow(
-                          color: EnpriveColors.ink.withValues(alpha: 0.05),
+                          color: surfaces.ambientShadowColor,
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -163,12 +176,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               width: 44,
                               height: 44,
                               decoration: BoxDecoration(
-                                color: EnpriveColors.chipOnDeviceBg,
+                                color: semantics.onDevice.background,
                                 borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: semantics.onDevice.border,
+                                ),
                               ),
-                              child: const EnpriveDuotoneIcon(
+                              child: EnpriveDuotoneIcon(
                                 Ph.shield_check_duotone,
-                                color: EnpriveColors.tealStrong,
+                                color: semantics.onDevice.icon,
                                 size: 22,
                               ),
                             ),
@@ -179,10 +195,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 children: [
                                   Text(
                                     l10n.privateAnalysisTitle,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w800,
-                                      color: EnpriveColors.ink,
+                                      color: colorScheme.onSurface,
                                     ),
                                   ),
                                   const SizedBox(height: 3),
@@ -190,9 +206,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     effectiveReady
                                         ? l10n.onDeviceReadyMsg
                                         : l10n.localScannerProtectedMsg,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 13,
-                                      color: EnpriveColors.inkSecondary,
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
@@ -219,13 +235,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             const SizedBox(height: 28),
 
-            // 2. Brilliant B3 Pattern: Soft Choice Cards for Explanation Style
+            // 2. Explanation Depth Selector (48dp+ accessible touch targets)
             Text(
               l10n.howShouldDeniExplain,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: EnpriveColors.ink,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 12),
@@ -246,30 +262,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     l10n.depthFull,
                   ),
                 };
+                final activeAccent = isDark
+                    ? EnpriveColors.tealDarkAccent
+                    : EnpriveColors.teal;
                 return Expanded(
                   child: Padding(
                     padding: EdgeInsetsDirectional.only(
                       end: depth != ExplanationDepth.detailed ? 10.0 : 0,
                     ),
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(EnpriveRadii.lg),
                       onTap: () => widget.onExplanationDepthChanged(depth),
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 160),
+                        duration: context.motionTokens.effectiveDuration(
+                          context,
+                          context.motionTokens.effectsFast,
+                        ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
                           vertical: 18,
                         ),
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? EnpriveColors.surface
-                              : EnpriveColors.surfaceMuted,
-                          borderRadius: BorderRadius.circular(20),
+                          color: isSelected ? surfaces.card : surfaces.cardMuted,
+                          borderRadius: BorderRadius.circular(EnpriveRadii.lg),
                           border: Border.all(
                             color: isSelected
-                                ? EnpriveColors.teal
-                                : Colors.transparent,
-                            width: 2.0,
+                                ? activeAccent
+                                : surfaces.hairlineBorder,
+                            width: isSelected ? 2.0 : 1.0,
                           ),
                         ),
                         child: Column(
@@ -279,16 +299,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               height: 40,
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? EnpriveColors.chipOnDeviceBg
-                                    : EnpriveColors.surface,
+                                    ? semantics.onDevice.background
+                                    : surfaces.card,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: EnpriveDuotoneIcon(
                                 iconSvg,
                                 size: 20,
                                 color: isSelected
-                                    ? EnpriveColors.tealStrong
-                                    : EnpriveColors.inkSecondary,
+                                    ? semantics.onDevice.icon
+                                    : colorScheme.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(height: 10),
@@ -300,8 +320,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 fontSize: 14,
                                 fontWeight: FontWeight.w800,
                                 color: isSelected
-                                    ? EnpriveColors.ink
-                                    : EnpriveColors.inkSecondary,
+                                    ? colorScheme.onSurface
+                                    : colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -315,19 +335,114 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             const SizedBox(height: 28),
 
-            // 3. Clean Minimal Preferences Group
+            // 3. Appearance (System / Light / Dark — Brand-Locked HCT, no OS wallpaper override)
             Text(
-              l10n.preferencesSection,
-              style: const TextStyle(
+              'Appearance',
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: EnpriveColors.ink,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                for (final (index, entry) in [
+                  (ThemeMode.system, LucideIcons.smartphone, 'System'),
+                  (ThemeMode.light, LucideIcons.sun, 'Light'),
+                  (ThemeMode.dark, LucideIcons.moon, 'Dark'),
+                ].indexed)
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsetsDirectional.only(
+                        end: index < 2 ? 10.0 : 0.0,
+                      ),
+                      child: InkWell(
+                        key: Key('theme_mode_option_${entry.$1.name}'),
+                        borderRadius: BorderRadius.circular(EnpriveRadii.lg),
+                        onTap: () =>
+                            widget.onThemeModeChanged?.call(entry.$1),
+                        child: AnimatedContainer(
+                          duration: context.motionTokens.effectiveDuration(
+                            context,
+                            context.motionTokens.effectsFast,
+                          ),
+                          constraints: const BoxConstraints(
+                            minHeight: EnpriveSpacing.minTouchTarget,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: widget.currentThemeMode == entry.$1
+                                ? surfaces.card
+                                : surfaces.cardMuted,
+                            borderRadius:
+                                BorderRadius.circular(EnpriveRadii.lg),
+                            border: Border.all(
+                              color: widget.currentThemeMode == entry.$1
+                                  ? (isDark
+                                        ? EnpriveColors.tealDarkAccent
+                                        : EnpriveColors.teal)
+                                  : surfaces.hairlineBorder,
+                              width: widget.currentThemeMode == entry.$1
+                                  ? 2.0
+                                  : 1.0,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                entry.$2,
+                                size: 16,
+                                color: widget.currentThemeMode == entry.$1
+                                    ? semantics.onDevice.icon
+                                    : colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  entry.$3,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: widget.currentThemeMode == entry.$1
+                                        ? colorScheme.onSurface
+                                        : colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: 28),
+
+            // 4. Preferences Group (M3 Expressive Contained List)
+            Text(
+              l10n.preferencesSection,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 12),
             Material(
-              color: EnpriveColors.surface,
-              borderRadius: BorderRadius.circular(24),
+              color: surfaces.card,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(EnpriveRadii.xl),
+                side: BorderSide(color: surfaces.hairlineBorder),
+              ),
               clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
@@ -347,10 +462,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                     title: Text(
                       l10n.languageTitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
-                        color: EnpriveColors.ink,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     trailing: Row(
@@ -362,23 +477,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: EnpriveColors.chipOnDeviceBg,
-                            borderRadius: BorderRadius.circular(999),
+                            color: semantics.onDevice.background,
+                            borderRadius:
+                                BorderRadius.circular(EnpriveRadii.pill),
+                            border: Border.all(color: semantics.onDevice.border),
                           ),
                           child: Text(
                             activeLang.nativeName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w800,
-                              color: EnpriveColors.tealStrong,
+                              color: semantics.onDevice.foreground,
                             ),
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(
+                        Icon(
                           LucideIcons.chevronRight,
                           size: 18,
-                          color: EnpriveColors.inkSecondary,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ],
                     ),
@@ -387,7 +504,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     height: 1,
                     indent: 20,
                     endIndent: 20,
-                    color: EnpriveColors.ink.withValues(alpha: 0.06),
+                    color: surfaces.hairlineBorder,
                   ),
                   if (widget.onReplayOnboarding != null) ...[
                     ListTile(
@@ -398,25 +515,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onTap: widget.onReplayOnboarding,
                       title: Text(
                         l10n.meetDeniGuide,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
-                          color: EnpriveColors.ink,
+                          color: colorScheme.onSurface,
                         ),
                       ),
-                      trailing: const Icon(
+                      trailing: Icon(
                         LucideIcons.chevronRight,
                         size: 18,
-                        color: EnpriveColors.inkSecondary,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     Divider(
                       height: 1,
                       indent: 20,
                       endIndent: 20,
-                      color: EnpriveColors.ink.withValues(alpha: 0.06),
+                      color: surfaces.hairlineBorder,
                     ),
                   ],
+                  ListTile(
+                    key: const Key('open_design_system_preview_tile'),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 4,
+                    ),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => DesignSystemPreviewScreen(
+                            currentThemeMode: widget.currentThemeMode,
+                            onThemeModeChanged: widget.onThemeModeChanged,
+                          ),
+                        ),
+                      );
+                    },
+                    title: Text(
+                      'Theme & Deni LOD Preview',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    trailing: Icon(
+                      LucideIcons.chevronRight,
+                      size: 18,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  Divider(
+                    height: 1,
+                    indent: 20,
+                    endIndent: 20,
+                    color: surfaces.hairlineBorder,
+                  ),
                   ListTile(
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -424,10 +577,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     title: Text(
                       l10n.clearSavedReceiptsCount(widget.savedReceiptsCount),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
-                        color: EnpriveColors.ink,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     trailing: TextButton(
@@ -439,8 +592,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           color: widget.savedReceiptsCount == 0
-                              ? EnpriveColors.inkDisabled
-                              : EnpriveColors.stateReviewRecommendedFg,
+                              ? surfaces.disabledFg
+                              : semantics.reviewRecommended.foreground,
                         ),
                       ),
                     ),

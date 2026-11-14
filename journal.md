@@ -688,7 +688,41 @@
   - `flutter test`: **39/39 passed**.
   - `cd android && ./gradlew :app:testDebugUnitTest --console=plain`: **BUILD SUCCESSFUL**, `HybridAiPolicyTest`: **15/15 passed**.
 - **Next Immediate Action & Recommended Model**:
-  - Commit the verified Phase A + Audit baseline (`Iterations 14–18`) on `feature/phase-a-privacy-boundary`, branch `feature/m3-expressive-rebrand`, and execute **Design Phase 1 — Theme Foundation and Deni LOD**.
+  - Commit the verified Phase A + Audit baseline (`Iterations 14–18`) on `feature/phase-a-privacy-boundary`, branch `feature/m3-expressive-rebrand`, and execute **Stage 0 — Material 3 Expressive Proof of Concept**.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 19 — Stage 0 Material 3 Expressive (`material_3_expressive: 1.2.1`) Proof of Concept, Namespace Bridge & Deni 3-Tier LOD (`feature/m3-expressive-rebrand`)
+- **Date**: 2026-11-14
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (branched from `feature/phase-a-privacy-boundary` commit `c902d16`)
+- **Active Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+- **Mandatory Skills & Inspiration Referenced**:
+  - `charliesbot/android-design` (`.agents/skills/android-design/SKILL.md` + `theming.md`, `components.md`, `layout.md`, `android-conventions.md`)
+  - `hamen/material-3-skill` (`.agents/skills/material-3/SKILL.md` + 6 reference files)
+  - `.agents/skills/svg-mascot-animator/SKILL.md` & `.agents/skills/mobile-app-ui-design/SKILL.md`
+  - All 8 visual inspiration boards in `mobile ui and ux inspration/` (untracked per `AGENTS.md` Rule 2.3)
+- **What Was Built**:
+  - **1. Dependencies (`pubspec.yaml`)**:
+    - Added `material_3_expressive: 1.2.1` (exact pin), `material_color_utilities: ^0.13.0`, and `material_ui: ^1.11.0`.
+  - **2. M3E Theme Architecture & Dual-Namespace Bridge (`lib/core/theme/enprive_m3e_theme.dart`, `lib/core/theme/enprive_theme.dart`, `lib/core/theme/enprive_tokens.dart`)**:
+    - Built `EnpriveM3ETheme` with complete 44-role `M3EColorScheme`s for Light ("Warm Archival Paper" `#FAF7F2` / `#FFFFFF`) and Dark ("Obsidian Ceramic Slate" `#0C1116` / `#141C23`), dual-scale `M3ETypography` (`baseline` + `emphasized` with `Nunito` brand and `Inter` plain typefaces), and configured `M3ECardTheme`, `M3EButtonTheme`, `M3EAppBarTheme`, and `M3ENavigationBarTheme`.
+    - Built `EnpriveM3EBridgeScope` synchronizing `M3ETheme`, `modern.Theme`, `MaterialUiCompatibilityBridge`, `legacy.Theme` (with `EnpriveSemanticColors`, `EnpriveSurfaceTokens`, `EnpriveMotionTokens`, and `EnpriveTypographyExtension`), and `legacy.ScaffoldMessenger`.
+    - Created `EnpriveM3ETheme.localizationsDelegates` combining `AppLocalizations.delegate`, `...modern.GlobalMaterialLocalizations.delegates`, and `legacy_l10n.Global*Localizations.delegate` for full 13-locale + RTL (`ar`) support.
+  - **3. Deni 3-Tier LOD System (`lib/widgets/deni_animated_mascot.dart`)**:
+    - Implemented `DeniLodTier` (`compact` `48–64dp`, `standard` `68–112dp`, `hero` `116dp+`) with automatic `resolveTierForSize(size)`, dark-mode luminous teal rim-lighting, and non-certification star particles for `celebrating`.
+  - **4. Root App Shell & Stage 0 Proof-of-Concept Screen (`lib/main.dart`, `lib/screens/design_system_preview_screen.dart`, `lib/screens/settings_screen.dart`, `lib/services/storage/receipt_repository.dart`)**:
+    - Migrated `EnpriveApp` in `lib/main.dart` to `M3EMaterialApp` + `EnpriveM3EBridgeScope` with persisted `ThemeMode` (`system`, `light`, `dark`) in `UserPreferencesRepository`.
+    - Built `EnpriveM3EStage0App` and `DesignSystemPreviewScreen` showcasing `M3EAppBar.top`, `M3ESegmentedButton`, `M3ESearchBar`, asymmetric Bento posture grid (`M3EProgressIndicator.linearWavy` + `M3ELoadingIndicator`), Deni `52dp`/`84dp`/`144dp` LODs with `M3EChip` pose toggles, `M3EList` + `M3EListItem` segmented containment, `Q1` verbatim quote card, `M3EButtonGroup`, `M3EButton.filled`, `M3EBottomSheet.show`, and `M3ENavigationBar`.
+- **Challenges & Root-Cause Fixes**:
+  - **Decoupled Localization Delegates in `M3EMaterialApp`**: `modern.MaterialApp` (`package:material_ui`) requires `modern.GlobalMaterialLocalizations.delegates` (`material_ui` + `cupertino_ui`); fixed by spreading `...modern.GlobalMaterialLocalizations.delegates` in `EnpriveM3ETheme.localizationsDelegates`.
+  - **`M3ELoadingIndicator` Spec Size Range Assertion**: `M3ELoadingIndicator` asserts `size in 24.0..240.0`; standardized compact inline indicator size to `28dp`.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **46/46 passed (100%)**.
+  - `flutter build apk --debug`: **Built `build/app/outputs/flutter-apk/app-debug.apk` cleanly**; verified live Light & Dark screenshots on `emulator-5554`.
+- **Next Immediate Action & Recommended Model**:
+  - Execute **Stage 1 — Full Token & Reusable M3E Component System** on `feature/m3-expressive-rebrand`.
   - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
 
 ---

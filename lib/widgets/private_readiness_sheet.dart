@@ -143,7 +143,7 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
                   size: 84,
                   pose: _isPreparing
                       ? DeniPose.thinking
-                      : (isReady ? DeniPose.celebrating : DeniPose.idle),
+                      : (isReady ? DeniPose.idle : DeniPose.support),
                 ),
               ),
 

@@ -2,11 +2,11 @@ import 'package:animated_status_card/animated_status_card.dart';
 import 'package:beautiful_timeline/beautiful_timeline.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:lucide_icons_flutter/lucide_icons_500.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 
 import 'core/theme/enprive_colors.dart';
 import 'core/theme/enprive_theme.dart';
@@ -54,28 +54,49 @@ class EnpriveApp extends StatefulWidget {
 
 class _EnpriveAppState extends State<EnpriveApp> {
   Locale _locale = const Locale('en');
+  ThemeMode _themeMode = ThemeMode.system;
 
   void _setLocale(Locale newLocale) {
     setState(() => _locale = newLocale);
   }
 
+  void _setThemeMode(ThemeMode newThemeMode) {
+    setState(() => _themeMode = newThemeMode);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    final platformBrightness =
+        MediaQuery.maybePlatformBrightnessOf(context) ?? Brightness.light;
+    final activeM3EData = EnpriveM3ETheme.resolve(
+      mode: _themeMode,
+      platformBrightness: platformBrightness,
+    );
+
+    return M3EMaterialApp(
       title: 'Enprive',
       debugShowCheckedModeBanner: false,
-      theme: EnpriveTheme.lightTheme,
+      data: activeM3EData,
+      typeface: EnpriveM3ETheme.typefaceConfig,
+      autoTheming: _themeMode == ThemeMode.system,
+      dynamicColoring: false,
+      initialTheme: activeM3EData.brightness,
+      theme: EnpriveM3ETheme.lightThemeData.toThemeData(),
+      darkTheme: EnpriveM3ETheme.darkThemeData.toThemeData(),
       locale: _locale,
       supportedLocales: AppLocalizations.supportedLocales,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      localizationsDelegates: EnpriveM3ETheme.localizationsDelegates,
+      appBuilder: (context, child) {
+        return EnpriveM3EBridgeScope(
+          themeMode: _themeMode,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       home: HomeScreen(
         currentLocale: _locale,
         onLocaleChange: _setLocale,
+        currentThemeMode: _themeMode,
+        onThemeModeChange: _setThemeMode,
         showSplashOnLaunch: widget.showSplashOnLaunch,
         splashDuration: widget.splashDuration,
       ),
@@ -86,6 +107,8 @@ class _EnpriveAppState extends State<EnpriveApp> {
 class HomeScreen extends StatefulWidget {
   final Locale currentLocale;
   final ValueChanged<Locale> onLocaleChange;
+  final ThemeMode currentThemeMode;
+  final ValueChanged<ThemeMode>? onThemeModeChange;
   final bool showSplashOnLaunch;
   final Duration splashDuration;
 
@@ -93,6 +116,8 @@ class HomeScreen extends StatefulWidget {
     super.key,
     required this.currentLocale,
     required this.onLocaleChange,
+    this.currentThemeMode = ThemeMode.system,
+    this.onThemeModeChange,
     this.showSplashOnLaunch = true,
     this.splashDuration = const Duration(milliseconds: 1400),
   });
@@ -195,6 +220,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
       final savedLocale = enpriveLanguageByCode(prefs.languageCode).locale;
       if (savedLocale.languageCode != widget.currentLocale.languageCode) {
         widget.onLocaleChange(savedLocale);
+      }
+      if (prefs.themeMode != widget.currentThemeMode) {
+        widget.onThemeModeChange?.call(prefs.themeMode);
       }
       if (!prefs.hasCompletedOnboarding) {
         if (_isSplashVisible) {
@@ -410,7 +438,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
     setState(() {
       _activePose = switch (receipt.overallState) {
         ReviewOverallState.reviewRecommended => DeniPose.explaining,
-        ReviewOverallState.noConcern => DeniPose.celebrating,
+        ReviewOverallState.noConcern => DeniPose.idle,
         ReviewOverallState.insufficientEvidence => DeniPose.support,
       };
     });
@@ -454,6 +482,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
     final activeLang = enpriveLanguageByCode(widget.currentLocale.languageCode);
     final disableAnimations =
         MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final surfaces = context.surfaceTokens;
+    final colorScheme = context.colorScheme;
 
     final mainScaffold = Scaffold(
       extendBody: true,
@@ -467,7 +497,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: EnpriveColors.ink.withValues(alpha: 0.12),
+                  color: surfaces.hairlineBorder,
                   width: 1,
                 ),
               ),
@@ -484,7 +514,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
             Text(
               l10n.appTitle,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: EnpriveColors.ink,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -514,31 +544,32 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: EnpriveColors.surfaceMuted,
+                    color: surfaces.cardMuted,
                     borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: surfaces.hairlineBorder),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         LucideIcons.globe,
                         size: 14,
-                        color: EnpriveColors.ink,
+                        color: colorScheme.onSurface,
                       ),
                       const SizedBox(width: 5),
                       Text(
                         activeLang.shortBadge,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,
-                          color: EnpriveColors.ink,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(width: 2),
-                      const Icon(
+                      Icon(
                         LucideIcons.chevronDown,
                         size: 13,
-                        color: EnpriveColors.inkSecondary,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ],
                   ),
@@ -565,6 +596,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
             capability: _deviceCapability,
             explanationDepth: _explanationDepth,
             currentLocale: widget.currentLocale,
+            currentThemeMode: widget.currentThemeMode,
             savedReceiptsCount: _savedReceipts.length,
             onExplanationDepthChanged: (depth) {
               setState(() => _explanationDepth = depth);
@@ -573,6 +605,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
             onLocaleChanged: (locale) {
               widget.onLocaleChange(locale);
               unawaited(_prefsRepo.update(languageCode: locale.languageCode));
+            },
+            onThemeModeChanged: (mode) {
+              widget.onThemeModeChange?.call(mode);
+              unawaited(_prefsRepo.update(themeMode: mode));
             },
             onRefreshCapability: _refreshCapability,
             onClearAllReceipts: _clearAllReceipts,
@@ -1346,6 +1382,12 @@ class _FloatingBottomNavDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surfaces = context.surfaceTokens;
+    final colorScheme = context.colorScheme;
+    final activeColor = context.isDarkMode
+        ? EnpriveColors.tealDarkAccent
+        : EnpriveColors.tealStrong;
+
     final items = [
       (icon: LucideIcons500.house, label: l10n.navHome),
       (icon: LucideIcons500.receiptText, label: l10n.navReceipts),
@@ -1360,11 +1402,12 @@ class _FloatingBottomNavDock extends StatelessWidget {
           height: 68,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: EnpriveColors.surface,
+            color: surfaces.card,
             borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: surfaces.hairlineBorder),
             boxShadow: [
               BoxShadow(
-                color: EnpriveColors.ink.withValues(alpha: 0.08),
+                color: surfaces.ambientShadowColor,
                 blurRadius: 24,
                 offset: const Offset(0, 8),
               ),
@@ -1387,13 +1430,13 @@ class _FloatingBottomNavDock extends StatelessWidget {
                       Badge(
                         isLabelVisible: showBadge,
                         label: Text('$receiptsCount'),
-                        backgroundColor: EnpriveColors.tealStrong,
+                        backgroundColor: activeColor,
                         child: Icon(
                           item.icon,
                           size: 24,
                           color: isSelected
-                              ? EnpriveColors.tealStrong
-                              : EnpriveColors.inkSecondary,
+                              ? activeColor
+                              : colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -1405,8 +1448,8 @@ class _FloatingBottomNavDock extends StatelessWidget {
                               ? FontWeight.w800
                               : FontWeight.w600,
                           color: isSelected
-                              ? EnpriveColors.tealStrong
-                              : EnpriveColors.inkSecondary,
+                              ? activeColor
+                              : colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],

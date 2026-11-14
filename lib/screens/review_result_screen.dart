@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+
 import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_theme.dart';
 import '../domain/permissions/permission_comparator.dart';
@@ -52,9 +53,10 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
 
   DeniPose get _statePose {
     if (_isSpeaking) return DeniPose.listening;
+    if (_isSaved) return DeniPose.celebrating;
     return switch (widget.receipt.overallState) {
       ReviewOverallState.reviewRecommended => DeniPose.explaining,
-      ReviewOverallState.noConcern => DeniPose.celebrating,
+      ReviewOverallState.noConcern => DeniPose.idle,
       ReviewOverallState.insufficientEvidence => DeniPose.support,
     };
   }
@@ -71,36 +73,33 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     final lang = Localizations.localeOf(context).languageCode;
     final spokenText =
         '${widget.receipt.subjectTitle}. $stateTitle. ${widget.receipt.summary}';
-    await widget.coordinator.bridge.speakText(
-      spokenText,
-      languageCode: lang,
-    );
+    await widget.coordinator.bridge.speakText(spokenText, languageCode: lang);
   }
 
   (Color bg, Color fg, IconData icon, String title, String subtitle)
-      _stateConfig(AppLocalizations l10n) {
+  _stateConfig(AppLocalizations l10n) {
     return switch (widget.receipt.overallState) {
       ReviewOverallState.reviewRecommended => (
-          EnpriveColors.stateReviewRecommendedBg,
-          EnpriveColors.stateReviewRecommendedFg,
-          LucideIcons.shieldAlert,
-          l10n.stateReviewRecommended,
-          l10n.stateReviewRecommendedSubtitle,
-        ),
+        EnpriveColors.stateReviewRecommendedBg,
+        EnpriveColors.stateReviewRecommendedFg,
+        LucideIcons.shieldAlert,
+        l10n.stateReviewRecommended,
+        l10n.stateReviewRecommendedSubtitle,
+      ),
       ReviewOverallState.noConcern => (
-          EnpriveColors.stateNoConcernBg,
-          EnpriveColors.stateNoConcernFg,
-          LucideIcons.shieldCheck,
-          l10n.stateNoConcern,
-          l10n.stateNoConcernSubtitle,
-        ),
+        EnpriveColors.stateNoConcernBg,
+        EnpriveColors.stateNoConcernFg,
+        LucideIcons.shieldCheck,
+        l10n.stateNoConcern,
+        l10n.stateNoConcernSubtitle,
+      ),
       ReviewOverallState.insufficientEvidence => (
-          EnpriveColors.stateInsufficientEvidenceBg,
-          EnpriveColors.stateInsufficientEvidenceFg,
-          LucideIcons.circleHelp,
-          l10n.stateInsufficientEvidence,
-          l10n.stateInsufficientEvidenceSubtitle,
-        ),
+        EnpriveColors.stateInsufficientEvidenceBg,
+        EnpriveColors.stateInsufficientEvidenceFg,
+        LucideIcons.circleHelp,
+        l10n.stateInsufficientEvidence,
+        l10n.stateInsufficientEvidenceSubtitle,
+      ),
     };
   }
 
@@ -115,7 +114,11 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     );
   }
 
-  void _handleSave(BuildContext context, AppLocalizations l10n, PolicyReviewReceipt receipt) {
+  void _handleSave(
+    BuildContext context,
+    AppLocalizations l10n,
+    PolicyReviewReceipt receipt,
+  ) {
     if (_isSaved) return;
     setState(() => _isSaved = true);
     widget.onSaveReceipt?.call(receipt);
@@ -258,7 +261,8 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                   const Spacer(),
                   InkWell(
                     borderRadius: BorderRadius.circular(999),
-                    onTap: () => _showSnapshotReceiptSheet(context, l10n, receipt),
+                    onTap: () =>
+                        _showSnapshotReceiptSheet(context, l10n, receipt),
                     child: EnpriveProvenanceChip(
                       source: receipt.inferenceSource,
                     ),
@@ -275,12 +279,9 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                           : 'Read summary aloud',
                       onPressed: () => _toggleVoicePlayback(stateTitle),
                       icon: Icon(
-                        _isSpeaking
-                            ? LucideIcons.square
-                            : LucideIcons.volume2,
+                        _isSpeaking ? LucideIcons.square : LucideIcons.volume2,
                         size: 19,
-                        color:
-                            _isSpeaking ? Colors.white : EnpriveColors.ink,
+                        color: _isSpeaking ? Colors.white : EnpriveColors.ink,
                       ),
                     ),
                   ),
@@ -342,9 +343,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                           Text(
                             receipt.subjectTitle,
                             textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineLarge
+                            style: Theme.of(context).textTheme.headlineLarge
                                 ?.copyWith(
                                   fontSize: 26,
                                   color: EnpriveColors.ink,
@@ -582,8 +581,8 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                       label: receipt.findings.isNotEmpty
                           ? l10n.btnAskDeni
                           : (_isSaved
-                              ? l10n.btnSavedToReceipts
-                              : l10n.btnSaveToReceipts),
+                                ? l10n.btnSavedToReceipts
+                                : l10n.btnSaveToReceipts),
                       onPressed: () {
                         if (receipt.findings.isNotEmpty) {
                           _openFindingDetails(receipt.findings.first);
@@ -634,11 +633,7 @@ class _PastelStatTile extends StatelessWidget {
             child: SizedBox(
               width: 22,
               height: 22,
-              child: EnpriveDuotoneIcon(
-                iconSvg,
-                size: 22,
-                color: iconColor,
-              ),
+              child: EnpriveDuotoneIcon(iconSvg, size: 22, color: iconColor),
             ),
           ),
           const SizedBox(height: 12),
@@ -736,8 +731,8 @@ class _CleanFindingCard extends StatelessWidget {
                           finding.status == EvidenceStatus.deviceObserved
                               ? l10n.observedOnPhoneLabel
                               : (isVerified
-                                  ? l10n.quoteVerifiedLabel
-                                  : l10n.unverifiedClaimLabel),
+                                    ? l10n.quoteVerifiedLabel
+                                    : l10n.unverifiedClaimLabel),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -804,10 +799,7 @@ class _CleanPermissionListCard extends StatelessWidget {
   final AppPermissionComparisonReport report;
   final AppLocalizations l10n;
 
-  const _CleanPermissionListCard({
-    required this.report,
-    required this.l10n,
-  });
+  const _CleanPermissionListCard({required this.report, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -823,7 +815,8 @@ class _CleanPermissionListCard extends StatelessWidget {
           ...report.items.asMap().entries.map((entry) {
             final idx = entry.key;
             final item = entry.value;
-            final isMismatch = item.alignmentState ==
+            final isMismatch =
+                item.alignmentState ==
                 PermissionAlignmentState.undisclosedInPolicy;
             return Column(
               children: [
@@ -838,14 +831,14 @@ class _CleanPermissionListCard extends StatelessWidget {
                       isMismatch
                           ? LucideIcons.triangleAlert
                           : (item.isGranted
-                              ? LucideIcons.circleCheck
-                              : LucideIcons.circleMinus),
+                                ? LucideIcons.circleCheck
+                                : LucideIcons.circleMinus),
                       size: 18,
                       color: isMismatch
                           ? EnpriveColors.stateReviewRecommendedFg
                           : (item.isGranted
-                              ? EnpriveColors.tealStrong
-                              : EnpriveColors.inkSecondary),
+                                ? EnpriveColors.tealStrong
+                                : EnpriveColors.inkSecondary),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
