@@ -279,7 +279,7 @@ class _OverlappingSourceBadges extends StatelessWidget {
               borderColor: surfaces.card,
               icon: isCloudCheck
                   ? LucideIcons.cloudCheck
-                  : LucideIcons.shieldCheck,
+                  : LucideIcons.fileText,
               color: isCloudCheck
                   ? semantics.inCloud.foreground
                   : semantics.noConcern.foreground,

@@ -4,7 +4,7 @@
   "appTagline": "Analyses de confidentialité fondées sur des preuves",
   "homePrivacySubtitle": "Vos analyses restent sur ce téléphone.",
   "stateNoConcern": "Aucun point préoccupant détecté",
-  "stateNoConcernSubtitle": "Rien de préoccupant dans les preuves examinées. Ceci n'est pas une certification de sécurité.",
+  "stateNoConcernSubtitle": "Aucune préoccupation identifiée dans les preuves examinées. Ceci n'est pas une certification de sécurité.",
   "stateReviewRecommended": "Vérification recommandée",
   "stateReviewRecommendedSubtitle": "Un ou plusieurs passages ou écarts d'autorisations méritent un examen attentif.",
   "stateInsufficientEvidence": "Preuves insuffisantes",
@@ -30,7 +30,7 @@
   "btnGetStarted": "Commencer",
   "btnContinue": "Continuer",
   "deniIntro": "Bonjour, je suis Deni. Je vous aide à comprendre ce que dit cette politique de confidentialité, à voir les preuves précises et à repérer ce qu'Enprive n'a pas pu vérifier.",
-  "cloudConsentDisclosure": "Pour analyser ce texte dans le cloud, Enprive enverra uniquement le texte ci-dessous à Firebase AI Logic. Votre liste d'applications installées et les autorisations Android ne seront jamais transmises.",
+  "cloudConsentDisclosure": "Pour analyser ce texte dans le cloud, Enprive enverra uniquement le texte caviardé affiché ci-dessus à Firebase AI Logic. Votre liste d'applications installées et les autorisations Android ne seront jamais transmises.",
   "permissionLimitationNotice": "Android indique cet état d'autorisation sur ce téléphone. Cela ne prouve pas si l'application a réellement accédé aux données ou les a transmises.",
   "navHome": "Accueil",
   "navReceipts": "Reçus",
@@ -169,5 +169,14 @@
   "sampleCalmMathSubtitle": "Maths hors ligne",
   "appsOnThisPhone": "Applications sur ce téléphone",
   "hintSearchApps": "Rechercher des apps…",
-  "noMatchingApps": "Aucune application correspondante trouvée sur ce téléphone."
+  "noMatchingApps": "Aucune application correspondante trouvée sur ce téléphone.",
+  "sampleSyntheticBadge": "Exemple synthétique",
+  "permissionInspectionTitle": "Inspection des autorisations de l'appareil",
+  "addAppPrivacyPolicyBtn": "Ajouter la politique de confidentialité de cette app",
+  "snapshotDigestLabel": "Empreinte de l'instantané · FNV-1a 64 bits",
+  "snapshotDigestExplanation": "Empreinte locale rapide sur 64 bits de ce texte (ce n'est pas un SHA-256 cryptographique). Elle change si un seul caractère est modifié.",
+  "copyDigestBtn": "Copier l'empreinte",
+  "digestCopiedMsg": "Empreinte copiée",
+  "permissionGrantedBadge": "Accordée",
+  "permissionNotGrantedBadge": "Non accordée"
 }

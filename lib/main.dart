@@ -48,9 +48,28 @@ class EnpriveApp extends StatefulWidget {
   State<EnpriveApp> createState() => _EnpriveAppState();
 }
 
-class _EnpriveAppState extends State<EnpriveApp> {
+class _EnpriveAppState extends State<EnpriveApp> with WidgetsBindingObserver {
   Locale _locale = const Locale('en');
   ThemeMode _themeMode = ThemeMode.system;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   void _setLocale(Locale newLocale) {
     setState(() => _locale = newLocale);
@@ -63,7 +82,9 @@ class _EnpriveAppState extends State<EnpriveApp> {
   @override
   Widget build(BuildContext context) {
     final platformBrightness =
-        MediaQuery.maybePlatformBrightnessOf(context) ?? Brightness.light;
+        MediaQuery.maybePlatformBrightnessOf(context) ??
+        View.maybeOf(context)?.platformDispatcher.platformBrightness ??
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
     final activeM3EData = EnpriveM3ETheme.resolve(
       mode: _themeMode,
       platformBrightness: platformBrightness,
@@ -74,7 +95,7 @@ class _EnpriveAppState extends State<EnpriveApp> {
       debugShowCheckedModeBanner: false,
       data: activeM3EData,
       typeface: EnpriveM3ETheme.typefaceConfig,
-      autoTheming: _themeMode == ThemeMode.system,
+      autoTheming: false,
       dynamicColoring: false,
       initialTheme: activeM3EData.brightness,
       theme: EnpriveM3ETheme.lightThemeData.toThemeData(),
@@ -464,7 +485,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
     if (!mounted) return;
     await _executePolicyReview(
       subjectTitle: isEduTrack ? 'EduTrack Classroom' : 'CalmMath Kids',
-      sourceLabel: 'Classroom Sample',
+      sourceLabel: AppLocalizations.of(context)?.sampleSyntheticBadge ??
+          'Synthetic example',
       policyText: policyText,
       appPermissions: isEduTrack
           ? PermissionComparator.demoEduTrackSnapshot
@@ -583,6 +605,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
             receipts: _savedReceipts,
             coordinator: _coordinator,
             onDeleteReceipt: _deleteReceipt,
+            onSaveReceipt: _saveReceipt,
             onStartReviewRequested: () {
               setState(() => _selectedTabIndex = 0);
             },
@@ -723,15 +746,35 @@ We do not collect personal identifiers, precise location data, microphone audio,
             const SizedBox(height: 28),
 
             // 4. Quick Sample App Checks (M3E Bento Cards inspired by Music OS & colo.jpeg)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                l10n.trySampleCheck,
-                style: m3e.typography.emphasized.titleMedium.copyWith(
-                  fontSize: 17,
-                  color: scheme.onSurface,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.trySampleCheck,
+                    style: m3e.typography.emphasized.titleMedium.copyWith(
+                      fontSize: 17,
+                      color: scheme.onSurface,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    l10n.sampleSyntheticBadge,
+                    style: m3e.typography.emphasized.labelSmall.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             LayoutBuilder(
@@ -964,6 +1007,32 @@ We do not collect personal identifiers, precise location data, microphone audio,
     );
     if (selected == null || !mounted) return;
 
+    if (!selected.hasSuppliedPolicy) {
+      final langCode = widget.currentLocale.languageCode;
+      final permReceipt = _coordinator.buildDevicePermissionInspectionReceipt(
+        subjectTitle: selected.subjectTitle,
+        sourceLabel: selected.sourceLabel,
+        appPermissions: selected.permissionSnapshot,
+        languageCode: langCode,
+      );
+      if (!mounted) return;
+      setState(() {
+        _activePose = DeniPose.idle;
+      });
+      if (!context.mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ReviewResultScreen(
+            receipt: permReceipt,
+            coordinator: _coordinator,
+            cloudConsentGrantedForSession: false,
+            onSaveReceipt: _saveReceipt,
+          ),
+        ),
+      );
+      return;
+    }
+
     await _executePolicyReview(
       subjectTitle: selected.subjectTitle,
       sourceLabel: selected.sourceLabel,
@@ -987,34 +1056,42 @@ We do not collect personal identifiers, precise location data, microphone audio,
           : l10n.defaultSubjectTitle,
     );
     bool isLinkMode = false;
-    final rootScheme = EnpriveM3ETheme.of(context).colorScheme;
 
     showModalBottomSheet<void>(
       context: context,
+      useSafeArea: true,
       isScrollControlled: true,
-      backgroundColor: rootScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (sheetContext, setSheetState) {
-            final m3e = EnpriveM3ETheme.of(sheetContext);
-            final scheme = m3e.colorScheme;
-            final surfaces = sheetContext.enpriveSurfaces;
-            final typeExt = sheetContext.enpriveType;
+        return EnpriveM3EBridgeScope.ensure(
+          sheetContext,
+          child: StatefulBuilder(
+            builder: (sheetContext, setSheetState) {
+              final m3e = EnpriveM3ETheme.of(sheetContext);
+              final scheme = m3e.colorScheme;
+              final surfaces = sheetContext.enpriveSurfaces;
+              final typeExt = sheetContext.enpriveType;
 
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
-                left: 24,
-                right: 24,
-                top: 20,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              return Material(
+                color: scheme.surface,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(32),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: SafeArea(
+                  top: false,
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      bottom:
+                          MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+                      left: 24,
+                      right: 24,
+                      top: 20,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                   Center(
                     child: Container(
                       width: 40,
@@ -1165,7 +1242,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     TextField(
                       controller: controller,
                       maxLines: 5,
-                      style: typeExt.policyQuotation,
+                      style: typeExt.policyQuotation.copyWith(
+                        color: scheme.onSurface,
+                      ),
                       decoration: InputDecoration(
                         hintText: l10n.hintPastePolicy,
                         filled: true,
@@ -1227,7 +1306,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
                           ? l10n.defaultSubjectTitle
                           : titleController.text.trim();
                       Navigator.pop(sheetContext);
-                      if (rawText.isEmpty) return;
                       await _executePolicyReview(
                         subjectTitle: subject,
                         sourceLabel: 'Pasted Snapshot',
@@ -1237,8 +1315,11 @@ We do not collect personal identifiers, precise location data, microphone audio,
                   ),
                 ],
               ),
+            ),
+            ),
             );
           },
+          ),
         );
       },
     );

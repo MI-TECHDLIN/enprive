@@ -56,7 +56,7 @@ class EnpriveReceiptCard extends StatelessWidget {
           ),
           ReviewOverallState.noConcern => (
             semantics.noConcern,
-            LucideIcons.shieldCheck,
+            LucideIcons.fileText,
           ),
           ReviewOverallState.insufficientEvidence => (
             semantics.insufficientEvidence,

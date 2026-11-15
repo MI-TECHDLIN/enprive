@@ -30,7 +30,7 @@
   "btnGetStarted": "ابدأ الآن",
   "btnContinue": "متابعة",
   "deniIntro": "مرحبًا، أنا ديني. أساعدك على فهم ما تقوله سياسة الخصوصية هذه، وأعرض لك الدليل النصي الدقيق، وأوضح ما تعذّر على Enprive التحقق منه.",
-  "cloudConsentDisclosure": "لتحليل هذا النص في السحابة، سيرسل Enprive النص الظاهر أدناه فقط إلى Firebase AI Logic. لن يتم إرسال قائمة تطبيقاتك المثبتة أو أذونات Android أبدًا.",
+  "cloudConsentDisclosure": "لتحليل هذا النص في السحابة، سيرسل Enprive النص المنقّح الظاهر أعلاه فقط إلى Firebase AI Logic. لن يتم إرسال قائمة تطبيقاتك المثبتة أو أذونات Android أبدًا.",
   "permissionLimitationNotice": "يُظهر نظام Android حالة الإذن هذه على هذا الهاتف. ولا يثبت ما إذا كان التطبيق قد وصل إلى البيانات أو نقلها فعليًا.",
   "navHome": "الرئيسية",
   "navReceipts": "الإيصالات",
@@ -169,5 +169,14 @@
   "sampleCalmMathSubtitle": "رياضيات دون إنترنت",
   "appsOnThisPhone": "التطبيقات على هذا الهاتف",
   "hintSearchApps": "ابحث عن التطبيقات…",
-  "noMatchingApps": "لم يتم العثور على تطبيقات مطابقة على هذا الهاتف."
+  "noMatchingApps": "لم يتم العثور على تطبيقات مطابقة على هذا الهاتف.",
+  "sampleSyntheticBadge": "مثال تجريبي",
+  "permissionInspectionTitle": "فحص أذونات الجهاز",
+  "addAppPrivacyPolicyBtn": "إضافة سياسة خصوصية هذا التطبيق",
+  "snapshotDigestLabel": "بصمة اللقطة · FNV-1a 64-بت",
+  "snapshotDigestExplanation": "بصمة محلية سريعة بـ 64 بت لهذا النص (وليست تشفير SHA-256). تتغير إذا تغير حرف واحد من النص.",
+  "copyDigestBtn": "نسخ البصمة",
+  "digestCopiedMsg": "تم نسخ بصمة اللقطة",
+  "permissionGrantedBadge": "ممنوح",
+  "permissionNotGrantedBadge": "غير ممنوح"
 }

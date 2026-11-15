@@ -4,10 +4,14 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.AdaptiveIconDrawable
 import android.os.Build
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import java.io.ByteArrayOutputStream
 import java.util.Locale
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.Firebase
@@ -304,6 +308,22 @@ class MainActivity : FlutterActivity() {
 
                         withContext(Dispatchers.Main) {
                             result.success(apps)
+                        }
+                    }
+                }
+
+                "getAppIcon" -> {
+                    val packageName = call.argument<String>("packageName")
+                    if (packageName.isNullOrBlank()) {
+                        result.error("INVALID_ARGUMENT", "packageName cannot be empty", null)
+                        return@setMethodCallHandler
+                    }
+                    val requestedSize = call.argument<Int>("sizePx") ?: 112
+                    val targetSize = requestedSize.coerceIn(32, 192)
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val iconBytes = loadAppIconPngBytes(packageName, targetSize)
+                        withContext(Dispatchers.Main) {
+                            result.success(iconBytes)
                         }
                     }
                 }
@@ -708,5 +728,51 @@ class MainActivity : FlutterActivity() {
             list.add(value)
         }
         return list
+    }
+
+    /**
+     * Loads the launcher icon for [packageName] strictly on-device and encodes it
+     * as a bounded PNG byte array for local UI display only.
+     */
+    private fun loadAppIconPngBytes(packageName: String, sizePx: Int): ByteArray? {
+        return try {
+            val drawable = packageManager.getApplicationIcon(packageName)
+            val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+            try {
+                val canvas = Canvas(bitmap)
+                if (drawable is AdaptiveIconDrawable) {
+                    // Trim adaptive outer mask bleed (~16.7% per side) so launcher artwork
+                    // fills the rounded squircle tile with crisp optical balance.
+                    val bleed = (sizePx * 0.18f).toInt()
+                    drawable.setBounds(-bleed, -bleed, sizePx + bleed, sizePx + bleed)
+                } else {
+                    val intrinsicW = drawable.intrinsicWidth
+                    val intrinsicH = drawable.intrinsicHeight
+                    if (intrinsicW > 0 && intrinsicH > 0 && intrinsicW != intrinsicH) {
+                        val scale = minOf(
+                            sizePx.toFloat() / intrinsicW,
+                            sizePx.toFloat() / intrinsicH,
+                        )
+                        val drawW = (intrinsicW * scale).toInt().coerceAtLeast(1)
+                        val drawH = (intrinsicH * scale).toInt().coerceAtLeast(1)
+                        val left = (sizePx - drawW) / 2
+                        val top = (sizePx - drawH) / 2
+                        drawable.setBounds(left, top, left + drawW, top + drawH)
+                    } else {
+                        drawable.setBounds(0, 0, sizePx, sizePx)
+                    }
+                }
+                drawable.draw(canvas)
+                val stream = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                stream.toByteArray()
+            } finally {
+                bitmap.recycle()
+            }
+        } catch (_: PackageManager.NameNotFoundException) {
+            null
+        } catch (_: Throwable) {
+            null
+        }
     }
 }

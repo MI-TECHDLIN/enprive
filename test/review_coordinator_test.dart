@@ -1009,5 +1009,251 @@ Our mobile application collects precise GPS location coordinates even when the a
         );
       },
     );
+
+    test(
+      'P0-A: fails closed to insufficientEvidence for empty, placeholder, random, rawText, missing fields, or failed zero-finding outputs',
+      () async {
+        var nativeAnalyseCalls = 0;
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+          if (call.method == 'getDeviceCapability') {
+            return {
+              'isSupported': true,
+              'deviceTier': 'SUPPORTED',
+              'modelStatus': 'AVAILABLE',
+            };
+          }
+          if (call.method == 'analyseText') {
+            nativeAnalyseCalls += 1;
+            return {
+              'schemaVersion': 1,
+              'requestId': (call.arguments as Map)['requestId'],
+              'status': 'success',
+              'inferenceSource': 'ON_DEVICE',
+              'structuredOutput': {
+                'overall_state': 'NO_CONCERN',
+                'summary': 'Looks fine',
+                'concerns': [],
+              },
+            };
+          }
+          return null;
+        });
+
+        final coordinator = ReviewCoordinator();
+
+        // 1. "Privacy notice unavailable." -> insufficientEvidence (0 AI calls)
+        final unavailableResult = await coordinator.runPolicyReview(
+          subjectTitle: 'QuickTest',
+          sourceLabel: 'Quick check',
+          policyText: 'Privacy notice unavailable.',
+        );
+        expect(
+          unavailableResult.receipt!.overallState,
+          ReviewOverallState.insufficientEvidence,
+        );
+        expect(
+          unavailableResult.receipt!.diagnosticKind,
+          ReviewDiagnosticKind.insufficientPolicyMaterial,
+        );
+
+        // 2. Random prose -> insufficientEvidence (0 AI calls)
+        final randomResult = await coordinator.runPolicyReview(
+          subjectTitle: 'Random',
+          sourceLabel: 'Paste',
+          policyText:
+              'Yesterday the yellow bicycle leaned against a brick garden wall after lunch.',
+        );
+        expect(
+          randomResult.receipt!.overallState,
+          ReviewOverallState.insufficientEvidence,
+        );
+        expect(
+          randomResult.receipt!.diagnosticKind,
+          ReviewDiagnosticKind.insufficientPolicyMaterial,
+        );
+
+        // 3. Empty text -> insufficientEvidence (0 AI calls)
+        final emptyResult = await coordinator.runPolicyReview(
+          subjectTitle: 'Empty',
+          sourceLabel: 'Paste',
+          policyText: '   \n  ',
+        );
+        expect(
+          emptyResult.receipt!.overallState,
+          ReviewOverallState.insufficientEvidence,
+        );
+        expect(nativeAnalyseCalls, 0);
+
+        // 4. rawText fallback (missing structured JSON) -> insufficientEvidence
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+          if (call.method == 'analyseText') {
+            return {
+              'schemaVersion': 1,
+              'requestId': (call.arguments as Map)['requestId'],
+              'status': 'success',
+              'inferenceSource': 'ON_DEVICE',
+              'structuredOutput': {'rawText': 'Everything is completely fine!'},
+            };
+          }
+          return {'isSupported': true, 'modelStatus': 'AVAILABLE'};
+        });
+        final rawTextResult = await coordinator.runPolicyReview(
+          subjectTitle: 'RawTextApp',
+          sourceLabel: 'Paste',
+          policyText: 'We do not sell personal data.',
+        );
+        expect(
+          rawTextResult.receipt!.overallState,
+          ReviewOverallState.insufficientEvidence,
+        );
+
+        // 4b. Unparseable/missing structuredOutput with success status -> insufficientEvidence
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+          if (call.method == 'analyseText') {
+            return {
+              'schemaVersion': 1,
+              'requestId': (call.arguments as Map)['requestId'],
+              'status': 'success',
+              'inferenceSource': 'ON_DEVICE',
+              'structuredOutput': null,
+            };
+          }
+          return {'isSupported': true, 'modelStatus': 'AVAILABLE'};
+        });
+        final missingJsonResult = await coordinator.runPolicyReview(
+          subjectTitle: 'UnparseableApp',
+          sourceLabel: 'Paste',
+          policyText: 'We do not sell personal data.',
+        );
+        expect(
+          missingJsonResult.receipt!.overallState,
+          ReviewOverallState.insufficientEvidence,
+        );
+
+        // 5. Missing required overall_state -> insufficientEvidence
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+          if (call.method == 'analyseText') {
+            return {
+              'schemaVersion': 1,
+              'requestId': (call.arguments as Map)['requestId'],
+              'status': 'success',
+              'inferenceSource': 'ON_DEVICE',
+              'structuredOutput': {
+                'summary': 'Privacy policy reviewed.',
+                'concerns': [],
+              },
+            };
+          }
+          return {'isSupported': true, 'modelStatus': 'AVAILABLE'};
+        });
+        final missingStateResult = await coordinator.runPolicyReview(
+          subjectTitle: 'MissingStateApp',
+          sourceLabel: 'Paste',
+          policyText: 'We do not sell personal data.',
+        );
+        expect(
+          missingStateResult.receipt!.overallState,
+          ReviewOverallState.insufficientEvidence,
+        );
+
+        // 6. Failed inference on valid clean zero-keyword policy -> insufficientEvidence (never silent noConcern)
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+          if (call.method == 'analyseText') {
+            return {
+              'schemaVersion': 1,
+              'requestId': (call.arguments as Map)['requestId'],
+              'status': 'failed',
+              'inferenceSource': 'UNKNOWN',
+              'errorCode': 'InferenceRuntimeException',
+              'message': 'On-device session failed unexpectedly.',
+            };
+          }
+          return {'isSupported': true, 'modelStatus': 'AVAILABLE'};
+        });
+        final failedInferenceResult = await coordinator.runPolicyReview(
+          subjectTitle: 'FailedModelApp',
+          sourceLabel: 'Paste',
+          policyText:
+              'All homework progress stays strictly on this tablet and is never collected.',
+          cloudConsent: true,
+        );
+        expect(
+          failedInferenceResult.receipt!.overallState,
+          ReviewOverallState.insufficientEvidence,
+        );
+        expect(
+          failedInferenceResult.receipt!.diagnosticKind,
+          ReviewDiagnosticKind.failedModelInference,
+        );
+
+        // 7. Unavailable cloud fallback on clean zero-keyword policy -> insufficientEvidence (cloudUnavailableLocalFallback)
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+          if (call.method == 'analyseText') {
+            return {
+              'schemaVersion': 1,
+              'requestId': (call.arguments as Map)['requestId'],
+              'status': 'failed',
+              'inferenceSource': 'UNKNOWN',
+              'errorCode': 'QuotaExceededException',
+              'message': 'Cloud quota exceeded',
+            };
+          }
+          return {'isSupported': false, 'modelStatus': 'UNAVAILABLE'};
+        });
+        final unavailableCloudResult = await coordinator.runPolicyReview(
+          subjectTitle: 'CloudDownApp',
+          sourceLabel: 'Paste',
+          policyText:
+              'All homework progress stays strictly on this tablet and is never collected.',
+          cloudConsent: true,
+        );
+        expect(
+          unavailableCloudResult.receipt!.overallState,
+          ReviewOverallState.insufficientEvidence,
+        );
+        expect(
+          unavailableCloudResult.receipt!.diagnosticKind,
+          ReviewDiagnosticKind.cloudUnavailableLocalFallback,
+        );
+
+        // 8. Valid policy with completed clean AI output still yields calibrated noConcern
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+          if (call.method == 'analyseText') {
+            return {
+              'schemaVersion': 1,
+              'requestId': (call.arguments as Map)['requestId'],
+              'status': 'success',
+              'inferenceSource': 'ON_DEVICE',
+              'structuredOutput': {
+                'overall_state': 'NO_CONCERN',
+                'summary': 'No personal collection clauses found.',
+                'concerns': [],
+              },
+            };
+          }
+          return {'isSupported': true, 'modelStatus': 'AVAILABLE'};
+        });
+        final validNoConcern = await coordinator.runPolicyReview(
+          subjectTitle: 'ValidCleanApp',
+          sourceLabel: 'Paste',
+          policyText: 'We do not sell personal data.',
+        );
+        expect(
+          validNoConcern.receipt!.overallState,
+          ReviewOverallState.noConcern,
+        );
+        expect(
+          validNoConcern.receipt!.diagnosticKind,
+          ReviewDiagnosticKind.validated,
+        );
+      },
+    );
   });
 }

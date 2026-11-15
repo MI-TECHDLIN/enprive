@@ -8,6 +8,17 @@ enum ReviewOverallState {
   insufficientEvidence,
 }
 
+/// Distinguishes why a receipt reached its verdict without conflating
+/// clean policy checks, insufficient inputs, failed inference, or local
+/// permission-only inspections.
+enum ReviewDiagnosticKind {
+  validated,
+  insufficientPolicyMaterial,
+  failedModelInference,
+  cloudUnavailableLocalFallback,
+  devicePermissionInspection,
+}
+
 /// Deterministic verification status of a finding against source evidence.
 enum EvidenceStatus {
   sourceMatched,
@@ -183,6 +194,7 @@ class PolicyReviewReceipt {
   final List<String> processSteps;
   final String? thoughtSummary;
   final String? thoughtSignature;
+  final ReviewDiagnosticKind diagnosticKind;
 
   const PolicyReviewReceipt({
     required this.id,
@@ -200,7 +212,12 @@ class PolicyReviewReceipt {
     this.processSteps = const [],
     this.thoughtSummary,
     this.thoughtSignature,
+    this.diagnosticKind = ReviewDiagnosticKind.validated,
   });
+
+  bool get isPermissionOnlyInspection =>
+      diagnosticKind == ReviewDiagnosticKind.devicePermissionInspection ||
+      (snapshotText.trim().isEmpty && permissionReport != null);
 
   int get sourceMatchedCount => findings
       .where(
@@ -233,6 +250,7 @@ class PolicyReviewReceipt {
         if (processSteps.isNotEmpty) 'processSteps': processSteps,
         if (thoughtSummary != null) 'thoughtSummary': thoughtSummary,
         if (thoughtSignature != null) 'thoughtSignature': thoughtSignature,
+        'diagnosticKind': diagnosticKind.name,
       };
 
   factory PolicyReviewReceipt.fromJson(Map<String, dynamic> json) {
@@ -245,19 +263,32 @@ class PolicyReviewReceipt {
         const <String>[];
     final rawThought = (json['thoughtSummary'] as String?)?.trim();
     final rawSignature = (json['thoughtSignature'] as String?)?.trim();
+    final snapshotText = json['snapshotText'] as String? ?? '';
+    final parsedState = ReviewOverallState.values.firstWhere(
+      (s) => s.name == json['overallState'],
+      orElse: () => ReviewOverallState.insufficientEvidence,
+    );
+    final rawDiagName = json['diagnosticKind'] as String?;
+    final diagnosticKind = rawDiagName != null
+        ? ReviewDiagnosticKind.values.firstWhere(
+            (d) => d.name == rawDiagName,
+            orElse: () => ReviewDiagnosticKind.validated,
+          )
+        : (snapshotText.trim().isEmpty && permMap != null
+              ? ReviewDiagnosticKind.devicePermissionInspection
+              : (parsedState == ReviewOverallState.insufficientEvidence
+                    ? ReviewDiagnosticKind.insufficientPolicyMaterial
+                    : ReviewDiagnosticKind.validated));
     return PolicyReviewReceipt(
       id: json['id'] as String? ?? 'rcpt_unknown',
       subjectTitle: json['subjectTitle'] as String? ?? 'Policy Snapshot',
       sourceLabel: json['sourceLabel'] as String? ?? 'Local Snapshot',
-      snapshotText: json['snapshotText'] as String? ?? '',
+      snapshotText: snapshotText,
       snapshotDigest: json['snapshotDigest'] as String? ?? '00000000',
       createdAt: DateTime.fromMillisecondsSinceEpoch(
         json['createdAtMs'] as int? ?? DateTime.now().millisecondsSinceEpoch,
       ),
-      overallState: ReviewOverallState.values.firstWhere(
-        (s) => s.name == json['overallState'],
-        orElse: () => ReviewOverallState.insufficientEvidence,
-      ),
+      overallState: parsedState,
       inferenceSource: parseInferenceSource(json['inferenceSource'] as String?),
       summary: json['summary'] as String? ?? '',
       calibratedDisclaimer: json['calibratedDisclaimer'] as String? ??
@@ -272,6 +303,7 @@ class PolicyReviewReceipt {
       processSteps: rawSteps,
       thoughtSummary: rawThought?.isNotEmpty == true ? rawThought : null,
       thoughtSignature: rawSignature?.isNotEmpty == true ? rawSignature : null,
+      diagnosticKind: diagnosticKind,
     );
   }
 }

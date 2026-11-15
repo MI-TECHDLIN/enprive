@@ -246,7 +246,7 @@ class EnpriveFindingM3ECard extends StatelessWidget {
                             sha256Preview!.isNotEmpty) ...[
                           const SizedBox(height: 6),
                           Text(
-                            'SHA-256 · $sha256Preview',
+                            'Snapshot digest · FNV-1a 64-bit · $sha256Preview',
                             style: typeExt.sha256Hash.copyWith(
                               fontSize: 11,
                               color: scheme.onSurfaceVariant,

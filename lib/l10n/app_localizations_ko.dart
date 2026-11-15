@@ -105,7 +105,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get cloudConsentDisclosure =>
-      '이 문장을 클라우드에서 분석하기 위해 Enprive는 아래 표시된 텍스트만 Firebase AI Logic으로 전송합니다. 설치된 앱 목록과 Android 권한 정보는 절대 전송되지 않습니다.';
+      '이 문장을 클라우드에서 분석하기 위해 Enprive는 위에 표시된 가림 처리된 텍스트만 Firebase AI Logic으로 전송합니다. 설치된 앱 목록과 Android 권한 정보는 절대 전송되지 않습니다.';
 
   @override
   String get permissionLimitationNotice =>
@@ -555,4 +555,32 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get noMatchingApps => '일치하는 앱을 찾지 못했습니다.';
+
+  @override
+  String get sampleSyntheticBadge => '가상 예시';
+
+  @override
+  String get permissionInspectionTitle => '기기 권한 검사';
+
+  @override
+  String get addAppPrivacyPolicyBtn => '이 앱의 개인정보 처리방침 추가';
+
+  @override
+  String get snapshotDigestLabel => '스냅샷 다이제스트 · FNV-1a 64비트';
+
+  @override
+  String get snapshotDigestExplanation =>
+      '이 텍스트의 빠른 64비트 로컬 지문입니다(암호화 SHA-256 아님). 한 글자만 바뀌어도 값이 달라집니다.';
+
+  @override
+  String get copyDigestBtn => '다이제스트 복사';
+
+  @override
+  String get digestCopiedMsg => '스냅샷 다이제스트를 복사했습니다';
+
+  @override
+  String get permissionGrantedBadge => '허용됨';
+
+  @override
+  String get permissionNotGrantedBadge => '허용되지 않음';
 }

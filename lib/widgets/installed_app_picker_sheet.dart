@@ -7,6 +7,7 @@ import '../domain/permissions/permission_comparator.dart';
 import '../l10n/app_localizations.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import 'deni_animated_mascot.dart';
+import 'installed_app_icon.dart';
 import 'm3e/enprive_m3e_components.dart';
 
 class SelectedAppInspectionChoice {
@@ -14,12 +15,16 @@ class SelectedAppInspectionChoice {
   final String sourceLabel;
   final String policyText;
   final AppPermissionSnapshot permissionSnapshot;
+  final bool hasSuppliedPolicy;
+  final bool isSyntheticSample;
 
   const SelectedAppInspectionChoice({
     required this.subjectTitle,
     required this.sourceLabel,
     required this.policyText,
     required this.permissionSnapshot,
+    this.hasSuppliedPolicy = false,
+    this.isSyntheticSample = false,
   });
 }
 
@@ -44,14 +49,11 @@ class InstalledAppPickerSheet extends StatefulWidget {
     required String eduTrackPolicyText,
     required String calmMathPolicyText,
   }) {
-    final scheme = EnpriveM3ETheme.of(context).colorScheme;
     return showModalBottomSheet<SelectedAppInspectionChoice>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: scheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.84,
@@ -109,41 +111,50 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
         );
 
     if (!mounted) return;
-    final defaultPolicy = '''
-${app.appName.toUpperCase()} — PRIVACY NOTICE SNAPSHOT
-This installed Android application (${app.packageName}) is being compared against its standard public privacy disclosure.
-We do not collect personal identifiers, precise location data, microphone audio, or camera input without explicit user disclosure.
-''';
 
     Navigator.pop(
       context,
       SelectedAppInspectionChoice(
         subjectTitle: app.appName,
         sourceLabel: 'Installed on this phone',
-        policyText: defaultPolicy,
+        policyText: '',
         permissionSnapshot: snapshot,
+        hasSuppliedPolicy: false,
+        isSyntheticSample: false,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final semantics = context.enpriveSemantics;
+    return EnpriveM3EBridgeScope.ensure(
+      context,
+      child: Builder(
+        builder: (context) {
+          final l10n =
+              AppLocalizations.of(context) ??
+              lookupAppLocalizations(const Locale('en'));
+          final m3e = EnpriveM3ETheme.of(context);
+          final scheme = m3e.colorScheme;
+          final semantics = context.enpriveSemantics;
 
-    final filteredApps = _installedApps.where((a) {
-      if (_searchQuery.trim().isEmpty) return true;
-      final q = _searchQuery.toLowerCase();
-      return a.appName.toLowerCase().contains(q) ||
-          a.packageName.toLowerCase().contains(q);
-    }).toList();
+          final filteredApps = _installedApps.where((a) {
+            if (_searchQuery.trim().isEmpty) return true;
+            final q = _searchQuery.toLowerCase();
+            return a.appName.toLowerCase().contains(q) ||
+                a.packageName.toLowerCase().contains(q);
+          }).toList();
 
-    final visibleApps = filteredApps.take(25).toList();
+          final visibleApps = filteredApps.take(25).toList();
 
-    return SafeArea(
-      child: Column(
+          return Material(
+            color: scheme.surface,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(32),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: SafeArea(
+              child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 12, 16, 8),
@@ -210,6 +221,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       child: _SampleAppChoiceCard(
                         title: 'EduTrack',
                         subtitle: l10n.sampleEduTrackSubtitle,
+                        footerTag: l10n.sampleSyntheticBadge,
                         icon: LucideIcons.graduationCap,
                         badgePair: semantics.reviewRecommended,
                         onTap: () {
@@ -217,10 +229,12 @@ We do not collect personal identifiers, precise location data, microphone audio,
                             context,
                             SelectedAppInspectionChoice(
                               subjectTitle: 'EduTrack Classroom Companion',
-                              sourceLabel: 'Classroom Sample',
+                              sourceLabel: 'Synthetic Example',
                               policyText: widget.eduTrackPolicyText,
                               permissionSnapshot:
                                   PermissionComparator.demoEduTrackSnapshot,
+                              hasSuppliedPolicy: true,
+                              isSyntheticSample: true,
                             ),
                           );
                         },
@@ -231,6 +245,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                       child: _SampleAppChoiceCard(
                         title: 'CalmMath',
                         subtitle: l10n.sampleCalmMathSubtitle,
+                        footerTag: l10n.sampleSyntheticBadge,
                         icon: LucideIcons.calculator,
                         badgePair: semantics.noConcern,
                         onTap: () {
@@ -238,10 +253,12 @@ We do not collect personal identifiers, precise location data, microphone audio,
                             context,
                             SelectedAppInspectionChoice(
                               subjectTitle: 'CalmMath Abacus',
-                              sourceLabel: 'Classroom Sample',
+                              sourceLabel: 'Synthetic Example',
                               policyText: widget.calmMathPolicyText,
                               permissionSnapshot:
                                   PermissionComparator.demoCalmMathSnapshot,
+                              hasSuppliedPolicy: true,
+                              isSyntheticSample: true,
                             ),
                           );
                         },
@@ -309,19 +326,11 @@ We do not collect personal identifiers, precise location data, microphone audio,
                               _inspectRealInstalledApp(visibleApps[idx]),
                           child: Row(
                             children: [
-                              Container(
-                                width: 42,
-                                height: 42,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: semantics.onDevice.background,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  LucideIcons.layoutGrid,
-                                  color: semantics.onDevice.foreground,
-                                  size: 20,
-                                ),
+                              InstalledAppIcon(
+                                key: ValueKey(visibleApps[idx].packageName),
+                                packageName: visibleApps[idx].packageName,
+                                bridge: widget.bridge,
+                                initialBytes: visibleApps[idx].iconBytes,
                               ),
                               const SizedBox(width: 14),
                               Expanded(
@@ -349,6 +358,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
           ),
         ],
       ),
+    ),
+          );
+        },
+      ),
     );
   }
 }
@@ -356,6 +369,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
 class _SampleAppChoiceCard extends StatelessWidget {
   final String title;
   final String subtitle;
+  final String footerTag;
   final IconData icon;
   final SemanticColorPair badgePair;
   final VoidCallback onTap;
@@ -363,6 +377,7 @@ class _SampleAppChoiceCard extends StatelessWidget {
   const _SampleAppChoiceCard({
     required this.title,
     required this.subtitle,
+    required this.footerTag,
     required this.icon,
     required this.badgePair,
     required this.onTap,
@@ -373,6 +388,7 @@ class _SampleAppChoiceCard extends StatelessWidget {
     return EnpriveBentoChoiceCard(
       title: title,
       subtitle: subtitle,
+      footerTag: footerTag,
       icon: icon,
       accentColor: badgePair.foreground,
       accentBackground: badgePair.background,

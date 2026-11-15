@@ -5,6 +5,7 @@ import '../../widgets/enprive_provenance_chip.dart';
 import '../evidence/evidence_validator.dart';
 import '../permissions/permission_comparator.dart';
 import '../privacy/pii_redactor.dart';
+import 'policy_sufficiency.dart';
 import 'review_models.dart';
 
 class ReviewExecutionResult {
@@ -96,13 +97,15 @@ class ReviewCoordinator {
     String languageCode = 'en',
   }) async {
     final trimmed = policyText.trim();
-    if (trimmed.isEmpty) {
+    final sufficiency = PolicySufficiencyValidator.assess(trimmed);
+    if (!sufficiency.isSufficient) {
       return ReviewExecutionResult.completed(
         _buildInsufficientReceipt(
           subjectTitle: subjectTitle,
           sourceLabel: sourceLabel,
-          snapshotText: '',
-          reason: 'No policy text was provided for review.',
+          snapshotText: trimmed,
+          reason: sufficiency.explanation,
+          diagnosticKind: ReviewDiagnosticKind.insufficientPolicyMaterial,
           languageCode: languageCode,
         ),
       );
@@ -182,8 +185,7 @@ class ReviewCoordinator {
           languageCode: languageCode,
         );
 
-        if (localResult.status == HybridStatus.success &&
-            localResult.structuredOutput != null) {
+        if (localResult.status == HybridStatus.success) {
           return _completeBridgePolicyReceipt(
             requestId: reqId,
             steps: processSteps,
@@ -240,8 +242,7 @@ class ReviewCoordinator {
         languageCode: languageCode,
       );
 
-      if (cloudResult.status == HybridStatus.success &&
-          cloudResult.structuredOutput != null) {
+      if (cloudResult.status == HybridStatus.success) {
         return _completeBridgePolicyReceipt(
           requestId: '${reqId}_appcheck',
           steps: processSteps,
@@ -260,7 +261,9 @@ class ReviewCoordinator {
       }
 
       // 3. Offline / network failure safety net after explicit cloud consent:
-      // run deterministic local clause scan and record OFFLINE_DETERMINISTIC.
+      // run deterministic local clause scan and record OFFLINE_DETERMINISTIC,
+      // while distinguishing unavailable cloud inference from failed model inference.
+      final isUnavailable = _isUnavailableCloudFailure(cloudResult);
       return _completeDeterministicPolicyScan(
         requestId: reqId,
         steps: processSteps,
@@ -273,10 +276,73 @@ class ReviewCoordinator {
         thoughtSummary: streamedThought,
         thoughtSignature: streamedSignature,
         languageCode: languageCode,
+        fallbackDiagnosticKind: isUnavailable
+            ? ReviewDiagnosticKind.cloudUnavailableLocalFallback
+            : ReviewDiagnosticKind.failedModelInference,
+        failureDetail: cloudResult.message,
       );
     } finally {
       await sub.cancel();
     }
+  }
+
+  /// Creates an honest, local-only Android Device Permission Inspection receipt
+  /// without synthesizing or inventing privacy-policy disclosures.
+  PolicyReviewReceipt buildDevicePermissionInspectionReceipt({
+    required String subjectTitle,
+    required String sourceLabel,
+    required AppPermissionSnapshot appPermissions,
+    String languageCode = 'en',
+  }) {
+    final report = PermissionComparator.inspectPermissionsOnly(
+      snapshot: appPermissions,
+    );
+    final requestedCount = appPermissions.requestedPermissions.length;
+    final grantedCount = appPermissions.grantedPermissions.length;
+
+    return PolicyReviewReceipt(
+      id: 'perm_${DateTime.now().millisecondsSinceEpoch}',
+      subjectTitle: subjectTitle,
+      sourceLabel: sourceLabel,
+      snapshotText: '',
+      snapshotDigest: '',
+      createdAt: DateTime.now(),
+      overallState: ReviewOverallState.insufficientEvidence,
+      inferenceSource: InferenceSource.offlineDeterministic,
+      summary:
+          'Device Permission Inspection for ${appPermissions.appName} '
+          '(${appPermissions.packageName}): $requestedCount Android '
+          '${requestedCount == 1 ? 'permission' : 'permissions'} declared '
+          '($grantedCount granted). No privacy policy was provided or '
+          'compared yet.',
+      calibratedDisclaimer:
+          'Permission inspection only — no privacy policy has been reviewed. '
+          '${_localizedDisclaimerFor(languageCode)}',
+      findings: const [],
+      permissionReport: report,
+      processSteps: const [
+        'Queried Android PackageManager locally on this phone',
+        'Skipped AI/cloud calls because no privacy policy was supplied',
+      ],
+      diagnosticKind: ReviewDiagnosticKind.devicePermissionInspection,
+    );
+  }
+
+  static bool _isUnavailableCloudFailure(HybridAnalysisResult result) {
+    final code = (result.errorCode ?? '').toLowerCase();
+    final msg = (result.message ?? '').toLowerCase();
+    final combined = '$code $msg';
+    return combined.contains('quota') ||
+        combined.contains('429') ||
+        combined.contains('offline') ||
+        combined.contains('unable to resolve host') ||
+        combined.contains('network') ||
+        combined.contains('socket') ||
+        combined.contains('timeout') ||
+        combined.contains('handshake') ||
+        combined.contains('app check') ||
+        combined.contains('appcheck') ||
+        combined.contains('unavailable');
   }
 
   ReviewExecutionResult _completeBridgePolicyReceipt({
@@ -342,6 +408,8 @@ class ReviewCoordinator {
     String? thoughtSummary,
     String? thoughtSignature,
     required String languageCode,
+    ReviewDiagnosticKind? fallbackDiagnosticKind,
+    String? failureDetail,
   }) {
     _recordAndEmitStep(
       requestId: requestId,
@@ -369,6 +437,8 @@ class ReviewCoordinator {
       thoughtSummary: thoughtSummary,
       thoughtSignature: thoughtSignature,
       languageCode: languageCode,
+      fallbackDiagnosticKind: fallbackDiagnosticKind,
+      failureDetail: failureDetail,
     );
     return ReviewExecutionResult.completed(
       _attachPermissionComparison(receipt, appPermissions),
@@ -669,8 +739,24 @@ class ReviewCoordinator {
     String? thoughtSignature,
     String languageCode = 'en',
   }) {
-    final map = bridgeResult.structuredOutput!;
-    final rawConcerns = (map['concerns'] as List?) ?? const [];
+    final map = bridgeResult.structuredOutput ?? const <String, dynamic>{};
+    final rawConcernsValue = map['concerns'];
+    final rawConcerns = rawConcernsValue is List ? rawConcernsValue : const [];
+    final rawSummary = (map['summary'] as String?)?.trim() ?? '';
+    final rawState = (map['overall_state'] as String?)?.trim().toUpperCase() ?? '';
+    final isRawTextFallback =
+        map.containsKey('rawText') &&
+        (rawState.isEmpty || rawConcernsValue is! List || rawSummary.isEmpty);
+    final hasRecognizedState =
+        rawState == 'REVIEW_RECOMMENDED' ||
+        rawState == 'NO_CONCERN' ||
+        rawState == 'INSUFFICIENT_EVIDENCE';
+    final hasValidStructure =
+        !isRawTextFallback &&
+        hasRecognizedState &&
+        rawConcernsValue is List &&
+        rawSummary.isNotEmpty;
+
     final findings = <VerifiedFinding>[];
 
     for (var i = 0; i < rawConcerns.length; i++) {
@@ -751,21 +837,41 @@ class ReviewCoordinator {
     final hasVerifiedConcerns = findings.any(
       (f) => f.status == EvidenceStatus.sourceMatched,
     );
-    final rawState = (map['overall_state'] as String?)?.toUpperCase() ?? '';
+    final sufficiency = PolicySufficiencyValidator.assess(snapshotText);
 
     final ReviewOverallState overallState;
-    if (hasVerifiedConcerns || rawState == 'REVIEW_RECOMMENDED') {
-      overallState = findings.isEmpty && rawState == 'REVIEW_RECOMMENDED'
-          ? ReviewOverallState.insufficientEvidence
-          : (hasVerifiedConcerns
-                ? ReviewOverallState.reviewRecommended
-                : ReviewOverallState.insufficientEvidence);
-    } else if (rawState == 'NO_CONCERN' && findings.isEmpty) {
-      overallState = ReviewOverallState.noConcern;
-    } else if (findings.isNotEmpty && !hasVerifiedConcerns) {
+    final ReviewDiagnosticKind diagnosticKind;
+    final String resolvedSummary;
+
+    if (!sufficiency.isSufficient) {
       overallState = ReviewOverallState.insufficientEvidence;
-    } else {
+      diagnosticKind = ReviewDiagnosticKind.insufficientPolicyMaterial;
+      resolvedSummary = sufficiency.explanation;
+    } else if (!hasValidStructure) {
+      overallState = ReviewOverallState.insufficientEvidence;
+      diagnosticKind = ReviewDiagnosticKind.failedModelInference;
+      resolvedSummary =
+          'Model inference returned incomplete or unparseable analysis output, so a reliable review could not be completed.';
+    } else if (rawState == 'INSUFFICIENT_EVIDENCE') {
+      overallState = ReviewOverallState.insufficientEvidence;
+      diagnosticKind = ReviewDiagnosticKind.insufficientPolicyMaterial;
+      resolvedSummary = rawSummary;
+    } else if (hasVerifiedConcerns &&
+        (rawState == 'REVIEW_RECOMMENDED' || findings.isNotEmpty)) {
+      overallState = ReviewOverallState.reviewRecommended;
+      diagnosticKind = ReviewDiagnosticKind.validated;
+      resolvedSummary = rawSummary;
+    } else if (rawState == 'NO_CONCERN' &&
+        rawConcerns.isEmpty &&
+        findings.isEmpty) {
       overallState = ReviewOverallState.noConcern;
+      diagnosticKind = ReviewDiagnosticKind.validated;
+      resolvedSummary = rawSummary;
+    } else {
+      overallState = ReviewOverallState.insufficientEvidence;
+      diagnosticKind = ReviewDiagnosticKind.failedModelInference;
+      resolvedSummary =
+          'Model output could not be verified against exact quotes in this snapshot (${findings.length} unverified).';
     }
 
     final sourceChip = parseInferenceSource(bridgeResult.inferenceSource);
@@ -779,9 +885,7 @@ class ReviewCoordinator {
       createdAt: DateTime.now(),
       overallState: overallState,
       inferenceSource: sourceChip,
-      summary:
-          (map['summary'] as String?) ??
-          _defaultSummaryForState(overallState, findings.length),
+      summary: resolvedSummary,
       calibratedDisclaimer:
           (map['calibratedDisclaimer'] as String?) ??
           _localizedDisclaimerFor(languageCode),
@@ -789,6 +893,7 @@ class ReviewCoordinator {
       processSteps: processSteps,
       thoughtSummary: thoughtSummary ?? bridgeResult.thoughtSummary,
       thoughtSignature: thoughtSignature ?? bridgeResult.thoughtSignature,
+      diagnosticKind: diagnosticKind,
     );
   }
 
@@ -804,12 +909,38 @@ class ReviewCoordinator {
     String? thoughtSummary,
     String? thoughtSignature,
     String languageCode = 'en',
+    ReviewDiagnosticKind? fallbackDiagnosticKind,
+    String? failureDetail,
   }) {
-    final sentences = policyText
+    final sufficiency = PolicySufficiencyValidator.assess(policyText);
+    if (!sufficiency.isSufficient) {
+      return PolicyReviewReceipt(
+        id: 'local_${DateTime.now().millisecondsSinceEpoch}',
+        subjectTitle: subjectTitle,
+        sourceLabel: sourceLabel,
+        snapshotText: policyText,
+        snapshotDigest: EvidenceValidator.computeSnapshotDigest(policyText),
+        createdAt: DateTime.now(),
+        overallState: ReviewOverallState.insufficientEvidence,
+        inferenceSource: source,
+        summary: sufficiency.explanation,
+        calibratedDisclaimer: _localizedDisclaimerFor(languageCode),
+        findings: const [],
+        processSteps: processSteps,
+        thoughtSummary: thoughtSummary,
+        thoughtSignature: thoughtSignature,
+        diagnosticKind: ReviewDiagnosticKind.insufficientPolicyMaterial,
+      );
+    }
+
+    final splitSentences = policyText
         .split(RegExp(r'(?<=[.!?])\s+'))
         .map((s) => s.trim())
         .where((s) => s.length >= 25)
         .toList();
+    final sentences = splitSentences.isNotEmpty
+        ? splitSentences
+        : [policyText.trim()];
 
     final findings = <VerifiedFinding>[];
     int idx = 1;
@@ -897,11 +1028,34 @@ class ReviewCoordinator {
       }
     }
 
-    final overallState = findings.isNotEmpty
-        ? ReviewOverallState.reviewRecommended
-        : (sentences.isEmpty
-              ? ReviewOverallState.insufficientEvidence
-              : ReviewOverallState.noConcern);
+    final ReviewOverallState overallState;
+    final ReviewDiagnosticKind diagnosticKind;
+    final String summaryText;
+
+    if (findings.isNotEmpty) {
+      overallState = ReviewOverallState.reviewRecommended;
+      diagnosticKind =
+          fallbackDiagnosticKind ?? ReviewDiagnosticKind.validated;
+      summaryText = _defaultSummaryForState(overallState, findings.length);
+    } else if (fallbackDiagnosticKind ==
+        ReviewDiagnosticKind.failedModelInference) {
+      overallState = ReviewOverallState.insufficientEvidence;
+      diagnosticKind = ReviewDiagnosticKind.failedModelInference;
+      final detail = (failureDetail ?? '').trim();
+      summaryText =
+          'Model inference failed${detail.isNotEmpty ? ' ($detail)' : ''}. '
+          'A local keyword scan matched no common risk phrases, so a full review could not be completed.';
+    } else if (fallbackDiagnosticKind ==
+        ReviewDiagnosticKind.cloudUnavailableLocalFallback) {
+      overallState = ReviewOverallState.insufficientEvidence;
+      diagnosticKind = ReviewDiagnosticKind.cloudUnavailableLocalFallback;
+      summaryText =
+          'Cloud inference was unavailable. A deterministic local keyword scan matched no flagged clauses, but full semantic analysis did not run.';
+    } else {
+      overallState = ReviewOverallState.noConcern;
+      diagnosticKind = ReviewDiagnosticKind.validated;
+      summaryText = _defaultSummaryForState(overallState, findings.length);
+    }
 
     return PolicyReviewReceipt(
       id: 'local_${DateTime.now().millisecondsSinceEpoch}',
@@ -912,12 +1066,13 @@ class ReviewCoordinator {
       createdAt: DateTime.now(),
       overallState: overallState,
       inferenceSource: source,
-      summary: _defaultSummaryForState(overallState, findings.length),
+      summary: summaryText,
       calibratedDisclaimer: _localizedDisclaimerFor(languageCode),
       findings: findings,
       processSteps: processSteps,
       thoughtSummary: thoughtSummary,
       thoughtSignature: thoughtSignature,
+      diagnosticKind: diagnosticKind,
     );
   }
 
@@ -963,6 +1118,8 @@ class ReviewCoordinator {
     required String sourceLabel,
     required String snapshotText,
     required String reason,
+    ReviewDiagnosticKind diagnosticKind =
+        ReviewDiagnosticKind.insufficientPolicyMaterial,
     String languageCode = 'en',
   }) {
     return PolicyReviewReceipt(
@@ -977,6 +1134,7 @@ class ReviewCoordinator {
       summary: reason,
       calibratedDisclaimer: _localizedDisclaimerFor(languageCode),
       findings: const [],
+      diagnosticKind: diagnosticKind,
     );
   }
 

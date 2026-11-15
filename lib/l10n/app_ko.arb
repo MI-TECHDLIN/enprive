@@ -30,7 +30,7 @@
   "btnGetStarted": "시작하기",
   "btnContinue": "계속하기",
   "deniIntro": "안녕하세요, 데니예요. 이 약관이 무엇을 뜻하는지 알기 쉽게 풀어드리고, 근거가 되는 원문과 확인되지 않은 점까지 함께 짚어드릴게요.",
-  "cloudConsentDisclosure": "이 문장을 클라우드에서 분석하기 위해 Enprive는 아래 표시된 텍스트만 Firebase AI Logic으로 전송합니다. 설치된 앱 목록과 Android 권한 정보는 절대 전송되지 않습니다.",
+  "cloudConsentDisclosure": "이 문장을 클라우드에서 분석하기 위해 Enprive는 위에 표시된 가림 처리된 텍스트만 Firebase AI Logic으로 전송합니다. 설치된 앱 목록과 Android 권한 정보는 절대 전송되지 않습니다.",
   "permissionLimitationNotice": "Android가 이 기기에서 보고한 권한 상태입니다. 실제로 데이터를 수집하거나 전송했는지는 증명하지 않습니다.",
   "navHome": "홈",
   "navReceipts": "영수증",
@@ -169,5 +169,14 @@
   "sampleCalmMathSubtitle": "오프라인 수학 연습",
   "appsOnThisPhone": "이 휴대폰에 설치된 앱",
   "hintSearchApps": "앱 이름 검색…",
-  "noMatchingApps": "일치하는 앱을 찾지 못했습니다."
+  "noMatchingApps": "일치하는 앱을 찾지 못했습니다.",
+  "sampleSyntheticBadge": "가상 예시",
+  "permissionInspectionTitle": "기기 권한 검사",
+  "addAppPrivacyPolicyBtn": "이 앱의 개인정보 처리방침 추가",
+  "snapshotDigestLabel": "스냅샷 다이제스트 · FNV-1a 64비트",
+  "snapshotDigestExplanation": "이 텍스트의 빠른 64비트 로컬 지문입니다(암호화 SHA-256 아님). 한 글자만 바뀌어도 값이 달라집니다.",
+  "copyDigestBtn": "다이제스트 복사",
+  "digestCopiedMsg": "스냅샷 다이제스트를 복사했습니다",
+  "permissionGrantedBadge": "허용됨",
+  "permissionNotGrantedBadge": "허용되지 않음"
 }

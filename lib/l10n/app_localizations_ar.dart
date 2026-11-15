@@ -105,7 +105,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cloudConsentDisclosure =>
-      'لتحليل هذا النص في السحابة، سيرسل Enprive النص الظاهر أدناه فقط إلى Firebase AI Logic. لن يتم إرسال قائمة تطبيقاتك المثبتة أو أذونات Android أبدًا.';
+      'لتحليل هذا النص في السحابة، سيرسل Enprive النص المنقّح الظاهر أعلاه فقط إلى Firebase AI Logic. لن يتم إرسال قائمة تطبيقاتك المثبتة أو أذونات Android أبدًا.';
 
   @override
   String get permissionLimitationNotice =>
@@ -582,4 +582,32 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get noMatchingApps =>
       'لم يتم العثور على تطبيقات مطابقة على هذا الهاتف.';
+
+  @override
+  String get sampleSyntheticBadge => 'مثال تجريبي';
+
+  @override
+  String get permissionInspectionTitle => 'فحص أذونات الجهاز';
+
+  @override
+  String get addAppPrivacyPolicyBtn => 'إضافة سياسة خصوصية هذا التطبيق';
+
+  @override
+  String get snapshotDigestLabel => 'بصمة اللقطة · FNV-1a 64-بت';
+
+  @override
+  String get snapshotDigestExplanation =>
+      'بصمة محلية سريعة بـ 64 بت لهذا النص (وليست تشفير SHA-256). تتغير إذا تغير حرف واحد من النص.';
+
+  @override
+  String get copyDigestBtn => 'نسخ البصمة';
+
+  @override
+  String get digestCopiedMsg => 'تم نسخ بصمة اللقطة';
+
+  @override
+  String get permissionGrantedBadge => 'ممنوح';
+
+  @override
+  String get permissionNotGrantedBadge => 'غير ممنوح';
 }

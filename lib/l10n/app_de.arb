@@ -30,7 +30,7 @@
   "btnGetStarted": "Los geht's",
   "btnContinue": "Weiter",
   "deniIntro": "Hallo, ich bin Deni. Ich helfe Ihnen zu verstehen, was in dieser Datenschutzerklärung steht, zeige die genauen Belegstellen und erkläre, was Enprive nicht überprüfen konnte.",
-  "cloudConsentDisclosure": "Für die Analyse in der Cloud sendet Enprive ausschließlich den unten gezeigten Text an Firebase AI Logic. Ihre Liste installierter Apps und Android-Berechtigungen werden niemals gesendet.",
+  "cloudConsentDisclosure": "Für die Analyse in der Cloud sendet Enprive ausschließlich den oben gezeigten bereinigten Text an Firebase AI Logic. Ihre Liste installierter Apps und Android-Berechtigungen werden niemals gesendet.",
   "permissionLimitationNotice": "Android meldet diesen Berechtigungsstatus auf diesem Telefon. Das beweist nicht, ob die App tatsächlich auf Daten zugegriffen oder diese übertragen hat.",
   "navHome": "Start",
   "navReceipts": "Belege",
@@ -169,5 +169,14 @@
   "sampleCalmMathSubtitle": "Offline-Matheübung",
   "appsOnThisPhone": "Apps auf diesem Gerät",
   "hintSearchApps": "Apps suchen…",
-  "noMatchingApps": "Keine passenden Apps auf diesem Gerät gefunden."
+  "noMatchingApps": "Keine passenden Apps auf diesem Gerät gefunden.",
+  "sampleSyntheticBadge": "Synthetisches Beispiel",
+  "permissionInspectionTitle": "Geräteberechtigungs-Prüfung",
+  "addAppPrivacyPolicyBtn": "Datenschutzerklärung dieser App hinzufügen",
+  "snapshotDigestLabel": "Snapshot-Prüfwert · FNV-1a 64-Bit",
+  "snapshotDigestExplanation": "Ein schneller lokaler 64-Bit-Fingerabdruck dieses Textes (kein kryptografisches SHA-256). Ändert sich bei jeder Zeichenänderung.",
+  "copyDigestBtn": "Prüfwert kopieren",
+  "digestCopiedMsg": "Snapshot-Prüfwert kopiert",
+  "permissionGrantedBadge": "Erteilt",
+  "permissionNotGrantedBadge": "Nicht erteilt"
 }

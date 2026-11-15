@@ -106,7 +106,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get cloudConsentDisclosure =>
-      'Для анализа текста в облаке Enprive отправит в Firebase AI Logic только текст, показанный ниже. Список установленных приложений и разрешения Android никогда не передаются.';
+      'Для анализа текста в облаке Enprive отправит в Firebase AI Logic только очищенный текст, показанный выше. Список установленных приложений и разрешения Android никогда не передаются.';
 
   @override
   String get permissionLimitationNotice =>
@@ -584,4 +584,34 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get noMatchingApps =>
       'Подходящие приложения на этом телефоне не найдены.';
+
+  @override
+  String get sampleSyntheticBadge => 'Синтетический пример';
+
+  @override
+  String get permissionInspectionTitle => 'Проверка разрешений устройства';
+
+  @override
+  String get addAppPrivacyPolicyBtn =>
+      'Добавить политику конфиденциальности приложения';
+
+  @override
+  String get snapshotDigestLabel =>
+      'Контрольное значение снимка · FNV-1a 64-бит';
+
+  @override
+  String get snapshotDigestExplanation =>
+      'Быстрый локальный 64-битный отпечаток текста (не криптографический SHA-256). Изменяется при правке любого символа.';
+
+  @override
+  String get copyDigestBtn => 'Копировать код';
+
+  @override
+  String get digestCopiedMsg => 'Контрольное значение скопировано';
+
+  @override
+  String get permissionGrantedBadge => 'Разрешено';
+
+  @override
+  String get permissionNotGrantedBadge => 'Не разрешено';
 }

@@ -30,7 +30,7 @@
   "btnGetStarted": "Inizia",
   "btnContinue": "Continua",
   "deniIntro": "Ciao, sono Deni. Ti aiuto a capire cosa dice questa informativa sulla privacy, a vedere le prove esatte e ciò che Enprive non ha potuto verificare.",
-  "cloudConsentDisclosure": "Per analizzare questo testo nel cloud, Enprive invierà solo il testo mostrato qui sotto a Firebase AI Logic. L'elenco delle tue app installate e i permessi Android non verranno mai inviati.",
+  "cloudConsentDisclosure": "Per analizzare questo testo nel cloud, Enprive invierà solo il testo oscurato mostrato qui sopra a Firebase AI Logic. L'elenco delle tue app installate e i permessi Android non verranno mai inviati.",
   "permissionLimitationNotice": "Android segnala questo stato dei permessi su questo telefono. Non dimostra se l'app abbia effettivamente avuto accesso ai dati o li abbia trasmessi.",
   "navHome": "Home",
   "navReceipts": "Ricevute",
@@ -169,5 +169,14 @@
   "sampleCalmMathSubtitle": "Matematica offline",
   "appsOnThisPhone": "App su questo telefono",
   "hintSearchApps": "Cerca app…",
-  "noMatchingApps": "Nessuna app corrispondente trovata su questo telefono."
+  "noMatchingApps": "Nessuna app corrispondente trovata su questo telefono.",
+  "sampleSyntheticBadge": "Esempio sintetico",
+  "permissionInspectionTitle": "Ispezione autorizzazioni dispositivo",
+  "addAppPrivacyPolicyBtn": "Aggiungi l'informativa sulla privacy di questa app",
+  "snapshotDigestLabel": "Impronta snapshot · FNV-1a a 64 bit",
+  "snapshotDigestExplanation": "Impronta locale rapida a 64 bit di questo testo (non è SHA-256 crittografico). Cambia se viene modificato un solo carattere.",
+  "copyDigestBtn": "Copia impronta",
+  "digestCopiedMsg": "Impronta snapshot copiata",
+  "permissionGrantedBadge": "Concessa",
+  "permissionNotGrantedBadge": "Non concessa"
 }

@@ -23,7 +23,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stateNoConcernSubtitle =>
-      'Nothing concerning in the reviewed evidence. This is not a safety certification.';
+      'No concern identified in the reviewed evidence. This is not a safety certification.';
 
   @override
   String get stateReviewRecommended => 'Review recommended';
@@ -105,7 +105,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cloudConsentDisclosure =>
-      'To analyse this text in the cloud, Enprive will send only the text shown below to Firebase AI Logic. Your installed-app list and Android permission observations will never be sent.';
+      'To analyse this text in the cloud, Enprive will send only the redacted text shown above to Firebase AI Logic. Your installed-app list and Android permission observations will never be sent.';
 
   @override
   String get permissionLimitationNotice =>
@@ -572,4 +572,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noMatchingApps => 'No matching apps found on this phone.';
+
+  @override
+  String get sampleSyntheticBadge => 'Synthetic example';
+
+  @override
+  String get permissionInspectionTitle => 'Device Permission Inspection';
+
+  @override
+  String get addAppPrivacyPolicyBtn => 'Add this app\'s privacy policy';
+
+  @override
+  String get snapshotDigestLabel => 'Snapshot digest · FNV-1a 64-bit';
+
+  @override
+  String get snapshotDigestExplanation =>
+      'A fast 64-bit local fingerprint of this text (not cryptographic SHA-256). Changing any character produces a different digest.';
+
+  @override
+  String get copyDigestBtn => 'Copy digest';
+
+  @override
+  String get digestCopiedMsg => 'Snapshot digest copied';
+
+  @override
+  String get permissionGrantedBadge => 'Granted';
+
+  @override
+  String get permissionNotGrantedBadge => 'Not granted';
 }

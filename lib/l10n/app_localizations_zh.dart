@@ -102,7 +102,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cloudConsentDisclosure =>
-      '为了在云端分析此文本，Enprive 仅会将下方显示的文本发送给 Firebase AI Logic。你已安装的应用列表和 Android 权限信息绝不会被发送。';
+      '为了在云端分析此文本，Enprive 仅会将上方显示的脱敏文本发送给 Firebase AI Logic。你已安装的应用列表和 Android 权限信息绝不会被发送。';
 
   @override
   String get permissionLimitationNotice =>
@@ -548,4 +548,32 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noMatchingApps => '在此手机上未找到匹配的应用。';
+
+  @override
+  String get sampleSyntheticBadge => '合成示例';
+
+  @override
+  String get permissionInspectionTitle => '设备权限检查';
+
+  @override
+  String get addAppPrivacyPolicyBtn => '添加此应用的隐私政策';
+
+  @override
+  String get snapshotDigestLabel => '快照摘要 · FNV-1a 64 位';
+
+  @override
+  String get snapshotDigestExplanation =>
+      '此文本的快速 64 位本地指纹（非加密 SHA-256）。更改任意单个字符都会生成不同的摘要。';
+
+  @override
+  String get copyDigestBtn => '复制摘要';
+
+  @override
+  String get digestCopiedMsg => '已复制快照摘要';
+
+  @override
+  String get permissionGrantedBadge => '已授予';
+
+  @override
+  String get permissionNotGrantedBadge => '未授予';
 }

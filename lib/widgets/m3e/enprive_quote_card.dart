@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 
@@ -14,7 +15,7 @@ import 'enprive_material_card_surface.dart';
 /// - Context-window highlighting (`before` + highlighted `matched` + `after`)
 ///   for [WhyThisFindingSheet].
 /// - Left vertical archival spine accent (`3.5dp`), optional verification
-///   header strip, and optional `SHA-256` monospace provenance footer.
+///   header strip, and optional `FNV-1a 64-bit` monospace snapshot digest footer.
 class EnpriveQuoteCard extends StatelessWidget {
   final String? quote;
   final ({String before, String matched, String after})? contextWindow;
@@ -186,12 +187,40 @@ class EnpriveQuoteCard extends StatelessWidget {
                                   color: scheme.onSurfaceVariant,
                                 ),
                                 const SizedBox(width: 6),
-                                Flexible(
+                                Expanded(
                                   child: Text(
-                                    'SHA-256 · $sha256Digest',
+                                    'Snapshot digest · FNV-1a 64-bit · $sha256Digest',
                                     overflow: TextOverflow.ellipsis,
                                     style: typeExt.sha256Hash.copyWith(
                                       fontSize: 11.5,
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                InkWell(
+                                  borderRadius: BorderRadius.circular(8),
+                                  onTap: () {
+                                    Clipboard.setData(
+                                      ClipboardData(text: sha256Digest!),
+                                    );
+                                    ScaffoldMessenger.maybeOf(context)
+                                      ?..hideCurrentSnackBar()
+                                      ..showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Snapshot digest copied',
+                                          ),
+                                          behavior: SnackBarBehavior.floating,
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4),
+                                    child: Icon(
+                                      LucideIcons.copy,
+                                      size: 13,
                                       color: scheme.onSurfaceVariant,
                                     ),
                                   ),
@@ -258,9 +287,44 @@ class EnpriveQuoteCard extends StatelessWidget {
 
     final String rawQuote = quote ?? contextWindow?.matched ?? '';
     if (selectable) {
-      return SelectableText(
-        rawQuote,
-        style: quoteStyle,
+      final tokenPattern = RegExp(
+        r'\[(?:EMAIL|PHONE|IP_ADDRESS|ADDRESS|PERSON|ID|REDACTED_[A-Z0-9_]+)\]',
+      );
+      final matches = tokenPattern.allMatches(rawQuote).toList();
+      if (matches.isEmpty) {
+        return SelectableText(
+          rawQuote,
+          style: quoteStyle,
+        );
+      }
+
+      final semantics = context.enpriveSemantics;
+      final spans = <InlineSpan>[];
+      var cursor = 0;
+      for (final match in matches) {
+        if (match.start > cursor) {
+          spans.add(TextSpan(text: rawQuote.substring(cursor, match.start)));
+        }
+        spans.add(
+          TextSpan(
+            text: match.group(0),
+            style: quoteStyle.copyWith(
+              fontFamily: 'Inter',
+              fontSize: 13.0,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.25,
+              color: semantics.inCloud.foreground,
+              backgroundColor: semantics.inCloud.background,
+            ),
+          ),
+        );
+        cursor = match.end;
+      }
+      if (cursor < rawQuote.length) {
+        spans.add(TextSpan(text: rawQuote.substring(cursor)));
+      }
+      return SelectableText.rich(
+        TextSpan(style: quoteStyle, children: spans),
       );
     }
 

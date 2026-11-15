@@ -30,7 +30,7 @@
   "btnGetStarted": "शुरू करें",
   "btnContinue": "आगे बढ़ें",
   "deniIntro": "नमस्ते, मैं Deni हूँ। मैं आपको यह समझने में मदद कर सकता हूँ कि गोपनीयता नीति क्या कहती है, साक्ष्य दिखा सकता हूँ, और वह बता सकता हूँ जिसे Enprive सत्यापित नहीं कर सका।",
-  "cloudConsentDisclosure": "क्लाउड में इस पाठ का विश्लेषण करने के लिए, Enprive केवल नीचे दिखाया गया पाठ Firebase AI Logic को भेजेगा। आपके इंस्टॉल किए गए ऐप्स की सूची और Android अनुमतियाँ कभी नहीं भेजी जाएँगी।",
+  "cloudConsentDisclosure": "क्लाउड में इस पाठ का विश्लेषण करने के लिए, Enprive केवल ऊपर दिखाया गया संपादित पाठ Firebase AI Logic को भेजेगा। आपके इंस्टॉल किए गए ऐप्स की सूची और Android अनुमतियाँ कभी नहीं भेजी जाएँगी।",
   "permissionLimitationNotice": "Android इस फ़ोन पर यह अनुमति स्थिति दिखाता है। यह साबित नहीं करता कि ऐप ने वास्तव में डेटा एक्सेस या प्रेषित किया है।",
   "navHome": "होम",
   "navReceipts": "रसीदें",
@@ -169,5 +169,14 @@
   "sampleCalmMathSubtitle": "ऑफ़लाइन गणित अभ्यास",
   "appsOnThisPhone": "इस फ़ोन पर मौजूद ऐप्स",
   "hintSearchApps": "ऐप्स खोजें…",
-  "noMatchingApps": "इस फ़ोन पर कोई मेल खाने वाला ऐप नहीं मिला।"
+  "noMatchingApps": "इस फ़ोन पर कोई मेल खाने वाला ऐप नहीं मिला।",
+  "sampleSyntheticBadge": "सिंथेटिक उदाहरण",
+  "permissionInspectionTitle": "डिवाइस अनुमति निरीक्षण",
+  "addAppPrivacyPolicyBtn": "इस ऐप की गोपनीयता नीति जोड़ें",
+  "snapshotDigestLabel": "स्नैपशॉट डाइजेस्ट · FNV-1a 64-बिट",
+  "snapshotDigestExplanation": "इस पाठ का तेज़ 64-बिट स्थानीय फिंगरप्रिंट (क्रिप्टोग्राफिक SHA-256 नहीं)। एक भी अक्षर बदलने पर यह बदल जाता है।",
+  "copyDigestBtn": "डाइजेस्ट कॉपी करें",
+  "digestCopiedMsg": "स्नैपशॉट डाइजेस्ट कॉपी किया गया",
+  "permissionGrantedBadge": "अनुमति दी गई",
+  "permissionNotGrantedBadge": "अनुमति नहीं दी गई"
 }

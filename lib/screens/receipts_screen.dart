@@ -35,6 +35,7 @@ class ReceiptsScreen extends StatefulWidget {
   final List<PolicyReviewReceipt> receipts;
   final ReviewCoordinator coordinator;
   final ValueChanged<String> onDeleteReceipt;
+  final Future<void> Function(PolicyReviewReceipt)? onSaveReceipt;
   final VoidCallback onStartReviewRequested;
 
   const ReceiptsScreen({
@@ -42,6 +43,7 @@ class ReceiptsScreen extends StatefulWidget {
     required this.receipts,
     required this.coordinator,
     required this.onDeleteReceipt,
+    this.onSaveReceipt,
     required this.onStartReviewRequested,
   });
 
@@ -203,6 +205,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                       builder: (_) => ReviewResultScreen(
                                         receipt: receipt,
                                         coordinator: widget.coordinator,
+                                        onSaveReceipt: widget.onSaveReceipt,
                                       ),
                                     ),
                                   );
@@ -294,11 +297,13 @@ class _M3EReceiptCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isConcern =
         receipt.overallState == ReviewOverallState.reviewRecommended;
-    final stateLabel = isConcern
-        ? l10n.stateReviewRecommended
-        : (receipt.overallState == ReviewOverallState.insufficientEvidence
-              ? l10n.statusUnverified
-              : l10n.stateNoConcern);
+    final stateLabel = receipt.isPermissionOnlyInspection
+        ? l10n.permissionInspectionTitle
+        : (isConcern
+              ? l10n.stateReviewRecommended
+              : (receipt.overallState == ReviewOverallState.insufficientEvidence
+                    ? l10n.statusUnverified
+                    : l10n.stateNoConcern));
     final formattedDate = _formatReceiptTimestamp(context, receipt.createdAt);
 
     return EnpriveReceiptCard(

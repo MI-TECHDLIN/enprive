@@ -30,7 +30,7 @@
   "btnGetStarted": "开始使用",
   "btnContinue": "继续",
   "deniIntro": "你好，我是 Deni。我可以帮你看懂隐私政策中的表述，指出每项结论对应的原文证据，并说明哪些内容 Enprive 无法验证。",
-  "cloudConsentDisclosure": "为了在云端分析此文本，Enprive 仅会将下方显示的文本发送给 Firebase AI Logic。你已安装的应用列表和 Android 权限信息绝不会被发送。",
+  "cloudConsentDisclosure": "为了在云端分析此文本，Enprive 仅会将上方显示的脱敏文本发送给 Firebase AI Logic。你已安装的应用列表和 Android 权限信息绝不会被发送。",
   "permissionLimitationNotice": "Android 在此手机上报告了该权限状态，但这不能证明应用是否实际访问或传输过数据。",
   "navHome": "首页",
   "navReceipts": "收据",
@@ -169,5 +169,14 @@
   "sampleCalmMathSubtitle": "离线数学练习",
   "appsOnThisPhone": "此手机上的应用",
   "hintSearchApps": "搜索应用…",
-  "noMatchingApps": "在此手机上未找到匹配的应用。"
+  "noMatchingApps": "在此手机上未找到匹配的应用。",
+  "sampleSyntheticBadge": "合成示例",
+  "permissionInspectionTitle": "设备权限检查",
+  "addAppPrivacyPolicyBtn": "添加此应用的隐私政策",
+  "snapshotDigestLabel": "快照摘要 · FNV-1a 64 位",
+  "snapshotDigestExplanation": "此文本的快速 64 位本地指纹（非加密 SHA-256）。更改任意单个字符都会生成不同的摘要。",
+  "copyDigestBtn": "复制摘要",
+  "digestCopiedMsg": "已复制快照摘要",
+  "permissionGrantedBadge": "已授予",
+  "permissionNotGrantedBadge": "未授予"
 }

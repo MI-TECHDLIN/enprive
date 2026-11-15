@@ -306,7 +306,7 @@ class _DesignSystemPreviewScreenState extends State<DesignSystemPreviewScreen> {
                     controller: _searchController,
                     margin: 0,
                     focusedMargin: 0,
-                    hintText: 'Search clauses, permissions, or SHA-256…',
+                    hintText: 'Search clauses, permissions, or digest…',
                     leading: Icon(
                       LucideIcons.search,
                       size: 20,
@@ -603,7 +603,7 @@ class _DesignSystemPreviewScreenState extends State<DesignSystemPreviewScreen> {
                             LucideIcons.fileCheck2,
                             color: scheme.secondary,
                           ),
-                          trailingText: 'SHA-256',
+                          trailingText: 'FNV-1a 64-bit',
                         ),
                       };
                     },
@@ -728,7 +728,7 @@ class _DesignSystemPreviewScreenState extends State<DesignSystemPreviewScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'SHA-256 · 8f4b2e9c10a74d3b6e12c9805f1a3d7e',
+                          'Snapshot digest · FNV-1a 64-bit · 8f4b2e9c10a74d3b',
                           style: typeExt.sha256Hash,
                         ),
                         const SizedBox(height: 12),

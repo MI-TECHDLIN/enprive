@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'package:flutter/services.dart';
 
 /// Raised when an AI generation or platform call is cancelled (parent, child,
@@ -169,8 +170,13 @@ class HybridAnalysisResult {
 
 class HybridAiBridge {
   static const MethodChannel _channel = MethodChannel('com.enprive/hybrid_ai');
+  static const int _maxCachedAppIcons = 200;
   static final Set<StreamController<AnalysisStreamEvent>> _nativeListeners = {};
   static bool _handlerBound = false;
+
+  final LinkedHashMap<String, Uint8List?> _appIconCache =
+      LinkedHashMap<String, Uint8List?>();
+  final Map<String, Future<Uint8List?>> _pendingAppIconFetches = {};
 
   final StreamController<AnalysisStreamEvent> _analysisEventsController =
       StreamController<AnalysisStreamEvent>.broadcast();
@@ -412,15 +418,74 @@ class HybridAiBridge {
     try {
       final res = await _channel.invokeMethod<List>('listLaunchableApps');
       if (res == null) return const [];
-      return res
+      final entries = res
           .whereType<Map>()
           .map(InstalledAppEntry.fromMap)
           .toList(growable: false);
+      for (final entry in entries) {
+        if (entry.iconBytes != null && entry.iconBytes!.isNotEmpty) {
+          _rememberAppIcon(entry.packageName, entry.iconBytes);
+        }
+      }
+      return entries;
     } on PlatformException {
       return const [];
     } on MissingPluginException {
       return const [];
     }
+  }
+
+  /// Returns a cached local PNG icon for [packageName] if already loaded on
+  /// this bridge instance, or `null` otherwise.
+  Uint8List? cachedAppIcon(String packageName) => _appIconCache[packageName];
+
+  /// Whether an icon lookup for [packageName] has already resolved in this
+  /// bridge instance's cache.
+  bool hasCachedAppIcon(String packageName) =>
+      _appIconCache.containsKey(packageName);
+
+  /// Loads the launcher icon PNG bytes for [packageName] strictly on-device.
+  /// Results are cached in volatile memory on this bridge instance and
+  /// deduplicated across concurrent callers so Binder IPC stays lightweight.
+  Future<Uint8List?> getAppIcon(String packageName, {int sizePx = 112}) {
+    if (packageName.trim().isEmpty) return Future<Uint8List?>.value(null);
+    if (_appIconCache.containsKey(packageName)) {
+      return Future<Uint8List?>.value(_appIconCache[packageName]);
+    }
+    final existing = _pendingAppIconFetches[packageName];
+    if (existing != null) return existing;
+
+    final fetchFuture = _fetchAppIconFromPlatform(packageName, sizePx: sizePx);
+    _pendingAppIconFetches[packageName] = fetchFuture;
+    return fetchFuture;
+  }
+
+  Future<Uint8List?> _fetchAppIconFromPlatform(
+    String packageName, {
+    required int sizePx,
+  }) async {
+    try {
+      final bytes = await _channel.invokeMethod<Uint8List>('getAppIcon', {
+        'packageName': packageName,
+        'sizePx': sizePx,
+      });
+      final normalized = (bytes != null && bytes.isNotEmpty) ? bytes : null;
+      _rememberAppIcon(packageName, normalized);
+      return normalized;
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    } finally {
+      _pendingAppIconFetches.remove(packageName);
+    }
+  }
+
+  void _rememberAppIcon(String packageName, Uint8List? bytes) {
+    if (_appIconCache.length >= _maxCachedAppIcons) {
+      _appIconCache.remove(_appIconCache.keys.first);
+    }
+    _appIconCache[packageName] = bytes;
   }
 
   /// Queries requested and granted permissions for a selected installed package.
@@ -449,18 +514,22 @@ class InstalledAppEntry {
   final String packageName;
   final String appName;
   final bool isSystemApp;
+  final Uint8List? iconBytes;
 
   const InstalledAppEntry({
     required this.packageName,
     required this.appName,
     this.isSystemApp = false,
+    this.iconBytes,
   });
 
   factory InstalledAppEntry.fromMap(Map<dynamic, dynamic> map) {
+    final rawIcon = map['iconBytes'];
     return InstalledAppEntry(
       packageName: map['packageName'] as String? ?? '',
       appName: map['appName'] as String? ?? '',
       isSystemApp: map['isSystemApp'] as bool? ?? false,
+      iconBytes: rawIcon is Uint8List ? rawIcon : null,
     );
   }
 }
