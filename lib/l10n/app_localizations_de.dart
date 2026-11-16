@@ -608,4 +608,30 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get permissionNotGrantedBadge => 'Nicht erteilt';
+
+  @override
+  String get checkingPolicyWithCloudAi =>
+      'Richtlinie wird mit Cloud-KI geprüft.';
+
+  @override
+  String get preparingCloudAiStream =>
+      'Bereinigte Cloud-Prüfung wird vorbereitet…';
+
+  @override
+  String get cancellingAnalysis => 'Wird abgebrochen…';
+
+  @override
+  String get analysisCancelledNotice => 'Prüfung abgebrochen.';
+
+  @override
+  String get cloudTimedOutNotice =>
+      'Cloud-KI hat nicht rechtzeitig geantwortet. Es wurde kein automatischer Neuversuch gestartet.';
+
+  @override
+  String get cloudFallbackBannerTitle =>
+      'Cloud-KI nicht verfügbar — lokaler Scan angezeigt';
+
+  @override
+  String get cloudFallbackBannerBody =>
+      'Die Cloud-Analyse war nicht verfügbar, daher stammt dieses Ergebnis vom lokalen deterministischen Scanner von Enprive.';
 }

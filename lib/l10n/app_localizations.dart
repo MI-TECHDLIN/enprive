@@ -847,7 +847,7 @@ abstract class AppLocalizations {
   /// No description provided for @reviewingOnPhone.
   ///
   /// In en, this message translates to:
-  /// **'Reviewing on this phone…'**
+  /// **'Reviewing on this phone.'**
   String get reviewingOnPhone;
 
   /// No description provided for @readingClausesInitial.
@@ -1191,6 +1191,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not granted'**
   String get permissionNotGrantedBadge;
+
+  /// No description provided for @checkingPolicyWithCloudAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking policy with cloud AI.'**
+  String get checkingPolicyWithCloudAi;
+
+  /// No description provided for @preparingCloudAiStream.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing redacted cloud verification…'**
+  String get preparingCloudAiStream;
+
+  /// No description provided for @cancellingAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling…'**
+  String get cancellingAnalysis;
+
+  /// No description provided for @analysisCancelledNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Review cancelled.'**
+  String get analysisCancelledNotice;
+
+  /// No description provided for @cloudTimedOutNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud AI timed out before responding. No automatic retry was sent.'**
+  String get cloudTimedOutNotice;
+
+  /// No description provided for @cloudFallbackBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud AI unavailable — local scan shown'**
+  String get cloudFallbackBannerTitle;
+
+  /// No description provided for @cloudFallbackBannerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud analysis was unavailable, so this result came from Enprive’s local deterministic scanner.'**
+  String get cloudFallbackBannerBody;
 }
 
 class _AppLocalizationsDelegate

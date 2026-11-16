@@ -2,21 +2,24 @@ import 'dart:async';
 import 'dart:collection';
 import 'package:flutter/services.dart';
 
-/// Raised when an AI generation or platform call is cancelled (parent, child,
-/// or timeout cancellation). Propagates cleanly without retrying or falling back
-/// to a deterministic offline result.
+/// Raised when an AI generation or platform call is cancelled (user action,
+/// parent/child cancellation, or first-response / total-operation timeout).
+/// Propagates cleanly without retrying or silently replacing cancellation with a
+/// misleading deterministic fallback receipt.
 class HybridOperationCancelledException implements Exception {
   final String requestId;
   final String message;
+  final bool isTimeout;
 
   const HybridOperationCancelledException({
     required this.requestId,
     this.message = 'Operation cancelled.',
+    this.isTimeout = false,
   });
 
   @override
   String toString() =>
-      'HybridOperationCancelledException($requestId): $message';
+      'HybridOperationCancelledException($requestId, timeout=$isTimeout): $message';
 }
 
 enum HybridStatus {
@@ -447,14 +450,17 @@ class HybridAiBridge {
         throw HybridOperationCancelledException(
           requestId: requestId,
           message: (res['message'] as String?) ?? 'Analysis cancelled.',
+          isTimeout: _isTimeoutCancellationCode(rawErrorCode),
         );
       }
       return HybridAnalysisResult.fromMap(res);
     } on PlatformException catch (e) {
       if (_isCancellationCode(e.code)) {
+        final reason = e.details is Map ? (e.details as Map)['reason'] : null;
         throw HybridOperationCancelledException(
           requestId: requestId,
           message: e.message ?? 'Analysis cancelled.',
+          isTimeout: _isTimeoutCancellationCode(e.code) || reason == 'timeout',
         );
       }
       return HybridAnalysisResult(
@@ -477,14 +483,41 @@ class HybridAiBridge {
     }
   }
 
+  /// Requests native cancellation of an in-flight analysis coroutine job.
+  Future<bool> cancelAnalysis({String? requestId}) async {
+    try {
+      final res = await _channel.invokeMethod<bool>('cancelAnalysis', {
+        if (requestId != null && requestId.trim().isNotEmpty)
+          'requestId': requestId.trim(),
+      });
+      return res ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   static bool _isCancellationCode(String? code) {
     if (code == null) return false;
     return switch (code.trim().toUpperCase()) {
       'CANCELLED' ||
       'CANCELED' ||
+      'TIMED_OUT' ||
+      'TIMEOUT_CANCELLED' ||
       'CANCELLATIONEXCEPTION' ||
       'TIMEOUTCANCELLATIONEXCEPTION' ||
       'JOBCANCELLATIONEXCEPTION' => true,
+      _ => false,
+    };
+  }
+
+  static bool _isTimeoutCancellationCode(String? code) {
+    if (code == null) return false;
+    return switch (code.trim().toUpperCase()) {
+      'TIMED_OUT' ||
+      'TIMEOUT_CANCELLED' ||
+      'TIMEOUTCANCELLATIONEXCEPTION' => true,
       _ => false,
     };
   }

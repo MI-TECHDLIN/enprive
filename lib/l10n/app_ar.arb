@@ -178,5 +178,12 @@
   "copyDigestBtn": "نسخ البصمة",
   "digestCopiedMsg": "تم نسخ بصمة اللقطة",
   "permissionGrantedBadge": "ممنوح",
-  "permissionNotGrantedBadge": "غير ممنوح"
+  "permissionNotGrantedBadge": "غير ممنوح",
+  "checkingPolicyWithCloudAi": "جارٍ فحص السياسة باستخدام الذكاء الاصطناعي السحابي.",
+  "preparingCloudAiStream": "جارٍ تجهيز التحقق السحابي المنقح…",
+  "cancellingAnalysis": "جارٍ الإلغاء…",
+  "analysisCancelledNotice": "تم إلغاء المراجعة.",
+  "cloudTimedOutNotice": "انتهت مهلة الذكاء الاصطناعي السحابي قبل الاستجابة. لم يتم إرسال أي محاولة إعادة تلقائية.",
+  "cloudFallbackBannerTitle": "تعذّر استخدام السحابة — عُرض الفحص المحلي",
+  "cloudFallbackBannerBody": "تعذّر التحليل السحابي، لذا جاءت هذه النتيجة من الماسح الحتمي المحلي في Enprive."
 }

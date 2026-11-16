@@ -614,4 +614,30 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get permissionNotGrantedBadge => 'Не разрешено';
+
+  @override
+  String get checkingPolicyWithCloudAi =>
+      'Проверка политики с помощью облачного ИИ.';
+
+  @override
+  String get preparingCloudAiStream =>
+      'Подготовка обезличенной облачной проверки…';
+
+  @override
+  String get cancellingAnalysis => 'Отмена…';
+
+  @override
+  String get analysisCancelledNotice => 'Проверка отменена.';
+
+  @override
+  String get cloudTimedOutNotice =>
+      'Облачный ИИ не ответил вовремя. Автоматический повтор не выполнялся.';
+
+  @override
+  String get cloudFallbackBannerTitle =>
+      'Облачный ИИ недоступен — показан локальный скан';
+
+  @override
+  String get cloudFallbackBannerBody =>
+      'Облачный анализ был недоступен, поэтому этот результат сформирован локальным детерминированным сканером Enprive.';
 }

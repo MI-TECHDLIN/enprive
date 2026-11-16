@@ -86,6 +86,37 @@ class DocumentTextExtractorTest {
             fileName = "locked.pdf",
         )
         assertEquals("password_protected", locked.status)
+
+        // 5. PDF containing JPXDecode image reference extracts text cleanly without JP2Decoder on classpath,
+        // and invoking JPXFilter.decode safely throws IOException (MissingImageReaderException), never crashing.
+        val jpxReferencingPdf = createPdfWithJpxStreamAndText(
+            "Students under age 13 do not see behavioral advertising.",
+        )
+        val jpxOutcome = DocumentTextExtractor.extractFromBytes(
+            bytes = jpxReferencingPdf,
+            mimeType = DocumentTextExtractor.MIME_PDF,
+            fileName = "jpx_policy.pdf",
+        )
+        assertEquals("ok", jpxOutcome.status)
+        assertTrue(jpxOutcome.extractedText.contains("behavioral advertising"))
+
+        val jpxFilter = com.tom_roush.pdfbox.filter.FilterFactory.INSTANCE
+            .getFilter(com.tom_roush.pdfbox.cos.COSName.JPX_DECODE)
+        var missingReaderThrown = false
+        try {
+            jpxFilter.decode(
+                ByteArrayInputStream(byteArrayOf(0x00, 0x00, 0x00, 0x0C)),
+                ByteArrayOutputStream(),
+                com.tom_roush.pdfbox.cos.COSDictionary(),
+                0,
+            )
+        } catch (e: com.tom_roush.pdfbox.filter.MissingImageReaderException) {
+            missingReaderThrown = true
+        }
+        assertTrue(
+            "JPXFilter without optional jp2-android dependency must fail via MissingImageReaderException, not crash",
+            missingReaderThrown,
+        )
     }
 
     @Test
@@ -216,5 +247,32 @@ class DocumentTextExtractorTest {
             zos.closeEntry()
         }
         return out.toByteArray()
+    }
+
+    private fun createPdfWithJpxStreamAndText(text: String): ByteArray {
+        val escaped = text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+        val contentStream = "BT /F1 12 Tf 50 700 Td ($escaped) Tj ET"
+        val objects = listOf(
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> /XObject << /Im1 6 0 R >> >> /Contents 5 0 R >>\nendobj\n",
+            "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+            "5 0 obj\n<< /Length ${contentStream.toByteArray(Charsets.US_ASCII).size} >>\nstream\n$contentStream\nendstream\nendobj\n",
+            "6 0 obj\n<< /Type /XObject /Subtype /Image /Width 1 /Height 1 /BitsPerComponent 8 /ColorSpace /DeviceRGB /Filter /JPXDecode /Length 4 >>\nstream\n\u0000\u0000\u0000\u000C\nendstream\nendobj\n",
+        )
+        val header = "%PDF-1.4\n"
+        val sb = StringBuilder(header)
+        val offsets = mutableListOf<Int>()
+        for (obj in objects) {
+            offsets.add(sb.toString().toByteArray(Charsets.US_ASCII).size)
+            sb.append(obj)
+        }
+        val xrefOffset = sb.toString().toByteArray(Charsets.US_ASCII).size
+        sb.append("xref\n0 ${objects.size + 1}\n0000000000 65535 f \n")
+        for (off in offsets) {
+            sb.append(String.format("%010d 00000 n \n", off))
+        }
+        sb.append("trailer\n<< /Size ${objects.size + 1} /Root 1 0 R >>\nstartxref\n$xrefOffset\n%%EOF\n")
+        return sb.toString().toByteArray(Charsets.US_ASCII)
     }
 }

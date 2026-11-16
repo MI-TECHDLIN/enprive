@@ -5,7 +5,14 @@ import com.google.firebase.ai.InferenceSource
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.ThinkingLevel
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 /**
  * Pure routing and provenance helpers for hybrid Firebase AI Logic execution.
@@ -14,6 +21,32 @@ import kotlinx.coroutines.CancellationException
  */
 @OptIn(PublicPreviewAPI::class)
 object HybridAiPolicy {
+    /**
+     * Explicit cloud & on-device inference timeout budgets (D2 remediation):
+     * - First-response timeout (20s): aborts silent App Check / TLS / handshake stalls quickly.
+     * - Total-operation timeout (45s): caps total streaming collection wall-clock time.
+     */
+    const val CLOUD_FIRST_RESPONSE_TIMEOUT_MS: Long = 20_000L
+    const val CLOUD_TOTAL_TIMEOUT_MS: Long = 45_000L
+    const val ON_DEVICE_FIRST_RESPONSE_TIMEOUT_MS: Long = 20_000L
+    const val ON_DEVICE_TOTAL_TIMEOUT_MS: Long = 45_000L
+
+    /**
+     * Explicit [CancellationException] raised when the user cancels an active check.
+     */
+    class UserAnalysisCancelledException(
+        message: String = "Analysis cancelled by user.",
+    ) : CancellationException(message)
+
+    /**
+     * Explicit [CancellationException] raised when either first-response or total
+     * stream timeout expires, ensuring timeout propagates as cancellation cleanly.
+     */
+    class AnalysisTimeoutCancellationException(
+        val isFirstResponseTimeout: Boolean,
+        message: String,
+    ) : CancellationException(message)
+
     /**
      * Validated default thinking level for Gemini 3.8 cloud requests.
      * Note: `gemini-3.8-flash` does not support `ThinkingLevel.MINIMAL`.
@@ -146,6 +179,55 @@ object HybridAiPolicy {
             ThinkingPolicyDecision.UNSUPPORTED_CONFIGURATION
         } else {
             ThinkingPolicyDecision.OMIT_THINKING_CONFIG
+        }
+    }
+
+    /**
+     * Collects [flow] under an explicit [totalTimeoutMs] budget and an upfront
+     * [firstResponseTimeoutMs] budget for the first emitted chunk. Both timeouts
+     * throw a [CancellationException] directly so callers propagate cancellation
+     * without entering failure fallbacks or retrying.
+     */
+    suspend fun <T> collectWithTimeoutBudgets(
+        flow: Flow<T>,
+        firstResponseTimeoutMs: Long = CLOUD_FIRST_RESPONSE_TIMEOUT_MS,
+        totalTimeoutMs: Long = CLOUD_TOTAL_TIMEOUT_MS,
+        onChunk: suspend (T) -> Unit,
+    ) {
+        withTimeout(totalTimeoutMs) {
+            coroutineScope {
+                val receivedFirstChunk = AtomicBoolean(false)
+                val firstResponseTimedOut = AtomicReference<AnalysisTimeoutCancellationException?>(null)
+                var collectorJob: Job? = null
+
+                val firstChunkWatchdog = launch {
+                    delay(firstResponseTimeoutMs)
+                    if (!receivedFirstChunk.get()) {
+                        val timeoutEx = AnalysisTimeoutCancellationException(
+                            isFirstResponseTimeout = true,
+                            message = "Timed out after ${firstResponseTimeoutMs}ms waiting for first model response.",
+                        )
+                        firstResponseTimedOut.compareAndSet(null, timeoutEx)
+                        collectorJob?.cancel(timeoutEx)
+                    }
+                }
+
+                collectorJob = launch {
+                    try {
+                        flow.collect { chunk ->
+                            if (receivedFirstChunk.compareAndSet(false, true)) {
+                                firstChunkWatchdog.cancel()
+                            }
+                            onChunk(chunk)
+                        }
+                    } finally {
+                        firstChunkWatchdog.cancel()
+                    }
+                }
+
+                collectorJob.join()
+                firstResponseTimedOut.get()?.let { throw it }
+            }
         }
     }
 

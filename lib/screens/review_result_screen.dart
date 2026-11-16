@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -11,12 +13,14 @@ import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
 import '../services/intake/policy_intake_helper.dart';
 import '../services/network/policy_url_retriever.dart';
+import '../services/platform/hybrid_ai_bridge.dart';
 import '../widgets/analysis_process_trace.dart';
 import '../widgets/cloud_consent_sheet.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_provenance_chip.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/m3e/enprive_m3e_components.dart';
+import '../widgets/review_progress_sheet.dart';
 import '../widgets/why_this_finding_sheet.dart';
 
 /// Material 3 Expressive Evidence Result Screen:
@@ -50,6 +54,10 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
   bool _isSaved = false;
   bool _isSpeaking = false;
   bool _isAttachingPolicy = false;
+  bool _isAttachingCloud = false;
+  bool _isCancellingAttach = false;
+  int _attachSequence = 0;
+  String? _attachRequestId;
 
   @override
   void didUpdateWidget(covariant ReviewResultScreen oldWidget) {
@@ -142,6 +150,31 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     );
   }
 
+  void _cancelAttachPolicy(AppLocalizations l10n) {
+    if (!_isAttachingPolicy) return;
+    final reqId = _attachRequestId;
+    _attachSequence++;
+    setState(() {
+      _isAttachingPolicy = false;
+      _isAttachingCloud = false;
+      _isCancellingAttach = false;
+      _attachRequestId = null;
+    });
+    if (reqId != null) {
+      unawaited(widget.coordinator.bridge.cancelAnalysis(requestId: reqId));
+    } else {
+      unawaited(widget.coordinator.bridge.cancelAnalysis());
+    }
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(l10n.analysisCancelledNotice),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
+
   Future<void> _openAttachPolicySheet(
     BuildContext context,
     AppLocalizations l10n,
@@ -151,6 +184,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     if (snapshot == null || _isAttachingPolicy) return;
 
     final lang = Localizations.localeOf(context).languageCode;
+    final messenger = ScaffoldMessenger.of(context);
     final attached = await showModalBottomSheet<_AttachedPolicyInput>(
       context: context,
       isScrollControlled: true,
@@ -167,10 +201,18 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
 
     if (attached == null || !mounted) return;
 
-    setState(() => _isAttachingPolicy = true);
+    final seq = ++_attachSequence;
+    var reqId = 'att_${DateTime.now().millisecondsSinceEpoch}';
+    setState(() {
+      _isAttachingPolicy = true;
+      _isAttachingCloud = false;
+      _isCancellingAttach = false;
+      _attachRequestId = reqId;
+    });
     try {
       final sourceLabel = '${receipt.sourceLabel} · ${attached.sourceLabel}';
       var outcome = await widget.coordinator.runPolicyReview(
+        requestId: reqId,
         subjectTitle: receipt.subjectTitle,
         sourceLabel: sourceLabel,
         policyText: attached.policyText,
@@ -178,9 +220,10 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         languageCode: lang,
         sourceSnapshot: attached.sourceSnapshot,
       );
+      if (!mounted || seq != _attachSequence) return;
 
       if (outcome.needsCloudConsentOrManual) {
-        if (!mounted || !context.mounted) return;
+        if (!context.mounted) return;
         final canonicalPayload =
             outcome.redactedPreview ??
             ReviewCoordinator.canonicalCloudPayload(attached.policyText);
@@ -191,8 +234,18 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
           canonicalRedactedPreview: canonicalPayload,
           deviceReason: outcome.errorReason,
         );
-        if (!mounted || decision == CloudConsentDecision.cancelled) return;
+        if (!mounted ||
+            seq != _attachSequence ||
+            decision == CloudConsentDecision.cancelled) {
+          return;
+        }
+        reqId = 'att_${DateTime.now().millisecondsSinceEpoch}';
+        setState(() {
+          _attachRequestId = reqId;
+          _isAttachingCloud = decision == CloudConsentDecision.useCloudOnce;
+        });
         outcome = await widget.coordinator.runPolicyReview(
+          requestId: reqId,
           subjectTitle: receipt.subjectTitle,
           sourceLabel: sourceLabel,
           policyText: attached.policyText,
@@ -208,15 +261,31 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         );
       }
 
-      if (!mounted || outcome.receipt == null) return;
+      if (!mounted || seq != _attachSequence || outcome.receipt == null) return;
       final updated = outcome.receipt!;
       setState(() {
         _activeReceipt = updated;
       });
       widget.onSaveReceipt?.call(updated);
+    } on HybridOperationCancelledException catch (e) {
+      if (mounted && seq == _attachSequence && e.isTimeout) {
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(l10n.cloudTimedOutNotice),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+      }
     } finally {
-      if (mounted) {
-        setState(() => _isAttachingPolicy = false);
+      if (mounted && seq == _attachSequence) {
+        setState(() {
+          _isAttachingPolicy = false;
+          _isAttachingCloud = false;
+          _isCancellingAttach = false;
+          _attachRequestId = null;
+        });
       }
     }
   }
@@ -615,6 +684,17 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                           ),
                           const SizedBox(height: 22),
 
+                          if (_isAttachingPolicy) ...[
+                            ReviewProgressCard(
+                              subjectTitle: receipt.subjectTitle,
+                              isCloudCheck: _isAttachingCloud,
+                              processStream: widget.coordinator.analysisEvents,
+                              onCancel: () => _cancelAttachPolicy(l10n),
+                              isCancelling: _isCancellingAttach,
+                            ),
+                            const SizedBox(height: 18),
+                          ],
+
                           // Summary & Calibrated Note
                           Text(
                             receipt.summary,
@@ -631,6 +711,60 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
+                          if (receipt.diagnosticKind ==
+                              ReviewDiagnosticKind
+                                  .cloudUnavailableLocalFallback) ...[
+                            const SizedBox(height: 14),
+                            EnpriveMaterialCardSurface(
+                              key: const ValueKey<String>(
+                                'cloud_fallback_notice_card',
+                              ),
+                              variant: EnpriveCardVariant.outlined,
+                              backgroundColor: semantics.inCloud.background
+                                  .withValues(alpha: 0.45),
+                              borderColor: semantics.inCloud.border,
+                              borderRadius: BorderRadius.circular(
+                                EnpriveRadii.lg,
+                              ),
+                              padding: const EdgeInsets.all(14),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    LucideIcons.cloudOff,
+                                    size: 18,
+                                    color: semantics.inCloud.foreground,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          l10n.cloudFallbackBannerTitle,
+                                          style: m3e.typeScale.labelLarge
+                                              .copyWith(
+                                                fontWeight: FontWeight.w700,
+                                                color: scheme.onSurface,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          l10n.cloudFallbackBannerBody,
+                                          style: m3e.typeScale.bodySmall
+                                              .copyWith(
+                                                color: scheme.onSurfaceVariant,
+                                                height: 1.38,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           if (receipt.processSteps.isNotEmpty ||
                               receipt.thoughtSummary != null ||
                               receipt.thoughtSignature != null) ...[

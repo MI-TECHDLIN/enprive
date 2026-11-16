@@ -609,4 +609,30 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get permissionNotGrantedBadge => 'Non accordée';
+
+  @override
+  String get checkingPolicyWithCloudAi =>
+      'Vérification de la politique avec l’IA cloud.';
+
+  @override
+  String get preparingCloudAiStream =>
+      'Préparation de la vérification cloud anonymisée…';
+
+  @override
+  String get cancellingAnalysis => 'Annulation…';
+
+  @override
+  String get analysisCancelledNotice => 'Analyse annulée.';
+
+  @override
+  String get cloudTimedOutNotice =>
+      'L’IA cloud n’a pas répondu à temps. Aucune nouvelle tentative automatique n’a été lancée.';
+
+  @override
+  String get cloudFallbackBannerTitle =>
+      'IA cloud indisponible — analyse locale affichée';
+
+  @override
+  String get cloudFallbackBannerBody =>
+      'L’analyse cloud était indisponible ; ce résultat provient du lecteur déterministe local d’Enprive.';
 }

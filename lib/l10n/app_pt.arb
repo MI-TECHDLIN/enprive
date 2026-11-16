@@ -178,5 +178,12 @@
   "copyDigestBtn": "Copiar resumo",
   "digestCopiedMsg": "Resumo do instantâneo copiado",
   "permissionGrantedBadge": "Concedida",
-  "permissionNotGrantedBadge": "Não concedida"
+  "permissionNotGrantedBadge": "Não concedida",
+  "checkingPolicyWithCloudAi": "Verificando política com IA na nuvem.",
+  "preparingCloudAiStream": "Preparando verificação na nuvem sem dados pessoais…",
+  "cancellingAnalysis": "Cancelando…",
+  "analysisCancelledNotice": "Análise cancelada.",
+  "cloudTimedOutNotice": "A IA na nuvem atingiu o tempo limite antes de responder. Nenhuma nova tentativa automática foi enviada.",
+  "cloudFallbackBannerTitle": "IA na nuvem indisponível — verificação local exibida",
+  "cloudFallbackBannerBody": "A análise na nuvem não estava disponível, portanto este resultado veio do verificador determinístico local do Enprive."
 }

@@ -178,5 +178,12 @@
   "copyDigestBtn": "Copiar resumen",
   "digestCopiedMsg": "Resumen de instantánea copiado",
   "permissionGrantedBadge": "Concedido",
-  "permissionNotGrantedBadge": "No concedido"
+  "permissionNotGrantedBadge": "No concedido",
+  "checkingPolicyWithCloudAi": "Revisando la política con IA en la nube.",
+  "preparingCloudAiStream": "Preparando verificación en la nube sin datos personales…",
+  "cancellingAnalysis": "Cancelando…",
+  "analysisCancelledNotice": "Revisión cancelada.",
+  "cloudTimedOutNotice": "La IA en la nube superó el tiempo límite antes de responder. No se envió ningún reintento automático.",
+  "cloudFallbackBannerTitle": "IA en la nube no disponible — escaneo local mostrado",
+  "cloudFallbackBannerBody": "El análisis en la nube no estuvo disponible, por lo que este resultado proviene del escáner determinista local de Enprive."
 }

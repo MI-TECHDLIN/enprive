@@ -607,4 +607,30 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get permissionNotGrantedBadge => 'Não concedida';
+
+  @override
+  String get checkingPolicyWithCloudAi =>
+      'Verificando política com IA na nuvem.';
+
+  @override
+  String get preparingCloudAiStream =>
+      'Preparando verificação na nuvem sem dados pessoais…';
+
+  @override
+  String get cancellingAnalysis => 'Cancelando…';
+
+  @override
+  String get analysisCancelledNotice => 'Análise cancelada.';
+
+  @override
+  String get cloudTimedOutNotice =>
+      'A IA na nuvem atingiu o tempo limite antes de responder. Nenhuma nova tentativa automática foi enviada.';
+
+  @override
+  String get cloudFallbackBannerTitle =>
+      'IA na nuvem indisponível — verificação local exibida';
+
+  @override
+  String get cloudFallbackBannerBody =>
+      'A análise na nuvem não estava disponível, portanto este resultado veio do verificador determinístico local do Enprive.';
 }

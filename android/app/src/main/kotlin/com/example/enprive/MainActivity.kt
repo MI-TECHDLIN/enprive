@@ -37,9 +37,12 @@ import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderF
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -56,6 +59,8 @@ class MainActivity : FlutterActivity() {
     private var tts: TextToSpeech? = null
     private var isTtsReady: Boolean = false
     private var methodChannel: MethodChannel? = null
+    private val activeAnalysisJobs = ConcurrentHashMap<String, Job>()
+    private val userCancelledRequestIds = ConcurrentHashMap.newKeySet<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -163,29 +168,42 @@ class MainActivity : FlutterActivity() {
                 Log.d(TAG, "Received ACTION_PROCESS_TEXT with ${text?.length ?: 0} chars")
             }
             Intent.ACTION_SEND -> {
-                val streamUri = readStreamUri(incomingIntent)
-                if (streamUri != null) {
-                    initialSelectedText = null
-                    initialIncomingPayload = mapOf(
-                        "kind" to "document_uri",
-                        "sourceAction" to "ACTION_SEND",
-                        "uriString" to streamUri.toString(),
-                        "mimeType" to incomingIntent.type,
-                    )
-                    Log.d(TAG, "Received ACTION_SEND stream URI (mime=${incomingIntent.type ?: "unknown"})")
-                } else {
-                    val sharedText = incomingIntent.getStringExtra(Intent.EXTRA_TEXT)
-                        ?: incomingIntent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()
-                    initialSelectedText = sharedText
-                    if (!sharedText.isNullOrBlank()) {
+                when (val route = IncomingShareRouter.fromSendIntent(incomingIntent, contentResolver)) {
+                    is SendShareRoute.TextOrUrl -> {
+                        initialSelectedText = route.text
                         initialIncomingPayload = mapOf(
                             "kind" to "text_or_url",
                             "sourceAction" to "ACTION_SEND",
-                            "text" to sharedText,
-                            "subject" to incomingIntent.getStringExtra(Intent.EXTRA_SUBJECT),
+                            "text" to route.text,
+                            "subject" to route.subject,
+                        )
+                        Log.d(TAG, "Received ACTION_SEND text payload (${route.text.length} chars)")
+                    }
+                    is SendShareRoute.DocumentUri -> {
+                        initialSelectedText = null
+                        initialIncomingPayload = mapOf(
+                            "kind" to "document_uri",
+                            "sourceAction" to "ACTION_SEND",
+                            "uriString" to route.uriString,
+                            "mimeType" to route.declaredMimeType,
+                            "fileName" to route.fileName,
+                        )
+                        Log.d(
+                            TAG,
+                            "Received ACTION_SEND stream URI (mime=${route.declaredMimeType ?: "unknown"})",
                         )
                     }
-                    Log.d(TAG, "Received ACTION_SEND text payload (${sharedText?.length ?: 0} chars)")
+                    is SendShareRoute.Rejected -> {
+                        initialSelectedText = null
+                        initialIncomingPayload = mapOf(
+                            "kind" to "document",
+                            "sourceAction" to "ACTION_SEND",
+                            "status" to route.reasonCode,
+                            "extractedText" to "",
+                            "userMessage" to route.userMessage,
+                        )
+                        Log.d(TAG, "Rejected empty or malformed ACTION_SEND payload (${route.reasonCode})")
+                    }
                 }
             }
         }
@@ -202,22 +220,6 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
-    }
-
-    private fun readStreamUri(incomingIntent: Intent): Uri? {
-        val direct: Uri? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            incomingIntent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-        } else {
-            @Suppress("DEPRECATION")
-            incomingIntent.getParcelableExtra(Intent.EXTRA_STREAM)
-        }
-        if (direct != null) return direct
-
-        val clipData = incomingIntent.clipData
-        if (clipData != null && clipData.itemCount > 0) {
-            return clipData.getItemAt(0).uri
-        }
-        return null
     }
 
     private fun resolveIncomingPayloadMap(rawPayload: Map<String, Any?>): Map<String, Any?> {
@@ -702,10 +704,28 @@ class MainActivity : FlutterActivity() {
                         return@setMethodCallHandler
                     }
 
+                    val jobKey = requestId.ifBlank { "op_${System.nanoTime()}" }
+                    if (userCancelledRequestIds.remove(jobKey)) {
+                        result.error(
+                            "CANCELLED",
+                            "Analysis cancelled by user.",
+                            mapOf("reason" to "user_cancelled"),
+                        )
+                        return@setMethodCallHandler
+                    }
+
                     lifecycleScope.launch(Dispatchers.IO) {
                         var replySubmitted = false
-                        HybridAiPolicy.executeSingleOperation(
-                            onRun = {
+                        val selfJob = kotlin.coroutines.coroutineContext[Job]
+                        if (selfJob != null) {
+                            activeAnalysisJobs[jobKey] = selfJob
+                        }
+                        try {
+                            if (userCancelledRequestIds.remove(jobKey)) {
+                                throw HybridAiPolicy.UserAnalysisCancelledException()
+                            }
+                            HybridAiPolicy.executeSingleOperation(
+                                onRun = {
                                 val inferenceMode =
                                     HybridAiPolicy.resolveInferenceMode(cloudConsent, requestedMode)
                                 val modelName = "gemini-3.8-flash"
@@ -827,7 +847,21 @@ class MainActivity : FlutterActivity() {
                                     label = HybridAiPolicy.initialStreamLabel(inferenceMode),
                                     sourceStr = HybridAiPolicy.initialStreamSource(inferenceMode)
                                 )
-                                createModel(enableThoughts).generateContentStream(prompt).collect { chunk ->
+                                val firstTimeoutMs = if (inferenceMode == InferenceMode.ONLY_IN_CLOUD) {
+                                    HybridAiPolicy.CLOUD_FIRST_RESPONSE_TIMEOUT_MS
+                                } else {
+                                    HybridAiPolicy.ON_DEVICE_FIRST_RESPONSE_TIMEOUT_MS
+                                }
+                                val totalTimeoutMs = if (inferenceMode == InferenceMode.ONLY_IN_CLOUD) {
+                                    HybridAiPolicy.CLOUD_TOTAL_TIMEOUT_MS
+                                } else {
+                                    HybridAiPolicy.ON_DEVICE_TOTAL_TIMEOUT_MS
+                                }
+                                HybridAiPolicy.collectWithTimeoutBudgets(
+                                    flow = createModel(enableThoughts).generateContentStream(prompt),
+                                    firstResponseTimeoutMs = firstTimeoutMs,
+                                    totalTimeoutMs = totalTimeoutMs,
+                                ) { chunk ->
                                     lastInferenceSource = chunk.inferenceSource
                                     val srcLabel = HybridAiPolicy.mapInferenceSource(lastInferenceSource)
                                     var chunkAddedThought = false
@@ -927,14 +961,28 @@ class MainActivity : FlutterActivity() {
                             }
                         },
                         onCancel = { ce ->
+                                val wasUserCancelled =
+                                    userCancelledRequestIds.remove(jobKey) ||
+                                        ce is HybridAiPolicy.UserAnalysisCancelledException ||
+                                        ce.cause is HybridAiPolicy.UserAnalysisCancelledException
+                                val isTimeout =
+                                    !wasUserCancelled &&
+                                        (ce is TimeoutCancellationException ||
+                                            ce is HybridAiPolicy.AnalysisTimeoutCancellationException ||
+                                            ce.cause is TimeoutCancellationException ||
+                                            ce.cause is HybridAiPolicy.AnalysisTimeoutCancellationException)
                                 if (!replySubmitted) {
                                     withContext(NonCancellable + Dispatchers.Main) {
                                         replySubmitted = true
                                         try {
                                             result.error(
-                                                "CANCELLED",
-                                                "Analysis cancelled.",
-                                                null
+                                                if (isTimeout) "TIMED_OUT" else "CANCELLED",
+                                                if (isTimeout) {
+                                                    "Cloud AI timed out before completing."
+                                                } else {
+                                                    "Analysis cancelled."
+                                                },
+                                                mapOf("reason" to if (isTimeout) "timeout" else "user_cancelled"),
                                             )
                                         } catch (_: Exception) {
                                             // Flutter engine may already be detached on cancellation.
@@ -961,7 +1009,35 @@ class MainActivity : FlutterActivity() {
                                 }
                             }
                         )
+                        } finally {
+                            if (selfJob != null) {
+                                activeAnalysisJobs.remove(jobKey, selfJob)
+                            }
+                            userCancelledRequestIds.remove(jobKey)
+                        }
                     }
+                }
+
+                "cancelAnalysis" -> {
+                    val requestedId = call.argument<String>("requestId")?.trim()
+                    var cancelledAny = false
+                    if (!requestedId.isNullOrEmpty()) {
+                        val candidateIds = listOf(requestedId, "${requestedId}_appcheck")
+                        for (cid in candidateIds) {
+                            userCancelledRequestIds.add(cid)
+                            activeAnalysisJobs[cid]?.let { activeJob ->
+                                activeJob.cancel(HybridAiPolicy.UserAnalysisCancelledException())
+                                cancelledAny = true
+                            }
+                        }
+                    } else {
+                        for ((id, activeJob) in activeAnalysisJobs.entries) {
+                            userCancelledRequestIds.add(id)
+                            activeJob.cancel(HybridAiPolicy.UserAnalysisCancelledException())
+                            cancelledAny = true
+                        }
+                    }
+                    result.success(cancelledAny)
                 }
 
                 else -> result.notImplemented()

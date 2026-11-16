@@ -15,8 +15,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -584,5 +586,194 @@ class HybridAiPolicyTest {
             val resolved = concurrentResults.map { it.await() }
             assertEquals(2, resolved.size)
             assertEquals(2, concurrentOpCalls.get())
+        }
+
+    @Test
+    fun `first response timeout and total timeout propagate as CancellationException with zero retry and zero fallback`() =
+        runBlocking {
+            assertEquals(20_000L, HybridAiPolicy.CLOUD_FIRST_RESPONSE_TIMEOUT_MS)
+            assertEquals(45_000L, HybridAiPolicy.CLOUD_TOTAL_TIMEOUT_MS)
+
+            // 1. First-response timeout fires cleanly before total timeout when stream never emits first chunk
+            val firstRespAttempts = AtomicInteger(0)
+            val firstRespCancelHooks = AtomicInteger(0)
+            val firstRespFailures = AtomicInteger(0)
+            try {
+                HybridAiPolicy.executeSingleOperation(
+                    onRun = {
+                        HybridAiPolicy.executeSingleGenerationAttempt(
+                            cloudConsent = true,
+                            requestedMode = "ONLY_IN_CLOUD",
+                            modelName = "gemini-3.8-flash",
+                            onBlocked = { fail("Unexpected block"); "" },
+                            onAttempt = { _, _ ->
+                                firstRespAttempts.incrementAndGet()
+                                val stalledFlow = flow<String> {
+                                    delay(5_000L)
+                                    emit("late chunk")
+                                }
+                                HybridAiPolicy.collectWithTimeoutBudgets(
+                                    flow = stalledFlow,
+                                    firstResponseTimeoutMs = 40L,
+                                    totalTimeoutMs = 5_000L,
+                                ) {}
+                                "SHOULD_TIMEOUT"
+                            },
+                        )
+                    },
+                    onCancel = { ce ->
+                        firstRespCancelHooks.incrementAndGet()
+                        assertTrue(ce is HybridAiPolicy.AnalysisTimeoutCancellationException)
+                        assertTrue((ce as HybridAiPolicy.AnalysisTimeoutCancellationException).isFirstResponseTimeout)
+                    },
+                    onFailure = { _, _ ->
+                        firstRespFailures.incrementAndGet()
+                        "SHOULD_NOT_FAIL"
+                    },
+                )
+                fail("Expected first-response timeout CancellationException")
+            } catch (_: HybridAiPolicy.AnalysisTimeoutCancellationException) {
+            }
+            assertEquals(1, firstRespAttempts.get())
+            assertEquals(1, firstRespCancelHooks.get())
+            assertEquals(0, firstRespFailures.get())
+
+            // 2. Total-operation timeout fires cleanly when first chunk arrives promptly but stream stalls afterward
+            val totalTimeoutAttempts = AtomicInteger(0)
+            val totalTimeoutCancelHooks = AtomicInteger(0)
+            val totalTimeoutFailures = AtomicInteger(0)
+            val receivedChunks = mutableListOf<String>()
+            try {
+                HybridAiPolicy.executeSingleOperation(
+                    onRun = {
+                        HybridAiPolicy.executeSingleGenerationAttempt(
+                            cloudConsent = true,
+                            requestedMode = "ONLY_IN_CLOUD",
+                            modelName = "gemini-3.8-flash",
+                            onBlocked = { fail("Unexpected block"); "" },
+                            onAttempt = { _, _ ->
+                                totalTimeoutAttempts.incrementAndGet()
+                                val slowStream = flow {
+                                    emit("chunk-1")
+                                    delay(5_000L)
+                                    emit("chunk-2")
+                                }
+                                HybridAiPolicy.collectWithTimeoutBudgets(
+                                    flow = slowStream,
+                                    firstResponseTimeoutMs = 1_000L,
+                                    totalTimeoutMs = 80L,
+                                ) { c -> receivedChunks.add(c) }
+                                "SHOULD_TIMEOUT"
+                            },
+                        )
+                    },
+                    onCancel = { ce ->
+                        totalTimeoutCancelHooks.incrementAndGet()
+                        assertTrue(ce is TimeoutCancellationException)
+                    },
+                    onFailure = { _, _ ->
+                        totalTimeoutFailures.incrementAndGet()
+                        "SHOULD_NOT_FAIL"
+                    },
+                )
+                fail("Expected total TimeoutCancellationException")
+            } catch (_: TimeoutCancellationException) {
+            }
+            assertEquals(listOf("chunk-1"), receivedChunks)
+            assertEquals(1, totalTimeoutAttempts.get())
+            assertEquals(1, totalTimeoutCancelHooks.get())
+            assertEquals(0, totalTimeoutFailures.get())
+        }
+
+    @Test
+    fun `user cancellation both before first chunk and mid-stream cancels immediately with zero retry`() =
+        runBlocking {
+            val parentScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+            try {
+                // 1. User cancellation while waiting for first chunk
+                val waitingAttempts = AtomicInteger(0)
+                val waitingCancelled = CountDownLatch(1)
+                val waitingFailures = AtomicInteger(0)
+                val waitingJob = parentScope.launch {
+                    HybridAiPolicy.executeSingleOperation(
+                        onRun = {
+                            HybridAiPolicy.executeSingleGenerationAttempt(
+                                cloudConsent = true,
+                                requestedMode = "ONLY_IN_CLOUD",
+                                modelName = "gemini-3.8-flash",
+                                onBlocked = { fail("Unexpected block"); "" },
+                                onAttempt = { _, _ ->
+                                    waitingAttempts.incrementAndGet()
+                                    HybridAiPolicy.collectWithTimeoutBudgets(
+                                        flow = flow<String> { delay(5_000L) },
+                                        firstResponseTimeoutMs = 5_000L,
+                                        totalTimeoutMs = 5_000L,
+                                    ) {}
+                                    "DONE"
+                                },
+                            )
+                        },
+                        onCancel = { waitingCancelled.countDown() },
+                        onFailure = { _, _ ->
+                            waitingFailures.incrementAndGet()
+                            "FAIL"
+                        },
+                    )
+                }
+                delay(30L)
+                waitingJob.cancel(HybridAiPolicy.UserAnalysisCancelledException())
+                waitingJob.join()
+                assertTrue(waitingCancelled.await(2, TimeUnit.SECONDS))
+                assertEquals(1, waitingAttempts.get())
+                assertEquals(0, waitingFailures.get())
+
+                // 2. User cancellation during streaming after receiving initial chunk
+                val streamAttempts = AtomicInteger(0)
+                val firstChunkSeen = CountDownLatch(1)
+                val streamCancelled = CountDownLatch(1)
+                val streamFailures = AtomicInteger(0)
+                val streamedChunks = mutableListOf<String>()
+                val streamingJob = parentScope.launch {
+                    HybridAiPolicy.executeSingleOperation(
+                        onRun = {
+                            HybridAiPolicy.executeSingleGenerationAttempt(
+                                cloudConsent = true,
+                                requestedMode = "ONLY_IN_CLOUD",
+                                modelName = "gemini-3.8-flash",
+                                onBlocked = { fail("Unexpected block"); "" },
+                                onAttempt = { _, _ ->
+                                    streamAttempts.incrementAndGet()
+                                    val stream = flow {
+                                        emit("part-1")
+                                        firstChunkSeen.countDown()
+                                        delay(5_000L)
+                                        emit("part-2")
+                                    }
+                                    HybridAiPolicy.collectWithTimeoutBudgets(
+                                        flow = stream,
+                                        firstResponseTimeoutMs = 5_000L,
+                                        totalTimeoutMs = 5_000L,
+                                    ) { chunk -> streamedChunks.add(chunk) }
+                                    "DONE"
+                                },
+                            )
+                        },
+                        onCancel = { streamCancelled.countDown() },
+                        onFailure = { _, _ ->
+                            streamFailures.incrementAndGet()
+                            "FAIL"
+                        },
+                    )
+                }
+                assertTrue(firstChunkSeen.await(2, TimeUnit.SECONDS))
+                streamingJob.cancel(HybridAiPolicy.UserAnalysisCancelledException())
+                streamingJob.join()
+                assertTrue(streamCancelled.await(2, TimeUnit.SECONDS))
+                assertEquals(listOf("part-1"), streamedChunks)
+                assertEquals(1, streamAttempts.get())
+                assertEquals(0, streamFailures.get())
+            } finally {
+                parentScope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+            }
         }
 }

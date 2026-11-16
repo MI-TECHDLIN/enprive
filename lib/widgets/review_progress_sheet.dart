@@ -16,12 +16,16 @@ class ReviewProgressCard extends StatefulWidget {
   final String subjectTitle;
   final bool isCloudCheck;
   final Stream<AnalysisStreamEvent>? processStream;
+  final VoidCallback? onCancel;
+  final bool isCancelling;
 
   const ReviewProgressCard({
     super.key,
     required this.subjectTitle,
     this.isCloudCheck = false,
     this.processStream,
+    this.onCancel,
+    this.isCancelling = false,
   });
 
   @override
@@ -141,7 +145,9 @@ class _ReviewProgressCardState extends State<ReviewProgressCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.reviewingOnPhone,
+                      _isInCloudActive
+                          ? l10n.checkingPolicyWithCloudAi
+                          : l10n.reviewingOnPhone,
                       style: m3e.typography.emphasized.titleMedium.copyWith(
                         color: scheme.onSurface,
                         height: 1.25,
@@ -205,7 +211,9 @@ class _ReviewProgressCardState extends State<ReviewProgressCard> {
               Expanded(
                 child: AnalysisLiveProcessView(
                   stream: widget.processStream,
-                  initialLabel: l10n.readingClausesInitial,
+                  initialLabel: _isInCloudActive
+                      ? l10n.preparingCloudAiStream
+                      : l10n.readingClausesInitial,
                   compact: true,
                 ),
               ),
@@ -229,6 +237,29 @@ class _ReviewProgressCardState extends State<ReviewProgressCard> {
               ),
             ],
           ),
+          if (widget.onCancel != null) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: OutlinedButton.icon(
+                key: const ValueKey<String>('review_progress_cancel_btn'),
+                onPressed: widget.isCancelling ? null : widget.onCancel,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(88, 48),
+                  foregroundColor: scheme.onSurfaceVariant,
+                  side: BorderSide(color: surfaces.hairlineBorder),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                icon: const Icon(LucideIcons.x, size: 16),
+                label: Text(
+                  widget.isCancelling ? l10n.cancellingAnalysis : l10n.btnCancel,
+                  style: m3e.typography.emphasized.labelLarge,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

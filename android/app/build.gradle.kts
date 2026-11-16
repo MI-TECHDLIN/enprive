@@ -37,11 +37,59 @@ android {
         manifestPlaceholders["firebaseAppCheckDebugSecret"] = appCheckDebugToken
     }
 
+    val keystorePropsFile = rootProject.file("key.properties")
+    val keystoreProps = Properties()
+    if (keystorePropsFile.exists()) {
+        keystorePropsFile.inputStream().use { stream ->
+            keystoreProps.load(stream)
+        }
+    }
+    val releaseStorePath = keystoreProps.getProperty("storeFile")?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: System.getenv("ENPRIVE_RELEASE_STORE_FILE")?.trim()?.takeIf { it.isNotEmpty() }
+    val releaseStorePassword = keystoreProps.getProperty("storePassword")?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: System.getenv("ENPRIVE_RELEASE_STORE_PASSWORD")?.trim()?.takeIf { it.isNotEmpty() }
+    val releaseKeyAlias = keystoreProps.getProperty("keyAlias")?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: System.getenv("ENPRIVE_RELEASE_KEY_ALIAS")?.trim()?.takeIf { it.isNotEmpty() }
+    val releaseKeyPassword = keystoreProps.getProperty("keyPassword")?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: System.getenv("ENPRIVE_RELEASE_KEY_PASSWORD")?.trim()?.takeIf { it.isNotEmpty() }
+    val releaseStoreFile = releaseStorePath?.let { rootProject.file(it) }
+    val hasReleaseSigning = releaseStoreFile != null &&
+        releaseStoreFile.exists() &&
+        releaseStorePassword != null &&
+        releaseKeyAlias != null &&
+        releaseKeyPassword != null
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = releaseStoreFile
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                logger.lifecycle(
+                    "[Enprive Build] Release keystore not configured (android/key.properties or ENPRIVE_RELEASE_* env vars missing); producing unsigned release artifacts.",
+                )
+                null
+            }
         }
     }
 

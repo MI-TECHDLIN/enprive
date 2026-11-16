@@ -1,4 +1,5 @@
 import '../../services/platform/hybrid_ai_bridge.dart';
+import '../review/deterministic_clause_scanner.dart';
 import '../review/review_models.dart';
 
 enum PermissionAlignmentState {
@@ -189,11 +190,20 @@ class PermissionComparator {
       friendlyName: 'Precise GPS Location',
       category: FindingCategory.tracking,
       severity: FindingSeverity.high,
-      policyKeywords: ['location', 'gps', 'coordinates'],
+      policyKeywords: [
+        'gps',
+        'precise location',
+        'exact location',
+        'geolocation coordinates',
+        'location data',
+        'location',
+      ],
       disclaimPhrases: [
         'do not collect personal identifiers, precise location',
+        'do not collect precise location',
         'do not collect location',
         'never collect location',
+        'never track location',
       ],
       capabilityDescription:
           'Allows reading street-level GPS coordinates while the app is open.',
@@ -203,9 +213,18 @@ class PermissionComparator {
       friendlyName: 'Background Location Access',
       category: FindingCategory.tracking,
       severity: FindingSeverity.high,
-      policyKeywords: ['background', 'location', 'bus zone'],
+      policyKeywords: [
+        'background location',
+        'background gps',
+        'even when the app is running in the background',
+        'even when the application is running in the background',
+        'when the app is running in the background',
+        'when running in the background',
+        'bus zone',
+      ],
       disclaimPhrases: [
         'do not collect personal identifiers, precise location',
+        'do not collect precise location',
         'do not collect location',
       ],
       capabilityDescription:
@@ -216,10 +235,11 @@ class PermissionComparator {
       friendlyName: 'Microphone & Voice Recording',
       category: FindingCategory.retention,
       severity: FindingSeverity.high,
-      policyKeywords: ['microphone', 'voice', 'audio', 'speech'],
+      policyKeywords: ['microphone', 'voice recording', 'audio recording', 'speech'],
       disclaimPhrases: [
         'microphone audio, or camera input',
         'do not collect microphone',
+        'do not record audio',
       ],
       capabilityDescription:
           'Allows capturing audio from the phone microphone.',
@@ -229,10 +249,11 @@ class PermissionComparator {
       friendlyName: 'Camera & Photo Capture',
       category: FindingCategory.dataCollection,
       severity: FindingSeverity.high,
-      policyKeywords: ['camera', 'photo', 'video capture', 'selfie'],
+      policyKeywords: ['camera input', 'camera', 'photo capture', 'video capture', 'selfie'],
       disclaimPhrases: [
         'camera input',
         'do not collect camera',
+        'do not access the camera',
       ],
       capabilityDescription:
           'Allows taking photos or recording video through the device cameras.',
@@ -243,7 +264,7 @@ class PermissionComparator {
       category: FindingCategory.sharing,
       severity: FindingSeverity.high,
       policyKeywords: ['contacts', 'address book', 'phonebook'],
-      disclaimPhrases: ['do not collect contacts'],
+      disclaimPhrases: ['do not collect contacts', 'do not access contacts'],
       capabilityDescription:
           'Allows reading family and friend contact entries saved on this phone.',
     ),
@@ -252,9 +273,24 @@ class PermissionComparator {
       friendlyName: 'Google Advertising ID (AD_ID)',
       category: FindingCategory.sharing,
       severity: FindingSeverity.medium,
-      policyKeywords: ['advertising', 'ad_id', 'behavioral promotions'],
+      policyKeywords: [
+        'advertising id',
+        'advertising identifier',
+        'advertising identifiers',
+        'android advertising id',
+        'ad_id',
+        'behavioral promotions',
+        'third-party advertising partners',
+        'advertising partner',
+        'advertising partners',
+        'ad networks',
+        'personalized ads',
+      ],
       disclaimPhrases: [
         'do not integrate third-party advertising',
+        'do not include any third party advertising',
+        'no third-party advertising',
+        'no third party advertising',
         'never sell, rent, or transmit',
       ],
       capabilityDescription:
@@ -377,11 +413,15 @@ class PermissionComparator {
       final isRequested = snapshot.isRequested(spec.permission);
       final isGranted = snapshot.isGranted(spec.permission);
 
-      final isDisclaimed = spec.disclaimPhrases.any(lowerPolicy.contains);
-      final isMentioned = !isDisclaimed &&
-          spec.policyKeywords.any((kw) => lowerPolicy.contains(kw));
+      final clauseMatch = _assessKeywordDisclosure(
+        policyText: policyText,
+        lowerPolicy: lowerPolicy,
+        spec: spec,
+      );
+      final isDisclaimed = clauseMatch.isDisclaimed;
+      final isMentioned = clauseMatch.isMentioned;
 
-      // Include in report if requested by the app OR mentioned in the policy
+      // Include in report if requested by the app OR affirmatively mentioned in the policy
       if (!isRequested && !isMentioned) continue;
 
       final PermissionAlignmentState state;
@@ -433,6 +473,66 @@ class PermissionComparator {
       snapshot: snapshot,
       items: items,
       limitationNotice: calibratedLimitationNotice,
+    );
+  }
+
+  static final RegExp _sentenceSplit = RegExp(r'(?<=[.!?])\s+|\n+');
+  static final RegExp _coarseIpPhrase = RegExp(
+    r'\b(?:imprecise|approximate|coarse|masked\s+ip)\b[^.]{0,40}\blocation\b|\blocation\b[^.]{0,25}\b(?:imprecise|approximate|coarse)\b',
+    caseSensitive: false,
+  );
+
+  static ({bool isDisclaimed, bool isMentioned}) _assessKeywordDisclosure({
+    required String policyText,
+    required String lowerPolicy,
+    required _SensitivePermissionSpec spec,
+  }) {
+    final sentences = policyText
+        .split(_sentenceSplit)
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+
+    var hasExplicitDisclaimer =
+        spec.disclaimPhrases.any((phrase) => lowerPolicy.contains(phrase));
+    var hasAffirmativeMention = false;
+
+    for (final sentence in sentences) {
+      final sentenceLower = sentence.toLowerCase();
+
+      // Masked-IP / imprecise regional estimation is distinct from GPS/location tracking
+      final isCoarseLocationOnly =
+          (spec.permission == 'android.permission.ACCESS_FINE_LOCATION' ||
+              spec.permission ==
+                  'android.permission.ACCESS_BACKGROUND_LOCATION') &&
+          _coarseIpPhrase.hasMatch(sentenceLower) &&
+          !RegExp(r'\b(?:gps|precise\s+location|exact\s+location|background\s+location)\b', caseSensitive: false)
+              .hasMatch(sentenceLower);
+      if (isCoarseLocationOnly) {
+        continue;
+      }
+
+      final matchesKeyword = spec.policyKeywords.any((kw) {
+        final escaped = RegExp.escape(kw);
+        return RegExp('(?:^|[^a-z0-9_])$escaped(?:\$|[^a-z0-9_])')
+            .hasMatch(sentenceLower);
+      });
+      final matchesDisclaimerPhrase = spec.disclaimPhrases.any(
+        (phrase) => sentenceLower.contains(phrase),
+      );
+      if (!matchesKeyword && !matchesDisclaimerPhrase) continue;
+
+      if (matchesDisclaimerPhrase ||
+          DeterministicClauseScanner.isNegatedClause(sentence)) {
+        hasExplicitDisclaimer = true;
+      } else {
+        hasAffirmativeMention = true;
+      }
+    }
+
+    return (
+      isDisclaimed: hasExplicitDisclaimer && !hasAffirmativeMention,
+      isMentioned: hasAffirmativeMention,
     );
   }
 

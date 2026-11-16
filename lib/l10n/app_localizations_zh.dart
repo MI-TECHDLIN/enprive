@@ -576,4 +576,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get permissionNotGrantedBadge => '未授予';
+
+  @override
+  String get checkingPolicyWithCloudAi => '正在使用云端 AI 检查政策。';
+
+  @override
+  String get preparingCloudAiStream => '正在准备脱敏云端验证…';
+
+  @override
+  String get cancellingAnalysis => '正在取消…';
+
+  @override
+  String get analysisCancelledNotice => '已取消审查。';
+
+  @override
+  String get cloudTimedOutNotice => '云端 AI 响应超时。未发送任何自动重试。';
+
+  @override
+  String get cloudFallbackBannerTitle => '云端 AI 不可用 — 已显示本地扫描结果';
+
+  @override
+  String get cloudFallbackBannerBody => '云端分析不可用，因此本结果由 Enprive 本地确定性扫描器生成。';
 }

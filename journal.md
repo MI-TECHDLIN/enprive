@@ -18,9 +18,9 @@
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
 - **Current `main` HEAD**: `a5c69d1`
-- **Active Feature Branch**: `feature/m3-expressive-rebrand` (Iteration 29 Settings cleanup atop `74357f4`, uncommitted working changes)
+- **Active Feature Branch**: `feature/m3-expressive-rebrand` (D1–D4 Real-Device Reliability Remediation atop `fe3b99d`, uncommitted working changes for user review)
 - **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 24 November 2026)
-- **Next Queued Action**: Run P1 visual polish & remaining acceptance items if authorized, and verify `enprive-hybrid-ai` Cloud Logging / physical Android AICore & App Check before Phase B.
+- **Next Queued Action**: Reconnect physical `RMX5303` (`007446c410310e84`) over USB to run on-device D1–D4 verification + complete `Knowunity`, `Quizlet`, `Transave`, and `5E` journeys; commit/PR only upon user approval before starting D5/Phase B.
 
 ---
 
@@ -1075,11 +1075,75 @@
 
 ---
 
+## Iteration 31 — Real-World Physical Device Compatibility & UX Stress Validation (`RMX5303`, Validation-Only)
+
+- **Date**: 2026-11-16
+- **Branch / Tested Commit**: `feature/m3-expressive-rebrand` (`fe3b99d`, **validation-only: zero app code changes**, documentation & screenshots added under `docs/real_app_testing/`)
+- **Target Device**: Physical Realme `RMX5303` (`007446c410310e84`), Android 15 (SDK 35, `arm64-v8a`, `720x1604` px, **no Google AICore installed**).
+- **Scope Executed Before USB Disconnect (`19:31:36`)**:
+  - Installed `fe3b99d` single-ABI arm64 debug APK (`151M`) and verified device readiness (`Local scanner active`).
+  - Verified Google Play Protect live scan (`Scan apps with Play Protect: ON`, `Improve harmful app detection: ON`, `131` apps scanned clean including `enprive`, `Math Makers`, `Quizlet`).
+  - **Math Makers (`com.ululab.numbers` `01.30.00`)**: Completed onboarding + COPPA birth-year gate policy discovery (`https://ululab.com/privacy-policy/`), genuine public URL retrieval with `[EMAIL]` PII redaction, `SHA-256 source hash` (`c0f2da...`) & `FNV-1a` digest (`#5bc2f641cfdc5f60`), offline deterministic scan (`7 Verified`), Android permission inspection (`17` declared / `13` granted incl. `AD_ID`) + policy attachment, Chrome Share failure (`D1`), Cloud App Check hang (`D2`), and deterministic negation false positives (`D3`).
+  - **Knowunity (`de.knowunity.app` `6.44.4`)**: Completed picker disambiguation + permission inspection (`33` declared / `24` granted), Play Store `App support` → `https://knowunity.com/legal/privacy`, and Chrome `ACTION_PROCESS_TEXT` overflow menu verification (`enprive` lowercase in `⋮`); interrupted at text-selection drag (`19:31:36`).
+  - **Quizlet (`com.quizlet.quizletandroid` `10.60`) & Transave (`com.transave.mobileapp` `1.0.73`)**: Captured ADB pre-flight package/permission metadata (`SYSTEM_ALERT_WINDOW`, `AD_ID`, biometrics, runtime perms) only; live UI flows + Journey `5E` (`PDF`/`TXT`/`DOCX` SAF & Share) remain unexecuted pending USB reconnection.
+- **Defects & UX Friction Catalogued**:
+  - **D1 (High)**: `MainActivity.kt#L166` `ACTION_SEND` prioritizes `readStreamUri` PNG preview `clipData` over Chrome `text/plain` `EXTRA_TEXT` URL (`unsupportedMime` on Chrome share).
+  - **D2 (High)**: Missing `APP_CHECK_DEBUG_TOKEN` in `android/local.properties` + lack of `withTimeout` at `MainActivity.kt#L830` hangs `ONLY_IN_CLOUD` at `0%` without Cancel UI, while `ReviewProgressCard` (`lib/widgets/review_progress_sheet.dart#L144`) displays `"Reviewing on this phone…"` even during cloud execution.
+  - **D3 (Medium)**: Deterministic scanner (`lib/domain/review/review_coordinator.dart#L1022-L1075`) misses negated ad phrases and escalates coarse masked-IP location into High-severity `"Tracks location even in the background — exact GPS location"`.
+  - **D4 (High)**: `flutter build apk --release --target-platform android-arm64` fails `:app:minifyReleaseWithR8` (`Missing class com.gemalto.jp2.JP2Decoder` in `build/app/outputs/mapping/release/missing_rules.txt`).
+  - **D5 (Medium / UX Stress)**: Multi-app navigation friction (external COPPA/Play Store scavenger hunt, no in-app `"Open Play Store"` helper or smart clipboard fill, broken Chrome Share default, separate `Paste text` vs `Policy link` tabs, two-modal flow repeating `"Review on this phone"`, missing two-way `"Compare with installed app"`, silent 25-app cap in picker, vanishing app icons on `ReviewResultScreen`, small-screen floating bottom dock / gesture bar overlaps on `720x1604`).
+- **Deliverables Authored**:
+  - [docs/real_app_testing/README.md](docs/real_app_testing/README.md), [consolidated_acceptance_report.md](docs/real_app_testing/consolidated_acceptance_report.md), [ux_friction_and_recommendations.md](docs/real_app_testing/ux_friction_and_recommendations.md), [device_profile.md](docs/real_app_testing/device_profile.md), [test_matrix.md](docs/real_app_testing/test_matrix.md), [play_protect_observations.md](docs/real_app_testing/play_protect_observations.md), plus per-app `test_report.md` & `findings.md` files under `docs/real_app_testing/applications/`.
+- **Next Immediate Action & Recommended Model**:
+  - Fix P0 blockers (`D1`, `D2`, `D4`) + priority UX/accuracy improvements (`D3`, `D5`), then reconnect `RMX5303` to complete Knowunity finish, Quizlet, Transave, and `5E` document tests.
+  - Recommended Model: **Claude Opus 5.5 / Gemini 4 Argon**.
+
+---
+
+## Iteration 32 — Real-Device Reliability Remediation (`D1`, `D2`, `D3`, `D4`)
+
+- **Date**: 2026-11-16
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop `fe3b99d`, uncommitted working changes; zero D5 navigation redesign)
+- **Active Model**: **Claude Opus 5.5 / Gemini (Antigravity)**
+- **Summary of Changes**:
+  - **D1 (`ACTION_SEND` Precedence & Routing)**:
+    - Extracted pure testable [`IncomingShareRouter.kt`](android/app/src/main/kotlin/com/example/enprive/IncomingShareRouter.kt) (`fromSendIntent`) and wired it in [`MainActivity.kt#L171`](android/app/src/main/kotlin/com/example/enprive/MainActivity.kt#L171). Enforces explicit priority: genuine PDF/DOCX document stream → genuine TXT/MD stream (`fromExtraStream` or blank `EXTRA_TEXT` without a shared URL) → public HTTP(S) `EXTRA_TEXT` URL (ignoring incidental Chrome preview PNGs in `EXTRA_STREAM` / `clipData`) → ordinary shared text → explicit media/stream rejection (`unsupportedMime`) → empty/malformed share rejection (`empty_share` / `invalid_share`).
+    - Mapped `empty_share` (`empty`) and `invalid_share` (`readError`) cleanly in [`policy_intake_helper.dart`](lib/services/intake/policy_intake_helper.dart).
+    - Added 8 unit tests in [`IncomingShareRouterTest.kt`](android/app/src/test/kotlin/com/example/enprive/IncomingShareRouterTest.kt) + widget share E2E coverage in [`test/p0_blocker_closure_widget_test.dart`](test/p0_blocker_closure_widget_test.dart).
+  - **D2 (Bounded Cloud Budgets, Live Cancel, Honest Progress & Fallback UI)**:
+    - Defined `CLOUD_FIRST_RESPONSE_TIMEOUT_MS = 20_000L`, `CLOUD_TOTAL_TIMEOUT_MS = 45_000L`, `UserAnalysisCancelledException`, `AnalysisTimeoutCancellationException`, and `collectWithTimeoutBudgets` in [`HybridAiPolicy.kt`](android/app/src/main/kotlin/com/example/enprive/HybridAiPolicy.kt); wired request cancellation (`cancelAnalysis`), `TIMED_OUT` vs `CANCELLED` `onCancel` propagation, and 0 automatic retries in [`MainActivity.kt`](android/app/src/main/kotlin/com/example/enprive/MainActivity.kt).
+    - Extended [`HybridAiBridge`](lib/services/platform/hybrid_ai_bridge.dart) (`HybridOperationCancelledException.isTimeout`, `cancelAnalysis`), updated all 12 ARB localization files (`checkingPolicyWithCloudAi`, `reviewingOnPhone`, cancel & fallback strings) and regenerated `app_localizations*.dart`.
+    - Updated [`ReviewProgressCard`](lib/widgets/review_progress_sheet.dart) with accurate cloud vs local status headings/subtitles and live `review_progress_cancel_btn`; wired live cancel handlers + clean timeout/cancel SnackBars in [`lib/main.dart`](lib/main.dart), [`ReviewResultScreen`](lib/screens/review_result_screen.dart), and [`WhyThisFindingSheet`](lib/widgets/why_this_finding_sheet.dart), plus `cloud_fallback_notice_card` on `ReviewResultScreen`.
+  - **D3 (Clause-Aware Deterministic Scanner & Permission Separation)**:
+    - Created [`DeterministicClauseScanner`](lib/domain/review/deterministic_clause_scanner.dart) with sentence/sub-clause splitting, negation suppression (`isNegatedClause` including multi-word `_noneSoldSharedPattern` and passive/active negation guards), masked-IP imprecise-location distinction (never escalating into exact GPS/background tracking), and scoped advertising vs third-party operational service distinction, plus `formatDeterministicSummary` fallback explanations; wired into [`ReviewCoordinator`](lib/domain/review/review_coordinator.dart).
+    - Tightened [`PermissionComparator`](lib/domain/permissions/permission_comparator.dart) (`_assessKeywordDisclosure`) so coarse masked-IP estimation, generic `"device identifiers"`, and `"background"` wording stay distinct from `AD_ID` and `ACCESS_FINE_LOCATION` / `ACCESS_BACKGROUND_LOCATION`.
+    - Added 10 regression cases in [`test/deterministic_clause_scanner_test.dart`](test/deterministic_clause_scanner_test.dart) and expanded [`test/review_coordinator_test.dart`](test/review_coordinator_test.dart) (`TIMED_OUT` `isTimeout: true`, `CANCELLED` `isTimeout: false`, App Check/429/`UnknownHostException` `cloudUnavailableLocalFallback`, `InvalidStateException`/`ServerException` `failedModelInference`, 0 retries).
+  - **D4 (R8 PDFBox Release Build & Safe Signing Posture)**:
+    - Created [`android/app/proguard-rules.pro`](android/app/proguard-rules.pro) (`-dontwarn com.gemalto.jp2.JP2Decoder`, `-dontwarn com.gemalto.jp2.JP2Encoder` — verified optional `Class.forName` guard in `JPXFilter.readJPX()`) and [`android/key.properties.example`](android/key.properties.example).
+    - Configured [`android/app/build.gradle.kts`](android/app/build.gradle.kts) with `isMinifyEnabled = true`, `isShrinkResources = true`, ProGuard rules, and clean release signing lookup (`android/key.properties` or `ENPRIVE_RELEASE_*` env vars, defaulting `signingConfig = null` for unsigned release artifacts instead of debug signing).
+    - Added `LinkageError` fallback guard in [`DocumentTextExtractor.kt`](android/app/src/main/kotlin/com/example/enprive/DocumentTextExtractor.kt) and raw PDF `/Filter /JPXDecode` + `FilterFactory` tests in [`DocumentTextExtractorTest.kt`](android/app/src/test/kotlin/com/example/enprive/DocumentTextExtractorTest.kt).
+- **Challenges & Root-Cause Fixes**:
+  - Restored `M3ELoadingIndicator(size: 24)` in [`enprive_bento_posture_card.dart`](lib/widgets/m3e/enprive_bento_posture_card.dart#L148-L156) (matching `HEAD`; local `size: 22` violated M3E `24.0–240.0` assertion in `theme_and_deni_lod_test.dart`).
+  - Expanded `_noneSoldSharedPattern`, removed misleading `"rather than exact GPS..."` disclaimer phrasing that triggered negation/location assertions, and added plurals/background phrases (`advertising identifiers`, `even when the application is running in the background`) to `PermissionComparator`.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **94/94 passed (100%)**.
+  - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks --console=plain`: **29/29 Kotlin JUnit tests passed** (`DocumentTextExtractorTest`: 4, `HybridAiPolicyTest`: 17, `IncomingShareRouterTest`: 8).
+  - `flutter build apk --debug --target-platform android-arm64`: **Built** (`151M`).
+  - `flutter build apk --profile --target-platform android-arm64`: **Built** (`59M` / `62.1MB`).
+  - `flutter build apk --release --target-platform android-arm64`: **Built** (`30M` / `31.4MB`, R8 minified, `pdfbox/resources/**` preserved, unsigned `signingConfig = null` verified via `apksigner`).
+  - **Physical `RMX5303` (`007446c410310e84`) Verification**: **NOT EXECUTED** (`adb devices -l` returned empty list — physical handset disconnected over USB; no emulator substituted).
+- **Next Immediate Action & Recommended Model**:
+  - Reconnect `RMX5303` over USB to execute physical D1–D4 smoke checks + finish `Knowunity`, `Quizlet`, `Transave`, and `5E`; commit/PR on explicit approval.
+  - Recommended Model: **Claude Opus 5.5 / Gemini 4 Argon**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
-1. **Manual Device & GCP Verification + Phase A Review**
-   - **Assigned Model**: Human Product/Tech Lead Verification
-   - **Scope**: Verify `enprive-hybrid-ai` Google Cloud Logging `_Default` sink exclusion filter / AI Monitoring settings in Console, plus test physical Android device AICore Gemini Nano & App Check `ONLY_IN_CLOUD` execution before authorizing Phase B.
+1. **Physical `RMX5303` Re-Validation (`D1`–`D4` + `Knowunity`/`Quizlet`/`Transave`/`5E`) & D5 Navigation UX**
+   - **Assigned Model**: **Claude Opus 5.5 / Gemini 4 Argon**
+   - **Scope**: Run physical `RMX5303` verification on the fixed arm64 APK, then implement approved D5 UX streamlining (`Open in Play Store`, unified intake sheet, compact Compare trigger, small-screen dock spacing).
 2. **Phase B/C Planning (`LocalPromptRegistry` & POC Server Prompt Template)**
    - **Assigned Model**: **Gemini 4 Argon / Claude Opus 5.5**
-   - **Scope**: Begin Phase B only after explicit user authorization on clean Phase A base.
+   - **Scope**: Begin Phase B only after physical-device sign-off.
