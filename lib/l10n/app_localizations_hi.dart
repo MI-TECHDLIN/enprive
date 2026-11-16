@@ -105,7 +105,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get cloudConsentDisclosure =>
-      'क्लाउड में इस पाठ का विश्लेषण करने के लिए, Enprive केवल नीचे दिखाया गया पाठ Firebase AI Logic को भेजेगा। आपके इंस्टॉल किए गए ऐप्स की सूची और Android अनुमतियाँ कभी नहीं भेजी जाएँगी।';
+      'क्लाउड में इस पाठ का विश्लेषण करने के लिए, Enprive केवल ऊपर दिखाया गया संपादित पाठ Firebase AI Logic को भेजेगा। आपके इंस्टॉल किए गए ऐप्स की सूची और Android अनुमतियाँ कभी नहीं भेजी जाएँगी।';
 
   @override
   String get permissionLimitationNotice =>
@@ -573,4 +573,32 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get noMatchingApps => 'इस फ़ोन पर कोई मेल खाने वाला ऐप नहीं मिला।';
+
+  @override
+  String get sampleSyntheticBadge => 'सिंथेटिक उदाहरण';
+
+  @override
+  String get permissionInspectionTitle => 'डिवाइस अनुमति निरीक्षण';
+
+  @override
+  String get addAppPrivacyPolicyBtn => 'इस ऐप की गोपनीयता नीति जोड़ें';
+
+  @override
+  String get snapshotDigestLabel => 'स्नैपशॉट डाइजेस्ट · FNV-1a 64-बिट';
+
+  @override
+  String get snapshotDigestExplanation =>
+      'इस पाठ का तेज़ 64-बिट स्थानीय फिंगरप्रिंट (क्रिप्टोग्राफिक SHA-256 नहीं)। एक भी अक्षर बदलने पर यह बदल जाता है।';
+
+  @override
+  String get copyDigestBtn => 'डाइजेस्ट कॉपी करें';
+
+  @override
+  String get digestCopiedMsg => 'स्नैपशॉट डाइजेस्ट कॉपी किया गया';
+
+  @override
+  String get permissionGrantedBadge => 'अनुमति दी गई';
+
+  @override
+  String get permissionNotGrantedBadge => 'अनुमति नहीं दी गई';
 }

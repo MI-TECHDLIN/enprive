@@ -9,27 +9,29 @@ import 'enprive_tactile_button.dart';
 import 'm3e/enprive_m3e_components.dart';
 
 enum CloudConsentDecision {
-  useCloudOnce,
   reviewLocally,
+  useCloudOnce,
   cancelled,
 }
 
-/// Material 3 Expressive Per-Check Cloud Consent Modal:
-/// - Deni (`LOD 2 · 84dp`, `DeniPose.support`) peeking above a clean PII-scrubbed
-///   policy excerpt card (`SourceSerif4` quotation typography).
-/// - Optional device-capability reason pill.
-/// - Centered bold headline & calm disclosure subtitle.
-/// - Two tactile action pills at the bottom (`Review on this phone` primary +
-///   `Use cloud for this check` secondary).
+/// Consent dialog shown before any policy snippet can leave the device.
+///
+/// Features pinned top navigation & bottom action bars, `useSafeArea: true`,
+/// reactive Material 3 Expressive surface styling across light & dark themes,
+/// accurate upward directional copy ("shown above"), and a full selectable
+/// scrubbed preview matching the exact cloud payload with M3E styling on
+/// masked placeholder tokens.
 class CloudConsentSheet extends StatelessWidget {
   final String subjectTitle;
   final String policyText;
+  final String? canonicalRedactedPreview;
   final String? deviceReason;
 
   const CloudConsentSheet({
     super.key,
     required this.subjectTitle,
     required this.policyText,
+    this.canonicalRedactedPreview,
     this.deviceReason,
   });
 
@@ -37,163 +39,280 @@ class CloudConsentSheet extends StatelessWidget {
     BuildContext context, {
     required String subjectTitle,
     required String policyText,
+    String? canonicalRedactedPreview,
     String? deviceReason,
   }) async {
-    final scheme = EnpriveM3ETheme.of(context).colorScheme;
     final decision = await showModalBottomSheet<CloudConsentDecision>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: scheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => CloudConsentSheet(
         subjectTitle: subjectTitle,
         policyText: policyText,
+        canonicalRedactedPreview: canonicalRedactedPreview,
         deviceReason: deviceReason,
       ),
     );
     return decision ?? CloudConsentDecision.cancelled;
   }
 
+  static final RegExp _tokenPattern = RegExp(
+    r'\[(?:EMAIL|PHONE|IP_ADDRESS|ADDRESS|PERSON|ID|REDACTED_[A-Z0-9_]+)\]',
+  );
+
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context) ??
-        lookupAppLocalizations(
-          Localizations.maybeLocaleOf(context) ?? const Locale('en'),
-        );
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final semantics = context.enpriveSemantics;
+    return EnpriveM3EBridgeScope.ensure(
+      context,
+      child: Builder(
+        builder: (context) {
+          final l10n = AppLocalizations.of(context) ??
+              lookupAppLocalizations(const Locale('en'));
+          final m3e = EnpriveM3ETheme.of(context);
+          final scheme = m3e.colorScheme;
+          final semantics = context.enpriveSemantics;
+          final surfaces = context.enpriveSurfaces;
 
-    final scrubbedPreview = PiiRedactor.redact(policyText).redactedText.trim();
-    final trimmedReason = deviceReason?.trim();
+          // Use the single canonical redacted payload unchanged when provided
+          // so preview and cloud bridge payloads stay byte-for-byte identical.
+          final redaction = PiiRedactor.redact(policyText.trim());
+          final scrubbedPreview =
+              canonicalRedactedPreview ?? redaction.redactedText;
+          final trimmedReason = deviceReason?.trim();
+          final detectedTokens = _tokenPattern
+              .allMatches(scrubbedPreview)
+              .map((m) => m.group(0)!)
+              .toSet()
+              .toList(growable: false);
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Drag handle + close
-            Row(
-              children: [
-                const SizedBox(width: 40),
-                const Spacer(),
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: scheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  tooltip: l10n.tooltipClose,
-                  onPressed: () =>
-                      Navigator.pop(context, CloudConsentDecision.cancelled),
-                  icon: Icon(
-                    LucideIcons.x,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
+          final maxSheetHeight = MediaQuery.sizeOf(context).height * 0.92;
 
-            // Deni (LOD 2 · 84dp) peeking over the Excerpt Card
-            Transform.translate(
-              offset: const Offset(0, 10),
-              child: const DeniAnimatedMascot(
-                size: 84,
-                pose: DeniPose.support,
-              ),
-            ),
-            EnpriveQuoteCard(
-              statusLabel: subjectTitle,
-              quote: scrubbedPreview,
-              selectable: true,
-              spineColor: semantics.inCloud.icon,
-              borderRadius: BorderRadius.circular(24),
-              padding: const EdgeInsets.fromLTRB(16, 18, 18, 18),
-            ),
-            if (trimmedReason != null && trimmedReason.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              EnpriveMaterialCardSurface(
-                variant: EnpriveCardVariant.tonal,
-                backgroundColor: semantics.unknown.background,
-                borderColor: semantics.unknown.border.withValues(alpha: 0.65),
-                accentColor: semantics.unknown.foreground,
-                borderRadius: BorderRadius.circular(16),
-                lipHeight: 2.0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
+          return SafeArea(
+            top: true,
+            bottom: false,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxSheetHeight),
+              child: Material(
+                color: scheme.surface,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(32),
                 ),
-                child: Row(
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      LucideIcons.info,
-                      size: 16,
-                      color: semantics.unknown.foreground,
+                    // Pinned header bar (never scrolls off or collides with status bar)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 12, 16, 12),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Center(
+                            child: Container(
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: scheme.outlineVariant,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const DeniAnimatedMascot(
+                                size: 42,
+                                pose: DeniPose.explaining,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      l10n.chooseReviewModeTitle,
+                                      style: m3e.typography.emphasized.titleMedium
+                                          .copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            color: scheme.onSurface,
+                                          ),
+                                    ),
+                                    if (subjectTitle.trim().isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        subjectTitle,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: m3e.typeScale.labelMedium
+                                            .copyWith(
+                                              color: scheme.onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: l10n.tooltipClose,
+                                constraints: const BoxConstraints(
+                                  minWidth: 48,
+                                  minHeight: 48,
+                                ),
+                                onPressed: () => Navigator.pop(
+                                  context,
+                                  CloudConsentDecision.cancelled,
+                                ),
+                                icon: Icon(
+                                  LucideIcons.x,
+                                  size: 20,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        trimmedReason,
-                        style: m3e.typeScale.bodySmall.copyWith(
-                          fontSize: 13,
-                          height: 1.35,
-                          color: semantics.unknown.foreground,
-                          fontWeight: FontWeight.w600,
+                    Divider(height: 1, color: surfaces.hairlineBorder),
+
+                    // Scrollable scrubbed cloud payload preview & disclosure
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (trimmedReason != null &&
+                                trimmedReason.isNotEmpty) ...[
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: semantics.unknown.background,
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: semantics.unknown.border,
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      LucideIcons.info,
+                                      size: 18,
+                                      color: semantics.unknown.foreground,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        trimmedReason,
+                                        style: m3e.typeScale.bodySmall.copyWith(
+                                          color: semantics.unknown.foreground,
+                                          height: 1.4,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                            ],
+
+                            if (detectedTokens.isNotEmpty) ...[
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  for (final token in detectedTokens)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: semantics.inCloud.background,
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                        border: Border.all(
+                                          color: semantics.inCloud.border,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        token,
+                                        style: m3e.typeScale.labelSmall
+                                            .copyWith(
+                                              fontWeight: FontWeight.w800,
+                                              color:
+                                                  semantics.inCloud.foreground,
+                                            ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+
+                            EnpriveQuoteCard(
+                              quote: scrubbedPreview,
+                              selectable: true,
+                              statusLabel: detectedTokens.isEmpty
+                                  ? 'No PII found'
+                                  : 'Masked (${redaction.replacementCount > 0 ? redaction.replacementCount : detectedTokens.length})',
+                              categoryLabel: 'Exact cloud payload',
+                              spineColor: semantics.inCloud.foreground,
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              l10n.cloudConsentDisclosure,
+                              style: m3e.typeScale.bodySmall.copyWith(
+                                color: scheme.onSurfaceVariant,
+                                height: 1.45,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    Divider(height: 1, color: surfaces.hairlineBorder),
+                    // Pinned consent action bar
+                    SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 14, 24, 18),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            EnpriveTactileButton(
+                              label: l10n.btnUseCloud,
+                              onPressed: () => Navigator.pop(
+                                context,
+                                CloudConsentDecision.useCloudOnce,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            EnpriveTactileButton(
+                              label: l10n.btnReviewOnPhone,
+                              isSecondary: true,
+                              onPressed: () => Navigator.pop(
+                                context,
+                                CloudConsentDecision.reviewLocally,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-            const SizedBox(height: 22),
-
-            // Centered Headline & Subtitle
-            Text(
-              l10n.chooseReviewModeTitle,
-              textAlign: TextAlign.center,
-              style: m3e.typography.emphasized.headlineMedium.copyWith(
-                fontSize: 24,
-                color: scheme.onSurface,
-              ),
             ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                '${l10n.cloudConsentDisclosure} ${l10n.cloudNeverSendsAppsNote}',
-                textAlign: TextAlign.center,
-                style: m3e.typeScale.bodyMedium.copyWith(
-                  fontSize: 14.5,
-                  height: 1.45,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const SizedBox(height: 28),
-
-            // Two Tactile Pill Buttons
-            EnpriveTactileButton(
-              label: l10n.btnReviewOnPhone,
-              onPressed: () =>
-                  Navigator.pop(context, CloudConsentDecision.reviewLocally),
-            ),
-            const SizedBox(height: 12),
-            EnpriveTactileButton(
-              label: l10n.btnUseCloud,
-              isSecondary: true,
-              onPressed: () =>
-                  Navigator.pop(context, CloudConsentDecision.useCloudOnce),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

@@ -24,7 +24,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get stateNoConcernSubtitle =>
-      'Rien de préoccupant dans les preuves examinées. Ceci n\'est pas une certification de sécurité.';
+      'Aucune préoccupation identifiée dans les preuves examinées. Ceci n\'est pas une certification de sécurité.';
 
   @override
   String get stateReviewRecommended => 'Vérification recommandée';
@@ -106,7 +106,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cloudConsentDisclosure =>
-      'Pour analyser ce texte dans le cloud, Enprive enverra uniquement le texte ci-dessous à Firebase AI Logic. Votre liste d\'applications installées et les autorisations Android ne seront jamais transmises.';
+      'Pour analyser ce texte dans le cloud, Enprive enverra uniquement le texte caviardé affiché ci-dessus à Firebase AI Logic. Votre liste d\'applications installées et les autorisations Android ne seront jamais transmises.';
 
   @override
   String get permissionLimitationNotice =>
@@ -578,4 +578,35 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get noMatchingApps =>
       'Aucune application correspondante trouvée sur ce téléphone.';
+
+  @override
+  String get sampleSyntheticBadge => 'Exemple synthétique';
+
+  @override
+  String get permissionInspectionTitle =>
+      'Inspection des autorisations de l\'appareil';
+
+  @override
+  String get addAppPrivacyPolicyBtn =>
+      'Ajouter la politique de confidentialité de cette app';
+
+  @override
+  String get snapshotDigestLabel =>
+      'Empreinte de l\'instantané · FNV-1a 64 bits';
+
+  @override
+  String get snapshotDigestExplanation =>
+      'Empreinte locale rapide sur 64 bits de ce texte (ce n\'est pas un SHA-256 cryptographique). Elle change si un seul caractère est modifié.';
+
+  @override
+  String get copyDigestBtn => 'Copier l\'empreinte';
+
+  @override
+  String get digestCopiedMsg => 'Empreinte copiée';
+
+  @override
+  String get permissionGrantedBadge => 'Accordée';
+
+  @override
+  String get permissionNotGrantedBadge => 'Non accordée';
 }

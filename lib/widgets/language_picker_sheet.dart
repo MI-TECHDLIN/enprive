@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../core/theme/enprive_theme.dart';
-import '../core/theme/enprive_tokens.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/enprive_languages.dart';
 
@@ -21,34 +19,41 @@ class EnpriveLanguagePickerSheet extends StatelessWidget {
     BuildContext context, {
     required Locale currentLocale,
   }) {
-    final scheme = M3ETheme.of(context).colorScheme;
     return showModalBottomSheet<Locale>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: scheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => EnpriveLanguagePickerSheet(selectedLocale: currentLocale),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context) ??
-        lookupAppLocalizations(selectedLocale);
-    final m3e = M3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final semantics = context.enpriveSemantics;
-    final surfaces = context.enpriveSurfaces;
+    return EnpriveM3EBridgeScope.ensure(
+      context,
+      child: Builder(
+        builder: (context) {
+          final l10n = AppLocalizations.of(context) ??
+              lookupAppLocalizations(selectedLocale);
+          final m3e = EnpriveM3ETheme.of(context);
+          final scheme = m3e.colorScheme;
+          final semantics = context.enpriveSemantics;
+          final surfaces = context.enpriveSurfaces;
 
-    final selectedCode =
-        enpriveLanguageByCode(selectedLocale.languageCode).code;
-    final maxSheetHeight = MediaQuery.of(context).size.height * 0.78;
+          final selectedCode =
+              enpriveLanguageByCode(selectedLocale.languageCode).code;
+          final maxSheetHeight = MediaQuery.of(context).size.height * 0.78;
 
-    return SafeArea(
-      top: false,
-      child: ConstrainedBox(
+          return Material(
+            color: scheme.surface,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(32),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: SafeArea(
+              top: false,
+              child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: maxSheetHeight),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
@@ -196,6 +201,10 @@ class EnpriveLanguagePickerSheet extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    ),
+          );
+        },
       ),
     );
   }

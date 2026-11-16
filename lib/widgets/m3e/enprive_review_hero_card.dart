@@ -85,7 +85,7 @@ class EnpriveReviewHeroCard extends StatelessWidget {
       ),
       ReviewOverallState.noConcern => (
         semantics.noConcern,
-        LucideIcons.shieldCheck,
+        LucideIcons.fileText,
       ),
       ReviewOverallState.insufficientEvidence => (
         semantics.insufficientEvidence,
@@ -130,34 +130,43 @@ class EnpriveReviewHeroCard extends StatelessWidget {
           )!.withValues(alpha: 0.45)
         : semantics.onDevice.background;
 
-    final Widget sourcePill = Tooltip(
-      message: sourceActionTooltip,
-      child: M3EButton(
-        onPressed: onSourceAction,
-        style: M3EButtonStyle.filled,
-        size: M3EButtonSize.sm.copyWith(height: 36, hPadding: 13),
-        shape: M3EButtonShape.round,
-        decoration: M3EButtonDecoration(
-          backgroundColor: WidgetStatePropertyAll<Color?>(
-            isDark ? surfaces.cardElevated : surfaces.tactilePrimaryBg,
+    Widget buildSourcePill(double maxButtonWidth) {
+      return Tooltip(
+        message: sourceActionTooltip,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxButtonWidth),
+          child: M3EButton(
+            onPressed: onSourceAction,
+            style: M3EButtonStyle.filled,
+            size: M3EButtonSize.sm.copyWith(height: 36, hPadding: 13),
+            shape: M3EButtonShape.round,
+            decoration: M3EButtonDecoration(
+              backgroundColor: WidgetStatePropertyAll<Color?>(
+                isDark ? surfaces.cardElevated : surfaces.tactilePrimaryBg,
+              ),
+              foregroundColor: WidgetStatePropertyAll<Color?>(
+                isDark ? scheme.onSurface : surfaces.tactilePrimaryFg,
+              ),
+              side: isDark
+                  ? WidgetStatePropertyAll<BorderSide?>(
+                      BorderSide(color: surfaces.strongBorder, width: 1.2),
+                    )
+                  : null,
+              textStyle: m3e.typography.emphasized.labelLarge,
+              motion: M3EButtonMotion.expressiveSpatialPress,
+              haptic: M3EHapticFeedback.light,
+              borderRadius: 999,
+              pressedRadius: 12,
+            ),
+            label: Text(
+              sourceActionLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          foregroundColor: WidgetStatePropertyAll<Color?>(
-            isDark ? scheme.onSurface : surfaces.tactilePrimaryFg,
-          ),
-          side: isDark
-              ? WidgetStatePropertyAll<BorderSide?>(
-                  BorderSide(color: surfaces.strongBorder, width: 1.2),
-                )
-              : null,
-          textStyle: m3e.typography.emphasized.labelLarge,
-          motion: M3EButtonMotion.expressiveSpatialPress,
-          haptic: M3EHapticFeedback.light,
-          borderRadius: 999,
-          pressedRadius: 12,
         ),
-        label: Text(sourceActionLabel),
-      ),
-    );
+      );
+    }
 
     final Widget voiceButton = Material(
       color: isSpeaking ? scheme.primary : surfaces.card,
@@ -316,7 +325,13 @@ class EnpriveReviewHeroCard extends StatelessWidget {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final bool stackVertically =
-                    isLargeScale || constraints.maxWidth < 250;
+                    isLargeScale ||
+                    constraints.maxWidth < 250 ||
+                    sourceActionLabel.length > 14;
+                final double maxButtonWidth = stackVertically
+                    ? (constraints.maxWidth - 58).clamp(110.0, 260.0)
+                    : (constraints.maxWidth * 0.48).clamp(96.0, 172.0);
+                final Widget sourcePill = buildSourcePill(maxButtonWidth);
 
                 final Widget identityColumn = Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

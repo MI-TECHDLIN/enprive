@@ -65,7 +65,7 @@ class EnpriveProvenanceChip extends StatelessWidget {
         ),
       InferenceSource.offlineDeterministic => (
           semantics.offlineFallback,
-          Ph.shield_check_duotone,
+          Ph.file_text_duotone,
           l10n.chipOfflineDeterministic,
         ),
       InferenceSource.unknown => (

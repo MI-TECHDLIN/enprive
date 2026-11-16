@@ -29,11 +29,15 @@ class PrivateReadinessSheet extends StatefulWidget {
   }) {
     return showModalBottomSheet<DeviceCapability>(
       context: context,
+      useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => PrivateReadinessSheet(
-        bridge: bridge,
-        initialCapability: initialCapability,
+      builder: (sheetContext) => EnpriveM3EBridgeScope.ensure(
+        sheetContext,
+        child: PrivateReadinessSheet(
+          bridge: bridge,
+          initialCapability: initialCapability,
+        ),
       ),
     );
   }
@@ -79,7 +83,7 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
         lookupAppLocalizations(
           Localizations.maybeLocaleOf(context) ?? const Locale('en'),
         );
-    final m3e = M3ETheme.of(context);
+    final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
     final semantics = context.enpriveSemantics;
     final surfaces = context.enpriveSurfaces;
@@ -102,12 +106,12 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
 
     final badgePair = isReady ? semantics.noConcern : semantics.onDevice;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-      ),
+    return Material(
+      color: scheme.surface,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      clipBehavior: Clip.antiAlias,
       child: SafeArea(
+        top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
           child: Column(

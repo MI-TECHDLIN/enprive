@@ -280,10 +280,14 @@ abstract final class EnpriveM3ETheme {
   /// back to Enprive's [lightThemeData] / [darkThemeData] matching
   /// `Theme.of(context).brightness` when rendered inside a standalone test harness.
   static M3EThemeData of(BuildContext context) {
-    final inherited = M3ETheme.maybeOf(context);
-    if (inherited != null) return inherited;
-    final brightness = legacy.Theme.of(context).brightness;
-    return brightness == Brightness.dark ? darkThemeData : lightThemeData;
+    final materialBrightness = legacy.Theme.of(context).brightness;
+    if (M3ETheme.maybeOf(context) != null) {
+      final resolved = M3ETheme.of(context);
+      if (resolved.brightness == materialBrightness) {
+        return resolved;
+      }
+    }
+    return materialBrightness == Brightness.dark ? darkThemeData : lightThemeData;
   }
 }
 
@@ -367,7 +371,9 @@ class EnpriveM3EBridgeScope extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final platformBrightness =
-        MediaQuery.maybePlatformBrightnessOf(context) ?? Brightness.light;
+        MediaQuery.maybePlatformBrightnessOf(context) ??
+        View.maybeOf(context)?.platformDispatcher.platformBrightness ??
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
     final m3eData = EnpriveM3ETheme.resolve(
       mode: themeMode,
       platformBrightness: platformBrightness,
@@ -386,9 +392,11 @@ class EnpriveM3EBridgeScope extends StatelessWidget {
           delegates: EnpriveM3ETheme.localizationsDelegates,
           child: legacy.Theme(
             data: legacyTheme,
-            child: legacy.ScaffoldMessenger(
-              child: child,
-            ),
+            child: legacy.ScaffoldMessenger.maybeOf(context) != null
+                ? child
+                : legacy.ScaffoldMessenger(
+                    child: child,
+                  ),
           ),
         ),
       ),

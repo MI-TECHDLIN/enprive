@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+
 /// Deterministic Evidence Validator.
 /// Enforces 100% quotation alignment against raw policy snapshots,
 /// validates evidence IDs, and rejects ungrounded or fabricated claims.
@@ -121,5 +125,12 @@ class EvidenceValidator {
     }
     return '${hash1.toRadixString(16).padLeft(8, '0')}'
         '${hash2.toRadixString(16).padLeft(8, '0')}';
+  }
+
+  /// Computes a cryptographic SHA-256 hex digest of the normalized UTF-8
+  /// [snapshotText] for verifiable local source snapshot provenance.
+  static String computeSha256SourceHash(String snapshotText) {
+    final normalized = normalize(snapshotText);
+    return sha256.convert(utf8.encode(normalized)).toString();
   }
 }

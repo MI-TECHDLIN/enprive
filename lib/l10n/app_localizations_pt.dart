@@ -105,7 +105,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get cloudConsentDisclosure =>
-      'Para analisar este texto na nuvem, o Enprive enviará apenas o texto mostrado abaixo ao Firebase AI Logic. Sua lista de aplicativos instalados e permissões do Android nunca serão enviadas.';
+      'Para analisar este texto na nuvem, o Enprive enviará apenas o texto ocultado mostrado acima ao Firebase AI Logic. Sua lista de aplicativos instalados e permissões do Android nunca serão enviadas.';
 
   @override
   String get permissionLimitationNotice =>
@@ -577,4 +577,34 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get noMatchingApps =>
       'Nenhum app correspondente encontrado neste telefone.';
+
+  @override
+  String get sampleSyntheticBadge => 'Exemplo sintético';
+
+  @override
+  String get permissionInspectionTitle =>
+      'Inspeção de permissões do dispositivo';
+
+  @override
+  String get addAppPrivacyPolicyBtn =>
+      'Adicionar política de privacidade deste app';
+
+  @override
+  String get snapshotDigestLabel => 'Resumo do instantâneo · FNV-1a 64 bits';
+
+  @override
+  String get snapshotDigestExplanation =>
+      'Impressão digital local rápida de 64 bits deste texto (não é SHA-256 criptográfico). Muda se qualquer caractere for alterado.';
+
+  @override
+  String get copyDigestBtn => 'Copiar resumo';
+
+  @override
+  String get digestCopiedMsg => 'Resumo do instantâneo copiado';
+
+  @override
+  String get permissionGrantedBadge => 'Concedida';
+
+  @override
+  String get permissionNotGrantedBadge => 'Não concedida';
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'package:flutter/services.dart';
 
 /// Raised when an AI generation or platform call is cancelled (parent, child,
@@ -169,16 +170,31 @@ class HybridAnalysisResult {
 
 class HybridAiBridge {
   static const MethodChannel _channel = MethodChannel('com.enprive/hybrid_ai');
+  static const int _maxCachedAppIcons = 200;
   static final Set<StreamController<AnalysisStreamEvent>> _nativeListeners = {};
+  static final Set<StreamController<IncomingIntentPayload>>
+  _incomingIntentListeners = {};
   static bool _handlerBound = false;
+
+  final LinkedHashMap<String, Uint8List?> _appIconCache =
+      LinkedHashMap<String, Uint8List?>();
+  final Map<String, Future<Uint8List?>> _pendingAppIconFetches = {};
 
   final StreamController<AnalysisStreamEvent> _analysisEventsController =
       StreamController<AnalysisStreamEvent>.broadcast();
+  final StreamController<IncomingIntentPayload> _incomingPayloadController =
+      StreamController<IncomingIntentPayload>.broadcast();
 
   Stream<AnalysisStreamEvent> get analysisEvents {
     _nativeListeners.add(_analysisEventsController);
     _ensureHandlerBound();
     return _analysisEventsController.stream;
+  }
+
+  Stream<IncomingIntentPayload> get incomingPayloads {
+    _incomingIntentListeners.add(_incomingPayloadController);
+    _ensureHandlerBound();
+    return _incomingPayloadController.stream;
   }
 
   void emitProcessEvent(AnalysisStreamEvent event) {
@@ -198,6 +214,16 @@ class HybridAiBridge {
             for (final controller in List.of(_nativeListeners)) {
               if (!controller.isClosed) {
                 controller.add(event);
+              }
+            }
+          }
+        } else if (call.method == 'onIncomingPayload') {
+          final args = call.arguments;
+          if (args is Map) {
+            final payload = IncomingIntentPayload.fromMap(args);
+            for (final controller in List.of(_incomingIntentListeners)) {
+              if (!controller.isClosed) {
+                controller.add(payload);
               }
             }
           }
@@ -274,6 +300,64 @@ class HybridAiBridge {
       return null;
     } on MissingPluginException {
       return null;
+    }
+  }
+
+  /// Retrieves any structured Android launch payload (`ACTION_PROCESS_TEXT`,
+  /// `ACTION_SEND` text/URL, or `ACTION_SEND` document URI), falling back to
+  /// [getInitialSelectedText] when only legacy text handlers are registered.
+  Future<IncomingIntentPayload?> getInitialIncomingPayload() async {
+    _ensureHandlerBound();
+    try {
+      final res = await _channel.invokeMethod<dynamic>(
+        'getInitialIncomingPayload',
+      );
+      if (res is Map) {
+        return IncomingIntentPayload.fromMap(res);
+      }
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      // Fall through to legacy handler for older platform mocks
+    }
+
+    final selected = await getInitialSelectedText();
+    if (selected == null || selected.isEmpty) return null;
+    return IncomingIntentPayload(
+      kind: 'text_or_url',
+      sourceAction: 'ACTION_PROCESS_TEXT',
+      text: selected,
+    );
+  }
+
+  /// Launches Android's Storage Access Framework document picker filtered to
+  /// supported privacy-policy formats (PDF, TXT, DOCX) and extracts text locally.
+  Future<DocumentExtractionOutcome> pickAndExtractDocument() async {
+    try {
+      final res = await _channel.invokeMethod<dynamic>(
+        'pickAndExtractDocument',
+      );
+      if (res is Map) {
+        return DocumentExtractionOutcome.fromMap(res);
+      }
+      return const DocumentExtractionOutcome(
+        status: 'cancelled',
+        extractedText: '',
+        userMessage: 'No document was selected.',
+      );
+    } on PlatformException catch (e) {
+      return DocumentExtractionOutcome(
+        status: 'read_error',
+        extractedText: '',
+        userMessage:
+            e.message ?? 'Could not open the selected document on this phone.',
+      );
+    } on MissingPluginException {
+      return const DocumentExtractionOutcome(
+        status: 'read_error',
+        extractedText: '',
+        userMessage: 'Document picker is only available on Android devices.',
+      );
     }
   }
 
@@ -412,15 +496,74 @@ class HybridAiBridge {
     try {
       final res = await _channel.invokeMethod<List>('listLaunchableApps');
       if (res == null) return const [];
-      return res
+      final entries = res
           .whereType<Map>()
           .map(InstalledAppEntry.fromMap)
           .toList(growable: false);
+      for (final entry in entries) {
+        if (entry.iconBytes != null && entry.iconBytes!.isNotEmpty) {
+          _rememberAppIcon(entry.packageName, entry.iconBytes);
+        }
+      }
+      return entries;
     } on PlatformException {
       return const [];
     } on MissingPluginException {
       return const [];
     }
+  }
+
+  /// Returns a cached local PNG icon for [packageName] if already loaded on
+  /// this bridge instance, or `null` otherwise.
+  Uint8List? cachedAppIcon(String packageName) => _appIconCache[packageName];
+
+  /// Whether an icon lookup for [packageName] has already resolved in this
+  /// bridge instance's cache.
+  bool hasCachedAppIcon(String packageName) =>
+      _appIconCache.containsKey(packageName);
+
+  /// Loads the launcher icon PNG bytes for [packageName] strictly on-device.
+  /// Results are cached in volatile memory on this bridge instance and
+  /// deduplicated across concurrent callers so Binder IPC stays lightweight.
+  Future<Uint8List?> getAppIcon(String packageName, {int sizePx = 112}) {
+    if (packageName.trim().isEmpty) return Future<Uint8List?>.value(null);
+    if (_appIconCache.containsKey(packageName)) {
+      return Future<Uint8List?>.value(_appIconCache[packageName]);
+    }
+    final existing = _pendingAppIconFetches[packageName];
+    if (existing != null) return existing;
+
+    final fetchFuture = _fetchAppIconFromPlatform(packageName, sizePx: sizePx);
+    _pendingAppIconFetches[packageName] = fetchFuture;
+    return fetchFuture;
+  }
+
+  Future<Uint8List?> _fetchAppIconFromPlatform(
+    String packageName, {
+    required int sizePx,
+  }) async {
+    try {
+      final bytes = await _channel.invokeMethod<Uint8List>('getAppIcon', {
+        'packageName': packageName,
+        'sizePx': sizePx,
+      });
+      final normalized = (bytes != null && bytes.isNotEmpty) ? bytes : null;
+      _rememberAppIcon(packageName, normalized);
+      return normalized;
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    } finally {
+      _pendingAppIconFetches.remove(packageName);
+    }
+  }
+
+  void _rememberAppIcon(String packageName, Uint8List? bytes) {
+    if (_appIconCache.length >= _maxCachedAppIcons) {
+      _appIconCache.remove(_appIconCache.keys.first);
+    }
+    _appIconCache[packageName] = bytes;
   }
 
   /// Queries requested and granted permissions for a selected installed package.
@@ -449,18 +592,22 @@ class InstalledAppEntry {
   final String packageName;
   final String appName;
   final bool isSystemApp;
+  final Uint8List? iconBytes;
 
   const InstalledAppEntry({
     required this.packageName,
     required this.appName,
     this.isSystemApp = false,
+    this.iconBytes,
   });
 
   factory InstalledAppEntry.fromMap(Map<dynamic, dynamic> map) {
+    final rawIcon = map['iconBytes'];
     return InstalledAppEntry(
       packageName: map['packageName'] as String? ?? '',
       appName: map['appName'] as String? ?? '',
       isSystemApp: map['isSystemApp'] as bool? ?? false,
+      iconBytes: rawIcon is Uint8List ? rawIcon : null,
     );
   }
 }
@@ -503,4 +650,71 @@ class AppPermissionSnapshot {
         'requestedPermissions': requestedPermissions,
         'grantedPermissions': grantedPermissions,
       };
+}
+
+class DocumentExtractionOutcome {
+  final String status;
+  final String? documentType;
+  final String? fileName;
+  final String? mimeType;
+  final int byteLength;
+  final int? pageCount;
+  final String extractedText;
+  final String userMessage;
+
+  const DocumentExtractionOutcome({
+    required this.status,
+    this.documentType,
+    this.fileName,
+    this.mimeType,
+    this.byteLength = 0,
+    this.pageCount,
+    required this.extractedText,
+    required this.userMessage,
+  });
+
+  bool get isSuccess => status == 'ok' && extractedText.trim().isNotEmpty;
+  bool get isCancelled => status == 'cancelled';
+
+  factory DocumentExtractionOutcome.fromMap(Map<dynamic, dynamic> map) {
+    return DocumentExtractionOutcome(
+      status: map['status'] as String? ?? 'read_error',
+      documentType: map['documentType'] as String?,
+      fileName: map['fileName'] as String?,
+      mimeType: map['mimeType'] as String?,
+      byteLength: (map['byteLength'] as num?)?.toInt() ?? 0,
+      pageCount: (map['pageCount'] as num?)?.toInt(),
+      extractedText: map['extractedText'] as String? ?? '',
+      userMessage: map['userMessage'] as String? ?? '',
+    );
+  }
+}
+
+class IncomingIntentPayload {
+  final String kind; // text | text_or_url | document
+  final String sourceAction;
+  final String? text;
+  final String? subject;
+  final DocumentExtractionOutcome? document;
+
+  const IncomingIntentPayload({
+    required this.kind,
+    required this.sourceAction,
+    this.text,
+    this.subject,
+    this.document,
+  });
+
+  factory IncomingIntentPayload.fromMap(Map<dynamic, dynamic> map) {
+    final kind = map['kind'] as String? ?? 'text';
+    return IncomingIntentPayload(
+      kind: kind,
+      sourceAction: map['sourceAction'] as String? ?? 'ACTION_SEND',
+      text: map['text'] as String?,
+      subject: map['subject'] as String?,
+      document: kind == 'document'
+          ? DocumentExtractionOutcome.fromMap(map)
+          : null,
+    );
+  }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,7 +9,6 @@ import 'package:material_3_expressive/material_3_expressive.dart';
 
 import 'core/theme/enprive_theme.dart';
 import 'domain/permissions/permission_comparator.dart';
-import 'domain/privacy/pii_redactor.dart';
 import 'domain/review/review_coordinator.dart';
 import 'domain/review/review_models.dart';
 import 'l10n/app_localizations.dart';
@@ -17,6 +18,8 @@ import 'screens/receipts_screen.dart';
 import 'screens/review_result_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
+import 'services/intake/policy_intake_helper.dart';
+import 'services/network/policy_url_retriever.dart';
 import 'services/platform/hybrid_ai_bridge.dart';
 import 'services/storage/receipt_repository.dart';
 import 'widgets/cloud_consent_sheet.dart';
@@ -37,20 +40,41 @@ void main() {
 class EnpriveApp extends StatefulWidget {
   final bool showSplashOnLaunch;
   final Duration splashDuration;
+  final PolicyUrlRetriever? urlRetriever;
 
   const EnpriveApp({
     super.key,
     this.showSplashOnLaunch = true,
     this.splashDuration = const Duration(milliseconds: 1400),
+    this.urlRetriever,
   });
 
   @override
   State<EnpriveApp> createState() => _EnpriveAppState();
 }
 
-class _EnpriveAppState extends State<EnpriveApp> {
+class _EnpriveAppState extends State<EnpriveApp> with WidgetsBindingObserver {
   Locale _locale = const Locale('en');
   ThemeMode _themeMode = ThemeMode.system;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   void _setLocale(Locale newLocale) {
     setState(() => _locale = newLocale);
@@ -63,7 +87,9 @@ class _EnpriveAppState extends State<EnpriveApp> {
   @override
   Widget build(BuildContext context) {
     final platformBrightness =
-        MediaQuery.maybePlatformBrightnessOf(context) ?? Brightness.light;
+        MediaQuery.maybePlatformBrightnessOf(context) ??
+        View.maybeOf(context)?.platformDispatcher.platformBrightness ??
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
     final activeM3EData = EnpriveM3ETheme.resolve(
       mode: _themeMode,
       platformBrightness: platformBrightness,
@@ -74,7 +100,7 @@ class _EnpriveAppState extends State<EnpriveApp> {
       debugShowCheckedModeBanner: false,
       data: activeM3EData,
       typeface: EnpriveM3ETheme.typefaceConfig,
-      autoTheming: _themeMode == ThemeMode.system,
+      autoTheming: false,
       dynamicColoring: false,
       initialTheme: activeM3EData.brightness,
       theme: EnpriveM3ETheme.lightThemeData.toThemeData(),
@@ -95,10 +121,13 @@ class _EnpriveAppState extends State<EnpriveApp> {
         onThemeModeChange: _setThemeMode,
         showSplashOnLaunch: widget.showSplashOnLaunch,
         splashDuration: widget.splashDuration,
+        urlRetriever: widget.urlRetriever,
       ),
     );
   }
 }
+
+enum _PasteModalMode { paste, link, document }
 
 class HomeScreen extends StatefulWidget {
   final Locale currentLocale;
@@ -107,6 +136,7 @@ class HomeScreen extends StatefulWidget {
   final ValueChanged<ThemeMode>? onThemeModeChange;
   final bool showSplashOnLaunch;
   final Duration splashDuration;
+  final PolicyUrlRetriever? urlRetriever;
 
   const HomeScreen({
     super.key,
@@ -116,6 +146,7 @@ class HomeScreen extends StatefulWidget {
     this.onThemeModeChange,
     this.showSplashOnLaunch = true,
     this.splashDuration = const Duration(milliseconds: 1400),
+    this.urlRetriever,
   });
 
   @override
@@ -137,6 +168,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
 ''';
 
   final HybridAiBridge _bridge = HybridAiBridge();
+  late final PolicyUrlRetriever _urlRetriever =
+      widget.urlRetriever ?? PolicyUrlRetriever();
   late final ReviewCoordinator _coordinator = ReviewCoordinator(
     bridge: _bridge,
   );
@@ -153,17 +186,25 @@ We do not collect personal identifiers, precise location data, microphone audio,
   final List<PolicyReviewReceipt> _savedReceipts = [];
   late bool _isSplashVisible = widget.showSplashOnLaunch;
   bool _pendingFirstRunOnboarding = false;
-  String? _pendingIncomingText;
+  IncomingIntentPayload? _pendingIncomingPayload;
+  StreamSubscription<IncomingIntentPayload>? _incomingPayloadSub;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _incomingPayloadSub = _bridge.incomingPayloads.listen(
+      _handleIncomingPayload,
+    );
     _initializeDeviceAndIntent();
   }
 
   @override
   void dispose() {
+    final sub = _incomingPayloadSub;
+    if (sub != null) {
+      unawaited(sub.cancel());
+    }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -179,16 +220,12 @@ We do not collect personal identifiers, precise location data, microphone audio,
     if (!_isSplashVisible || !mounted) return;
     setState(() => _isSplashVisible = false);
 
-    if (_pendingIncomingText != null) {
-      final text = _pendingIncomingText!;
-      _pendingIncomingText = null;
+    if (_pendingIncomingPayload != null) {
+      final pending = _pendingIncomingPayload!;
+      _pendingIncomingPayload = null;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        setState(() => _activePose = DeniPose.thinking);
-        final l10n = AppLocalizations.of(context);
-        if (l10n != null) {
-          _showPasteModal(context, l10n, initialText: text);
-        }
+        unawaited(_handleIncomingPayload(pending));
       });
       return;
     }
@@ -300,12 +337,55 @@ We do not collect personal identifiers, precise location data, microphone audio,
   }
 
   Future<void> _checkIncomingTextIntent() async {
-    final incomingText = await _bridge.getInitialSelectedText();
-    if (!mounted || incomingText == null || incomingText.isEmpty) return;
+    final payload = await _bridge.getInitialIncomingPayload();
+    if (!mounted || payload == null) return;
+    await _handleIncomingPayload(payload);
+  }
 
+  String? _resolveCustomTitle(
+    String rawTitle,
+    AppLocalizations? l10n, {
+    bool ignoreSelectedPlaceholder = true,
+  }) {
+    final trimmed = rawTitle.trim();
+    if (trimmed.isEmpty ||
+        trimmed == 'Privacy Policy' ||
+        (l10n != null && trimmed == l10n.defaultSubjectTitle) ||
+        (ignoreSelectedPlaceholder &&
+            l10n != null &&
+            trimmed == l10n.selectedExcerptTitle)) {
+      return null;
+    }
+    return trimmed;
+  }
+
+  Future<void> _handleIncomingPayload(IncomingIntentPayload payload) async {
+    if (!mounted) return;
     if (_isSplashVisible) {
-      _pendingIncomingText = incomingText;
+      _pendingIncomingPayload = payload;
       _completeSplash();
+      return;
+    }
+
+    if (payload.kind == 'document') {
+      final doc = payload.document;
+      if (doc == null || doc.isCancelled) return;
+      await _handleDocumentOutcome(
+        doc,
+        userSubjectTitle: payload.subject ?? '',
+      );
+      return;
+    }
+
+    final rawText = (payload.text ?? '').trim();
+    if (rawText.isEmpty) return;
+
+    final sharedUrl = PolicyUrlRetriever.extractSharedUrl(rawText);
+    if (sharedUrl != null) {
+      await _executeUrlReview(
+        rawUrl: sharedUrl,
+        userSubjectTitle: payload.subject ?? '',
+      );
       return;
     }
 
@@ -315,8 +395,127 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
     final l10n = AppLocalizations.of(context);
     if (l10n != null) {
-      _showPasteModal(context, l10n, initialText: incomingText);
+      _showPasteModal(
+        context,
+        l10n,
+        initialText: rawText,
+        initialSourceType: payload.sourceAction == 'ACTION_SEND'
+            ? PolicySourceType.sharedText
+            : PolicySourceType.selectedText,
+        initialSubject: payload.subject,
+      );
     }
+  }
+
+  Future<void> _openReviewResult(PolicyReviewReceipt receipt) async {
+    if (!mounted) return;
+    setState(() {
+      _activePose = switch (receipt.overallState) {
+        ReviewOverallState.reviewRecommended => DeniPose.explaining,
+        ReviewOverallState.noConcern => DeniPose.idle,
+        ReviewOverallState.insufficientEvidence => DeniPose.support,
+      };
+    });
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ReviewResultScreen(
+          receipt: receipt,
+          coordinator: _coordinator,
+          cloudConsentGrantedForSession: false,
+          urlRetriever: _urlRetriever,
+          onSaveReceipt: _saveReceipt,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _executeUrlReview({
+    required String rawUrl,
+    String userSubjectTitle = '',
+  }) async {
+    if (_isRunningReview || _isConsentSheetOpen) return;
+    final l10n = AppLocalizations.of(context);
+    final customTitle = _resolveCustomTitle(userSubjectTitle, l10n);
+    final provisionalTitle =
+        customTitle ?? PolicyUrlRetriever.deriveSubjectTitle(rawUrl);
+
+    setState(() {
+      _isRunningReview = true;
+      _activeReviewTitle = provisionalTitle;
+      _isCloudReviewInFlight = false;
+      _activePose = DeniPose.thinking;
+    });
+
+    final PolicyUrlRetrievalResult retrieval;
+    try {
+      retrieval = await _urlRetriever.fetchPolicy(rawUrl);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRunningReview = false;
+        });
+      }
+    }
+    if (!mounted) return;
+
+    final resolvedSubject =
+        customTitle ??
+        PolicyUrlRetriever.deriveSubjectTitle(
+          retrieval.canonicalUrl ?? retrieval.requestedUrl,
+        );
+
+    if (!retrieval.isUsablePolicy) {
+      final failureReceipt = PolicyIntakeHelper.buildUrlFailureReceipt(
+        subjectTitle: resolvedSubject,
+        retrieval: retrieval,
+        languageCode: widget.currentLocale.languageCode,
+      );
+      await _openReviewResult(failureReceipt);
+      return;
+    }
+
+    await _executePolicyReview(
+      subjectTitle: resolvedSubject,
+      sourceLabel: retrieval.canonicalUrl ?? retrieval.requestedUrl,
+      policyText: retrieval.extractedText!,
+      sourceSnapshot: retrieval.sourceSnapshot,
+    );
+  }
+
+  Future<void> _handleDocumentOutcome(
+    DocumentExtractionOutcome doc, {
+    String userSubjectTitle = '',
+  }) async {
+    final l10n = AppLocalizations.of(context);
+    final customTitle = _resolveCustomTitle(userSubjectTitle, l10n);
+    final subject =
+        customTitle ??
+        (doc.fileName != null && doc.fileName!.trim().isNotEmpty
+            ? doc.fileName!.trim()
+            : 'Document Intake');
+
+    if (!doc.isSuccess) {
+      final failureReceipt = PolicyIntakeHelper.buildDocumentFailureReceipt(
+        subjectTitle: subject,
+        doc: doc,
+        languageCode: widget.currentLocale.languageCode,
+      );
+      await _openReviewResult(failureReceipt);
+      return;
+    }
+
+    final snapshot = PolicyIntakeHelper.snapshotFromDocumentSuccess(doc);
+    final sourceLabel =
+        doc.fileName != null && doc.fileName!.trim().isNotEmpty
+        ? 'Document · ${doc.fileName!.trim()}'
+        : 'Document Intake';
+    await _executePolicyReview(
+      subjectTitle: subject,
+      sourceLabel: sourceLabel,
+      policyText: doc.extractedText,
+      sourceSnapshot: snapshot,
+    );
   }
 
   Future<String> _loadFixtureText(String assetPath, String fallback) async {
@@ -334,6 +533,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
     required String sourceLabel,
     required String policyText,
     AppPermissionSnapshot? appPermissions,
+    PolicySourceSnapshot? sourceSnapshot,
+    String? canonicalRedactedPayload,
     bool cloudConsent = false,
     bool forceLocalManualScan = false,
   }) async {
@@ -352,6 +553,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
         sourceLabel: sourceLabel,
         policyText: policyText,
         appPermissions: appPermissions,
+        sourceSnapshot: sourceSnapshot,
+        canonicalRedactedPayload: canonicalRedactedPayload,
         cloudConsent: cloudConsent,
         forceLocalManualScan: forceLocalManualScan,
         languageCode: widget.currentLocale.languageCode,
@@ -376,6 +579,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
     final receipt = outcome.receipt;
     if (receipt == null) {
       if (outcome.needsCloudConsentOrManual) {
+        final canonicalPayload =
+            outcome.redactedPreview ??
+            ReviewCoordinator.canonicalCloudPayload(policyText);
         setState(() {
           _isConsentSheetOpen = true;
           _activePose = DeniPose.support;
@@ -385,8 +591,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
           decision = await CloudConsentSheet.show(
             context,
             subjectTitle: subjectTitle,
-            policyText: outcome.redactedPreview ??
-                PiiRedactor.redact(policyText).redactedText,
+            policyText: canonicalPayload,
+            canonicalRedactedPreview: canonicalPayload,
             deviceReason: outcome.errorReason,
           );
         } finally {
@@ -406,6 +612,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
               sourceLabel: sourceLabel,
               policyText: policyText,
               appPermissions: appPermissions,
+              sourceSnapshot: sourceSnapshot,
+              canonicalRedactedPayload: canonicalPayload,
               cloudConsent: true,
             );
             return;
@@ -415,6 +623,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
               sourceLabel: sourceLabel,
               policyText: policyText,
               appPermissions: appPermissions,
+              sourceSnapshot: sourceSnapshot,
               forceLocalManualScan: true,
             );
             return;
@@ -431,24 +640,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
       return;
     }
 
-    setState(() {
-      _activePose = switch (receipt.overallState) {
-        ReviewOverallState.reviewRecommended => DeniPose.explaining,
-        ReviewOverallState.noConcern => DeniPose.idle,
-        ReviewOverallState.insufficientEvidence => DeniPose.support,
-      };
-    });
-
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ReviewResultScreen(
-          receipt: receipt,
-          coordinator: _coordinator,
-          cloudConsentGrantedForSession: false,
-          onSaveReceipt: _saveReceipt,
-        ),
-      ),
-    );
+    await _openReviewResult(receipt);
   }
 
   Future<void> _runQuickSampleReview({required bool isEduTrack}) async {
@@ -464,11 +656,17 @@ We do not collect personal identifiers, precise location data, microphone audio,
     if (!mounted) return;
     await _executePolicyReview(
       subjectTitle: isEduTrack ? 'EduTrack Classroom' : 'CalmMath Kids',
-      sourceLabel: 'Classroom Sample',
+      sourceLabel: AppLocalizations.of(context)?.sampleSyntheticBadge ??
+          'Synthetic example',
       policyText: policyText,
       appPermissions: isEduTrack
           ? PermissionComparator.demoEduTrackSnapshot
           : PermissionComparator.demoCalmMathSnapshot,
+      sourceSnapshot: PolicyIntakeHelper.snapshotForManualOrSharedText(
+        sourceType: PolicySourceType.sample,
+        text: policyText,
+        hasAppPermissions: true,
+      ),
     );
   }
 
@@ -583,6 +781,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
             receipts: _savedReceipts,
             coordinator: _coordinator,
             onDeleteReceipt: _deleteReceipt,
+            onSaveReceipt: _saveReceipt,
             onStartReviewRequested: () {
               setState(() => _selectedTabIndex = 0);
             },
@@ -723,15 +922,35 @@ We do not collect personal identifiers, precise location data, microphone audio,
             const SizedBox(height: 28),
 
             // 4. Quick Sample App Checks (M3E Bento Cards inspired by Music OS & colo.jpeg)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                l10n.trySampleCheck,
-                style: m3e.typography.emphasized.titleMedium.copyWith(
-                  fontSize: 17,
-                  color: scheme.onSurface,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.trySampleCheck,
+                    style: m3e.typography.emphasized.titleMedium.copyWith(
+                      fontSize: 17,
+                      color: scheme.onSurface,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    l10n.sampleSyntheticBadge,
+                    style: m3e.typography.emphasized.labelSmall.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             LayoutBuilder(
@@ -875,6 +1094,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                 builder: (_) => ReviewResultScreen(
                                   receipt: receipt,
                                   coordinator: _coordinator,
+                                  urlRetriever: _urlRetriever,
+                                  onSaveReceipt: _saveReceipt,
                                 ),
                               ),
                             );
@@ -964,11 +1185,43 @@ We do not collect personal identifiers, precise location data, microphone audio,
     );
     if (selected == null || !mounted) return;
 
+    if (!selected.hasSuppliedPolicy) {
+      final langCode = widget.currentLocale.languageCode;
+      final permReceipt = _coordinator.buildDevicePermissionInspectionReceipt(
+        subjectTitle: selected.subjectTitle,
+        sourceLabel: selected.sourceLabel,
+        appPermissions: selected.permissionSnapshot,
+        languageCode: langCode,
+      );
+      if (!mounted) return;
+      setState(() {
+        _activePose = DeniPose.idle;
+      });
+      if (!context.mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ReviewResultScreen(
+            receipt: permReceipt,
+            coordinator: _coordinator,
+            cloudConsentGrantedForSession: false,
+            urlRetriever: _urlRetriever,
+            onSaveReceipt: _saveReceipt,
+          ),
+        ),
+      );
+      return;
+    }
+
     await _executePolicyReview(
       subjectTitle: selected.subjectTitle,
       sourceLabel: selected.sourceLabel,
       policyText: selected.policyText,
       appPermissions: selected.permissionSnapshot,
+      sourceSnapshot: PolicyIntakeHelper.snapshotForManualOrSharedText(
+        sourceType: PolicySourceType.sample,
+        text: selected.policyText,
+        hasAppPermissions: true,
+      ),
     );
   }
 
@@ -976,269 +1229,352 @@ We do not collect personal identifiers, precise location data, microphone audio,
     BuildContext context,
     AppLocalizations l10n, {
     String? initialText,
+    PolicySourceType? initialSourceType,
+    String? initialSubject,
   }) {
     final controller = TextEditingController(text: initialText ?? '');
-    final urlController = TextEditingController(
-      text: 'https://edutrack.example.edu/privacy',
-    );
+    final urlController = TextEditingController();
+    final trimmedInitialSubject = initialSubject?.trim() ?? '';
     final titleController = TextEditingController(
-      text: initialText != null && initialText.isNotEmpty
-          ? l10n.selectedExcerptTitle
-          : l10n.defaultSubjectTitle,
+      text: trimmedInitialSubject.isNotEmpty
+          ? trimmedInitialSubject
+          : (initialText != null && initialText.isNotEmpty
+                ? l10n.selectedExcerptTitle
+                : l10n.defaultSubjectTitle),
     );
-    bool isLinkMode = false;
-    final rootScheme = EnpriveM3ETheme.of(context).colorScheme;
+    var mode = _PasteModalMode.paste;
+    String? modalError;
+    bool isPickingDocument = false;
+    String? loadedSampleText;
 
     showModalBottomSheet<void>(
       context: context,
+      useSafeArea: true,
       isScrollControlled: true,
-      backgroundColor: rootScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (sheetContext, setSheetState) {
-            final m3e = EnpriveM3ETheme.of(sheetContext);
-            final scheme = m3e.colorScheme;
-            final surfaces = sheetContext.enpriveSurfaces;
-            final typeExt = sheetContext.enpriveType;
+        return EnpriveM3EBridgeScope.ensure(
+          sheetContext,
+          child: StatefulBuilder(
+            builder: (sheetContext, setSheetState) {
+              final m3e = EnpriveM3ETheme.of(sheetContext);
+              final scheme = m3e.colorScheme;
+              final surfaces = sheetContext.enpriveSurfaces;
+              final typeExt = sheetContext.enpriveType;
 
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
-                left: 24,
-                right: 24,
-                top: 20,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: scheme.outlineVariant,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
+              return Material(
+                color: scheme.surface,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(32),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: SafeArea(
+                  top: false,
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      bottom:
+                          MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+                      left: 24,
+                      right: 24,
+                      top: 20,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          l10n.btnPasteTerms,
-                          style: m3e.typography.emphasized.headlineMedium
-                              .copyWith(
-                                color: scheme.onSurface,
-                              ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () async {
-                          final sample = await _loadFixtureText(
-                            'assets/fixtures/synthetic_policy_edutrack.txt',
-                            _fallbackEduTrackFixture,
-                          );
-                          titleController.text = 'EduTrack Classroom Companion';
-                          controller.text = sample;
-                          urlController.text =
-                              'https://edutrack.example.edu/privacy';
-                        },
-                        child: Text(
-                          l10n.trySampleText,
-                          style: m3e.typography.emphasized.labelLarge.copyWith(
-                            color: scheme.primary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Segmented Source Mode Pills: Paste text vs Policy link
-                  SizedBox(
-                    width: double.infinity,
-                    child: M3ESegmentedButton<bool>(
-                      showSelectedIcon: false,
-                      segments: [
-                        M3ESegment<bool>(
-                          value: false,
-                          icon: const Icon(LucideIcons.fileText, size: 16),
-                          label: l10n.modePasteText,
-                        ),
-                        M3ESegment<bool>(
-                          value: true,
-                          icon: const Icon(LucideIcons.link2, size: 16),
-                          label: l10n.modePolicyLink,
-                        ),
-                      ],
-                      selected: {isLinkMode},
-                      onSelectionChanged: (selection) {
-                        setSheetState(() => isLinkMode = selection.first);
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  TextField(
-                    controller: titleController,
-                    style: m3e.typeScale.bodyLarge.copyWith(
-                      color: scheme.onSurface,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: l10n.hintAppName,
-                      filled: true,
-                      fillColor: surfaces.card,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: surfaces.hairlineBorder),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: surfaces.hairlineBorder),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  if (isLinkMode) ...[
-                    TextField(
-                      controller: urlController,
-                      keyboardType: TextInputType.url,
-                      style: m3e.typeScale.bodyMedium.copyWith(
-                        color: scheme.onSurface,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'https://app.example.com/privacy',
-                        prefixIcon: Icon(
-                          LucideIcons.link2,
-                          size: 18,
-                          color: scheme.primary,
-                        ),
-                        filled: true,
-                        fillColor: surfaces.card,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(
-                            color: surfaces.hairlineBorder,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(
-                            color: surfaces.hairlineBorder,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        M3EChip(
-                          label: 'edutrack.example.edu/privacy',
-                          type: M3EChipType.assist,
-                          onPressed: () {
-                            titleController.text =
-                                'EduTrack Classroom Companion';
-                            urlController.text =
-                                'https://edutrack.example.edu/privacy';
-                          },
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: scheme.outlineVariant,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
                         ),
-                        M3EChip(
-                          label: 'calmmath.example.org/privacy',
-                          type: M3EChipType.assist,
-                          onPressed: () {
-                            titleController.text = 'CalmMath Abacus';
-                            urlController.text =
-                                'https://calmmath.example.org/privacy';
-                          },
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                l10n.btnPasteTerms,
+                                style: m3e.typography.emphasized.headlineMedium
+                                    .copyWith(color: scheme.onSurface),
+                              ),
+                            ),
+                            if (mode == _PasteModalMode.paste)
+                              TextButton(
+                                onPressed: () async {
+                                  final sample = await _loadFixtureText(
+                                    'assets/fixtures/synthetic_policy_edutrack.txt',
+                                    _fallbackEduTrackFixture,
+                                  );
+                                  loadedSampleText = sample.trim();
+                                  titleController.text =
+                                      'EduTrack Classroom Companion';
+                                  controller.text = sample;
+                                },
+                                child: Text(
+                                  l10n.trySampleText,
+                                  style: m3e.typography.emphasized.labelLarge
+                                      .copyWith(color: scheme.primary),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Segmented Source Mode Pills: Paste text vs Policy link vs Document
+                        SizedBox(
+                          width: double.infinity,
+                          child: M3ESegmentedButton<_PasteModalMode>(
+                            showSelectedIcon: false,
+                            segments: [
+                              M3ESegment<_PasteModalMode>(
+                                value: _PasteModalMode.paste,
+                                icon: const Icon(LucideIcons.fileText, size: 16),
+                                label: l10n.modePasteText,
+                              ),
+                              M3ESegment<_PasteModalMode>(
+                                value: _PasteModalMode.link,
+                                icon: const Icon(LucideIcons.link2, size: 16),
+                                label: l10n.modePolicyLink,
+                              ),
+                              const M3ESegment<_PasteModalMode>(
+                                value: _PasteModalMode.document,
+                                icon: Icon(LucideIcons.fileUp, size: 16),
+                                label: 'Document',
+                              ),
+                            ],
+                            selected: {mode},
+                            onSelectionChanged: (selection) {
+                              if (isPickingDocument) return;
+                              setSheetState(() {
+                                mode = selection.first;
+                                modalError = null;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        TextField(
+                          controller: titleController,
+                          style: m3e.typeScale.bodyLarge.copyWith(
+                            color: scheme.onSurface,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: l10n.hintAppName,
+                            filled: true,
+                            fillColor: surfaces.card,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: surfaces.hairlineBorder,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: surfaces.hairlineBorder,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        if (mode == _PasteModalMode.link) ...[
+                          TextField(
+                            controller: urlController,
+                            keyboardType: TextInputType.url,
+                            onChanged: (_) {
+                              if (modalError != null) {
+                                setSheetState(() => modalError = null);
+                              }
+                            },
+                            style: m3e.typeScale.bodyMedium.copyWith(
+                              color: scheme.onSurface,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'https://example.com/privacy-policy',
+                              prefixIcon: Icon(
+                                LucideIcons.link2,
+                                size: 18,
+                                color: scheme.primary,
+                              ),
+                              errorText: modalError,
+                              errorMaxLines: 4,
+                              filled: true,
+                              fillColor: surfaces.card,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(
+                                  color: surfaces.hairlineBorder,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(
+                                  color: surfaces.hairlineBorder,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Fetches the public URL directly. User-supplied links do not prove app ownership.',
+                            style: m3e.typeScale.bodySmall.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ] else if (mode == _PasteModalMode.document)
+                          EnpriveMaterialCardSurface(
+                            variant: EnpriveCardVariant.outlined,
+                            backgroundColor: surfaces.card,
+                            borderRadius: BorderRadius.circular(18),
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Import PDF, TXT, or DOCX policy file',
+                                  style: m3e.typeScale.titleSmall.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: scheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Text is extracted strictly on this phone with a local SHA-256 snapshot hash. Files never upload directly.',
+                                  style: m3e.typeScale.bodySmall.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                if (modalError != null) ...[
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    modalError!,
+                                    style: m3e.typeScale.bodySmall.copyWith(
+                                      color: scheme.error,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          )
+                        else
+                          TextField(
+                            controller: controller,
+                            maxLines: 5,
+                            style: typeExt.policyQuotation.copyWith(
+                              color: scheme.onSurface,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: l10n.hintPastePolicy,
+                              filled: true,
+                              fillColor: surfaces.quoteSurface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: BorderSide(
+                                  color: surfaces.hairlineBorder,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: BorderSide(
+                                  color: surfaces.hairlineBorder,
+                                ),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 18),
+                        EnpriveTactileButton(
+                          label: isPickingDocument
+                              ? 'Working…'
+                              : (mode == _PasteModalMode.document
+                                    ? 'Choose document (PDF, TXT, DOCX)'
+                                    : l10n.btnReviewOnPhone),
+                          onPressed: isPickingDocument
+                              ? null
+                              : () async {
+                                  if (mode == _PasteModalMode.link) {
+                                    final rawUrl = urlController.text.trim();
+                                    if (rawUrl.isEmpty) {
+                                      setSheetState(() {
+                                        modalError =
+                                            'Enter a public https:// privacy policy URL.';
+                                      });
+                                      return;
+                                    }
+                                    final userTitle = titleController.text.trim();
+                                    if (sheetContext.mounted) {
+                                      Navigator.pop(sheetContext);
+                                    }
+                                    await _executeUrlReview(
+                                      rawUrl: rawUrl,
+                                      userSubjectTitle: userTitle,
+                                    );
+                                    return;
+                                  }
+
+                                  if (mode == _PasteModalMode.document) {
+                                    setSheetState(() {
+                                      isPickingDocument = true;
+                                      modalError = null;
+                                    });
+                                    final doc = await _bridge
+                                        .pickAndExtractDocument();
+                                    if (!sheetContext.mounted) return;
+                                    if (doc.isCancelled) {
+                                      setSheetState(
+                                        () => isPickingDocument = false,
+                                      );
+                                      return;
+                                    }
+                                    final userTitle = titleController.text.trim();
+                                    Navigator.pop(sheetContext);
+                                    await _handleDocumentOutcome(
+                                      doc,
+                                      userSubjectTitle: userTitle,
+                                    );
+                                    return;
+                                  }
+
+                                  final rawText = controller.text.trim();
+                                  final subject =
+                                      titleController.text.trim().isEmpty
+                                      ? l10n.defaultSubjectTitle
+                                      : titleController.text.trim();
+                                  final isLoadedSample =
+                                      loadedSampleText != null &&
+                                      rawText == loadedSampleText;
+                                  final sourceType = isLoadedSample
+                                      ? PolicySourceType.sample
+                                      : (initialSourceType ??
+                                            PolicySourceType.pastedText);
+                                  Navigator.pop(sheetContext);
+                                  await _executePolicyReview(
+                                    subjectTitle: subject,
+                                    sourceLabel: isLoadedSample
+                                        ? (l10n.sampleSyntheticBadge)
+                                        : 'Pasted Snapshot',
+                                    policyText: rawText,
+                                    sourceSnapshot: PolicyIntakeHelper
+                                        .snapshotForManualOrSharedText(
+                                          sourceType: sourceType,
+                                          text: rawText,
+                                        ),
+                                  );
+                                },
                         ),
                       ],
                     ),
-                  ] else
-                    TextField(
-                      controller: controller,
-                      maxLines: 5,
-                      style: typeExt.policyQuotation,
-                      decoration: InputDecoration(
-                        hintText: l10n.hintPastePolicy,
-                        filled: true,
-                        fillColor: surfaces.quoteSurface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(
-                            color: surfaces.hairlineBorder,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(
-                            color: surfaces.hairlineBorder,
-                          ),
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 18),
-                  EnpriveTactileButton(
-                    label: l10n.btnReviewOnPhone,
-                    onPressed: () async {
-                      if (isLinkMode) {
-                        final rawUrl = urlController.text.trim();
-                        if (rawUrl.isEmpty) return;
-                        final isCalm = rawUrl.toLowerCase().contains(
-                          'calmmath',
-                        );
-                        final resolvedText = await _loadFixtureText(
-                          isCalm
-                              ? 'assets/fixtures/synthetic_policy_calmmath.txt'
-                              : 'assets/fixtures/synthetic_policy_edutrack.txt',
-                          isCalm
-                              ? _fallbackCalmMathFixture
-                              : _fallbackEduTrackFixture,
-                        );
-                        final trimmedTitle = titleController.text.trim();
-                        final subject =
-                            trimmedTitle.isEmpty ||
-                                trimmedTitle == l10n.defaultSubjectTitle ||
-                                trimmedTitle == 'Privacy Policy'
-                            ? (isCalm
-                                  ? 'CalmMath Abacus'
-                                  : 'EduTrack Classroom Companion')
-                            : trimmedTitle;
-                        if (sheetContext.mounted) {
-                          Navigator.pop(sheetContext);
-                        }
-                        await _executePolicyReview(
-                          subjectTitle: subject,
-                          sourceLabel: rawUrl,
-                          policyText: resolvedText,
-                        );
-                        return;
-                      }
-
-                      final rawText = controller.text.trim();
-                      final subject = titleController.text.trim().isEmpty
-                          ? l10n.defaultSubjectTitle
-                          : titleController.text.trim();
-                      Navigator.pop(sheetContext);
-                      if (rawText.isEmpty) return;
-                      await _executePolicyReview(
-                        subjectTitle: subject,
-                        sourceLabel: 'Pasted Snapshot',
-                        policyText: rawText,
-                      );
-                    },
                   ),
-                ],
-              ),
-            );
-          },
+                ),
+              );
+            },
+          ),
         );
       },
     );

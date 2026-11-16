@@ -7,6 +7,7 @@ import 'package:enprive/widgets/deni_animated_mascot.dart';
 import 'package:enprive/widgets/enprive_provenance_chip.dart';
 import 'package:enprive/widgets/m3e/enprive_m3e_components.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -574,6 +575,95 @@ void main() {
         expect(find.byType(EnpriveReviewHeroCard), findsOneWidget);
         expect(find.byType(DeniAnimatedMascot), findsOneWidget);
         expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'P0-E & Section 7: Digest labels use FNV-1a 64-bit with copy action and neutral document icons without green safety seals',
+      (WidgetTester tester) async {
+        String? copiedDigestText;
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copiedDigestText =
+                (call.arguments as Map<dynamic, dynamic>)['text'] as String?;
+          }
+          return null;
+        });
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(SystemChannels.platform, null);
+        });
+
+        await tester.pumpWidget(
+          _wrapInM3EApp(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const EnpriveQuoteCard(
+                    quote: 'We do not sell student records.',
+                    sha256Digest: '1234abcd5678ef90',
+                  ),
+                  const SizedBox(height: 16),
+                  const EnpriveCollapsibleQuoteBox(
+                    headerLabel: 'Reviewed Excerpt',
+                    quote: 'Progress stays strictly on device.',
+                    sha256Digest: 'fedcba9876543210',
+                    initiallyExpanded: true,
+                  ),
+                  const SizedBox(height: 16),
+                  const EnpriveProvenanceChip(
+                    source: InferenceSource.offlineDeterministic,
+                  ),
+                  const SizedBox(height: 16),
+                  EnpriveReviewHeroCard(
+                    subjectTitle: 'CalmMath Kids',
+                    subtitle: 'Synthetic example · Nov 15',
+                    overallState: ReviewOverallState.noConcern,
+                    stateBadgeLabel: 'No concern identified',
+                    findingsCountValue: '0',
+                    findingsLabel: 'Findings',
+                    verifiedCountValue: '0',
+                    verifiedLabel: 'Verified',
+                    secondaryMetricValue: '0',
+                    secondaryMetricLabel: 'OS Granted',
+                    hasPermissionReport: false,
+                    mascotPose: DeniPose.celebrating,
+                    sourceActionLabel: 'Source',
+                    sourceActionTooltip: 'View snapshot',
+                    onSourceAction: () {},
+                    isSpeaking: false,
+                    voiceTooltip: 'Read aloud',
+                    onVoiceAction: () {},
+                    primaryCtaLabel: 'Save',
+                    onPrimaryCta: () {},
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.textContaining('SHA-256'), findsNothing);
+        expect(
+          find.text('Snapshot digest · FNV-1a 64-bit · 1234abcd5678ef90'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Snapshot digest · FNV-1a 64-bit · fedcba9876543210'),
+          findsOneWidget,
+        );
+        expect(find.byIcon(LucideIcons.shieldCheck), findsNothing);
+        expect(find.byIcon(LucideIcons.fileText), findsWidgets);
+
+        final copyButton = find.byIcon(LucideIcons.copy).first;
+        await tester.ensureVisible(copyButton);
+        await tester.tap(copyButton);
+        await tester.pump();
+        expect(copiedDigestText, equals('1234abcd5678ef90'));
       },
     );
   });

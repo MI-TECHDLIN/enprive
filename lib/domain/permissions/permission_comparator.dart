@@ -5,6 +5,7 @@ enum PermissionAlignmentState {
   undisclosedInPolicy,
   grantedAndDisclosed,
   disclosedNotGranted,
+  observedWithoutPolicy,
   notRequested,
 }
 
@@ -146,6 +147,9 @@ class PermissionComparator {
   static const String calibratedLimitationNotice =
       'Android reports this permission state on this phone. It does not prove whether the app actually accessed or transmitted data.';
 
+  static const String permissionOnlyLimitationNotice =
+      'Device Permission Inspection only: these permissions are reported locally by Android PackageManager. Enprive has not inspected a privacy policy for this app and makes no claims about developer data collection or retention.';
+
   static const AppPermissionSnapshot demoEduTrackSnapshot =
       AppPermissionSnapshot(
     packageName: 'com.edutrack.classroom.demo',
@@ -268,11 +272,104 @@ class PermissionComparator {
     ),
   ];
 
-  /// Compares [snapshot] from Android PackageManager against [policyText].
+  /// Inspects Android OS permissions locally without fabricating or comparing
+  /// against a privacy policy.
+  static AppPermissionComparisonReport inspectPermissionsOnly({
+    required AppPermissionSnapshot snapshot,
+  }) {
+    final items = <ComparedPermissionItem>[];
+    final knownPermissions = <String>{};
+
+    for (final spec in _catalog) {
+      knownPermissions.add(spec.permission);
+      final isRequested = snapshot.isRequested(spec.permission);
+      final isGranted = snapshot.isGranted(spec.permission);
+      if (!isRequested && !isGranted) {
+        continue;
+      }
+
+      final state = PermissionAlignmentState.observedWithoutPolicy;
+      final osSummary = isGranted
+          ? 'GRANTED on this phone (${spec.permission})'
+          : 'Requested in manifest · Currently NOT granted (${spec.permission})';
+      final statusNote = isGranted
+          ? 'Currently allowed (granted) by Android on this device.'
+          : 'Declared in the APK manifest, not currently granted on this device.';
+
+      items.add(
+        ComparedPermissionItem(
+          androidPermission: spec.permission,
+          friendlyName: spec.friendlyName,
+          category: spec.category,
+          severity: spec.severity,
+          isRequested: isRequested,
+          isGranted: isGranted,
+          isMentionedInPolicy: false,
+          isExplicitlyDisclaimedInPolicy: false,
+          alignmentState: state,
+          osStatusSummary: osSummary,
+          parentExplanation: '${spec.capabilityDescription} $statusNote',
+        ),
+      );
+    }
+
+    final extraPermissions = <String>{
+      ...snapshot.requestedPermissions,
+      ...snapshot.grantedPermissions,
+    }..removeAll(knownPermissions);
+
+    for (final perm in extraPermissions.toList()..sort()) {
+      final isRequested = snapshot.isRequested(perm);
+      final isGranted = snapshot.isGranted(perm);
+      final osSummary = isGranted
+          ? 'GRANTED on this phone ($perm)'
+          : 'Requested in manifest · Currently NOT granted ($perm)';
+      items.add(
+        ComparedPermissionItem(
+          androidPermission: perm,
+          friendlyName: _humanizeAndroidPermission(perm),
+          category: FindingCategory.dataCollection,
+          severity: FindingSeverity.low,
+          isRequested: isRequested,
+          isGranted: isGranted,
+          isMentionedInPolicy: false,
+          isExplicitlyDisclaimedInPolicy: false,
+          alignmentState: PermissionAlignmentState.observedWithoutPolicy,
+          osStatusSummary: osSummary,
+          parentExplanation: isGranted
+              ? 'Reported by Android PackageManager as granted. Add this app\'s privacy policy to check why the developer requests it.'
+              : 'Declared in the Android APK manifest (not currently granted). Add this app\'s privacy policy to review developer explanations.',
+        ),
+      );
+    }
+
+    return AppPermissionComparisonReport(
+      snapshot: snapshot,
+      items: items,
+      limitationNotice: permissionOnlyLimitationNotice,
+    );
+  }
+
+  static String _humanizeAndroidPermission(String permission) {
+    final short = permission.contains('.')
+        ? permission.split('.').last
+        : permission;
+    final words = short
+        .toLowerCase()
+        .split('_')
+        .where((w) => w.isNotEmpty)
+        .map((w) => '${w[0].toUpperCase()}${w.substring(1)}');
+    return words.isEmpty ? permission : words.join(' ');
+  }
+
+  /// Compares [snapshot] from Android PackageManager against genuine [policyText].
   static AppPermissionComparisonReport compare({
     required AppPermissionSnapshot snapshot,
     required String policyText,
   }) {
+    if (policyText.trim().isEmpty) {
+      return inspectPermissionsOnly(snapshot: snapshot);
+    }
     final lowerPolicy = policyText.toLowerCase();
     final items = <ComparedPermissionItem>[];
 

@@ -105,7 +105,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get cloudConsentDisclosure =>
-      'この文章をクラウドで分析するため、Enpriveは下に表示されたテキストのみをFirebase AI Logicに送信します。インストール済みアプリ一覧やAndroidの権限情報は送信されません。';
+      'この文章をクラウドで分析するため、Enpriveは上に表示された伏せ字済みテキストのみをFirebase AI Logicに送信します。インストール済みアプリ一覧やAndroidの権限情報は送信されません。';
 
   @override
   String get permissionLimitationNotice =>
@@ -556,4 +556,32 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get noMatchingApps => '一致するアプリがこの端末に見つかりませんでした。';
+
+  @override
+  String get sampleSyntheticBadge => '合成サンプル';
+
+  @override
+  String get permissionInspectionTitle => '端末権限の検査';
+
+  @override
+  String get addAppPrivacyPolicyBtn => 'このアプリのプライバシーポリシーを追加';
+
+  @override
+  String get snapshotDigestLabel => 'スナップショットダイジェスト · FNV-1a 64ビット';
+
+  @override
+  String get snapshotDigestExplanation =>
+      'このテキストの高速な64ビットローカル指紋です（暗号学的SHA-256ではありません）。1文字でも変わると値が変わります。';
+
+  @override
+  String get copyDigestBtn => 'ダイジェストをコピー';
+
+  @override
+  String get digestCopiedMsg => 'スナップショットダイジェストをコピーしました';
+
+  @override
+  String get permissionGrantedBadge => '許可済み';
+
+  @override
+  String get permissionNotGrantedBadge => '未許可';
 }

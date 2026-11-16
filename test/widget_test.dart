@@ -3,19 +3,25 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:enprive/core/theme/enprive_theme.dart';
 import 'package:enprive/domain/review/review_coordinator.dart';
 import 'package:enprive/domain/review/review_models.dart';
 import 'package:enprive/l10n/app_localizations.dart';
 import 'package:enprive/l10n/enprive_languages.dart';
 import 'package:enprive/main.dart';
 import 'package:enprive/screens/onboarding_flow_screen.dart';
+import 'package:enprive/screens/review_result_screen.dart';
 import 'package:enprive/screens/splash_screen.dart';
 import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/services/storage/receipt_repository.dart';
 import 'package:enprive/widgets/analysis_process_trace.dart';
 import 'package:enprive/widgets/cloud_consent_sheet.dart';
 import 'package:enprive/widgets/enprive_provenance_chip.dart';
+import 'package:enprive/widgets/installed_app_icon.dart';
+import 'package:enprive/widgets/installed_app_picker_sheet.dart';
 import 'package:enprive/widgets/review_progress_sheet.dart';
 import 'package:enprive/widgets/why_this_finding_sheet.dart';
 
@@ -35,6 +41,7 @@ void main() {
   final List<MethodCall> recordedCalls = [];
 
   setUp(() {
+    rootBundle.clear();
     recordedCalls.clear();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
@@ -84,10 +91,7 @@ void main() {
 
       expect(find.text('Enprive'), findsOneWidget);
       final appBarLogo = tester.widget<Image>(
-        find.descendant(
-          of: find.byType(AppBar),
-          matching: find.byType(Image),
-        ),
+        find.descendant(of: find.byType(AppBar), matching: find.byType(Image)),
       );
       expect(
         (appBarLogo.image as AssetImage).assetName,
@@ -146,9 +150,7 @@ void main() {
           locale: const Locale('ar'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: EnpriveSplashScreen(
-            onCompleted: () => completed = true,
-          ),
+          home: EnpriveSplashScreen(onCompleted: () => completed = true),
         ),
       );
       await tester.pump();
@@ -579,7 +581,8 @@ void main() {
   testWidgets(
     'CloudConsentSheet displays complete untruncated scrubbed PII preview and deviceReason',
     (WidgetTester tester) async {
-      final longTail = '${'Detailed classroom diagnostics clause. ' * 6}'
+      final longTail =
+          '${'Detailed classroom diagnostics clause. ' * 6}'
           'FINAL_VERIFIED_CLAUSE_END_MARKER';
       await tester.pumpWidget(
         MaterialApp(
@@ -605,14 +608,12 @@ void main() {
         ),
       );
       expect(
-        previewWidget.data,
-        equals(
-          'Parent: [PERSON] ([EMAIL], [PHONE]). $longTail',
-        ),
+        previewWidget.data ?? previewWidget.textSpan?.toPlainText(),
+        equals('Parent: [PERSON] ([EMAIL], [PHONE]). $longTail'),
       );
-      expect(find.textContaining('[PERSON]'), findsOneWidget);
-      expect(find.textContaining('[EMAIL]'), findsOneWidget);
-      expect(find.textContaining('[PHONE]'), findsOneWidget);
+      expect(find.textContaining('[PERSON]'), findsAtLeastNWidgets(1));
+      expect(find.textContaining('[EMAIL]'), findsAtLeastNWidgets(1));
+      expect(find.textContaining('[PHONE]'), findsAtLeastNWidgets(1));
       expect(
         find.textContaining('FINAL_VERIFIED_CLAUSE_END_MARKER'),
         findsOneWidget,
@@ -637,53 +638,53 @@ void main() {
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        const MethodChannel('com.enprive/hybrid_ai'),
-        (call) async {
-          recordedCalls.add(call);
-          if (call.method == 'getDeviceCapability') {
-            return {
-              'isSupported': false,
-              'modelStatus': 'UNAVAILABLE',
-              'modelCategory': 'NONE',
-              'apiLevel': 34,
-              'userMessage': 'Gemini Nano unavailable on emulator.',
-            };
-          }
-          if (call.method == 'getInitialSelectedText') {
-            return null;
-          }
-          if (call.method == 'listLaunchableApps') {
-            return const [];
-          }
-          if (call.method == 'analyseText') {
-            final args = Map<String, dynamic>.from(call.arguments as Map);
-            analyseCalls.add(args);
-            if (args['cloudConsent'] != true) {
-              return {
-                'schemaVersion': 1,
-                'requestId': args['requestId'],
-                'status': 'unavailable',
-                'inferenceSource': 'UNKNOWN',
-                'message': 'On-device model unavailable on emulator.',
-              };
-            }
-            return {
-              'schemaVersion': 1,
-              'requestId': args['requestId'],
-              'status': 'success',
-              'inferenceSource': 'IN_CLOUD',
-              'structuredOutput': {
-                'overall_state': 'NO_CONCERN',
-                'summary': 'Reviewed via consented cloud check.',
-                'concerns': const [],
-                'calibratedDisclaimer':
-                    ReviewCoordinator.calibratedDefaultDisclaimer,
-              },
-            };
-          }
-          return null;
-        },
-      );
+            const MethodChannel('com.enprive/hybrid_ai'),
+            (call) async {
+              recordedCalls.add(call);
+              if (call.method == 'getDeviceCapability') {
+                return {
+                  'isSupported': false,
+                  'modelStatus': 'UNAVAILABLE',
+                  'modelCategory': 'NONE',
+                  'apiLevel': 34,
+                  'userMessage': 'Gemini Nano unavailable on emulator.',
+                };
+              }
+              if (call.method == 'getInitialSelectedText') {
+                return null;
+              }
+              if (call.method == 'listLaunchableApps') {
+                return const [];
+              }
+              if (call.method == 'analyseText') {
+                final args = Map<String, dynamic>.from(call.arguments as Map);
+                analyseCalls.add(args);
+                if (args['cloudConsent'] != true) {
+                  return {
+                    'schemaVersion': 1,
+                    'requestId': args['requestId'],
+                    'status': 'unavailable',
+                    'inferenceSource': 'UNKNOWN',
+                    'message': 'On-device model unavailable on emulator.',
+                  };
+                }
+                return {
+                  'schemaVersion': 1,
+                  'requestId': args['requestId'],
+                  'status': 'success',
+                  'inferenceSource': 'IN_CLOUD',
+                  'structuredOutput': {
+                    'overall_state': 'NO_CONCERN',
+                    'summary': 'Reviewed via consented cloud check.',
+                    'concerns': const [],
+                    'calibratedDisclaimer':
+                        ReviewCoordinator.calibratedDefaultDisclaimer,
+                  },
+                };
+              }
+              return null;
+            },
+          );
 
       await tester.pumpWidget(
         const EnpriveApp(
@@ -758,10 +759,7 @@ void main() {
       await _flushBridgeAndPump(tester);
 
       expect(find.text('Offline local scan'), findsOneWidget);
-      expect(
-        analyseCalls.where((c) => c['cloudConsent'] == true),
-        isEmpty,
-      );
+      expect(analyseCalls.where((c) => c['cloudConsent'] == true), isEmpty);
 
       // Navigate back to Home
       await tester.tap(find.byTooltip('Close').last);
@@ -776,14 +774,14 @@ void main() {
       await tester.tap(calmMathFinder);
       await _flushBridgeAndPump(tester);
 
-      final displayedHomePayload = tester
-          .widget<SelectableText>(
-            find.descendant(
-              of: find.byType(CloudConsentSheet),
-              matching: find.byType(SelectableText),
-            ),
-          )
-          .data;
+      final homePreviewWidget = tester.widget<SelectableText>(
+        find.descendant(
+          of: find.byType(CloudConsentSheet),
+          matching: find.byType(SelectableText),
+        ),
+      );
+      final displayedHomePayload =
+          homePreviewWidget.data ?? homePreviewWidget.textSpan?.toPlainText();
 
       final useCloudBtn = find.text('Use cloud for this check');
       await Scrollable.ensureVisible(
@@ -795,8 +793,9 @@ void main() {
       await _flushBridgeAndPump(tester);
 
       expect(find.text('In the cloud'), findsOneWidget);
-      final cloudCalls =
-          analyseCalls.where((c) => c['cloudConsent'] == true).toList();
+      final cloudCalls = analyseCalls
+          .where((c) => c['cloudConsent'] == true)
+          .toList();
       expect(cloudCalls.length, 1);
       expect(cloudCalls.single['requestedMode'], 'ONLY_IN_CLOUD');
       expect(cloudCalls.single['text'], equals(displayedHomePayload));
@@ -829,35 +828,35 @@ void main() {
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        const MethodChannel('com.enprive/hybrid_ai'),
-        (call) async {
-          if (call.method == 'analyseText') {
-            final args = Map<String, dynamic>.from(call.arguments as Map);
-            analyseCalls.add(args);
-            if (args['cloudConsent'] != true) {
-              return {
-                'schemaVersion': 1,
-                'requestId': args['requestId'],
-                'status': 'unavailable',
-                'inferenceSource': 'UNKNOWN',
-                'message': 'Nano cannot explain offline.',
-              };
-            }
-            return {
-              'schemaVersion': 1,
-              'requestId': args['requestId'],
-              'status': 'success',
-              'inferenceSource': 'IN_CLOUD',
-              'structuredOutput': {
-                'answer': 'Consented cloud explanation.',
-                'whatPolicySays': 'Shares ad IDs.',
-                'unknownBoundary': 'Opt-out scope not detailed.',
-              },
-            };
-          }
-          return null;
-        },
-      );
+            const MethodChannel('com.enprive/hybrid_ai'),
+            (call) async {
+              if (call.method == 'analyseText') {
+                final args = Map<String, dynamic>.from(call.arguments as Map);
+                analyseCalls.add(args);
+                if (args['cloudConsent'] != true) {
+                  return {
+                    'schemaVersion': 1,
+                    'requestId': args['requestId'],
+                    'status': 'unavailable',
+                    'inferenceSource': 'UNKNOWN',
+                    'message': 'Nano cannot explain offline.',
+                  };
+                }
+                return {
+                  'schemaVersion': 1,
+                  'requestId': args['requestId'],
+                  'status': 'success',
+                  'inferenceSource': 'IN_CLOUD',
+                  'structuredOutput': {
+                    'answer': 'Consented cloud explanation.',
+                    'whatPolicySays': 'Shares ad IDs.',
+                    'unknownBoundary': 'Opt-out scope not detailed.',
+                  },
+                };
+              }
+              return null;
+            },
+          );
 
       final coordinator = ReviewCoordinator();
       const finding = VerifiedFinding(
@@ -892,10 +891,7 @@ void main() {
 
       // 1. Tap preset question -> tries ONLY_ON_DEVICE -> pauses with CloudConsentSheet
       final q1Finder = find.text('What does this mean for my child?');
-      await Scrollable.ensureVisible(
-        tester.element(q1Finder),
-        alignment: 0.5,
-      );
+      await Scrollable.ensureVisible(tester.element(q1Finder), alignment: 0.5);
       await tester.pump();
       await tester.tap(q1Finder);
       await _flushBridgeAndPump(tester);
@@ -920,30 +916,24 @@ void main() {
 
       expect(find.text('Deni’s Answer'), findsOneWidget);
       expect(find.text('Offline local scan'), findsOneWidget);
-      expect(
-        analyseCalls.where((c) => c['cloudConsent'] == true),
-        isEmpty,
-      );
+      expect(analyseCalls.where((c) => c['cloudConsent'] == true), isEmpty);
 
       // 3. Ask another question and approve "Use cloud for this check"
       final q2Finder = find.text('What is still unknown here?');
-      await Scrollable.ensureVisible(
-        tester.element(q2Finder),
-        alignment: 0.5,
-      );
+      await Scrollable.ensureVisible(tester.element(q2Finder), alignment: 0.5);
       await tester.pump();
       await tester.tap(q2Finder);
       await _flushBridgeAndPump(tester);
       expect(find.byType(CloudConsentSheet), findsOneWidget);
 
-      final displayedDeniPayload = tester
-          .widget<SelectableText>(
-            find.descendant(
-              of: find.byType(CloudConsentSheet),
-              matching: find.byType(SelectableText),
-            ),
-          )
-          .data;
+      final deniPreviewWidget = tester.widget<SelectableText>(
+        find.descendant(
+          of: find.byType(CloudConsentSheet),
+          matching: find.byType(SelectableText),
+        ),
+      );
+      final displayedDeniPayload =
+          deniPreviewWidget.data ?? deniPreviewWidget.textSpan?.toPlainText();
 
       final useCloudBtn = find.text('Use cloud for this check');
       await Scrollable.ensureVisible(
@@ -959,8 +949,9 @@ void main() {
 
       expect(find.text('Consented cloud explanation.'), findsOneWidget);
       expect(find.text('In the cloud'), findsOneWidget);
-      final cloudCalls =
-          analyseCalls.where((c) => c['cloudConsent'] == true).toList();
+      final cloudCalls = analyseCalls
+          .where((c) => c['cloudConsent'] == true)
+          .toList();
       expect(cloudCalls.length, 1);
       expect(cloudCalls.single['requestedMode'], 'ONLY_IN_CLOUD');
       expect(cloudCalls.single['text'], equals(displayedDeniPayload));
@@ -969,10 +960,7 @@ void main() {
 
       // 4. Subsequent question still requires explicit consent (per-check gate)
       final q3Finder = find.text('Can we turn this off or opt out?');
-      await Scrollable.ensureVisible(
-        tester.element(q3Finder),
-        alignment: 0.5,
-      );
+      await Scrollable.ensureVisible(tester.element(q3Finder), alignment: 0.5);
       await tester.pump();
       await tester.tap(q3Finder);
       await _flushBridgeAndPump(tester);
@@ -984,10 +972,411 @@ void main() {
         ),
       );
       await _flushBridgeAndPump(tester);
+      expect(analyseCalls.where((c) => c['cloudConsent'] == true).length, 1);
+    },
+  );
+
+  testWidgets(
+    'P0-B: real installed app defaults to Device Permission Inspection without synthetic policy and compares only after user supplies genuine policy',
+    (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({
+        'enprive_pref_completed_onboarding': true,
+      });
+
+      final nativeCalls = <MethodCall>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        const MethodChannel('com.enprive/hybrid_ai'),
+        (call) async {
+          nativeCalls.add(call);
+          if (call.method == 'getDeviceCapability') {
+            return {
+              'isSupported': true,
+              'deviceTier': 'SUPPORTED',
+              'modelStatus': 'AVAILABLE',
+            };
+          }
+          if (call.method == 'listLaunchableApps') {
+            return [
+              {
+                'packageName': 'com.example.reader',
+                'appName': 'Focus Reader',
+                'isSystemApp': false,
+              },
+            ];
+          }
+          if (call.method == 'inspectSelectedApp') {
+            return {
+              'packageName': 'com.example.reader',
+              'appName': 'Focus Reader',
+              'versionName': '2.1.0',
+              'requestedPermissions': [
+                'android.permission.CAMERA',
+                'android.permission.INTERNET',
+              ],
+              'grantedPermissions': [
+                'android.permission.CAMERA',
+              ],
+            };
+          }
+          if (call.method == 'analyseText') {
+            return {
+              'schemaVersion': 1,
+              'requestId': (call.arguments as Map)['requestId'],
+              'status': 'success',
+              'inferenceSource': 'ON_DEVICE',
+              'structuredOutput': {
+                'overall_state': 'NO_CONCERN',
+                'summary': 'No collection claims in policy.',
+                'concerns': [],
+              },
+            };
+          }
+          return null;
+        },
+      );
+
+      tester.view.physicalSize = const Size(430, 932);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        const EnpriveApp(showSplashOnLaunch: false),
+      );
+      await _flushBridgeAndPump(tester);
+
+      // Synthetic sample badge shown next to Home sample cards
+      expect(find.text('Synthetic example'), findsAtLeastNWidgets(1));
+
+      final checkAppBtn = find.text('Check an app');
+      await tester.ensureVisible(checkAppBtn);
+      await tester.pump();
+      await tester.tap(checkAppBtn);
+      await _flushBridgeAndPump(tester);
+      await _flushBridgeAndPump(tester);
+      expect(find.byType(InstalledAppPickerSheet), findsOneWidget);
+
+      // Installed app list renders Focus Reader
+      final readerTile = find.text('Focus Reader');
+      await tester.ensureVisible(readerTile);
+      await tester.pump();
+      await tester.tap(readerTile);
+      await _flushBridgeAndPump(tester);
+      await _flushBridgeAndPump(tester);
+
+      // Opens Device Permission Inspection directly with 0 analyseText AI calls
+      expect(find.byType(ReviewResultScreen), findsOneWidget);
+      expect(find.text('Device Permission Inspection'), findsWidgets);
+      expect(find.text('Granted'), findsWidgets);
+      expect(find.text('Not granted'), findsWidgets);
       expect(
-        analyseCalls.where((c) => c['cloudConsent'] == true).length,
+        find.text('View reviewed policy snapshot'),
+        findsNothing,
+      );
+      expect(
+        nativeCalls.where((c) => c.method == 'analyseText'),
+        isEmpty,
+      );
+
+      // Tap optional CTA "Add this app's privacy policy"
+      final addPolicyBtn = find.text("Add this app's privacy policy").last;
+      await tester.ensureVisible(addPolicyBtn);
+      await tester.pump();
+      await tester.tap(addPolicyBtn);
+      await _flushBridgeAndPump(tester);
+
+      // Placeholder stub is rejected inline
+      final policyField = find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.byType(TextField),
+      );
+      await tester.enterText(policyField, 'Privacy notice unavailable.');
+      await tester.tap(find.text('Review on this phone'));
+      await tester.pump();
+      expect(find.textContaining('placeholder'), findsOneWidget);
+      expect(
+        nativeCalls.where((c) => c.method == 'analyseText'),
+        isEmpty,
+      );
+
+      // Genuine supplied policy runs policy-to-permission comparison
+      await tester.enterText(
+        policyField,
+        'Focus Reader stores books locally and does not use your camera or upload analytics.',
+      );
+      await tester.tap(find.text('Review on this phone'));
+      await _flushBridgeAndPump(tester);
+      await _flushBridgeAndPump(tester);
+
+      expect(
+        nativeCalls.where((c) => c.method == 'analyseText').length,
         1,
       );
+    },
+  );
+
+  testWidgets(
+    'P0-C, P0-E & Section 7: CloudConsentSheet copy/safe layout, FNV-1a digest sheet & copy, and calibrated noConcern subtitles',
+    (WidgetTester tester) async {
+      String? copiedDigest;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copiedDigest =
+              (call.arguments as Map<dynamic, dynamic>)['text'] as String?;
+        }
+        return null;
+      });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+
+      // Section 7 calibrated strings in English & French
+      final enL10n = lookupAppLocalizations(const Locale('en'));
+      final frL10n = lookupAppLocalizations(const Locale('fr'));
+      expect(
+        enL10n.stateNoConcernSubtitle,
+        equals(
+          'No concern identified in the reviewed evidence. This is not a safety certification.',
+        ),
+      );
+      expect(
+        frL10n.stateNoConcernSubtitle.toLowerCase(),
+        contains('certification'),
+      );
+
+      // P0-C CloudConsentSheet.show copy and layout
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          darkTheme: ThemeData.dark(useMaterial3: true),
+          themeMode: ThemeMode.dark,
+          home: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(1.8)),
+            child: Builder(
+              builder: (ctx) => Scaffold(
+                body: ElevatedButton(
+                  onPressed: () {
+                    CloudConsentSheet.show(
+                      ctx,
+                      subjectTitle: 'CalmMath',
+                      policyText:
+                          'Contact: alex@example.com or Device ID: 998877.',
+                      deviceReason: 'On-device AI is downloading.',
+                    );
+                  },
+                  child: const Text('Open Consent'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Consent'));
+      await _flushBridgeAndPump(tester);
+
+      expect(find.byType(CloudConsentSheet), findsOneWidget);
+      expect(find.textContaining('shown above'), findsOneWidget);
+      expect(find.textContaining('shown below'), findsNothing);
+      expect(find.textContaining('never be sent'), findsOneWidget);
+      expect(find.textContaining('never sent'), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(CloudConsentSheet),
+          matching: find.byTooltip('Close'),
+        ),
+      );
+      await _flushBridgeAndPump(tester);
+
+      // P0-E Snapshot receipt modal shows FNV-1a 64-bit digest + copy action, zero SHA-256
+      final cleanReceipt = PolicyReviewReceipt(
+        id: 'r_digest_test',
+        subjectTitle: 'CalmMath Kids',
+        sourceLabel: 'Synthetic example',
+        createdAt: DateTime(2026, 11, 15, 10, 0),
+        overallState: ReviewOverallState.noConcern,
+        summary: 'No data collection found.',
+        calibratedDisclaimer:
+            'No concern identified in the reviewed evidence. This is not a safety certification.',
+        findings: const [],
+        snapshotText: 'We never sell student data.',
+        snapshotDigest: '9a8b7c6d5e4f3210',
+        inferenceSource: InferenceSource.onDevice,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ReviewResultScreen(
+            receipt: cleanReceipt,
+            coordinator: ReviewCoordinator(),
+          ),
+        ),
+      );
+      await _flushBridgeAndPump(tester);
+
+      final viewSnapshotBtn = find.text('View reviewed policy snapshot').last;
+      await tester.ensureVisible(viewSnapshotBtn);
+      await tester.pump();
+      await tester.tap(viewSnapshotBtn);
+      await _flushBridgeAndPump(tester);
+
+      expect(find.textContaining('SHA-256 ·'), findsNothing);
+      expect(
+        find.textContaining('not cryptographic SHA-256'),
+        findsAtLeastNWidgets(1),
+      );
+      expect(
+        find.text('Snapshot digest · FNV-1a 64-bit · #9a8b7c6d5e4f3210'),
+        findsOneWidget,
+      );
+
+      final copyDigestBtn = find.text('Copy digest').first;
+      await tester.ensureVisible(copyDigestBtn);
+      await tester.pump();
+      await tester.tap(copyDigestBtn);
+      await tester.pump();
+      expect(copiedDigest, equals('9a8b7c6d5e4f3210'));
+    },
+  );
+
+  testWidgets(
+    'HybridAiBridge caches getAppIcon calls and InstalledAppPickerSheet renders original launcher icons with graceful fallback',
+    (WidgetTester tester) async {
+      final samplePngBytes = Uint8List.fromList(const [
+        137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0,
+        1, 0, 0, 0, 1, 8, 6, 0, 0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68,
+        65, 84, 120, 218, 99, 252, 207, 192, 80, 15, 0, 4, 133, 1, 128, 132,
+        169, 140, 33, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+      ]);
+
+      final iconRequests = <String>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('com.enprive/hybrid_ai'),
+            (call) async {
+              if (call.method == 'listLaunchableApps') {
+                return [
+                  {
+                    'packageName': 'com.example.focus',
+                    'appName': 'Focus Reader',
+                    'isSystemApp': false,
+                  },
+                  {
+                    'packageName': 'com.example.noicon',
+                    'appName': 'Plain Utility',
+                    'isSystemApp': false,
+                  },
+                ];
+              }
+              if (call.method == 'getAppIcon') {
+                final args = call.arguments as Map<dynamic, dynamic>;
+                final pkg = args['packageName'] as String;
+                iconRequests.add(pkg);
+                if (pkg == 'com.example.focus') {
+                  return samplePngBytes;
+                }
+                if (pkg == 'com.example.broken') {
+                  throw PlatformException(code: 'NOT_FOUND');
+                }
+                return null;
+              }
+              return null;
+            },
+          );
+
+      // 1. Bridge deduplication & instance caching
+      final bridge = HybridAiBridge();
+      final concurrent = await Future.wait([
+        bridge.getAppIcon('com.example.focus'),
+        bridge.getAppIcon('com.example.focus'),
+      ]);
+      expect(concurrent[0], equals(samplePngBytes));
+      expect(concurrent[1], equals(samplePngBytes));
+      expect(bridge.cachedAppIcon('com.example.focus'), equals(samplePngBytes));
+      expect(
+        iconRequests.where((p) => p == 'com.example.focus').length,
+        equals(1),
+      );
+      expect(await bridge.getAppIcon('com.example.broken'), isNull);
+      expect(await bridge.getAppIcon(''), isNull);
+
+      // 2. InstalledAppPickerSheet renders original icon + fallback cleanly in Dark Mode 200% text scale
+      iconRequests.clear();
+      final sheetBridge = HybridAiBridge();
+      tester.view.physicalSize = const Size(430, 932);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final darkData = EnpriveM3ETheme.darkThemeData;
+      await tester.pumpWidget(
+        M3EMaterialApp(
+          data: darkData,
+          typeface: EnpriveM3ETheme.typefaceConfig,
+          autoTheming: false,
+          dynamicColoring: false,
+          initialTheme: darkData.brightness,
+          theme: EnpriveM3ETheme.lightThemeData.toThemeData(),
+          darkTheme: EnpriveM3ETheme.darkThemeData.toThemeData(),
+          localizationsDelegates: EnpriveM3ETheme.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          appBuilder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: const TextScaler.linear(2.0),
+            ),
+            child: EnpriveM3EBridgeScope(
+              themeMode: ThemeMode.dark,
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
+          home: Scaffold(
+            body: InstalledAppPickerSheet(
+              bridge: sheetBridge,
+              eduTrackPolicyText: 'EduTrack sample policy',
+              calmMathPolicyText: 'CalmMath sample policy',
+            ),
+          ),
+        ),
+      );
+      await _flushBridgeAndPump(tester);
+      await tester.scrollUntilVisible(
+        find.text('Plain Utility'),
+        220,
+        scrollable: find
+            .descendant(
+              of: find.byType(InstalledAppPickerSheet),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await _flushBridgeAndPump(tester);
+
+      final focusTile = find.byKey(const ValueKey('com.example.focus'));
+      final noIconTile = find.byKey(const ValueKey('com.example.noicon'));
+      expect(focusTile, findsOneWidget);
+      expect(noIconTile, findsOneWidget);
+      expect(find.byType(InstalledAppIcon), findsNWidgets(2));
+
+      final focusImageFinder = find.descendant(
+        of: focusTile,
+        matching: find.byType(Image),
+      );
+      expect(focusImageFinder, findsOneWidget);
+      final focusImage = tester.widget<Image>(focusImageFinder);
+      expect(focusImage.image, isA<MemoryImage>());
+      expect((focusImage.image as MemoryImage).bytes, equals(samplePngBytes));
+
+      final noIconFallbackFinder = find.descendant(
+        of: noIconTile,
+        matching: find.byIcon(LucideIcons.layoutGrid),
+      );
+      expect(noIconFallbackFinder, findsOneWidget);
+      expect(tester.takeException(), isNull);
     },
   );
 }

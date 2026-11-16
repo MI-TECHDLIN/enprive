@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:enprive/core/theme/enprive_colors.dart';
 import 'package:enprive/core/theme/enprive_theme.dart';
@@ -383,6 +384,16 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         expect(find.text('Appearance'), findsOneWidget);
+        // Verify developer-only Stage 0 PoC link is not exposed in user Settings.
+        expect(
+          find.byKey(const Key('open_design_system_preview_tile')),
+          findsNothing,
+        );
+        expect(find.text('Theme & Deni LOD Preview'), findsNothing);
+        expect(find.text('Language'), findsOneWidget);
+        expect(find.text('Meet Deni & setup guide'), findsOneWidget);
+        expect(find.text('Clear saved receipts (0)'), findsOneWidget);
+
         final darkOption = find.byKey(const Key('theme_mode_option_dark'));
         expect(darkOption, findsOneWidget);
         await tester.ensureVisible(darkOption);
@@ -548,7 +559,10 @@ void main() {
         expect(find.text('STAGE 1 SYSTEM'), findsOneWidget);
         expect(find.text('Advertising ID Shared with Third Parties'), findsOneWidget);
         expect(find.text('QUOTE MATCHED'), findsOneWidget);
-        expect(find.text('SHA-256 · 8f4b2e9c10a74d3b'), findsOneWidget);
+        expect(
+          find.text('Snapshot digest · FNV-1a 64-bit · 8f4b2e9c10a74d3b'),
+          findsOneWidget,
+        );
 
         // Tap Ask Deni button on EnpriveFindingM3ECard
         final askDeniBtn = find.text('Ask Deni · Why this matters');
@@ -563,8 +577,11 @@ void main() {
         );
         await tester.pump(const Duration(milliseconds: 350));
 
-        // When collapsed, the SHA-256 line inside EnpriveCollapsibleQuoteBox is hidden
-        expect(find.text('SHA-256 · 8f4b2e9c10a74d3b'), findsNothing);
+        // When collapsed, the digest line inside EnpriveCollapsibleQuoteBox is hidden
+        expect(
+          find.text('Snapshot digest · FNV-1a 64-bit · 8f4b2e9c10a74d3b'),
+          findsNothing,
+        );
 
         // Expand AnalysisSavedTraceCard thoughts in Dark Mode
         final viewThoughtsToggle = find.text('View streamed thoughts & steps');
@@ -913,6 +930,161 @@ void main() {
         );
         await tester.pump();
         expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'P0-D: InstalledAppPickerSheet resolves readable WCAG AA (>= 4.5:1) surface and ink across System Dark/Light and Explicit Dark/Light runtime switches',
+      (WidgetTester tester) async {
+        double contrastRatio(Color a, Color b) {
+          final la = a.computeLuminance();
+          final lb = b.computeLuminance();
+          final lighter = math.max(la, lb);
+          final darker = math.min(la, lb);
+          return (lighter + 0.05) / (darker + 0.05);
+        }
+
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+          const MethodChannel('com.enprive/hybrid_ai'),
+          (call) async {
+            if (call.method == 'getDeviceCapability') {
+              return {
+                'isSupported': true,
+                'deviceTier': 'SUPPORTED',
+                'modelStatus': 'AVAILABLE',
+              };
+            }
+            if (call.method == 'listLaunchableApps') {
+              return [
+                {
+                  'packageName': 'com.example.reader',
+                  'appName': 'Reader App',
+                  'isSystemApp': false,
+                },
+              ];
+            }
+            return null;
+          },
+        );
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(
+                const MethodChannel('com.enprive/hybrid_ai'),
+                null,
+              );
+        });
+
+        SharedPreferences.setMockInitialValues({
+          'enprive_pref_completed_onboarding': true,
+        });
+
+        Future<void> flushAndPump() async {
+          await tester.pump();
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 30)),
+          );
+          for (var i = 0; i < 6; i++) {
+            await tester.pump(const Duration(milliseconds: 90));
+          }
+        }
+
+        Future<void> verifyPickerContrast({required bool expectDark}) async {
+          final checkAppBtn = find.text('Check an app');
+          await tester.ensureVisible(checkAppBtn);
+          await tester.tap(checkAppBtn);
+          await flushAndPump();
+
+          final sheetFinder = find.byType(InstalledAppPickerSheet);
+          expect(sheetFinder, findsOneWidget);
+
+          final sheetMaterial = tester.widget<Material>(
+            find
+                .descendant(
+                  of: sheetFinder,
+                  matching: find.byType(Material),
+                )
+                .first,
+          );
+          final bgColor = sheetMaterial.color!;
+          expect(
+            bgColor.computeLuminance(),
+            expectDark ? lessThan(0.15) : greaterThan(0.7),
+          );
+
+          final titleWidget = tester.widget<Text>(
+            find.descendant(
+              of: sheetFinder,
+              matching: find.text('Check an app'),
+            ),
+          );
+          final titleColor = titleWidget.style!.color!;
+          expect(
+            contrastRatio(titleColor, bgColor),
+            greaterThanOrEqualTo(4.5),
+          );
+
+          final sectionWidget = tester.widget<Text>(
+            find.descendant(
+              of: sheetFinder,
+              matching: find.text('Try a sample kids app'),
+            ),
+          );
+          expect(
+            contrastRatio(sectionWidget.style!.color!, bgColor),
+            greaterThanOrEqualTo(4.5),
+          );
+
+          final closeBtn = find.descendant(
+            of: sheetFinder,
+            matching: find.byTooltip('Close'),
+          );
+          await tester.tap(closeBtn);
+          await flushAndPump();
+        }
+
+        tester.view.physicalSize = const Size(430, 932);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // 1. Initial launch in OS Dark Mode (ThemeMode.system)
+        tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+        addTearDown(
+          () => tester.platformDispatcher.clearPlatformBrightnessTestValue(),
+        );
+
+        await tester.pumpWidget(const EnpriveApp(showSplashOnLaunch: false));
+        await flushAndPump();
+        await verifyPickerContrast(expectDark: true);
+
+        // 2. Runtime OS toggle to Light Mode without restart
+        tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+        await flushAndPump();
+        await verifyPickerContrast(expectDark: false);
+
+        // 3. Explicit Dark via Settings without restart
+        await tester.tap(find.text('Settings'));
+        await flushAndPump();
+        final darkOption = find.byKey(const Key('theme_mode_option_dark'));
+        await tester.ensureVisible(darkOption);
+        await tester.pump();
+        await tester.tap(darkOption);
+        await flushAndPump();
+        await tester.tap(find.text('Home'));
+        await flushAndPump();
+        await verifyPickerContrast(expectDark: true);
+
+        // 4. Explicit Light via Settings without restart
+        await tester.tap(find.text('Settings'));
+        await flushAndPump();
+        final lightOption = find.byKey(const Key('theme_mode_option_light'));
+        await tester.ensureVisible(lightOption);
+        await tester.pump();
+        await tester.tap(lightOption);
+        await flushAndPump();
+        await tester.tap(find.text('Home'));
+        await flushAndPump();
+        await verifyPickerContrast(expectDark: false);
       },
     );
   });

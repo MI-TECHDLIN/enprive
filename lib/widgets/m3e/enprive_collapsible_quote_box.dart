@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/enprive_theme.dart';
 import 'enprive_material_card_surface.dart';
 
-/// Collapsible verbatim quotation & SHA-256 archival container designed for
+/// Collapsible verbatim quotation & FNV-1a 64-bit snapshot digest container designed for
 /// `WhyThisFindingSheet` and detailed policy clause inspection.
 ///
 /// Automatically collapses to a compact 1-line bar when [autoCollapseTrigger]
@@ -68,19 +69,14 @@ class _EnpriveCollapsibleQuoteBoxState
       child: Stack(
         children: [
           PositionedDirectional(
-            top: 14,
-            bottom: 14,
-            start: 10,
-            width: 3.5,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: scheme.primary,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            top: 0,
+            bottom: 0,
+            start: 0,
+            width: 4,
+            child: ColoredBox(color: scheme.primary),
           ),
           Padding(
-            padding: const EdgeInsetsDirectional.only(start: 8),
+            padding: const EdgeInsetsDirectional.only(start: 4),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -144,10 +140,7 @@ class _EnpriveCollapsibleQuoteBoxState
                     context,
                     motion.effectsDefault,
                   ),
-                  curve: motion.effectiveCurve(
-                    context,
-                    motion.emphasizedCurve,
-                  ),
+                  curve: motion.effectiveCurve(context, motion.emphasizedCurve),
                   child: _isExpanded
                       ? Container(
                           width: double.infinity,
@@ -178,12 +171,50 @@ class _EnpriveCollapsibleQuoteBoxState
                                       color: surfaces.hairlineBorder,
                                     ),
                                   ),
-                                  child: Text(
-                                    'SHA-256 · ${widget.sha256Digest}',
-                                    style: typeExt.sha256Hash.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                      fontSize: 11.5,
-                                    ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          'Snapshot digest · FNV-1a 64-bit · ${widget.sha256Digest}',
+                                          style: typeExt.sha256Hash.copyWith(
+                                            color: scheme.onSurfaceVariant,
+                                            fontSize: 11.5,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      InkWell(
+                                        borderRadius: BorderRadius.circular(6),
+                                        onTap: () {
+                                          Clipboard.setData(
+                                            ClipboardData(
+                                              text: widget.sha256Digest!,
+                                            ),
+                                          );
+                                          ScaffoldMessenger.maybeOf(context)
+                                            ?..hideCurrentSnackBar()
+                                            ..showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Snapshot digest copied',
+                                                ),
+                                                behavior:
+                                                    SnackBarBehavior.floating,
+                                                duration: Duration(seconds: 2),
+                                              ),
+                                            );
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(4),
+                                          child: Icon(
+                                            LucideIcons.copy,
+                                            size: 13,
+                                            color: scheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],

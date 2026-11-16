@@ -145,7 +145,7 @@ abstract class AppLocalizations {
   /// No description provided for @stateNoConcernSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Nothing concerning in the reviewed evidence. This is not a safety certification.'**
+  /// **'No concern identified in the reviewed evidence. This is not a safety certification.'**
   String get stateNoConcernSubtitle;
 
   /// No description provided for @stateReviewRecommended.
@@ -301,7 +301,7 @@ abstract class AppLocalizations {
   /// No description provided for @cloudConsentDisclosure.
   ///
   /// In en, this message translates to:
-  /// **'To analyse this text in the cloud, Enprive will send only the text shown below to Firebase AI Logic. Your installed-app list and Android permission observations will never be sent.'**
+  /// **'To analyse this text in the cloud, Enprive will send only the redacted text shown above to Firebase AI Logic. Your installed-app list and Android permission observations will never be sent.'**
   String get cloudConsentDisclosure;
 
   /// No description provided for @permissionLimitationNotice.
@@ -1137,6 +1137,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No matching apps found on this phone.'**
   String get noMatchingApps;
+
+  /// No description provided for @sampleSyntheticBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Synthetic example'**
+  String get sampleSyntheticBadge;
+
+  /// No description provided for @permissionInspectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Permission Inspection'**
+  String get permissionInspectionTitle;
+
+  /// No description provided for @addAppPrivacyPolicyBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Add this app\'s privacy policy'**
+  String get addAppPrivacyPolicyBtn;
+
+  /// No description provided for @snapshotDigestLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Snapshot digest · FNV-1a 64-bit'**
+  String get snapshotDigestLabel;
+
+  /// No description provided for @snapshotDigestExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'A fast 64-bit local fingerprint of this text (not cryptographic SHA-256). Changing any character produces a different digest.'**
+  String get snapshotDigestExplanation;
+
+  /// No description provided for @copyDigestBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy digest'**
+  String get copyDigestBtn;
+
+  /// No description provided for @digestCopiedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Snapshot digest copied'**
+  String get digestCopiedMsg;
+
+  /// No description provided for @permissionGrantedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Granted'**
+  String get permissionGrantedBadge;
+
+  /// No description provided for @permissionNotGrantedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Not granted'**
+  String get permissionNotGrantedBadge;
 }
 
 class _AppLocalizationsDelegate

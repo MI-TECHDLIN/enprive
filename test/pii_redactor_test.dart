@@ -39,5 +39,30 @@ Server log from 192.168.1.45 at 742 Evergreen Terrace.
       expect(PiiRedactor.isComprehensivePolicy(shortPolicy), isFalse);
       expect(PiiRedactor.isComprehensivePolicy(comprehensivePolicy), isTrue);
     });
+
+    test('P0-C: preserves ordinary "device identifiers" prose while redacting labeled IDs', () {
+      const ordinary =
+          'We collect device identifiers, account settings, and a device ID that stays local. Section 12345 and token abc123 in version 2026_11 describe peer-to-peer study sessions with up to 12345 flashcards.';
+      final ordinaryResult = PiiRedactor.redact(ordinary);
+      expect(ordinaryResult.redactedText, equals(ordinary));
+      expect(ordinaryResult.redactedText, isNot(contains('[ID]')));
+      expect(ordinaryResult.hadPersonalDetails, isFalse);
+
+      const labeled =
+          'Device ID: 12345, session id: abc123, Student ID: STU_90421, User ID=STU-90421, ID: STU_90421, User ID: 987654.';
+      final labeledResult = PiiRedactor.redact(labeled);
+      expect(labeledResult.hadPersonalDetails, isTrue);
+      expect(labeledResult.redactedText, contains('Device ID: [ID]'));
+      expect(labeledResult.redactedText, contains('session id: [ID]'));
+      expect(labeledResult.redactedText, contains('Student ID: [ID]'));
+      expect(labeledResult.redactedText, contains('User ID=[ID]'));
+      expect(labeledResult.redactedText, contains('ID: [ID]'));
+      expect(labeledResult.redactedText, contains('User ID: [ID]'));
+      expect(labeledResult.redactedText, isNot(contains('12345')));
+      expect(labeledResult.redactedText, isNot(contains('abc123')));
+      expect(labeledResult.redactedText, isNot(contains('STU_90421')));
+      expect(labeledResult.redactedText, isNot(contains('STU-90421')));
+      expect(labeledResult.redactedText, isNot(contains('987654')));
+    });
   });
 }

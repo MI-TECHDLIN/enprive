@@ -44,14 +44,11 @@ class WhyThisFindingSheet extends StatefulWidget {
     required ReviewCoordinator coordinator,
     bool cloudConsentGrantedForSession = false,
   }) {
-    final surfaces = context.enpriveSurfaces;
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: surfaces.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.85,
@@ -143,7 +140,8 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
       decision = await CloudConsentSheet.show(
         context,
         subjectTitle: widget.finding.title,
-        policyText: explanation.redactedPreview ??
+        policyText:
+            explanation.redactedPreview ??
             PiiRedactor.redact(widget.snapshotText).redactedText,
         deviceReason: explanation.consentReason,
       );
@@ -177,7 +175,8 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
         question: question,
         snapshotText: widget.snapshotText,
         cloudConsent: decision == CloudConsentDecision.useCloudOnce,
-        forceLocalManualFallback: decision == CloudConsentDecision.reviewLocally,
+        forceLocalManualFallback:
+            decision == CloudConsentDecision.reviewLocally,
         languageCode: languageCode,
         intentHint: hint,
       );
@@ -237,8 +236,12 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
           final typeExt = context.enpriveType;
           final reducedMotion = EnpriveMotionTokens.isReducedMotion(context);
 
-          return SafeArea(
-            child: Column(
+          return Material(
+            color: surfaces.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            clipBehavior: Clip.antiAlias,
+            child: SafeArea(
+              child: Column(
               children: [
                 // Top Bar: Close + M3E Wavy Progress Indicator
                 Padding(
@@ -460,8 +463,9 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                                           else
                                             Text(
                                               '“${finding.exactExcerpt}”',
-                                              maxLines:
-                                                  _isQuoteCollapsed ? 1 : null,
+                                              maxLines: _isQuoteCollapsed
+                                                  ? 1
+                                                  : null,
                                               overflow: _isQuoteCollapsed
                                                   ? TextOverflow.ellipsis
                                                   : TextOverflow.visible,
@@ -650,10 +654,10 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                         onTap: (_isAskingDeni || _isConsentSheetOpen)
                             ? null
                             : () => _askDeni(
-                                  _selectedQuestionIndex,
-                                  activeQuestion,
-                                  languageCode,
-                                ),
+                                _selectedQuestionIndex,
+                                activeQuestion,
+                                languageCode,
+                              ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -696,6 +700,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                   ),
                 ),
               ],
+            ),
             ),
           );
         },

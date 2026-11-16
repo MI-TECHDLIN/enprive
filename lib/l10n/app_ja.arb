@@ -30,7 +30,7 @@
   "btnGetStarted": "はじめる",
   "btnContinue": "続ける",
   "deniIntro": "こんにちは、Deniです。このプライバシーポリシーの内容を分かりやすく整理し、根拠となる原文や確認できなかった点までお伝えします。",
-  "cloudConsentDisclosure": "この文章をクラウドで分析するため、Enpriveは下に表示されたテキストのみをFirebase AI Logicに送信します。インストール済みアプリ一覧やAndroidの権限情報は送信されません。",
+  "cloudConsentDisclosure": "この文章をクラウドで分析するため、Enpriveは上に表示された伏せ字済みテキストのみをFirebase AI Logicに送信します。インストール済みアプリ一覧やAndroidの権限情報は送信されません。",
   "permissionLimitationNotice": "Androidがこの端末上で報告している権限状態です。アプリが実際にデータへアクセスまたは送信したかを証明するものではありません。",
   "navHome": "ホーム",
   "navReceipts": "レシート",
@@ -169,5 +169,14 @@
   "sampleCalmMathSubtitle": "オフライン算数練習",
   "appsOnThisPhone": "この端末のアプリ",
   "hintSearchApps": "アプリを検索…",
-  "noMatchingApps": "一致するアプリがこの端末に見つかりませんでした。"
+  "noMatchingApps": "一致するアプリがこの端末に見つかりませんでした。",
+  "sampleSyntheticBadge": "合成サンプル",
+  "permissionInspectionTitle": "端末権限の検査",
+  "addAppPrivacyPolicyBtn": "このアプリのプライバシーポリシーを追加",
+  "snapshotDigestLabel": "スナップショットダイジェスト · FNV-1a 64ビット",
+  "snapshotDigestExplanation": "このテキストの高速な64ビットローカル指紋です（暗号学的SHA-256ではありません）。1文字でも変わると値が変わります。",
+  "copyDigestBtn": "ダイジェストをコピー",
+  "digestCopiedMsg": "スナップショットダイジェストをコピーしました",
+  "permissionGrantedBadge": "許可済み",
+  "permissionNotGrantedBadge": "未許可"
 }

@@ -30,7 +30,7 @@
   "btnGetStarted": "Comenzar",
   "btnContinue": "Continuar",
   "deniIntro": "Hola, soy Deni. Puedo ayudarte a entender qué dice esta política de privacidad, mostrarte las pruebas detrás de cada punto y explicar lo que Enprive no pudo verificar.",
-  "cloudConsentDisclosure": "Para analizar este texto en la nube, Enprive enviará únicamente el texto mostrado abajo a Firebase AI Logic. Tu lista de apps instaladas y los permisos de Android nunca se enviarán.",
+  "cloudConsentDisclosure": "Para analizar este texto en la nube, Enprive enviará únicamente el texto redactado mostrado arriba a Firebase AI Logic. Tu lista de apps instaladas y los permisos de Android nunca se enviarán.",
   "permissionLimitationNotice": "Android informa este estado de permisos en este teléfono. No demuestra si la app realmente accedió a los datos o los transmitió.",
   "navHome": "Inicio",
   "navReceipts": "Recibos",
@@ -169,5 +169,14 @@
   "sampleCalmMathSubtitle": "Matemáticas sin conexión",
   "appsOnThisPhone": "Apps en este teléfono",
   "hintSearchApps": "Buscar apps…",
-  "noMatchingApps": "No se encontraron apps coincidentes en este teléfono."
+  "noMatchingApps": "No se encontraron apps coincidentes en este teléfono.",
+  "sampleSyntheticBadge": "Ejemplo sintético",
+  "permissionInspectionTitle": "Inspección de permisos del dispositivo",
+  "addAppPrivacyPolicyBtn": "Añadir la política de privacidad de esta app",
+  "snapshotDigestLabel": "Resumen de instantánea · FNV-1a de 64 bits",
+  "snapshotDigestExplanation": "Huella digital local rápida de 64 bits de este texto (no es SHA-256 criptográfico). Cambia si se modifica un solo carácter.",
+  "copyDigestBtn": "Copiar resumen",
+  "digestCopiedMsg": "Resumen de instantánea copiado",
+  "permissionGrantedBadge": "Concedido",
+  "permissionNotGrantedBadge": "No concedido"
 }
