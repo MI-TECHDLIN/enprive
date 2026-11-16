@@ -18,7 +18,7 @@
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
 - **Current `main` HEAD**: `a5c69d1`
-- **Active Feature Branch**: `feature/m3-expressive-rebrand` (Iterations 27–28 committed & pushed atop `2d20311`)
+- **Active Feature Branch**: `feature/m3-expressive-rebrand` (Iteration 29 Settings cleanup atop `74357f4`, uncommitted working changes)
 - **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 24 November 2026)
 - **Next Queued Action**: Run P1 visual polish & remaining acceptance items if authorized, and verify `enprive-hybrid-ai` Cloud Logging / physical Android AICore & App Check before Phase B.
 
@@ -1017,6 +1017,60 @@
   - **Live Pixel 9 (`emulator-5554`) Visual & Runtime Verification**: Verified in both Light Mode (`TankLoop Field`, `Calendar`, `Camera`, `Chrome`, `Clock`, `Contacts`, `Drive`, `Files`, `Maps`, `Messages`, `Phone`, `Photos`, `Play Store`, `Safety`, `Settings`) and Dark Mode (including `TMoble`, `Voice Access`, `YouTube`, `YT Music`) with crisp adaptive squircle balance, clear hairline separation on both backgrounds, and zero `flutter` / `AndroidRuntime` errors in `logcat`.
 - **Next Immediate Action & Recommended Model**:
   - Proceed with P1 visual polish or Phase B planning once authorized; open PR from `feature/m3-expressive-rebrand` to `main` when ready.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+## Iteration 29 — Remove Developer "Theme & Deni LOD Preview" Row from Settings
+
+- **Date**: 2026-11-15
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop `74357f4`, uncommitted working changes)
+- **Active Model**: **Gemini (Antigravity)**
+- **Summary of Changes**:
+  - Removed the leftover developer Stage 0 PoC row (`open_design_system_preview_tile` / `'Theme & Deni LOD Preview'`) and unused `design_system_preview_screen.dart` import from [`SettingsScreen`](lib/screens/settings_screen.dart).
+  - Kept [`DesignSystemPreviewScreen`](lib/screens/design_system_preview_screen.dart) (`EnpriveM3EStage0App`) intact for standalone Stage 0 M3E and Deni LOD tests; segmented corner radii on `SettingsScreen` adapt dynamically via `prefRows.length` for the remaining preference rows (`Language`, `Meet Deni & setup guide`, `Clear saved receipts`).
+  - Added widget test assertions in [`test/theme_and_deni_lod_test.dart`](test/theme_and_deni_lod_test.dart) (`'SettingsScreen switches between System, Light, and Dark ThemeMode inside M3EMaterialApp and persists preference'`) verifying `open_design_system_preview_tile` and `'Theme & Deni LOD Preview'` are not rendered while user preference rows remain visible.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **66/66 passed (100%)**.
+- **Next Immediate Action & Recommended Model**:
+  - Proceeded to P0 Blocker Closure (Iteration 30).
+  - Recommended Model: **Claude Opus 5.5 / Gemini 4 Argon**.
+
+---
+
+## Iteration 30 — P0 Blocker Closure: Genuine Public URL Retrieval, Local Document Intake, Permission Precedence & Cloud Payload Parity
+
+- **Date**: 2026-11-15
+- **Branch / Base Commit**: `feature/m3-expressive-rebrand` (atop `74357f4` + preserved Iteration 29 cleanup, uncommitted for review)
+- **Active Model**: **Claude Opus 5.5**
+- **Summary of Changes**:
+  - **1. Genuine Public Policy URL Retrieval (`PolicyUrlRetriever` & Intake Flows)**:
+    - Eliminated synthetic URL fixture substitution (`EduTrack`/`CalmMath` substring mapping) and fake sample assist chips from [`lib/main.dart`](lib/main.dart) (`_showPasteModal` / `_executeUrlReview`), initializing link fields empty and reserving sample fixtures strictly for explicit sample buttons/cards.
+    - Implemented [`PolicyUrlRetriever`](lib/services/network/policy_url_retriever.dart) with public `http`/`https` scheme enforcement, SSRF destination filtering (loopback, private IPv4/IPv6, link-local, CGNAT, metadata `169.254.169.254`, obfuscated numeric IPs, `.local`/`.internal`), per-hop manual redirect validation (`maxRedirects = 5`), bounded timeouts (`12s` per hop / `20s` total) and payload size (`2 MiB`), `Content-Type` / binary sniffing, linear-time HTML boilerplate/script/style/nav extraction, challenge/error-page detection, canonical URL + redirect chain + UTC timestamp provenance, SHA-256 source hash (`EvidenceValidator.computeSha256SourceHash`), explicit unverified app-identity limitation note, `PolicySufficiencyValidator` gating before inference, and `INSUFFICIENT_EVIDENCE` fallback receipts via [`PolicyIntakeHelper`](lib/services/intake/policy_intake_helper.dart).
+    - Added Android `INTERNET` permission and PDF/DOCX `ACTION_SEND` filters in [`AndroidManifest.xml`](android/app/src/main/AndroidManifest.xml) plus structured `ACTION_SEND` / `ACTION_PROCESS_TEXT` routing (`getInitialIncomingPayload` & `onIncomingPayload`) across [`MainActivity.kt`](android/app/src/main/kotlin/com/example/enprive/MainActivity.kt), [`HybridAiBridge`](lib/services/platform/hybrid_ai_bridge.dart), and [`HomeScreen`](lib/main.dart).
+  - **2. Local Supported Document Intake (`PDF`, `TXT`, `DOCX`)**:
+    - Implemented [`DocumentTextExtractor.kt`](android/app/src/main/kotlin/com/example/enprive/DocumentTextExtractor.kt) (with `pdfbox-android:2.0.27.0` in [`build.gradle.kts`](android/app/build.gradle.kts)) for strictly on-device, `10 MiB`-bounded local extraction of `PDF`, `TXT` (UTF-8/UTF-16, NUL binary rejection), and `DOCX` (XXE-disabled XML parser, zip-bomb guards, OLE2 & `EncryptedPackage` encryption rejection), plus Android SAF picker (`pickAndExtractDocument`) and `ACTION_SEND` `EXTRA_STREAM` `content://` handling.
+    - Integrated `Document` intake mode into both [`_showPasteModal`](lib/main.dart) and [`_AttachPolicySheet`](lib/screens/review_result_screen.dart) alongside [`_SourceProvenanceBlock`](lib/screens/review_result_screen.dart) displaying canonical URL / filename / MIME / extraction status / UTC timestamp / SHA-256 source hash.
+  - **3. Permission-Comparison Precedence, Evidence Cases A/B/C & Tampered Disclaimer Guard**:
+    - Fixed `ReviewCoordinator._attachPermissionComparison` in [`review_coordinator.dart`](lib/domain/review/review_coordinator.dart) to preserve `diagnosticKind`, `inferenceSource`, `sourceSnapshot`, `languageCode`, original findings, and limitations, ensuring permission mismatches never upgrade `insufficientEvidence` receipts into `reviewRecommended` or `noConcern`.
+    - Removed model-JSON `map['calibratedDisclaimer']` trust in `ReviewCoordinator` and sourced localized non-certification copy (`stateNoConcernSubtitle`) directly in [`ReviewResultScreen`](lib/screens/review_result_screen.dart).
+  - **4. Single Canonical Cloud Payload Parity & Log Sanitization**:
+    - Unified cloud payload construction (`ReviewCoordinator.canonicalCloudPayload`) across [`CloudConsentSheet`](lib/widgets/cloud_consent_sheet.dart), [`ReviewResultScreen._openAttachPolicySheet`](lib/screens/review_result_screen.dart), and [`HomeScreen._executePolicyReview`](lib/main.dart) so the exact text previewed in `CloudConsentSheet` matches the `analyseText` native bridge payload byte-for-byte while excluding installed-app inventories and OS permissions.
+    - Replaced raw exception `.message` logging in [`MainActivity.kt`](android/app/src/main/kotlin/com/example/enprive/MainActivity.kt) with exception class names, MIME types, character counts, and error codes; verified live Firebase AI Monitoring `telemetryConfig.mode == "NONE"` and Cloud Logging `_Default` exclusion `exclude-enprive-firebase-ai-model-payloads`.
+  - **5. Comprehensive Regression Tests**:
+    - Added [`test/policy_url_retriever_test.dart`](test/policy_url_retriever_test.dart) (`10` unit tests), [`DocumentTextExtractorTest.kt`](android/app/src/test/kotlin/com/example/enprive/DocumentTextExtractorTest.kt) (`4` JUnit tests), [`test/p0_blocker_closure_widget_test.dart`](test/p0_blocker_closure_widget_test.dart) (`4` E2E widget tests), expanded [`test/pii_redactor_test.dart`](test/pii_redactor_test.dart) (`STU_90421`, `STU-90421`, `12345`, `abc123`, `"device identifiers"`), and expanded [`test/review_coordinator_test.dart`](test/review_coordinator_test.dart) (Sections 3, 4 Cases A/B/C, and 7).
+- **Challenges & Root-Cause Fixes**:
+  - **PDFBox Resource Loading Under Android JVM Unit Tests**: `PDType1Font.HELVETICA` failed to find `com/tom_roush/pdfbox/resources/afm/Times-Roman.afm` during JVM `:app:testDebugUnitTest` because resources lived inside Android AARs. Resolved by adding a `pdfboxTestAssets` Gradle configuration + `preparePdfBoxTestResources` copy task wired into the `test` sourceSet in [`android/app/build.gradle.kts`](android/app/build.gradle.kts) without adding duplicate assets to APK builds.
+  - **Cryptographic SHA-256 vs Legacy FNV-1a Digest UI Labels**: Existing widget tests explicitly verify legacy receipts do not mislabel FNV-1a as SHA-256; computing real SHA-256 in `EvidenceValidator.computeSha256SourceHash` and labeling it `'SHA-256 source hash'` on `PolicySourceSnapshot` while keeping `'Snapshot digest · FNV-1a 64-bit'` accurate satisfies both cryptographic provenance and P0-E truth-in-labeling.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test --reporter expanded`: **83/83 passed (100%)**.
+  - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks --console=plain`: **BUILD SUCCESSFUL** (`HybridAiPolicyTest`: `15/15`, `DocumentTextExtractorTest`: `4/4`).
+  - `flutter build apk --debug`: **Built `build/app/outputs/flutter-apk/app-debug.apk`**.
+  - **Live Pixel 9 (`emulator-5554`) Verification**: Verified empty Settings cleanup, empty Link field without fake assist chips, `ttp://127.0.0.1:8080/privacy` -> `Insufficient evidence` (`invalidUrl`), `ACTION_SEND` `"https://edutrack.example.edu/privacy"` -> real network error (`Insufficient evidence`, zero synthetic EduTrack fallback), `ACTION_SEND` `"https://policies.google.com/privacy?hl=en"` -> live HTML extraction -> `[IP_ADDRESS]` redaction -> `CloudConsentSheet` -> local deterministic review with real `SHA-256 source hash` (`4773ae...`), SAF `live_doc_policy.txt` local extraction + `SHA-256 source hash` (`f50279...`), and clean `EnpriveHybridAi` Logcat.
+- **Next Immediate Action & Recommended Model**:
+  - User review / explicit approval before committing/pushing/merging `feature/m3-expressive-rebrand`.
   - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
 
 ---

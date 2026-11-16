@@ -172,6 +172,8 @@ class HybridAiBridge {
   static const MethodChannel _channel = MethodChannel('com.enprive/hybrid_ai');
   static const int _maxCachedAppIcons = 200;
   static final Set<StreamController<AnalysisStreamEvent>> _nativeListeners = {};
+  static final Set<StreamController<IncomingIntentPayload>>
+  _incomingIntentListeners = {};
   static bool _handlerBound = false;
 
   final LinkedHashMap<String, Uint8List?> _appIconCache =
@@ -180,11 +182,19 @@ class HybridAiBridge {
 
   final StreamController<AnalysisStreamEvent> _analysisEventsController =
       StreamController<AnalysisStreamEvent>.broadcast();
+  final StreamController<IncomingIntentPayload> _incomingPayloadController =
+      StreamController<IncomingIntentPayload>.broadcast();
 
   Stream<AnalysisStreamEvent> get analysisEvents {
     _nativeListeners.add(_analysisEventsController);
     _ensureHandlerBound();
     return _analysisEventsController.stream;
+  }
+
+  Stream<IncomingIntentPayload> get incomingPayloads {
+    _incomingIntentListeners.add(_incomingPayloadController);
+    _ensureHandlerBound();
+    return _incomingPayloadController.stream;
   }
 
   void emitProcessEvent(AnalysisStreamEvent event) {
@@ -204,6 +214,16 @@ class HybridAiBridge {
             for (final controller in List.of(_nativeListeners)) {
               if (!controller.isClosed) {
                 controller.add(event);
+              }
+            }
+          }
+        } else if (call.method == 'onIncomingPayload') {
+          final args = call.arguments;
+          if (args is Map) {
+            final payload = IncomingIntentPayload.fromMap(args);
+            for (final controller in List.of(_incomingIntentListeners)) {
+              if (!controller.isClosed) {
+                controller.add(payload);
               }
             }
           }
@@ -280,6 +300,64 @@ class HybridAiBridge {
       return null;
     } on MissingPluginException {
       return null;
+    }
+  }
+
+  /// Retrieves any structured Android launch payload (`ACTION_PROCESS_TEXT`,
+  /// `ACTION_SEND` text/URL, or `ACTION_SEND` document URI), falling back to
+  /// [getInitialSelectedText] when only legacy text handlers are registered.
+  Future<IncomingIntentPayload?> getInitialIncomingPayload() async {
+    _ensureHandlerBound();
+    try {
+      final res = await _channel.invokeMethod<dynamic>(
+        'getInitialIncomingPayload',
+      );
+      if (res is Map) {
+        return IncomingIntentPayload.fromMap(res);
+      }
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      // Fall through to legacy handler for older platform mocks
+    }
+
+    final selected = await getInitialSelectedText();
+    if (selected == null || selected.isEmpty) return null;
+    return IncomingIntentPayload(
+      kind: 'text_or_url',
+      sourceAction: 'ACTION_PROCESS_TEXT',
+      text: selected,
+    );
+  }
+
+  /// Launches Android's Storage Access Framework document picker filtered to
+  /// supported privacy-policy formats (PDF, TXT, DOCX) and extracts text locally.
+  Future<DocumentExtractionOutcome> pickAndExtractDocument() async {
+    try {
+      final res = await _channel.invokeMethod<dynamic>(
+        'pickAndExtractDocument',
+      );
+      if (res is Map) {
+        return DocumentExtractionOutcome.fromMap(res);
+      }
+      return const DocumentExtractionOutcome(
+        status: 'cancelled',
+        extractedText: '',
+        userMessage: 'No document was selected.',
+      );
+    } on PlatformException catch (e) {
+      return DocumentExtractionOutcome(
+        status: 'read_error',
+        extractedText: '',
+        userMessage:
+            e.message ?? 'Could not open the selected document on this phone.',
+      );
+    } on MissingPluginException {
+      return const DocumentExtractionOutcome(
+        status: 'read_error',
+        extractedText: '',
+        userMessage: 'Document picker is only available on Android devices.',
+      );
     }
   }
 
@@ -572,4 +650,71 @@ class AppPermissionSnapshot {
         'requestedPermissions': requestedPermissions,
         'grantedPermissions': grantedPermissions,
       };
+}
+
+class DocumentExtractionOutcome {
+  final String status;
+  final String? documentType;
+  final String? fileName;
+  final String? mimeType;
+  final int byteLength;
+  final int? pageCount;
+  final String extractedText;
+  final String userMessage;
+
+  const DocumentExtractionOutcome({
+    required this.status,
+    this.documentType,
+    this.fileName,
+    this.mimeType,
+    this.byteLength = 0,
+    this.pageCount,
+    required this.extractedText,
+    required this.userMessage,
+  });
+
+  bool get isSuccess => status == 'ok' && extractedText.trim().isNotEmpty;
+  bool get isCancelled => status == 'cancelled';
+
+  factory DocumentExtractionOutcome.fromMap(Map<dynamic, dynamic> map) {
+    return DocumentExtractionOutcome(
+      status: map['status'] as String? ?? 'read_error',
+      documentType: map['documentType'] as String?,
+      fileName: map['fileName'] as String?,
+      mimeType: map['mimeType'] as String?,
+      byteLength: (map['byteLength'] as num?)?.toInt() ?? 0,
+      pageCount: (map['pageCount'] as num?)?.toInt(),
+      extractedText: map['extractedText'] as String? ?? '',
+      userMessage: map['userMessage'] as String? ?? '',
+    );
+  }
+}
+
+class IncomingIntentPayload {
+  final String kind; // text | text_or_url | document
+  final String sourceAction;
+  final String? text;
+  final String? subject;
+  final DocumentExtractionOutcome? document;
+
+  const IncomingIntentPayload({
+    required this.kind,
+    required this.sourceAction,
+    this.text,
+    this.subject,
+    this.document,
+  });
+
+  factory IncomingIntentPayload.fromMap(Map<dynamic, dynamic> map) {
+    final kind = map['kind'] as String? ?? 'text';
+    return IncomingIntentPayload(
+      kind: kind,
+      sourceAction: map['sourceAction'] as String? ?? 'ACTION_SEND',
+      text: map['text'] as String?,
+      subject: map['subject'] as String?,
+      document: kind == 'document'
+          ? DocumentExtractionOutcome.fromMap(map)
+          : null,
+    );
+  }
 }

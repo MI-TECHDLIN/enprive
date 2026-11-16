@@ -44,7 +44,7 @@ class PiiRedactor {
   );
 
   static final RegExp _labeledIdPattern = RegExp(
-    r'\b((?:Student|User|Account|Device|Membership|Member|Session|Serial|Customer|Child)[ \t_]*(?:ID\b|No\.?(?=\s|[:#=\-0-9])|Number\b|#)[ \t]*[:#=]?[ \t]*)((?=[A-Za-z0-9_-]*[0-9])[A-Za-z0-9_-]{4,})\b',
+    r'(\b(?:Student|User|Account|Device|Membership|Member|Session|Serial|Customer|Child|Employee|Order|Install(?:ation)?|Tracking|Advertising|Ad)[ \t_]*(?:ID\b|No\.?(?=\s|[:#=\-0-9])|Number\b|#)[ \t]*[:#=]?[ \t]*|\bID[ \t]*[:#=][ \t]*)((?=[A-Za-z0-9_-]*[0-9])[A-Za-z0-9_-]{4,})\b',
     caseSensitive: false,
   );
 

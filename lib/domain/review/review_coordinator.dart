@@ -87,6 +87,11 @@ class ReviewCoordinator {
     return lookupAppLocalizations(normalized.locale).stateNoConcernSubtitle;
   }
 
+  /// Produces the canonical PII-redacted string used identically for both the
+  /// [CloudConsentSheet] preview and the App Check protected cloud bridge payload.
+  static String canonicalCloudPayload(String policyText) =>
+      PiiRedactor.redact(policyText.trim()).redactedText;
+
   Future<ReviewExecutionResult> runPolicyReview({
     required String subjectTitle,
     required String sourceLabel,
@@ -95,19 +100,38 @@ class ReviewCoordinator {
     bool cloudConsent = false,
     bool forceLocalManualScan = false,
     String languageCode = 'en',
+    PolicySourceSnapshot? sourceSnapshot,
+    String? canonicalRedactedPayload,
   }) async {
     final trimmed = policyText.trim();
+    final resolvedSnapshot =
+        sourceSnapshot ??
+        PolicySourceSnapshot(
+          snapshotId: 'snap_${DateTime.now().millisecondsSinceEpoch}',
+          sourceType: PolicySourceType.pastedText,
+          retrievedAt: DateTime.now().toUtc(),
+          retrievalStatus: PolicyRetrievalStatus.localProvided,
+          appIdentityMatchStatus: appPermissions != null
+              ? AppIdentityMatchStatus.unverifiedUserSupplied
+              : AppIdentityMatchStatus.notApplicable,
+          sourceSha256Hash: trimmed.isEmpty
+              ? ''
+              : EvidenceValidator.computeSha256SourceHash(trimmed),
+        );
+
     final sufficiency = PolicySufficiencyValidator.assess(trimmed);
     if (!sufficiency.isSufficient) {
+      final insufficient = _buildInsufficientReceipt(
+        subjectTitle: subjectTitle,
+        sourceLabel: sourceLabel,
+        snapshotText: trimmed,
+        reason: sufficiency.explanation,
+        diagnosticKind: ReviewDiagnosticKind.insufficientPolicyMaterial,
+        languageCode: languageCode,
+        sourceSnapshot: resolvedSnapshot,
+      );
       return ReviewExecutionResult.completed(
-        _buildInsufficientReceipt(
-          subjectTitle: subjectTitle,
-          sourceLabel: sourceLabel,
-          snapshotText: trimmed,
-          reason: sufficiency.explanation,
-          diagnosticKind: ReviewDiagnosticKind.insufficientPolicyMaterial,
-          languageCode: languageCode,
-        ),
+        _attachPermissionComparison(insufficient, appPermissions),
       );
     }
 
@@ -143,6 +167,7 @@ class ReviewCoordinator {
           thoughtSummary: streamedThought,
           thoughtSignature: streamedSignature,
           languageCode: languageCode,
+          sourceSnapshot: resolvedSnapshot,
         );
       }
 
@@ -161,7 +186,7 @@ class ReviewCoordinator {
             stage: 'on_device_consent_required',
             label: 'Policy exceeds on-device limit — waiting for your choice',
           );
-          final preview = PiiRedactor.redact(trimmed).redactedText;
+          final preview = canonicalCloudPayload(trimmed);
           return ReviewExecutionResult.requiresConsentChoice(
             reason:
                 'This policy is too detailed for on-device AI processing.',
@@ -197,6 +222,7 @@ class ReviewCoordinator {
             streamedThought: streamedThought,
             streamedSignature: streamedSignature,
             languageCode: languageCode,
+            sourceSnapshot: resolvedSnapshot,
           );
         }
 
@@ -206,7 +232,7 @@ class ReviewCoordinator {
           stage: 'on_device_unavailable',
           label: 'On-device AI unavailable — waiting for your choice',
         );
-        final preview = PiiRedactor.redact(trimmed).redactedText;
+        final preview = canonicalCloudPayload(trimmed);
         return ReviewExecutionResult.requiresConsentChoice(
           reason: localResult.message ??
               'On-device AI is unavailable on this phone right now.',
@@ -217,6 +243,7 @@ class ReviewCoordinator {
       // 2. Explicit cloudConsent granted for this check: scrub PII strictly for
       // data minimization, then invoke App Check protected ONLY_IN_CLOUD inference.
       final redaction = PiiRedactor.redact(trimmed);
+      final textForCloud = canonicalRedactedPayload ?? redaction.redactedText;
       _recordAndEmitStep(
         requestId: reqId,
         steps: processSteps,
@@ -236,7 +263,7 @@ class ReviewCoordinator {
       final cloudResult = await _bridge.analyseText(
         requestId: '${reqId}_appcheck',
         task: 'summarise_concerns',
-        text: redaction.redactedText,
+        text: textForCloud,
         cloudConsent: true,
         requestedMode: 'ONLY_IN_CLOUD',
         languageCode: languageCode,
@@ -249,7 +276,7 @@ class ReviewCoordinator {
           subjectTitle: subjectTitle,
           sourceLabel: sourceLabel,
           snapshotText: trimmed,
-          redactedSnapshotText: redaction.redactedText,
+          redactedSnapshotText: textForCloud,
           bridgeResult: cloudResult,
           appPermissions: appPermissions,
           streamedThought: streamedThought,
@@ -257,6 +284,7 @@ class ReviewCoordinator {
           languageCode: languageCode,
           thoughtStepLabel: 'Streamed model thoughts',
           signatureStepLabel: 'Verified thought signature',
+          sourceSnapshot: resolvedSnapshot,
         );
       }
 
@@ -280,6 +308,7 @@ class ReviewCoordinator {
             ? ReviewDiagnosticKind.cloudUnavailableLocalFallback
             : ReviewDiagnosticKind.failedModelInference,
         failureDetail: cloudResult.message,
+        sourceSnapshot: resolvedSnapshot,
       );
     } finally {
       await sub.cancel();
@@ -325,6 +354,17 @@ class ReviewCoordinator {
         'Skipped AI/cloud calls because no privacy policy was supplied',
       ],
       diagnosticKind: ReviewDiagnosticKind.devicePermissionInspection,
+      sourceSnapshot: PolicySourceSnapshot(
+        snapshotId: 'perm_${DateTime.now().millisecondsSinceEpoch}',
+        sourceType: PolicySourceType.devicePermissions,
+        retrievedAt: DateTime.now().toUtc(),
+        retrievalStatus: PolicyRetrievalStatus.localProvided,
+        appIdentityMatchStatus: AppIdentityMatchStatus.notApplicable,
+        sourceSha256Hash: '',
+        limitationNote:
+            'Android PackageManager inspection on this device only; no privacy policy was supplied.',
+      ),
+      languageCode: languageCode,
     );
   }
 
@@ -359,6 +399,7 @@ class ReviewCoordinator {
     required String languageCode,
     String thoughtStepLabel = 'Captured policy reasoning',
     String signatureStepLabel = 'Captured thought signature',
+    PolicySourceSnapshot? sourceSnapshot,
   }) {
     final thought = bridgeResult.thoughtSummary ?? streamedThought;
     final signature = bridgeResult.thoughtSignature ?? streamedSignature;
@@ -390,6 +431,7 @@ class ReviewCoordinator {
       thoughtSummary: thought,
       thoughtSignature: signature,
       languageCode: languageCode,
+      sourceSnapshot: sourceSnapshot,
     );
     return ReviewExecutionResult.completed(
       _attachPermissionComparison(receipt, appPermissions),
@@ -410,6 +452,7 @@ class ReviewCoordinator {
     required String languageCode,
     ReviewDiagnosticKind? fallbackDiagnosticKind,
     String? failureDetail,
+    PolicySourceSnapshot? sourceSnapshot,
   }) {
     _recordAndEmitStep(
       requestId: requestId,
@@ -439,6 +482,7 @@ class ReviewCoordinator {
       languageCode: languageCode,
       fallbackDiagnosticKind: fallbackDiagnosticKind,
       failureDetail: failureDetail,
+      sourceSnapshot: sourceSnapshot,
     );
     return ReviewExecutionResult.completed(
       _attachPermissionComparison(receipt, appPermissions),
@@ -461,11 +505,30 @@ class ReviewCoordinator {
           report: report,
         );
 
-    final hasConcerns =
-        enrichedFindings.any((f) => f.isVerified) || report.mismatchCount > 0;
-    final updatedState = hasConcerns
-        ? ReviewOverallState.reviewRecommended
-        : baseReceipt.overallState;
+    // Explicit verdict-state precedence:
+    // Local Android permission observations can promote a validated clean check
+    // (NO_CONCERN) to reviewRecommended when undisclosed permissions exist, OR
+    // preserve an already-validated reviewRecommended finding. They MUST NEVER
+    // promote an insufficient, failed-inference, or unavailable-cloud receipt
+    // into a valid reviewRecommended or noConcern outcome, and MUST preserve
+    // diagnosticKind, inferenceSource, and sourceSnapshot provenance.
+    final ReviewOverallState updatedState;
+    if (baseReceipt.overallState == ReviewOverallState.insufficientEvidence) {
+      updatedState = ReviewOverallState.insufficientEvidence;
+    } else if (baseReceipt.overallState ==
+        ReviewOverallState.reviewRecommended) {
+      updatedState = ReviewOverallState.reviewRecommended;
+    } else {
+      final hasConcerns =
+          enrichedFindings.any((f) => f.isVerified) || report.mismatchCount > 0;
+      updatedState = hasConcerns
+          ? ReviewOverallState.reviewRecommended
+          : baseReceipt.overallState;
+    }
+
+    final permissionNote = report.mismatchCount > 0
+        ? ' Local Android inspection also spotted ${report.mismatchCount} undisclosed permission ${report.mismatchCount == 1 ? 'request' : 'requests'}.'
+        : '';
 
     return PolicyReviewReceipt(
       id: baseReceipt.id,
@@ -476,15 +539,16 @@ class ReviewCoordinator {
       createdAt: baseReceipt.createdAt,
       overallState: updatedState,
       inferenceSource: baseReceipt.inferenceSource,
-      summary: report.mismatchCount > 0
-          ? '${baseReceipt.summary} Local Android inspection also spotted ${report.mismatchCount} undisclosed permission ${report.mismatchCount == 1 ? 'request' : 'requests'}.'
-          : baseReceipt.summary,
+      summary: '${baseReceipt.summary}$permissionNote',
       calibratedDisclaimer: baseReceipt.calibratedDisclaimer,
       findings: enrichedFindings,
       permissionReport: report,
       processSteps: baseReceipt.processSteps,
       thoughtSummary: baseReceipt.thoughtSummary,
       thoughtSignature: baseReceipt.thoughtSignature,
+      diagnosticKind: baseReceipt.diagnosticKind,
+      sourceSnapshot: baseReceipt.sourceSnapshot,
+      languageCode: baseReceipt.languageCode,
     );
   }
 
@@ -738,6 +802,7 @@ class ReviewCoordinator {
     String? thoughtSummary,
     String? thoughtSignature,
     String languageCode = 'en',
+    PolicySourceSnapshot? sourceSnapshot,
   }) {
     final map = bridgeResult.structuredOutput ?? const <String, dynamic>{};
     final rawConcernsValue = map['concerns'];
@@ -886,14 +951,16 @@ class ReviewCoordinator {
       overallState: overallState,
       inferenceSource: sourceChip,
       summary: resolvedSummary,
-      calibratedDisclaimer:
-          (map['calibratedDisclaimer'] as String?) ??
-          _localizedDisclaimerFor(languageCode),
+      // Security & trust integrity: never accept untrusted disclaimers from
+      // model JSON output; always resolve localized calibrated non-certification copy.
+      calibratedDisclaimer: _localizedDisclaimerFor(languageCode),
       findings: findings,
       processSteps: processSteps,
       thoughtSummary: thoughtSummary ?? bridgeResult.thoughtSummary,
       thoughtSignature: thoughtSignature ?? bridgeResult.thoughtSignature,
       diagnosticKind: diagnosticKind,
+      sourceSnapshot: sourceSnapshot,
+      languageCode: languageCode,
     );
   }
 
@@ -911,6 +978,7 @@ class ReviewCoordinator {
     String languageCode = 'en',
     ReviewDiagnosticKind? fallbackDiagnosticKind,
     String? failureDetail,
+    PolicySourceSnapshot? sourceSnapshot,
   }) {
     final sufficiency = PolicySufficiencyValidator.assess(policyText);
     if (!sufficiency.isSufficient) {
@@ -930,6 +998,8 @@ class ReviewCoordinator {
         thoughtSummary: thoughtSummary,
         thoughtSignature: thoughtSignature,
         diagnosticKind: ReviewDiagnosticKind.insufficientPolicyMaterial,
+        sourceSnapshot: sourceSnapshot,
+        languageCode: languageCode,
       );
     }
 
@@ -1073,6 +1143,8 @@ class ReviewCoordinator {
       thoughtSummary: thoughtSummary,
       thoughtSignature: thoughtSignature,
       diagnosticKind: diagnosticKind,
+      sourceSnapshot: sourceSnapshot,
+      languageCode: languageCode,
     );
   }
 
@@ -1121,6 +1193,7 @@ class ReviewCoordinator {
     ReviewDiagnosticKind diagnosticKind =
         ReviewDiagnosticKind.insufficientPolicyMaterial,
     String languageCode = 'en',
+    PolicySourceSnapshot? sourceSnapshot,
   }) {
     return PolicyReviewReceipt(
       id: 'insuf_${DateTime.now().millisecondsSinceEpoch}',
@@ -1135,6 +1208,8 @@ class ReviewCoordinator {
       calibratedDisclaimer: _localizedDisclaimerFor(languageCode),
       findings: const [],
       diagnosticKind: diagnosticKind,
+      sourceSnapshot: sourceSnapshot,
+      languageCode: languageCode,
     );
   }
 

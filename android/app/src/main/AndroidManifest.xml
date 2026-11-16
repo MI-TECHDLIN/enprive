@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for genuine public privacy-policy HTTP(S) retrieval in both debug and release builds -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="enprive"
         android:name="${applicationName}"
@@ -31,11 +33,13 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
-            <!-- System Share Sheet: Share privacy policy text or link to Enprive -->
+            <!-- System Share Sheet: Share privacy policy text, URL, or supported document (PDF/TXT/DOCX) to Enprive -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

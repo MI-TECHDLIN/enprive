@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../core/theme/enprive_theme.dart';
 import '../domain/permissions/permission_comparator.dart';
@@ -8,6 +9,8 @@ import '../domain/review/policy_sufficiency.dart';
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
+import '../services/intake/policy_intake_helper.dart';
+import '../services/network/policy_url_retriever.dart';
 import '../widgets/analysis_process_trace.dart';
 import '../widgets/cloud_consent_sheet.dart';
 import '../widgets/deni_animated_mascot.dart';
@@ -27,6 +30,7 @@ class ReviewResultScreen extends StatefulWidget {
   final ReviewCoordinator coordinator;
   final ValueChanged<PolicyReviewReceipt>? onSaveReceipt;
   final bool cloudConsentGrantedForSession;
+  final PolicyUrlRetriever? urlRetriever;
 
   const ReviewResultScreen({
     super.key,
@@ -34,6 +38,7 @@ class ReviewResultScreen extends StatefulWidget {
     required this.coordinator,
     this.onSaveReceipt,
     this.cloudConsentGrantedForSession = false,
+    this.urlRetriever,
   });
 
   @override
@@ -146,7 +151,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     if (snapshot == null || _isAttachingPolicy) return;
 
     final lang = Localizations.localeOf(context).languageCode;
-    final suppliedPolicy = await showModalBottomSheet<String>(
+    final attached = await showModalBottomSheet<_AttachedPolicyInput>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -154,38 +159,52 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       builder: (_) => _AttachPolicySheet(
         appName: snapshot.appName,
         packageName: snapshot.packageName,
+        coordinator: widget.coordinator,
+        urlRetriever: widget.urlRetriever ?? PolicyUrlRetriever(),
         l10n: l10n,
       ),
     );
 
-    if (suppliedPolicy == null || !mounted) return;
+    if (attached == null || !mounted) return;
+
     setState(() => _isAttachingPolicy = true);
     try {
+      final sourceLabel = '${receipt.sourceLabel} · ${attached.sourceLabel}';
       var outcome = await widget.coordinator.runPolicyReview(
         subjectTitle: receipt.subjectTitle,
-        sourceLabel: '${receipt.sourceLabel} · Policy compared',
-        policyText: suppliedPolicy,
+        sourceLabel: sourceLabel,
+        policyText: attached.policyText,
         appPermissions: snapshot,
         languageCode: lang,
+        sourceSnapshot: attached.sourceSnapshot,
       );
 
       if (outcome.needsCloudConsentOrManual) {
         if (!mounted || !context.mounted) return;
+        final canonicalPayload =
+            outcome.redactedPreview ??
+            ReviewCoordinator.canonicalCloudPayload(attached.policyText);
         final decision = await CloudConsentSheet.show(
           context,
           subjectTitle: receipt.subjectTitle,
-          policyText: suppliedPolicy,
+          policyText: attached.policyText,
+          canonicalRedactedPreview: canonicalPayload,
           deviceReason: outcome.errorReason,
         );
         if (!mounted || decision == CloudConsentDecision.cancelled) return;
         outcome = await widget.coordinator.runPolicyReview(
           subjectTitle: receipt.subjectTitle,
-          sourceLabel: '${receipt.sourceLabel} · Policy compared',
-          policyText: suppliedPolicy,
+          sourceLabel: sourceLabel,
+          policyText: attached.policyText,
           appPermissions: snapshot,
           cloudConsent: decision == CloudConsentDecision.useCloudOnce,
           forceLocalManualScan: decision == CloudConsentDecision.reviewLocally,
           languageCode: lang,
+          sourceSnapshot: attached.sourceSnapshot,
+          canonicalRedactedPayload:
+              decision == CloudConsentDecision.useCloudOnce
+                  ? canonicalPayload
+                  : null,
         );
       }
 
@@ -363,6 +382,13 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                       ),
                                     ],
                                   ),
+                                ),
+                              ],
+                              if (receipt.sourceSnapshot != null) ...[
+                                const SizedBox(height: 10),
+                                _SourceProvenanceBlock(
+                                  snapshot: receipt.sourceSnapshot!,
+                                  l10n: l10n,
                                 ),
                               ],
                             ],
@@ -741,6 +767,49 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               l10n: l10n,
                             ),
                           ],
+                          if (receipt.sourceSnapshot != null &&
+                              (receipt.sourceSnapshot!.canonicalUrl != null ||
+                                  receipt.sourceSnapshot!.originalFilename !=
+                                      null ||
+                                  receipt.sourceSnapshot!.sourceSha256Hash
+                                      .isNotEmpty)) ...[
+                            const SizedBox(height: 20),
+                            _SourceProvenanceBlock(
+                              snapshot: receipt.sourceSnapshot!,
+                              l10n: l10n,
+                            ),
+                          ],
+                          const SizedBox(height: 16),
+                          // Localized calibrated non-certification notice anchored strictly
+                          // to trusted app resources (never raw model JSON strings).
+                          EnpriveMaterialCardSurface(
+                            variant: EnpriveCardVariant.outlined,
+                            backgroundColor: surfaces.cardMuted,
+                            borderRadius: BorderRadius.circular(
+                              EnpriveRadii.lg,
+                            ),
+                            padding: const EdgeInsets.all(14),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  LucideIcons.shieldCheck,
+                                  size: 16,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    l10n.stateNoConcernSubtitle,
+                                    style: m3e.typeScale.bodySmall.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                           if (!receipt.isPermissionOnlyInspection &&
                               receipt.snapshotText.trim().isNotEmpty) ...[
                             const SizedBox(height: 18),
@@ -956,14 +1025,160 @@ class _M3EPermissionListCard extends StatelessWidget {
   }
 }
 
+enum _AttachPolicyMode { paste, link, document }
+
+class _AttachedPolicyInput {
+  final String policyText;
+  final String sourceLabel;
+  final PolicySourceSnapshot sourceSnapshot;
+
+  const _AttachedPolicyInput({
+    required this.policyText,
+    required this.sourceLabel,
+    required this.sourceSnapshot,
+  });
+}
+
+class _SourceProvenanceBlock extends StatelessWidget {
+  final PolicySourceSnapshot snapshot;
+  final AppLocalizations l10n;
+
+  const _SourceProvenanceBlock({
+    required this.snapshot,
+    required this.l10n,
+  });
+
+  String _formatUtcTimestamp(DateTime dt) {
+    final u = dt.toUtc();
+    return '${u.year}-${u.month.toString().padLeft(2, '0')}-${u.day.toString().padLeft(2, '0')} '
+        '${u.hour.toString().padLeft(2, '0')}:${u.minute.toString().padLeft(2, '0')} UTC';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final surfaces = context.enpriveSurfaces;
+    final typeExt = context.enpriveType;
+
+    final sourceKindLabel = switch (snapshot.sourceType) {
+      PolicySourceType.url => 'Public URL',
+      PolicySourceType.pdf => 'Local PDF document',
+      PolicySourceType.docx => 'Local DOCX document',
+      PolicySourceType.textDocument => 'Local text document',
+      PolicySourceType.sharedText => 'Shared text',
+      PolicySourceType.selectedText => 'Selected text',
+      PolicySourceType.sample => 'Synthetic sample',
+      PolicySourceType.devicePermissions => 'Android permissions',
+      PolicySourceType.pastedText => 'Pasted text',
+    };
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: surfaces.cardMuted,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: surfaces.hairlineBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Source provenance · $sourceKindLabel (${_formatUtcTimestamp(snapshot.retrievedAt)})',
+            style: m3e.typeScale.labelMedium.copyWith(
+              fontWeight: FontWeight.w800,
+              color: scheme.onSurface,
+            ),
+          ),
+          if (snapshot.canonicalUrl != null &&
+              snapshot.canonicalUrl!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Canonical URL: ${snapshot.canonicalUrl}',
+              style: m3e.typeScale.bodySmall.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          if (snapshot.originalFilename != null &&
+              snapshot.originalFilename!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'File: ${snapshot.originalFilename}'
+              '${snapshot.mimeType != null ? ' (${snapshot.mimeType})' : ''}'
+              ' · Status: ${snapshot.extractionStatus.name}',
+              style: m3e.typeScale.bodySmall.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          if (snapshot.sourceSha256Hash.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'SHA-256 source hash: ${snapshot.sourceSha256Hash}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: typeExt.sha256Hash.copyWith(
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(
+                      ClipboardData(text: snapshot.sourceSha256Hash),
+                    );
+                    ScaffoldMessenger.of(context)
+                      ..hideCurrentSnackBar()
+                      ..showSnackBar(
+                        SnackBar(
+                          content: Text(l10n.digestCopiedMsg),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                  },
+                  icon: Icon(
+                    LucideIcons.copy,
+                    size: 14,
+                    color: scheme.primary,
+                  ),
+                  label: Text(l10n.copyDigestBtn),
+                ),
+              ],
+            ),
+          ],
+          if (snapshot.limitationNote != null &&
+              snapshot.limitationNote!.trim().isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              snapshot.limitationNote!,
+              style: m3e.typeScale.bodySmall.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _AttachPolicySheet extends StatefulWidget {
   final String appName;
   final String packageName;
+  final ReviewCoordinator coordinator;
+  final PolicyUrlRetriever urlRetriever;
   final AppLocalizations l10n;
 
   const _AttachPolicySheet({
     required this.appName,
     required this.packageName,
+    required this.coordinator,
+    required this.urlRetriever,
     required this.l10n,
   });
 
@@ -973,12 +1188,97 @@ class _AttachPolicySheet extends StatefulWidget {
 
 class _AttachPolicySheetState extends State<_AttachPolicySheet> {
   final TextEditingController _policyController = TextEditingController();
+  final TextEditingController _urlController = TextEditingController();
+  _AttachPolicyMode _mode = _AttachPolicyMode.paste;
   String? _inlineError;
+  bool _isBusy = false;
 
   @override
   void dispose() {
     _policyController.dispose();
+    _urlController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitLink(BuildContext innerCtx) async {
+    final rawUrl = _urlController.text.trim();
+    if (rawUrl.isEmpty) {
+      setState(
+        () => _inlineError = 'Enter a public https:// privacy policy URL.',
+      );
+      return;
+    }
+    setState(() {
+      _isBusy = true;
+      _inlineError = null;
+    });
+    try {
+      final result = await widget.urlRetriever.fetchPolicy(rawUrl);
+      if (!mounted || !innerCtx.mounted) return;
+      if (result.isUsablePolicy) {
+        Navigator.pop(
+          innerCtx,
+          _AttachedPolicyInput(
+            policyText: result.extractedText!,
+            sourceLabel: result.canonicalUrl ?? rawUrl,
+            sourceSnapshot: result.sourceSnapshot!,
+          ),
+        );
+        return;
+      }
+      setState(() {
+        _isBusy = false;
+        _inlineError =
+            '${result.userMessage} Paste the policy text or import a local document instead.';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isBusy = false;
+        _inlineError =
+            'Could not retrieve that link. Paste the policy text or import a PDF, TXT, or DOCX document instead.';
+      });
+    }
+  }
+
+  Future<void> _pickDocument(BuildContext innerCtx) async {
+    setState(() {
+      _isBusy = true;
+      _inlineError = null;
+    });
+    final doc = await widget.coordinator.bridge.pickAndExtractDocument();
+    if (!mounted || !innerCtx.mounted) return;
+    if (doc.isCancelled) {
+      setState(() => _isBusy = false);
+      return;
+    }
+    if (!doc.isSuccess) {
+      setState(() {
+        _isBusy = false;
+        _inlineError =
+            '${doc.userMessage} Choose another PDF, TXT, or DOCX file or paste the policy text manually.';
+      });
+      return;
+    }
+    final validation = PolicySufficiencyValidator.assess(doc.extractedText);
+    if (!validation.isSufficient) {
+      setState(() {
+        _isBusy = false;
+        _inlineError = validation.explanation;
+      });
+      return;
+    }
+    Navigator.pop(
+      innerCtx,
+      _AttachedPolicyInput(
+        policyText: doc.extractedText,
+        sourceLabel: doc.fileName ?? 'Document',
+        sourceSnapshot: PolicyIntakeHelper.snapshotFromDocumentSuccess(
+          doc,
+          hasAppPermissions: true,
+        ),
+      ),
+    );
   }
 
   @override
@@ -1048,43 +1348,200 @@ class _AttachPolicySheetState extends State<_AttachPolicySheet> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: _policyController,
-                      maxLines: 6,
-                      minLines: 4,
-                      onChanged: (_) {
-                        if (_inlineError != null) {
-                          setState(() => _inlineError = null);
-                        }
-                      },
-                      decoration: InputDecoration(
-                        hintText: widget.l10n.hintPastePolicy,
-                        errorText: _inlineError,
-                        filled: true,
-                        fillColor: surfaces.card,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(
-                            color: surfaces.hairlineBorder,
+                    SizedBox(
+                      width: double.infinity,
+                      child: M3ESegmentedButton<_AttachPolicyMode>(
+                        showSelectedIcon: false,
+                        segments: [
+                          M3ESegment<_AttachPolicyMode>(
+                            value: _AttachPolicyMode.paste,
+                            icon: const Icon(LucideIcons.fileText, size: 15),
+                            label: widget.l10n.modePasteText,
+                          ),
+                          M3ESegment<_AttachPolicyMode>(
+                            value: _AttachPolicyMode.link,
+                            icon: const Icon(LucideIcons.link2, size: 15),
+                            label: widget.l10n.modePolicyLink,
+                          ),
+                          const M3ESegment<_AttachPolicyMode>(
+                            value: _AttachPolicyMode.document,
+                            icon: Icon(LucideIcons.fileUp, size: 15),
+                            label: 'Document',
+                          ),
+                        ],
+                        selected: {_mode},
+                        onSelectionChanged: (sel) {
+                          setState(() {
+                            _mode = sel.first;
+                            _inlineError = null;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (_mode == _AttachPolicyMode.paste)
+                      TextField(
+                        controller: _policyController,
+                        maxLines: 6,
+                        minLines: 4,
+                        onChanged: (_) {
+                          if (_inlineError != null) {
+                            setState(() => _inlineError = null);
+                          }
+                        },
+                        decoration: InputDecoration(
+                          hintText: widget.l10n.hintPastePolicy,
+                          errorText: _inlineError,
+                          filled: true,
+                          fillColor: surfaces.card,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            borderSide: BorderSide(
+                              color: surfaces.hairlineBorder,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (_mode == _AttachPolicyMode.link) ...[
+                      TextField(
+                        controller: _urlController,
+                        keyboardType: TextInputType.url,
+                        onChanged: (_) {
+                          if (_inlineError != null) {
+                            setState(() => _inlineError = null);
+                          }
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'https://example.com/privacy-policy',
+                          prefixIcon: Icon(
+                            LucideIcons.link2,
+                            size: 18,
+                            color: scheme.primary,
+                          ),
+                          errorText: _inlineError,
+                          errorMaxLines: 4,
+                          filled: true,
+                          fillColor: surfaces.card,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            borderSide: BorderSide(
+                              color: surfaces.hairlineBorder,
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Fetches the public URL directly. User-supplied links do not prove app ownership.',
+                        style: m3e.typeScale.bodySmall.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ] else ...[
+                      EnpriveMaterialCardSurface(
+                        variant: EnpriveCardVariant.outlined,
+                        backgroundColor: surfaces.card,
+                        borderRadius: BorderRadius.circular(18),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Import PDF, TXT, or DOCX policy file',
+                              style: m3e.typeScale.titleSmall.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: scheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Text is extracted strictly on this phone with a local SHA-256 snapshot hash. Files never upload directly.',
+                              style: m3e.typeScale.bodySmall.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                            if (_inlineError != null) ...[
+                              const SizedBox(height: 10),
+                              Text(
+                                _inlineError!,
+                                style: m3e.typeScale.bodySmall.copyWith(
+                                  color: scheme.error,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (_inlineError != null) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          if (_mode != _AttachPolicyMode.paste)
+                            TextButton(
+                              onPressed: () => setState(() {
+                                _mode = _AttachPolicyMode.paste;
+                                _inlineError = null;
+                              }),
+                              child: Text(widget.l10n.modePasteText),
+                            ),
+                          if (_mode != _AttachPolicyMode.document)
+                            TextButton(
+                              onPressed: () => setState(() {
+                                _mode = _AttachPolicyMode.document;
+                                _inlineError = null;
+                              }),
+                              child: const Text('Import document'),
+                            ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 14),
                     EnpriveTactileButton(
-                      label: widget.l10n.btnReviewOnPhone,
-                      onPressed: () {
-                        final text = _policyController.text.trim();
-                        final validation =
-                            PolicySufficiencyValidator.assess(text);
-                        if (!validation.isSufficient) {
-                          setState(
-                            () => _inlineError = validation.explanation,
-                          );
-                          return;
-                        }
-                        Navigator.pop(innerCtx, text);
-                      },
+                      label: _isBusy
+                          ? 'Working…'
+                          : (_mode == _AttachPolicyMode.document
+                                ? 'Choose document (PDF, TXT, DOCX)'
+                                : widget.l10n.btnReviewOnPhone),
+                      onPressed: _isBusy
+                          ? null
+                          : () {
+                              if (_mode == _AttachPolicyMode.link) {
+                                _submitLink(innerCtx);
+                                return;
+                              }
+                              if (_mode == _AttachPolicyMode.document) {
+                                _pickDocument(innerCtx);
+                                return;
+                              }
+                              final text = _policyController.text.trim();
+                              final validation =
+                                  PolicySufficiencyValidator.assess(text);
+                              if (!validation.isSufficient) {
+                                setState(
+                                  () => _inlineError = validation.explanation,
+                                );
+                                return;
+                              }
+                              Navigator.pop(
+                                innerCtx,
+                                _AttachedPolicyInput(
+                                  policyText: text,
+                                  sourceLabel: 'Policy compared',
+                                  sourceSnapshot:
+                                      PolicyIntakeHelper
+                                          .snapshotForManualOrSharedText(
+                                            sourceType:
+                                                PolicySourceType.pastedText,
+                                            text: text,
+                                            hasAppPermissions: true,
+                                          ),
+                                ),
+                              );
+                            },
                     ),
                   ],
                 ),

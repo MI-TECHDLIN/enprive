@@ -1,5 +1,6 @@
 package com.example.enprive
 
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
@@ -7,10 +8,13 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.AdaptiveIconDrawable
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import java.io.ByteArrayOutputStream
 import java.util.Locale
 import androidx.lifecycle.lifecycleScope
@@ -45,14 +49,23 @@ import org.json.JSONObject
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.enprive/hybrid_ai"
     private val TAG = "EnpriveHybridAi"
+    private val PICK_DOCUMENT_REQUEST_CODE = 4091
     private var initialSelectedText: String? = null
+    private var initialIncomingPayload: Map<String, Any?>? = null
+    private var pendingDocumentResult: MethodChannel.Result? = null
     private var tts: TextToSpeech? = null
     private var isTtsReady: Boolean = false
     private var methodChannel: MethodChannel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        handleIncomingTextIntent(intent)
+        handleIncomingTextIntent(intent, dispatchIfAttached = false)
+
+        try {
+            PDFBoxResourceLoader.init(applicationContext)
+        } catch (e: Exception) {
+            Log.w(TAG, "PDFBox resource init fallback (${e.javaClass.simpleName})")
+        }
 
         // Initialize local Android TextToSpeech for Enprive Voice (English & Korean)
         try {
@@ -63,7 +76,7 @@ class MainActivity : FlutterActivity() {
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "TextToSpeech init note: ${e.message}")
+            Log.w(TAG, "TextToSpeech init note (${e.javaClass.simpleName})")
         }
 
         // Install App Check Provider (Debug for emulator/dev, Play Integrity for release)
@@ -78,7 +91,7 @@ class MainActivity : FlutterActivity() {
             )
             Log.d(TAG, "Firebase App Check initialized (debug=$isDebuggable)")
         } catch (e: Exception) {
-            Log.w(TAG, "Firebase App Check initialization note: ${e.message}")
+            Log.w(TAG, "Firebase App Check initialization note (${e.javaClass.simpleName})")
         }
     }
 
@@ -95,24 +108,259 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        handleIncomingTextIntent(intent)
+        handleIncomingTextIntent(intent, dispatchIfAttached = true)
     }
 
-    private fun handleIncomingTextIntent(incomingIntent: Intent?) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != PICK_DOCUMENT_REQUEST_CODE) return
+
+        val callback = pendingDocumentResult
+        pendingDocumentResult = null
+        if (callback == null) return
+
+        val uri = data?.data
+        if (resultCode != Activity.RESULT_OK || uri == null) {
+            callback.success(
+                mapOf(
+                    "status" to "cancelled",
+                    "documentType" to null,
+                    "fileName" to null,
+                    "mimeType" to null,
+                    "byteLength" to 0,
+                    "extractedText" to "",
+                    "userMessage" to "Document selection cancelled.",
+                )
+            )
+            return
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val extracted = extractDocumentFromUri(uri, declaredMime = data.type)
+            withContext(Dispatchers.Main) {
+                callback.success(extracted)
+            }
+        }
+    }
+
+    private fun handleIncomingTextIntent(
+        incomingIntent: Intent?,
+        dispatchIfAttached: Boolean,
+    ) {
         when (incomingIntent?.action) {
             Intent.ACTION_PROCESS_TEXT -> {
-                initialSelectedText = incomingIntent
+                val text = incomingIntent
                     .getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)
                     ?.toString()
-                Log.d(TAG, "Received ACTION_PROCESS_TEXT with ${initialSelectedText?.length ?: 0} chars")
+                initialSelectedText = text
+                if (!text.isNullOrBlank()) {
+                    initialIncomingPayload = mapOf(
+                        "kind" to "text",
+                        "sourceAction" to "ACTION_PROCESS_TEXT",
+                        "text" to text,
+                    )
+                }
+                Log.d(TAG, "Received ACTION_PROCESS_TEXT with ${text?.length ?: 0} chars")
             }
             Intent.ACTION_SEND -> {
-                if (incomingIntent.type == "text/plain") {
-                    initialSelectedText = incomingIntent.getStringExtra(Intent.EXTRA_TEXT)
-                    Log.d(TAG, "Received ACTION_SEND with ${initialSelectedText?.length ?: 0} chars")
+                val streamUri = readStreamUri(incomingIntent)
+                if (streamUri != null) {
+                    initialSelectedText = null
+                    initialIncomingPayload = mapOf(
+                        "kind" to "document_uri",
+                        "sourceAction" to "ACTION_SEND",
+                        "uriString" to streamUri.toString(),
+                        "mimeType" to incomingIntent.type,
+                    )
+                    Log.d(TAG, "Received ACTION_SEND stream URI (mime=${incomingIntent.type ?: "unknown"})")
+                } else {
+                    val sharedText = incomingIntent.getStringExtra(Intent.EXTRA_TEXT)
+                        ?: incomingIntent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()
+                    initialSelectedText = sharedText
+                    if (!sharedText.isNullOrBlank()) {
+                        initialIncomingPayload = mapOf(
+                            "kind" to "text_or_url",
+                            "sourceAction" to "ACTION_SEND",
+                            "text" to sharedText,
+                            "subject" to incomingIntent.getStringExtra(Intent.EXTRA_SUBJECT),
+                        )
+                    }
+                    Log.d(TAG, "Received ACTION_SEND text payload (${sharedText?.length ?: 0} chars)")
                 }
             }
         }
+
+        val activeChannel = methodChannel
+        val payloadToPush = initialIncomingPayload
+        if (dispatchIfAttached && activeChannel != null && payloadToPush != null) {
+            initialIncomingPayload = null
+            initialSelectedText = null
+            lifecycleScope.launch(Dispatchers.IO) {
+                val resolved = resolveIncomingPayloadMap(payloadToPush)
+                withContext(Dispatchers.Main) {
+                    activeChannel.invokeMethod("onIncomingPayload", resolved)
+                }
+            }
+        }
+    }
+
+    private fun readStreamUri(incomingIntent: Intent): Uri? {
+        val direct: Uri? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            incomingIntent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            incomingIntent.getParcelableExtra(Intent.EXTRA_STREAM)
+        }
+        if (direct != null) return direct
+
+        val clipData = incomingIntent.clipData
+        if (clipData != null && clipData.itemCount > 0) {
+            return clipData.getItemAt(0).uri
+        }
+        return null
+    }
+
+    private fun resolveIncomingPayloadMap(rawPayload: Map<String, Any?>): Map<String, Any?> {
+        if (rawPayload["kind"] != "document_uri") {
+            return rawPayload
+        }
+        val uriStr = rawPayload["uriString"] as? String ?: ""
+        val declaredMime = rawPayload["mimeType"] as? String
+        val uri = Uri.parse(uriStr)
+        if (uri.scheme?.lowercase() != "content") {
+            return mapOf(
+                "kind" to "document",
+                "sourceAction" to (rawPayload["sourceAction"] ?: "ACTION_SEND"),
+                "status" to "permission_denied",
+                "extractedText" to "",
+                "userMessage" to "Only Android content:// document URIs can be inspected safely.",
+            )
+        }
+        val docMap = extractDocumentFromUri(uri, declaredMime = declaredMime)
+        return mapOf(
+            "kind" to "document",
+            "sourceAction" to (rawPayload["sourceAction"] ?: "ACTION_SEND"),
+            *docMap.entries.map { it.key to it.value }.toTypedArray(),
+        )
+    }
+
+    private fun extractDocumentFromUri(
+        uri: Uri,
+        declaredMime: String?,
+    ): Map<String, Any?> {
+        var fileName: String? = null
+        var reportedSize: Long? = null
+
+        try {
+            contentResolver.query(
+                uri,
+                arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE),
+                null,
+                null,
+                null,
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (nameIdx >= 0 && !cursor.isNull(nameIdx)) {
+                        fileName = cursor.getString(nameIdx)
+                    }
+                    val sizeIdx = cursor.getColumnIndex(OpenableColumns.SIZE)
+                    if (sizeIdx >= 0 && !cursor.isNull(sizeIdx)) {
+                        reportedSize = cursor.getLong(sizeIdx)
+                    }
+                }
+            }
+        } catch (_: SecurityException) {
+            return mapOf(
+                "status" to "permission_denied",
+                "documentType" to null,
+                "fileName" to fileName,
+                "mimeType" to declaredMime,
+                "byteLength" to 0,
+                "extractedText" to "",
+                "userMessage" to "Permission to access the selected document was denied by Android.",
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Document metadata query fallback (${e.javaClass.simpleName})")
+        }
+
+        val resolvedMime = try {
+            contentResolver.getType(uri) ?: declaredMime
+        } catch (_: Exception) {
+            declaredMime
+        }
+
+        if (DocumentTextExtractor.resolveFormat(resolvedMime, fileName) ==
+            DocumentTextExtractor.DetectedFormat.UNSUPPORTED
+        ) {
+            return mapOf(
+                "status" to "unsupported_mime",
+                "documentType" to null,
+                "fileName" to fileName,
+                "mimeType" to resolvedMime,
+                "byteLength" to (reportedSize?.toInt() ?: 0),
+                "extractedText" to "",
+                "userMessage" to "Unsupported document format (${resolvedMime ?: "unknown"}). Enprive supports local PDF, TXT, and DOCX documents.",
+            )
+        }
+
+        val maxBytes = DocumentTextExtractor.MAX_DOCUMENT_BYTES.toLong()
+        val initialSize = reportedSize
+        if (initialSize != null && initialSize > maxBytes) {
+            return mapOf(
+                "status" to "too_large",
+                "documentType" to null,
+                "fileName" to fileName,
+                "mimeType" to resolvedMime,
+                "byteLength" to initialSize.toInt().coerceAtLeast(0),
+                "extractedText" to "",
+                "userMessage" to "Selected document exceeds the 10 MB local extraction limit.",
+            )
+        }
+
+        val bytes = try {
+            contentResolver.openInputStream(uri)?.use { stream ->
+                DocumentTextExtractor.readBoundedBytes(stream)
+            }
+        } catch (_: SecurityException) {
+            return mapOf(
+                "status" to "permission_denied",
+                "documentType" to null,
+                "fileName" to fileName,
+                "mimeType" to resolvedMime,
+                "byteLength" to 0,
+                "extractedText" to "",
+                "userMessage" to "Permission to read this document URI expired or was denied.",
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Document stream read failed (${e.javaClass.simpleName})")
+            return mapOf(
+                "status" to "read_error",
+                "documentType" to null,
+                "fileName" to fileName,
+                "mimeType" to resolvedMime,
+                "byteLength" to 0,
+                "extractedText" to "",
+                "userMessage" to "Could not read the selected document from device storage.",
+            )
+        }
+
+        if (bytes == null) {
+            // Either stream returned null or exceeded MAX_DOCUMENT_BYTES during bounded read.
+            return mapOf(
+                "status" to if (initialSize != null && initialSize > maxBytes) "too_large" else "read_error",
+                "documentType" to null,
+                "fileName" to fileName,
+                "mimeType" to resolvedMime,
+                "byteLength" to 0,
+                "extractedText" to "",
+                "userMessage" to "Document exceeded the 10 MB safety limit or could not be opened.",
+            )
+        }
+
+        return DocumentTextExtractor
+            .extractFromBytes(bytes, mimeType = resolvedMime, fileName = fileName)
+            .toChannelMap(fileName = fileName, mimeType = resolvedMime)
     }
 
     private fun createOnDeviceModel() = Firebase.ai(
@@ -166,7 +414,7 @@ class MainActivity : FlutterActivity() {
                             val status = ext?.checkStatus()
                             mapModelStatus(status)
                         } catch (e: Exception) {
-                            Log.w(TAG, "On-device checkStatus fallback: ${e.message}")
+                            Log.w(TAG, "On-device checkStatus fallback (${e.javaClass.simpleName})")
                             "UNAVAILABLE"
                         }
                         val isSupported = mappedStatus == "AVAILABLE" ||
@@ -201,7 +449,7 @@ class MainActivity : FlutterActivity() {
                                 mapModelStatus(current)
                             }
                         } catch (e: Exception) {
-                            Log.w(TAG, "Model download/check failed: ${e.message}")
+                            Log.w(TAG, "Model download/check failed (${e.javaClass.simpleName})")
                             "FAILED"
                         }
                         withContext(Dispatchers.Main) {
@@ -217,7 +465,7 @@ class MainActivity : FlutterActivity() {
                             ext?.warmUp()
                             true
                         } catch (e: Exception) {
-                            Log.w(TAG, "Model warmUp note: ${e.message}")
+                            Log.w(TAG, "Model warmUp note (${e.javaClass.simpleName})")
                             false
                         }
                         withContext(Dispatchers.Main) {
@@ -230,6 +478,60 @@ class MainActivity : FlutterActivity() {
                     val text = initialSelectedText
                     initialSelectedText = null
                     result.success(text)
+                }
+
+                "getInitialIncomingPayload" -> {
+                    val pending = initialIncomingPayload
+                    initialIncomingPayload = null
+                    initialSelectedText = null
+                    if (pending == null) {
+                        result.success(null)
+                        return@setMethodCallHandler
+                    }
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val resolved = resolveIncomingPayloadMap(pending)
+                        withContext(Dispatchers.Main) {
+                            result.success(resolved)
+                        }
+                    }
+                }
+
+                "pickAndExtractDocument" -> {
+                    if (pendingDocumentResult != null) {
+                        result.error(
+                            "PICK_IN_PROGRESS",
+                            "A document picker session is already active.",
+                            null,
+                        )
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        pendingDocumentResult = result
+                        val openIntent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                            type = "*/*"
+                            putExtra(
+                                Intent.EXTRA_MIME_TYPES,
+                                DocumentTextExtractor.SUPPORTED_PICKER_MIMES,
+                            )
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        startActivityForResult(openIntent, PICK_DOCUMENT_REQUEST_CODE)
+                    } catch (e: Exception) {
+                        pendingDocumentResult = null
+                        Log.w(TAG, "Document picker launch failed (${e.javaClass.simpleName})")
+                        result.success(
+                            mapOf(
+                                "status" to "read_error",
+                                "documentType" to null,
+                                "fileName" to null,
+                                "mimeType" to null,
+                                "byteLength" to 0,
+                                "extractedText" to "",
+                                "userMessage" to "Could not open Android's system document picker on this device.",
+                            )
+                        )
+                    }
                 }
 
                 "speakText" -> {
@@ -250,7 +552,7 @@ class MainActivity : FlutterActivity() {
                         )
                         result.success(speakRes == TextToSpeech.SUCCESS)
                     } catch (e: Exception) {
-                        Log.w(TAG, "speakText error: ${e.message}")
+                        Log.w(TAG, "speakText error (${e.javaClass.simpleName})")
                         result.success(false)
                     }
                 }
@@ -302,7 +604,7 @@ class MainActivity : FlutterActivity() {
                                     .thenBy { (it["appName"] as String).lowercase() }
                             )
                         } catch (e: Exception) {
-                            Log.w(TAG, "listLaunchableApps error: ${e.message}")
+                            Log.w(TAG, "listLaunchableApps error (${e.javaClass.simpleName})")
                             emptyList<Map<String, Any>>()
                         }
 
@@ -363,8 +665,12 @@ class MainActivity : FlutterActivity() {
                             "requestedPermissions" to requested,
                             "grantedPermissions" to granted
                         ))
-                    } catch (e: Exception) {
-                        result.error("PACKAGE_NOT_FOUND", e.message, null)
+                    } catch (_: Exception) {
+                        result.error(
+                            "PACKAGE_NOT_FOUND",
+                            "Selected application package could not be inspected.",
+                            null,
+                        )
                     }
                 }
 
@@ -627,7 +933,7 @@ class MainActivity : FlutterActivity() {
                                         try {
                                             result.error(
                                                 "CANCELLED",
-                                                ce.message ?: "Analysis cancelled.",
+                                                "Analysis cancelled.",
                                                 null
                                             )
                                         } catch (_: Exception) {
@@ -640,7 +946,7 @@ class MainActivity : FlutterActivity() {
                                 if (info.isUnavailable) {
                                     Log.i(TAG, "On-device model unavailable on this hardware/emulator; prompting user choice.")
                                 } else {
-                                    Log.w(TAG, "Inference note: ${info.message}")
+                                    Log.w(TAG, "Inference note (code=${info.errorCode}, status=${info.status})")
                                 }
                                 withContext(Dispatchers.Main) {
                                     replySubmitted = true

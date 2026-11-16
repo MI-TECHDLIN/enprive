@@ -24,12 +24,14 @@ enum CloudConsentDecision {
 class CloudConsentSheet extends StatelessWidget {
   final String subjectTitle;
   final String policyText;
+  final String? canonicalRedactedPreview;
   final String? deviceReason;
 
   const CloudConsentSheet({
     super.key,
     required this.subjectTitle,
     required this.policyText,
+    this.canonicalRedactedPreview,
     this.deviceReason,
   });
 
@@ -37,6 +39,7 @@ class CloudConsentSheet extends StatelessWidget {
     BuildContext context, {
     required String subjectTitle,
     required String policyText,
+    String? canonicalRedactedPreview,
     String? deviceReason,
   }) async {
     final decision = await showModalBottomSheet<CloudConsentDecision>(
@@ -47,6 +50,7 @@ class CloudConsentSheet extends StatelessWidget {
       builder: (_) => CloudConsentSheet(
         subjectTitle: subjectTitle,
         policyText: policyText,
+        canonicalRedactedPreview: canonicalRedactedPreview,
         deviceReason: deviceReason,
       ),
     );
@@ -70,8 +74,11 @@ class CloudConsentSheet extends StatelessWidget {
           final semantics = context.enpriveSemantics;
           final surfaces = context.enpriveSurfaces;
 
-          final redaction = PiiRedactor.redact(policyText);
-          final scrubbedPreview = redaction.redactedText.trim();
+          // Use the single canonical redacted payload unchanged when provided
+          // so preview and cloud bridge payloads stay byte-for-byte identical.
+          final redaction = PiiRedactor.redact(policyText.trim());
+          final scrubbedPreview =
+              canonicalRedactedPreview ?? redaction.redactedText;
           final trimmedReason = deviceReason?.trim();
           final detectedTokens = _tokenPattern
               .allMatches(scrubbedPreview)
@@ -254,7 +261,7 @@ class CloudConsentSheet extends StatelessWidget {
                               selectable: true,
                               statusLabel: detectedTokens.isEmpty
                                   ? 'No PII found'
-                                  : 'Masked (${redaction.replacementCount})',
+                                  : 'Masked (${redaction.replacementCount > 0 ? redaction.replacementCount : detectedTokens.length})',
                               categoryLabel: 'Exact cloud payload',
                               spineColor: semantics.inCloud.foreground,
                             ),

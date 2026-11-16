@@ -13,7 +13,6 @@ import '../widgets/enprive_tactile_button.dart';
 import '../widgets/language_picker_sheet.dart';
 import '../widgets/m3e/enprive_m3e_components.dart';
 import '../widgets/private_readiness_sheet.dart';
-import 'design_system_preview_screen.dart';
 
 /// Settings & Private Analysis Readiness Screen with Material 3 Expressive
 /// token integration, System/Light/Dark appearance control, and 3-tier Deni LOD.
@@ -205,35 +204,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: scheme.onSurfaceVariant,
                 ),
               ),
-            ListTile(
-              key: const Key('open_design_system_preview_tile'),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 4,
-              ),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => DesignSystemPreviewScreen(
-                      currentThemeMode: widget.currentThemeMode,
-                      onThemeModeChanged: widget.onThemeModeChanged,
-                    ),
-                  ),
-                );
-              },
-              title: Text(
-                'Theme & Deni LOD Preview',
-                style: m3e.typeScale.titleSmall.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: scheme.onSurface,
-                ),
-              ),
-              trailing: Icon(
-                LucideIcons.chevronRight,
-                size: 18,
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
             ListTile(
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 20,

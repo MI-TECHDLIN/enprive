@@ -44,6 +44,37 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+    val pdfboxResDir = layout.buildDirectory.dir("generated/pdfboxTestResources").get().asFile
+    sourceSets {
+        getByName("test").resources.directories.add(pdfboxResDir.absolutePath)
+    }
+}
+
+val pdfboxTestAssets by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    isTransitive = false
+}
+
+val preparePdfBoxTestResources by tasks.registering(Sync::class) {
+    from(pdfboxTestAssets.elements.map { files -> files.map { zipTree(it.asFile) } }) {
+        include("assets/com/tom_roush/pdfbox/**")
+        eachFile {
+            path = path.removePrefix("assets/")
+        }
+        includeEmptyDirs = false
+    }
+    into(layout.buildDirectory.dir("generated/pdfboxTestResources"))
+}
+
+tasks.configureEach {
+    if (name == "processDebugUnitTestJavaRes" || name == "processReleaseUnitTestJavaRes") {
+        dependsOn(preparePdfBoxTestResources)
+    }
 }
 
 kotlin {
@@ -63,5 +94,7 @@ dependencies {
     implementation("com.google.firebase:firebase-appcheck-debug")
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+    pdfboxTestAssets("com.tom-roush:pdfbox-android:2.0.27.0")
     testImplementation("junit:junit:4.13.2")
 }

@@ -41,6 +41,147 @@ enum FindingSeverity {
   low,
 }
 
+enum PolicySourceType {
+  pastedText,
+  selectedText,
+  sharedText,
+  url,
+  pdf,
+  textDocument,
+  docx,
+  sample,
+  devicePermissions,
+}
+
+enum PolicyRetrievalStatus {
+  localProvided,
+  retrieved,
+  invalidUrl,
+  unsafeDestination,
+  networkError,
+  timeout,
+  sizeExceeded,
+  unsupportedContentType,
+  httpError,
+  emptyOrErrorPage,
+  insufficientPolicy,
+  cancelled,
+}
+
+enum AppIdentityMatchStatus {
+  notApplicable,
+  unverifiedUserSupplied,
+  sampleFixture,
+}
+
+enum DocumentExtractionStatus {
+  none,
+  extracted,
+  unsupportedMime,
+  tooLarge,
+  empty,
+  corrupt,
+  passwordProtected,
+  permissionDenied,
+  readError,
+  cancelled,
+}
+
+/// Captures local provenance and cryptographic SHA-256 snapshot integrity for
+/// retrieved URLs, imported documents, shared text, or pasted policies.
+class PolicySourceSnapshot {
+  final String snapshotId;
+  final PolicySourceType sourceType;
+  final String? requestedUrl;
+  final String? canonicalUrl;
+  final List<String> redirectChain;
+  final DateTime retrievedAt;
+  final PolicyRetrievalStatus retrievalStatus;
+  final AppIdentityMatchStatus appIdentityMatchStatus;
+  final String sourceSha256Hash;
+  final String? originalFilename;
+  final String? mimeType;
+  final int? byteLength;
+  final DocumentExtractionStatus extractionStatus;
+  final String? limitationNote;
+
+  const PolicySourceSnapshot({
+    required this.snapshotId,
+    required this.sourceType,
+    this.requestedUrl,
+    this.canonicalUrl,
+    this.redirectChain = const [],
+    required this.retrievedAt,
+    required this.retrievalStatus,
+    this.appIdentityMatchStatus = AppIdentityMatchStatus.notApplicable,
+    required this.sourceSha256Hash,
+    this.originalFilename,
+    this.mimeType,
+    this.byteLength,
+    this.extractionStatus = DocumentExtractionStatus.none,
+    this.limitationNote,
+  });
+
+  bool get hasRedirect =>
+      redirectChain.length > 1 ||
+      (requestedUrl != null &&
+          canonicalUrl != null &&
+          requestedUrl != canonicalUrl);
+
+  Map<String, dynamic> toJson() => {
+        'snapshotId': snapshotId,
+        'sourceType': sourceType.name,
+        if (requestedUrl != null) 'requestedUrl': requestedUrl,
+        if (canonicalUrl != null) 'canonicalUrl': canonicalUrl,
+        if (redirectChain.isNotEmpty) 'redirectChain': redirectChain,
+        'retrievedAtMs': retrievedAt.millisecondsSinceEpoch,
+        'retrievalStatus': retrievalStatus.name,
+        'appIdentityMatchStatus': appIdentityMatchStatus.name,
+        'sourceSha256Hash': sourceSha256Hash,
+        if (originalFilename != null) 'originalFilename': originalFilename,
+        if (mimeType != null) 'mimeType': mimeType,
+        if (byteLength != null) 'byteLength': byteLength,
+        'extractionStatus': extractionStatus.name,
+        if (limitationNote != null) 'limitationNote': limitationNote,
+      };
+
+  factory PolicySourceSnapshot.fromJson(Map<String, dynamic> json) {
+    return PolicySourceSnapshot(
+      snapshotId: json['snapshotId'] as String? ?? 'snap_unknown',
+      sourceType: PolicySourceType.values.firstWhere(
+        (v) => v.name == json['sourceType'],
+        orElse: () => PolicySourceType.pastedText,
+      ),
+      requestedUrl: json['requestedUrl'] as String?,
+      canonicalUrl: json['canonicalUrl'] as String?,
+      redirectChain: (json['redirectChain'] as List?)
+              ?.map((e) => e.toString())
+              .toList(growable: false) ??
+          const [],
+      retrievedAt: DateTime.fromMillisecondsSinceEpoch(
+        json['retrievedAtMs'] as int? ?? DateTime.now().millisecondsSinceEpoch,
+      ),
+      retrievalStatus: PolicyRetrievalStatus.values.firstWhere(
+        (v) => v.name == json['retrievalStatus'],
+        orElse: () => PolicyRetrievalStatus.localProvided,
+      ),
+      appIdentityMatchStatus: AppIdentityMatchStatus.values.firstWhere(
+        (v) => v.name == json['appIdentityMatchStatus'],
+        orElse: () => AppIdentityMatchStatus.notApplicable,
+      ),
+      sourceSha256Hash: json['sourceSha256Hash'] as String? ?? '',
+      originalFilename: json['originalFilename'] as String?,
+      mimeType: json['mimeType'] as String?,
+      byteLength: json['byteLength'] as int?,
+      extractionStatus: DocumentExtractionStatus.values.firstWhere(
+        (v) => v.name == json['extractionStatus'],
+        orElse: () => DocumentExtractionStatus.none,
+      ),
+      limitationNote: json['limitationNote'] as String?,
+    );
+  }
+}
+
 class VerifiedFinding {
   final String id;
   final String title;
@@ -195,6 +336,8 @@ class PolicyReviewReceipt {
   final String? thoughtSummary;
   final String? thoughtSignature;
   final ReviewDiagnosticKind diagnosticKind;
+  final PolicySourceSnapshot? sourceSnapshot;
+  final String languageCode;
 
   const PolicyReviewReceipt({
     required this.id,
@@ -213,7 +356,14 @@ class PolicyReviewReceipt {
     this.thoughtSummary,
     this.thoughtSignature,
     this.diagnosticKind = ReviewDiagnosticKind.validated,
+    this.sourceSnapshot,
+    this.languageCode = 'en',
   });
+
+  String? get sourceSha256Hash =>
+      sourceSnapshot?.sourceSha256Hash.isNotEmpty == true
+          ? sourceSnapshot!.sourceSha256Hash
+          : null;
 
   bool get isPermissionOnlyInspection =>
       diagnosticKind == ReviewDiagnosticKind.devicePermissionInspection ||
@@ -251,12 +401,16 @@ class PolicyReviewReceipt {
         if (thoughtSummary != null) 'thoughtSummary': thoughtSummary,
         if (thoughtSignature != null) 'thoughtSignature': thoughtSignature,
         'diagnosticKind': diagnosticKind.name,
+        if (sourceSnapshot != null) 'sourceSnapshot': sourceSnapshot!.toJson(),
+        'languageCode': languageCode,
       };
 
   factory PolicyReviewReceipt.fromJson(Map<String, dynamic> json) {
     final findingsList = (json['findings'] as List?) ?? const [];
     final permMap =
         (json['permissionReport'] as Map?)?.cast<String, dynamic>();
+    final snapshotMap =
+        (json['sourceSnapshot'] as Map?)?.cast<String, dynamic>();
     final rawSteps = (json['processSteps'] as List?)
             ?.map((e) => e.toString())
             .toList(growable: false) ??
@@ -304,6 +458,12 @@ class PolicyReviewReceipt {
       thoughtSummary: rawThought?.isNotEmpty == true ? rawThought : null,
       thoughtSignature: rawSignature?.isNotEmpty == true ? rawSignature : null,
       diagnosticKind: diagnosticKind,
+      sourceSnapshot: snapshotMap == null
+          ? null
+          : PolicySourceSnapshot.fromJson(snapshotMap),
+      languageCode: (json['languageCode'] as String?)?.trim().isNotEmpty == true
+          ? (json['languageCode'] as String).trim()
+          : 'en',
     );
   }
 }

@@ -384,6 +384,16 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         expect(find.text('Appearance'), findsOneWidget);
+        // Verify developer-only Stage 0 PoC link is not exposed in user Settings.
+        expect(
+          find.byKey(const Key('open_design_system_preview_tile')),
+          findsNothing,
+        );
+        expect(find.text('Theme & Deni LOD Preview'), findsNothing);
+        expect(find.text('Language'), findsOneWidget);
+        expect(find.text('Meet Deni & setup guide'), findsOneWidget);
+        expect(find.text('Clear saved receipts (0)'), findsOneWidget);
+
         final darkOption = find.byKey(const Key('theme_mode_option_dark'));
         expect(darkOption, findsOneWidget);
         await tester.ensureVisible(darkOption);
