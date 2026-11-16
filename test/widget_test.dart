@@ -240,7 +240,30 @@ void main() {
       );
       await tester.pump();
       expect(find.text('EduTrack Classroom Companion'), findsOneWidget);
-      expect(find.text('Reviewing on this phone…'), findsOneWidget);
+      expect(find.text('Reviewing on this phone.'), findsOneWidget);
+
+      // Cloud mode renders accurate cloud progress messaging + real Cancel action
+      var cancelTapped = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ReviewProgressCard(
+              subjectTitle: 'Cloud Target App',
+              isCloudCheck: true,
+              onCancel: () => cancelTapped = true,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Checking policy with cloud AI.'), findsOneWidget);
+      expect(find.text('Reviewing on this phone.'), findsNothing);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('review_progress_cancel_btn')),
+      );
+      expect(cancelTapped, isTrue);
     },
   );
 
@@ -986,63 +1009,59 @@ void main() {
       final nativeCalls = <MethodCall>[];
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        const MethodChannel('com.enprive/hybrid_ai'),
-        (call) async {
-          nativeCalls.add(call);
-          if (call.method == 'getDeviceCapability') {
-            return {
-              'isSupported': true,
-              'deviceTier': 'SUPPORTED',
-              'modelStatus': 'AVAILABLE',
-            };
-          }
-          if (call.method == 'listLaunchableApps') {
-            return [
-              {
-                'packageName': 'com.example.reader',
-                'appName': 'Focus Reader',
-                'isSystemApp': false,
-              },
-            ];
-          }
-          if (call.method == 'inspectSelectedApp') {
-            return {
-              'packageName': 'com.example.reader',
-              'appName': 'Focus Reader',
-              'versionName': '2.1.0',
-              'requestedPermissions': [
-                'android.permission.CAMERA',
-                'android.permission.INTERNET',
-              ],
-              'grantedPermissions': [
-                'android.permission.CAMERA',
-              ],
-            };
-          }
-          if (call.method == 'analyseText') {
-            return {
-              'schemaVersion': 1,
-              'requestId': (call.arguments as Map)['requestId'],
-              'status': 'success',
-              'inferenceSource': 'ON_DEVICE',
-              'structuredOutput': {
-                'overall_state': 'NO_CONCERN',
-                'summary': 'No collection claims in policy.',
-                'concerns': [],
-              },
-            };
-          }
-          return null;
-        },
-      );
+            const MethodChannel('com.enprive/hybrid_ai'),
+            (call) async {
+              nativeCalls.add(call);
+              if (call.method == 'getDeviceCapability') {
+                return {
+                  'isSupported': true,
+                  'deviceTier': 'SUPPORTED',
+                  'modelStatus': 'AVAILABLE',
+                };
+              }
+              if (call.method == 'listLaunchableApps') {
+                return [
+                  {
+                    'packageName': 'com.example.reader',
+                    'appName': 'Focus Reader',
+                    'isSystemApp': false,
+                  },
+                ];
+              }
+              if (call.method == 'inspectSelectedApp') {
+                return {
+                  'packageName': 'com.example.reader',
+                  'appName': 'Focus Reader',
+                  'versionName': '2.1.0',
+                  'requestedPermissions': [
+                    'android.permission.CAMERA',
+                    'android.permission.INTERNET',
+                  ],
+                  'grantedPermissions': ['android.permission.CAMERA'],
+                };
+              }
+              if (call.method == 'analyseText') {
+                return {
+                  'schemaVersion': 1,
+                  'requestId': (call.arguments as Map)['requestId'],
+                  'status': 'success',
+                  'inferenceSource': 'ON_DEVICE',
+                  'structuredOutput': {
+                    'overall_state': 'NO_CONCERN',
+                    'summary': 'No collection claims in policy.',
+                    'concerns': [],
+                  },
+                };
+              }
+              return null;
+            },
+          );
 
       tester.view.physicalSize = const Size(430, 932);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(
-        const EnpriveApp(showSplashOnLaunch: false),
-      );
+      await tester.pumpWidget(const EnpriveApp(showSplashOnLaunch: false));
       await _flushBridgeAndPump(tester);
 
       // Synthetic sample badge shown next to Home sample cards
@@ -1069,14 +1088,8 @@ void main() {
       expect(find.text('Device Permission Inspection'), findsWidgets);
       expect(find.text('Granted'), findsWidgets);
       expect(find.text('Not granted'), findsWidgets);
-      expect(
-        find.text('View reviewed policy snapshot'),
-        findsNothing,
-      );
-      expect(
-        nativeCalls.where((c) => c.method == 'analyseText'),
-        isEmpty,
-      );
+      expect(find.text('View reviewed policy snapshot'), findsNothing);
+      expect(nativeCalls.where((c) => c.method == 'analyseText'), isEmpty);
 
       // Tap optional CTA "Add this app's privacy policy"
       final addPolicyBtn = find.text("Add this app's privacy policy").last;
@@ -1094,10 +1107,7 @@ void main() {
       await tester.tap(find.text('Review on this phone'));
       await tester.pump();
       expect(find.textContaining('placeholder'), findsOneWidget);
-      expect(
-        nativeCalls.where((c) => c.method == 'analyseText'),
-        isEmpty,
-      );
+      expect(nativeCalls.where((c) => c.method == 'analyseText'), isEmpty);
 
       // Genuine supplied policy runs policy-to-permission comparison
       await tester.enterText(
@@ -1108,10 +1118,7 @@ void main() {
       await _flushBridgeAndPump(tester);
       await _flushBridgeAndPump(tester);
 
-      expect(
-        nativeCalls.where((c) => c.method == 'analyseText').length,
-        1,
-      );
+      expect(nativeCalls.where((c) => c.method == 'analyseText').length, 1);
     },
   );
 
@@ -1121,12 +1128,12 @@ void main() {
       String? copiedDigest;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(SystemChannels.platform, (call) async {
-        if (call.method == 'Clipboard.setData') {
-          copiedDigest =
-              (call.arguments as Map<dynamic, dynamic>)['text'] as String?;
-        }
-        return null;
-      });
+            if (call.method == 'Clipboard.setData') {
+              copiedDigest =
+                  (call.arguments as Map<dynamic, dynamic>)['text'] as String?;
+            }
+            return null;
+          });
       addTearDown(() {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
             .setMockMethodCallHandler(SystemChannels.platform, null);
@@ -1201,8 +1208,7 @@ void main() {
         createdAt: DateTime(2026, 11, 15, 10, 0),
         overallState: ReviewOverallState.noConcern,
         summary: 'No data collection found.',
-        calibratedDisclaimer:
-            'No concern identified in the reviewed evidence. This is not a safety certification.',
+        calibratedDisclaimer: 'No concern identified in the reviewed evidence. This is not a safety certification.',
         findings: const [],
         snapshotText: 'We never sell student data.',
         snapshotDigest: '9a8b7c6d5e4f3210',
@@ -1249,10 +1255,76 @@ void main() {
     'HybridAiBridge caches getAppIcon calls and InstalledAppPickerSheet renders original launcher icons with graceful fallback',
     (WidgetTester tester) async {
       final samplePngBytes = Uint8List.fromList(const [
-        137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0,
-        1, 0, 0, 0, 1, 8, 6, 0, 0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68,
-        65, 84, 120, 218, 99, 252, 207, 192, 80, 15, 0, 4, 133, 1, 128, 132,
-        169, 140, 33, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+        137,
+        80,
+        78,
+        71,
+        13,
+        10,
+        26,
+        10,
+        0,
+        0,
+        0,
+        13,
+        73,
+        72,
+        68,
+        82,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        8,
+        6,
+        0,
+        0,
+        0,
+        31,
+        21,
+        196,
+        137,
+        0,
+        0,
+        0,
+        13,
+        73,
+        68,
+        65,
+        84,
+        120,
+        218,
+        99,
+        252,
+        207,
+        192,
+        80,
+        15,
+        0,
+        4,
+        133,
+        1,
+        128,
+        132,
+        169,
+        140,
+        33,
+        0,
+        0,
+        0,
+        0,
+        73,
+        69,
+        78,
+        68,
+        174,
+        66,
+        96,
+        130,
       ]);
 
       final iconRequests = <String>[];
@@ -1326,9 +1398,8 @@ void main() {
           localizationsDelegates: EnpriveM3ETheme.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           appBuilder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: const TextScaler.linear(2.0),
-            ),
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(2.0)),
             child: EnpriveM3EBridgeScope(
               themeMode: ThemeMode.dark,
               child: child ?? const SizedBox.shrink(),

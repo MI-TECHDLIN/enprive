@@ -178,5 +178,12 @@
   "copyDigestBtn": "Copia impronta",
   "digestCopiedMsg": "Impronta snapshot copiata",
   "permissionGrantedBadge": "Concessa",
-  "permissionNotGrantedBadge": "Non concessa"
+  "permissionNotGrantedBadge": "Non concessa",
+  "checkingPolicyWithCloudAi": "Verifica dell'informativa con l'IA cloud.",
+  "preparingCloudAiStream": "Preparazione della verifica cloud anonimizzata…",
+  "cancellingAnalysis": "Annullamento…",
+  "analysisCancelledNotice": "Analisi annullata.",
+  "cloudTimedOutNotice": "L'IA cloud ha superato il tempo limite prima di rispondere. Nessun nuovo tentativo automatico inviato.",
+  "cloudFallbackBannerTitle": "IA cloud non disponibile — scansione locale mostrata",
+  "cloudFallbackBannerBody": "L'analisi cloud non era disponibile, quindi questo risultato proviene dallo scanner deterministico locale di Enprive."
 }

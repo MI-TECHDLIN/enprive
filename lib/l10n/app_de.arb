@@ -178,5 +178,12 @@
   "copyDigestBtn": "Prüfwert kopieren",
   "digestCopiedMsg": "Snapshot-Prüfwert kopiert",
   "permissionGrantedBadge": "Erteilt",
-  "permissionNotGrantedBadge": "Nicht erteilt"
+  "permissionNotGrantedBadge": "Nicht erteilt",
+  "checkingPolicyWithCloudAi": "Richtlinie wird mit Cloud-KI geprüft.",
+  "preparingCloudAiStream": "Bereinigte Cloud-Prüfung wird vorbereitet…",
+  "cancellingAnalysis": "Wird abgebrochen…",
+  "analysisCancelledNotice": "Prüfung abgebrochen.",
+  "cloudTimedOutNotice": "Cloud-KI hat nicht rechtzeitig geantwortet. Es wurde kein automatischer Neuversuch gestartet.",
+  "cloudFallbackBannerTitle": "Cloud-KI nicht verfügbar — lokaler Scan angezeigt",
+  "cloudFallbackBannerBody": "Die Cloud-Analyse war nicht verfügbar, daher stammt dieses Ergebnis vom lokalen deterministischen Scanner von Enprive."
 }

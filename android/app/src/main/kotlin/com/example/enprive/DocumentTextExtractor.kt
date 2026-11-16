@@ -210,6 +210,14 @@ object DocumentTextExtractor {
                 byteLength = bytes.size,
                 userMessage = "This PDF restricts text extraction.",
             )
+        } catch (_: LinkageError) {
+            ExtractionResult(
+                status = "corrupt",
+                documentType = "pdf",
+                extractedText = "",
+                byteLength = bytes.size,
+                userMessage = "This PDF uses an unsupported image codec or stream that cannot be extracted locally. Paste the privacy policy text directly instead.",
+            )
         } catch (_: Exception) {
             ExtractionResult(
                 status = "corrupt",

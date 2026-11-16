@@ -583,4 +583,27 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get permissionNotGrantedBadge => '허용되지 않음';
+
+  @override
+  String get checkingPolicyWithCloudAi => '클라우드 AI로 정책을 확인하고 있습니다.';
+
+  @override
+  String get preparingCloudAiStream => '개인정보를 가린 클라우드 확인을 준비하는 중…';
+
+  @override
+  String get cancellingAnalysis => '취소 중…';
+
+  @override
+  String get analysisCancelledNotice => '검토가 취소되었습니다.';
+
+  @override
+  String get cloudTimedOutNotice =>
+      '클라우드 AI 응답 시간이 초과되었습니다. 자동 재시도는 전송되지 않았습니다.';
+
+  @override
+  String get cloudFallbackBannerTitle => '클라우드 AI를 사용할 수 없음 — 로컬 스캔 표시됨';
+
+  @override
+  String get cloudFallbackBannerBody =>
+      '클라우드 분석을 사용할 수 없어 Enprive의 로컬 결정적 스캐너 결과를 표시하고 있습니다.';
 }

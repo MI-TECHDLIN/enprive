@@ -178,5 +178,12 @@
   "copyDigestBtn": "Копировать код",
   "digestCopiedMsg": "Контрольное значение скопировано",
   "permissionGrantedBadge": "Разрешено",
-  "permissionNotGrantedBadge": "Не разрешено"
+  "permissionNotGrantedBadge": "Не разрешено",
+  "checkingPolicyWithCloudAi": "Проверка политики с помощью облачного ИИ.",
+  "preparingCloudAiStream": "Подготовка обезличенной облачной проверки…",
+  "cancellingAnalysis": "Отмена…",
+  "analysisCancelledNotice": "Проверка отменена.",
+  "cloudTimedOutNotice": "Облачный ИИ не ответил вовремя. Автоматический повтор не выполнялся.",
+  "cloudFallbackBannerTitle": "Облачный ИИ недоступен — показан локальный скан",
+  "cloudFallbackBannerBody": "Облачный анализ был недоступен, поэтому этот результат сформирован локальным детерминированным сканером Enprive."
 }

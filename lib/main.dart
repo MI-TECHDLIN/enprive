@@ -178,6 +178,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
   DeviceCapability? _deviceCapability;
   bool _isRunningReview = false;
   bool _isConsentSheetOpen = false;
+  bool _isCancellingReview = false;
+  int _activeOperationSequence = 0;
+  String? _activeAnalysisRequestId;
   String _activeReviewTitle = 'Privacy Policy';
   bool _isCloudReviewInFlight = false;
   DeniPose _activePose = DeniPose.idle;
@@ -430,6 +433,36 @@ We do not collect personal identifiers, precise location data, microphone audio,
     );
   }
 
+  void _cancelActiveReview() {
+    if (!_isRunningReview) return;
+    final reqId = _activeAnalysisRequestId;
+    final l10n = AppLocalizations.of(context);
+    _activeOperationSequence++;
+    setState(() {
+      _isCancellingReview = true;
+      _isRunningReview = false;
+      _isCloudReviewInFlight = false;
+      _activeAnalysisRequestId = null;
+      _activePose = DeniPose.idle;
+      _isCancellingReview = false;
+    });
+    if (reqId != null) {
+      unawaited(_bridge.cancelAnalysis(requestId: reqId));
+    } else {
+      unawaited(_bridge.cancelAnalysis());
+    }
+    if (l10n != null && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(l10n.analysisCancelledNotice),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    }
+  }
+
   Future<void> _executeUrlReview({
     required String rawUrl,
     String userSubjectTitle = '',
@@ -439,9 +472,12 @@ We do not collect personal identifiers, precise location data, microphone audio,
     final customTitle = _resolveCustomTitle(userSubjectTitle, l10n);
     final provisionalTitle =
         customTitle ?? PolicyUrlRetriever.deriveSubjectTitle(rawUrl);
+    final opSeq = ++_activeOperationSequence;
 
     setState(() {
       _isRunningReview = true;
+      _isCancellingReview = false;
+      _activeAnalysisRequestId = null;
       _activeReviewTitle = provisionalTitle;
       _isCloudReviewInFlight = false;
       _activePose = DeniPose.thinking;
@@ -451,13 +487,13 @@ We do not collect personal identifiers, precise location data, microphone audio,
     try {
       retrieval = await _urlRetriever.fetchPolicy(rawUrl);
     } finally {
-      if (mounted) {
+      if (mounted && opSeq == _activeOperationSequence) {
         setState(() {
           _isRunningReview = false;
         });
       }
     }
-    if (!mounted) return;
+    if (!mounted || opSeq != _activeOperationSequence) return;
 
     final resolvedSubject =
         customTitle ??
@@ -539,8 +575,12 @@ We do not collect personal identifiers, precise location data, microphone audio,
     bool forceLocalManualScan = false,
   }) async {
     if (_isRunningReview || _isConsentSheetOpen) return;
+    final opSeq = ++_activeOperationSequence;
+    final reqId = 'rev_${DateTime.now().millisecondsSinceEpoch}';
     setState(() {
       _isRunningReview = true;
+      _isCancellingReview = false;
+      _activeAnalysisRequestId = reqId;
       _activeReviewTitle = subjectTitle;
       _isCloudReviewInFlight = cloudConsent;
       _activePose = DeniPose.thinking;
@@ -549,6 +589,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
     final ReviewExecutionResult outcome;
     try {
       outcome = await _coordinator.runPolicyReview(
+        requestId: reqId,
         subjectTitle: subjectTitle,
         sourceLabel: sourceLabel,
         policyText: policyText,
@@ -559,21 +600,36 @@ We do not collect personal identifiers, precise location data, microphone audio,
         forceLocalManualScan: forceLocalManualScan,
         languageCode: widget.currentLocale.languageCode,
       );
-    } on HybridOperationCancelledException {
-      if (mounted) {
+    } on HybridOperationCancelledException catch (e) {
+      if (mounted && opSeq == _activeOperationSequence) {
+        final l10n = AppLocalizations.of(context);
         setState(() {
           _isRunningReview = false;
           _isCloudReviewInFlight = false;
+          _isCancellingReview = false;
+          _activeAnalysisRequestId = null;
           _activePose = DeniPose.idle;
         });
+        if (e.isTimeout && l10n != null) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(l10n.cloudTimedOutNotice),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+        }
       }
       return;
     }
 
-    if (!mounted) return;
+    if (!mounted || opSeq != _activeOperationSequence) return;
     setState(() {
       _isRunningReview = false;
       _isCloudReviewInFlight = false;
+      _isCancellingReview = false;
+      _activeAnalysisRequestId = null;
     });
 
     final receipt = outcome.receipt;
@@ -899,6 +955,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
                 subjectTitle: _activeReviewTitle,
                 isCloudCheck: _isCloudReviewInFlight,
                 processStream: _coordinator.analysisEvents,
+                onCancel: _cancelActiveReview,
+                isCancelling: _isCancellingReview,
               )
             else ...[
               EnpriveTactileButton(

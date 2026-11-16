@@ -415,7 +415,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get btnCheckAgain => 'Check again';
 
   @override
-  String get reviewingOnPhone => 'Reviewing on this phone…';
+  String get reviewingOnPhone => 'Reviewing on this phone.';
 
   @override
   String get readingClausesInitial => 'Reading policy clauses on this phone…';
@@ -600,4 +600,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get permissionNotGrantedBadge => 'Not granted';
+
+  @override
+  String get checkingPolicyWithCloudAi => 'Checking policy with cloud AI.';
+
+  @override
+  String get preparingCloudAiStream => 'Preparing redacted cloud verification…';
+
+  @override
+  String get cancellingAnalysis => 'Cancelling…';
+
+  @override
+  String get analysisCancelledNotice => 'Review cancelled.';
+
+  @override
+  String get cloudTimedOutNotice =>
+      'Cloud AI timed out before responding. No automatic retry was sent.';
+
+  @override
+  String get cloudFallbackBannerTitle =>
+      'Cloud AI unavailable — local scan shown';
+
+  @override
+  String get cloudFallbackBannerBody =>
+      'Cloud analysis was unavailable, so this result came from Enprive’s local deterministic scanner.';
 }

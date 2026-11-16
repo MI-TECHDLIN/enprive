@@ -178,5 +178,12 @@
   "copyDigestBtn": "Copier l'empreinte",
   "digestCopiedMsg": "Empreinte copiée",
   "permissionGrantedBadge": "Accordée",
-  "permissionNotGrantedBadge": "Non accordée"
+  "permissionNotGrantedBadge": "Non accordée",
+  "checkingPolicyWithCloudAi": "Vérification de la politique avec l’IA cloud.",
+  "preparingCloudAiStream": "Préparation de la vérification cloud anonymisée…",
+  "cancellingAnalysis": "Annulation…",
+  "analysisCancelledNotice": "Analyse annulée.",
+  "cloudTimedOutNotice": "L’IA cloud n’a pas répondu à temps. Aucune nouvelle tentative automatique n’a été lancée.",
+  "cloudFallbackBannerTitle": "IA cloud indisponible — analyse locale affichée",
+  "cloudFallbackBannerBody": "L’analyse cloud était indisponible ; ce résultat provient du lecteur déterministe local d’Enprive."
 }

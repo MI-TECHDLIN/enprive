@@ -145,7 +145,7 @@
   "privateAnalysisSheetSubtitle": "Your installed apps and permission checks never leave your phone.",
   "btnDone": "Done",
   "btnCheckAgain": "Check again",
-  "reviewingOnPhone": "Reviewing on this phone…",
+  "reviewingOnPhone": "Reviewing on this phone.",
   "readingClausesInitial": "Reading policy clauses on this phone…",
   "progressStepCounter": "{current} of {total}",
   "@progressStepCounter": {
@@ -221,5 +221,12 @@
   "copyDigestBtn": "Copy digest",
   "digestCopiedMsg": "Snapshot digest copied",
   "permissionGrantedBadge": "Granted",
-  "permissionNotGrantedBadge": "Not granted"
+  "permissionNotGrantedBadge": "Not granted",
+  "checkingPolicyWithCloudAi": "Checking policy with cloud AI.",
+  "preparingCloudAiStream": "Preparing redacted cloud verification…",
+  "cancellingAnalysis": "Cancelling…",
+  "analysisCancelledNotice": "Review cancelled.",
+  "cloudTimedOutNotice": "Cloud AI timed out before responding. No automatic retry was sent.",
+  "cloudFallbackBannerTitle": "Cloud AI unavailable — local scan shown",
+  "cloudFallbackBannerBody": "Cloud analysis was unavailable, so this result came from Enprive’s local deterministic scanner."
 }

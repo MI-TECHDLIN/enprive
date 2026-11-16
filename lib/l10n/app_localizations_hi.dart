@@ -601,4 +601,30 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get permissionNotGrantedBadge => 'अनुमति नहीं दी गई';
+
+  @override
+  String get checkingPolicyWithCloudAi =>
+      'क्लाउड AI से नीति की जाँच हो रही है।';
+
+  @override
+  String get preparingCloudAiStream =>
+      'गोपनीय विवरण हटाकर क्लाउड जाँच तैयार हो रही है…';
+
+  @override
+  String get cancellingAnalysis => 'रद्द किया जा रहा है…';
+
+  @override
+  String get analysisCancelledNotice => 'समीक्षा रद्द कर दी गई।';
+
+  @override
+  String get cloudTimedOutNotice =>
+      'क्लाउड AI ने उत्तर देने में समय समाप्त कर दिया। कोई स्वचालित पुनः प्रयास नहीं किया गया।';
+
+  @override
+  String get cloudFallbackBannerTitle =>
+      'क्लाउड AI अनुपलब्ध — स्थानीय स्कैन दिखाया गया';
+
+  @override
+  String get cloudFallbackBannerBody =>
+      'क्लाउड विश्लेषण उपलब्ध नहीं था, इसलिए यह परिणाम Enprive के स्थानीय निर्धारित स्कैनर से आया है।';
 }

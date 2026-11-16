@@ -178,5 +178,12 @@
   "copyDigestBtn": "复制摘要",
   "digestCopiedMsg": "已复制快照摘要",
   "permissionGrantedBadge": "已授予",
-  "permissionNotGrantedBadge": "未授予"
+  "permissionNotGrantedBadge": "未授予",
+  "checkingPolicyWithCloudAi": "正在使用云端 AI 检查政策。",
+  "preparingCloudAiStream": "正在准备脱敏云端验证…",
+  "cancellingAnalysis": "正在取消…",
+  "analysisCancelledNotice": "已取消审查。",
+  "cloudTimedOutNotice": "云端 AI 响应超时。未发送任何自动重试。",
+  "cloudFallbackBannerTitle": "云端 AI 不可用 — 已显示本地扫描结果",
+  "cloudFallbackBannerBody": "云端分析不可用，因此本结果由 Enprive 本地确定性扫描器生成。"
 }

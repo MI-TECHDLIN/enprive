@@ -610,4 +610,29 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get permissionNotGrantedBadge => 'غير ممنوح';
+
+  @override
+  String get checkingPolicyWithCloudAi =>
+      'جارٍ فحص السياسة باستخدام الذكاء الاصطناعي السحابي.';
+
+  @override
+  String get preparingCloudAiStream => 'جارٍ تجهيز التحقق السحابي المنقح…';
+
+  @override
+  String get cancellingAnalysis => 'جارٍ الإلغاء…';
+
+  @override
+  String get analysisCancelledNotice => 'تم إلغاء المراجعة.';
+
+  @override
+  String get cloudTimedOutNotice =>
+      'انتهت مهلة الذكاء الاصطناعي السحابي قبل الاستجابة. لم يتم إرسال أي محاولة إعادة تلقائية.';
+
+  @override
+  String get cloudFallbackBannerTitle =>
+      'تعذّر استخدام السحابة — عُرض الفحص المحلي';
+
+  @override
+  String get cloudFallbackBannerBody =>
+      'تعذّر التحليل السحابي، لذا جاءت هذه النتيجة من الماسح الحتمي المحلي في Enprive.';
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -633,6 +634,255 @@ void main() {
           analyseCalls.where((c) => c['cloudConsent'] == true).toList(),
           hasLength(1),
         );
+      },
+    );
+
+    testWidgets(
+      'D1/D2: Chrome URL share reaches PolicyUrlRetriever, cloud fallback explains local scan, and timeout/cancel restore UI cleanly without fallback receipt',
+      (WidgetTester tester) async {
+        final requestedUris = <Uri>[];
+        final retriever = PolicyUrlRetriever(
+          dnsLookup: fakeDns,
+          clientFactory: () => MockClient((request) async {
+            requestedUris.add(request.url);
+            return http.Response(
+              '''
+              <!doctype html>
+              <html>
+                <head><title>Ululab Privacy</title></head>
+                <body>
+                  <main>
+                    <h1>Privacy Policy</h1>
+                    <p>Our services do not include any third party advertising. A third party attribution platform called AppsFlyer collects the Android Advertising ID to measure parent-facing campaigns.</p>
+                    <p>For questions email info@ululab.com.</p>
+                  </main>
+                </body>
+              </html>
+              ''',
+              200,
+              headers: {'content-type': 'text/html; charset=utf-8'},
+            );
+          }),
+        );
+
+        var nextCloudMode = 'quota_429';
+        final cancelRequests = <String?>[];
+        final analyseCalls = <Map<String, dynamic>>[];
+
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+          switch (call.method) {
+            case 'getDeviceCapability':
+              return {
+                'isSupported': false,
+                'modelStatus': 'UNAVAILABLE',
+                'modelCategory': 'PREVIEW',
+                'apiLevel': 35,
+                'userMessage': 'Gemini Nano unavailable on RMX5303.',
+              };
+            case 'getInitialIncomingPayload':
+              return {
+                'kind': 'text_or_url',
+                'sourceAction': 'ACTION_SEND',
+                'text': 'https://ululab.com/privacy-policy/',
+                'subject': 'Privacy Policy - Ululab',
+              };
+            case 'getInitialSelectedText':
+              return null;
+            case 'cancelAnalysis':
+              cancelRequests.add((call.arguments as Map?)?['requestId'] as String?);
+              return true;
+            case 'analyseText':
+              final args = Map<String, dynamic>.from(call.arguments as Map);
+              analyseCalls.add(args);
+              if (args['requestedMode'] == 'ONLY_ON_DEVICE') {
+                return {
+                  'schemaVersion': 1,
+                  'requestId': args['requestId'],
+                  'status': 'unavailable',
+                  'inferenceSource': 'UNKNOWN',
+                  'message': 'On-device AI unavailable on this hardware.',
+                };
+              }
+              if (nextCloudMode == 'quota_429') {
+                return {
+                  'schemaVersion': 1,
+                  'requestId': args['requestId'],
+                  'status': 'failed',
+                  'inferenceSource': 'UNKNOWN',
+                  'errorCode': 'QuotaExceededException',
+                  'message': 'HTTP 429 quota exceeded',
+                };
+              }
+              if (nextCloudMode == 'timeout') {
+                throw PlatformException(
+                  code: 'TIMED_OUT',
+                  message: 'Cloud AI timed out before completing.',
+                  details: {'reason': 'timeout'},
+                );
+              }
+              return {
+                'schemaVersion': 1,
+                'requestId': args['requestId'],
+                'status': 'success',
+                'inferenceSource': 'IN_CLOUD',
+                'structuredOutput': {
+                  'overall_state': 'NO_CONCERN',
+                  'summary': 'Reviewed cleanly.',
+                  'concerns': [],
+                },
+              };
+          }
+          return null;
+        });
+
+        await tester.pumpWidget(
+          EnpriveApp(
+            showSplashOnLaunch: false,
+            urlRetriever: retriever,
+          ),
+        );
+        await _pumpAndFlush(tester, steps: 8);
+
+        // 1. Verify Chrome URL share reached PolicyUrlRetriever (NOT PNG unsupportedMime!)
+        expect(
+          requestedUris.any(
+            (u) => u.toString() == 'https://ululab.com/privacy-policy/',
+          ),
+          isTrue,
+        );
+        expect(find.byType(CloudConsentSheet), findsOneWidget);
+        expect(find.textContaining('Unsupported document format'), findsNothing);
+
+        // 2. Cloud fails with HTTP 429 -> deterministic fallback shows explicit explanation card
+        await tester.tap(find.text('Use cloud for this check'));
+        await _pumpAndFlush(tester, steps: 8);
+
+        expect(find.byType(ReviewResultScreen), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey<String>('cloud_fallback_notice_card')),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('Cloud analysis was unavailable'),
+          findsWidgets,
+        );
+        // Verified D3 accuracy on live extracted HTML too: negated ad claim skipped, AppsFlyer kept
+        expect(
+          find.textContaining('Our services do not include any third party advertising'),
+          findsNothing,
+        );
+        expect(
+          analyseCalls.where((c) => c['cloudConsent'] == true).toList(),
+          hasLength(1),
+        );
+
+        // 3. Navigate back & verify timeout cancellation propagates without creating a fallback receipt
+        await tester.tap(find.byTooltip('Close'));
+        await _pumpAndFlush(tester);
+        nextCloudMode = 'timeout';
+
+        await tester.tap(find.text('Paste terms or URL'));
+        await _pumpAndFlush(tester);
+        await tester.tap(find.text('Policy link'));
+        await _pumpAndFlush(tester);
+        await tester.enterText(
+          find.byType(TextField).last,
+          'https://ululab.com/privacy-policy/',
+        );
+        await tester.tap(find.text('Review on this phone'));
+        await _pumpAndFlush(tester, steps: 8);
+
+        expect(find.byType(CloudConsentSheet), findsOneWidget);
+        await tester.tap(find.text('Use cloud for this check'));
+        await _pumpAndFlush(tester, steps: 8);
+
+        expect(find.byType(ReviewResultScreen), findsNothing);
+        expect(
+          find.text('Cloud AI timed out before responding. No automatic retry was sent.'),
+          findsOneWidget,
+        );
+
+        // 4. Live in-flight user cancellation via ReviewProgressCard Cancel button
+        final stalledCloudCompleter = Completer<Map<String, dynamic>>();
+        nextCloudMode = 'stalled';
+        cancelRequests.clear();
+
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+          switch (call.method) {
+            case 'getDeviceCapability':
+              return {
+                'isSupported': false,
+                'modelStatus': 'UNAVAILABLE',
+                'modelCategory': 'PREVIEW',
+                'apiLevel': 35,
+                'userMessage': 'Gemini Nano unavailable on RMX5303.',
+              };
+            case 'getInitialIncomingPayload':
+            case 'getInitialSelectedText':
+              return null;
+            case 'cancelAnalysis':
+              cancelRequests.add((call.arguments as Map?)?['requestId'] as String?);
+              if (!stalledCloudCompleter.isCompleted) {
+                stalledCloudCompleter.completeError(
+                  PlatformException(
+                    code: 'CANCELLED',
+                    message: 'Analysis cancelled by user.',
+                    details: {'reason': 'user_cancelled'},
+                  ),
+                );
+              }
+              return true;
+            case 'analyseText':
+              final args = Map<String, dynamic>.from(call.arguments as Map);
+              analyseCalls.add(args);
+              if (args['requestedMode'] == 'ONLY_ON_DEVICE') {
+                return {
+                  'schemaVersion': 1,
+                  'requestId': args['requestId'],
+                  'status': 'unavailable',
+                  'inferenceSource': 'UNKNOWN',
+                  'message': 'On-device AI unavailable on this hardware.',
+                };
+              }
+              return stalledCloudCompleter.future;
+          }
+          return null;
+        });
+
+        await tester.tap(find.text('Paste terms or URL'));
+        await _pumpAndFlush(tester);
+        await tester.tap(find.text('Policy link'));
+        await _pumpAndFlush(tester);
+        await tester.enterText(
+          find.byType(TextField).last,
+          'https://ululab.com/privacy-policy/',
+        );
+        await tester.tap(find.text('Review on this phone'));
+        await _pumpAndFlush(tester, steps: 8);
+
+        expect(find.byType(CloudConsentSheet), findsOneWidget);
+        await tester.tap(find.text('Use cloud for this check'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+
+        expect(find.text('Checking policy with cloud AI.'), findsOneWidget);
+        expect(find.text('Reviewing on this phone.'), findsNothing);
+        final cancelBtn = find.byKey(
+          const ValueKey<String>('review_progress_cancel_btn'),
+        );
+        expect(cancelBtn, findsOneWidget);
+
+        await tester.ensureVisible(cancelBtn);
+        await tester.pump();
+        await tester.tap(cancelBtn);
+        await _pumpAndFlush(tester, steps: 6);
+
+        expect(cancelRequests.where((id) => id != null && id.isNotEmpty), isNotEmpty);
+        expect(find.byType(ReviewResultScreen), findsNothing);
+        expect(find.text('Check an app'), findsOneWidget);
+        expect(find.text('Review cancelled.'), findsOneWidget);
       },
     );
   });

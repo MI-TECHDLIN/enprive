@@ -584,4 +584,26 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get permissionNotGrantedBadge => '未許可';
+
+  @override
+  String get checkingPolicyWithCloudAi => 'クラウド AI でポリシーを確認中。';
+
+  @override
+  String get preparingCloudAiStream => '個人情報を伏せたクラウド確認を準備中…';
+
+  @override
+  String get cancellingAnalysis => 'キャンセル中…';
+
+  @override
+  String get analysisCancelledNotice => '確認をキャンセルしました。';
+
+  @override
+  String get cloudTimedOutNotice => 'クラウド AI の応答がタイムアウトしました。自動再試行は行っていません。';
+
+  @override
+  String get cloudFallbackBannerTitle => 'クラウド AI が利用できません — ローカルスキャンを表示';
+
+  @override
+  String get cloudFallbackBannerBody =>
+      'クラウド分析を利用できなかったため、この結果は Enprive のローカル決定論的スキャナーによって生成されました。';
 }

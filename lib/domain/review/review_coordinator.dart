@@ -5,6 +5,7 @@ import '../../widgets/enprive_provenance_chip.dart';
 import '../evidence/evidence_validator.dart';
 import '../permissions/permission_comparator.dart';
 import '../privacy/pii_redactor.dart';
+import 'deterministic_clause_scanner.dart';
 import 'policy_sufficiency.dart';
 import 'review_models.dart';
 
@@ -102,6 +103,7 @@ class ReviewCoordinator {
     String languageCode = 'en',
     PolicySourceSnapshot? sourceSnapshot,
     String? canonicalRedactedPayload,
+    String? requestId,
   }) async {
     final trimmed = policyText.trim();
     final resolvedSnapshot =
@@ -135,7 +137,9 @@ class ReviewCoordinator {
       );
     }
 
-    final reqId = 'rev_${DateTime.now().millisecondsSinceEpoch}';
+    final reqId = (requestId != null && requestId.trim().isNotEmpty)
+        ? requestId.trim()
+        : 'rev_${DateTime.now().millisecondsSinceEpoch}';
     final processSteps = <String>[];
     String? streamedThought;
     String? streamedSignature;
@@ -292,11 +296,16 @@ class ReviewCoordinator {
       // run deterministic local clause scan and record OFFLINE_DETERMINISTIC,
       // while distinguishing unavailable cloud inference from failed model inference.
       final isUnavailable = _isUnavailableCloudFailure(cloudResult);
+      final fallbackDiagKind = isUnavailable
+          ? ReviewDiagnosticKind.cloudUnavailableLocalFallback
+          : ReviewDiagnosticKind.failedModelInference;
       return _completeDeterministicPolicyScan(
         requestId: reqId,
         steps: processSteps,
         stage: 'offline_fallback',
-        label: 'Scanning policy clauses offline on this phone',
+        label: isUnavailable
+            ? 'Cloud analysis unavailable — running local deterministic scanner'
+            : 'Model inference failed — running local deterministic scanner',
         subjectTitle: subjectTitle,
         sourceLabel: sourceLabel,
         policyText: trimmed,
@@ -304,9 +313,7 @@ class ReviewCoordinator {
         thoughtSummary: streamedThought,
         thoughtSignature: streamedSignature,
         languageCode: languageCode,
-        fallbackDiagnosticKind: isUnavailable
-            ? ReviewDiagnosticKind.cloudUnavailableLocalFallback
-            : ReviewDiagnosticKind.failedModelInference,
+        fallbackDiagnosticKind: fallbackDiagKind,
         failureDetail: cloudResult.message,
         sourceSnapshot: resolvedSnapshot,
       );
@@ -561,8 +568,11 @@ class ReviewCoordinator {
     bool forceLocalManualFallback = false,
     String languageCode = 'en',
     String? intentHint,
+    String? requestId,
   }) async {
-    final reqId = 'deni_${DateTime.now().millisecondsSinceEpoch}';
+    final reqId = (requestId != null && requestId.trim().isNotEmpty)
+        ? requestId.trim()
+        : 'deni_${DateTime.now().millisecondsSinceEpoch}';
     final compositeInput =
         'Question: ${question.trim()}\nQuoted Clause: "${finding.exactExcerpt.trim()}"\n\n${snapshotText.trim()}';
     final processSteps = <String>[];
@@ -1003,129 +1013,33 @@ class ReviewCoordinator {
       );
     }
 
-    final splitSentences = policyText
-        .split(RegExp(r'(?<=[.!?])\s+'))
-        .map((s) => s.trim())
-        .where((s) => s.length >= 25)
-        .toList();
-    final sentences = splitSentences.isNotEmpty
-        ? splitSentences
-        : [policyText.trim()];
-
-    final findings = <VerifiedFinding>[];
-    int idx = 1;
-
-    for (final sentence in sentences) {
-      final lower = sentence.toLowerCase();
-
-      // Skip explicit non-collection reassurance clauses
-      final isNegatedReassurance =
-          lower.contains('we do not collect') ||
-          lower.contains('we never sell') ||
-          lower.contains('stored exclusively on this device') ||
-          lower.contains('do not integrate third-party advertising');
-      if (isNegatedReassurance) continue;
-
-      if (lower.contains('location') &&
-          (lower.contains('gps') ||
-              lower.contains('background') ||
-              lower.contains('precise') ||
-              lower.contains('share'))) {
-        findings.add(
-          _buildVerifiedLocalFinding(
-            id: 'local_$idx',
-            title: 'Tracks location even in the background',
-            category: FindingCategory.tracking,
-            severity: FindingSeverity.high,
-            excerpt: sentence,
-            explanation: 'The app can read your child’s exact GPS location even when it isn’t open on screen.',
-            unknown: 'The policy text doesn’t show whether location permission is actually granted on this phone.',
-            snapshotText: policyText,
-          ),
-        );
-        idx++;
-      } else if ((lower.contains('voice') ||
-              lower.contains('microphone') ||
-              lower.contains('biometric')) &&
-          (lower.contains('retain') ||
-              lower.contains('indefinitely') ||
-              lower.contains('train') ||
-              lower.contains('record'))) {
-        findings.add(
-          _buildVerifiedLocalFinding(
-            id: 'local_$idx',
-            title: 'Keeps child voice recordings to train AI',
-            category: FindingCategory.retention,
-            severity: FindingSeverity.high,
-            excerpt: sentence,
-            explanation: 'Your child’s voice recordings are kept indefinitely to train speech models unless a school admin requests deletion.',
-            unknown: 'It doesn’t say if a parent can delete recordings directly without going through a school admin.',
-            snapshotText: policyText,
-          ),
-        );
-        idx++;
-      } else if (lower.contains('advertising') ||
-          lower.contains('third-party') ||
-          lower.contains('behavioral promotions')) {
-        findings.add(
-          _buildVerifiedLocalFinding(
-            id: 'local_$idx',
-            title: 'Shares ad IDs with external partners',
-            category: FindingCategory.sharing,
-            severity: FindingSeverity.medium,
-            excerpt: sentence,
-            explanation: 'Ad partners can follow what your child taps in the app using a persistent advertising ID.',
-            unknown: 'It doesn’t name the ad networks or confirm whether child-directed ad limits are turned on.',
-            snapshotText: policyText,
-          ),
-        );
-        idx++;
-      } else if (lower.contains('disable core') ||
-          lower.contains('revoking') && lower.contains('permissions')) {
-        findings.add(
-          _buildVerifiedLocalFinding(
-            id: 'local_$idx',
-            title: 'Features may break if permissions are off',
-            category: FindingCategory.parentalConsent,
-            severity: FindingSeverity.low,
-            excerpt: sentence,
-            explanation: 'Turning off mic or location access in Android Settings may lock some classroom or homework tools.',
-            unknown: 'It doesn’t list which offline activities still work with permissions turned off.',
-            snapshotText: policyText,
-          ),
-        );
-        idx++;
-      }
-    }
+    final findings = DeterministicClauseScanner.scan(policyText);
 
     final ReviewOverallState overallState;
     final ReviewDiagnosticKind diagnosticKind;
-    final String summaryText;
-
     if (findings.isNotEmpty) {
       overallState = ReviewOverallState.reviewRecommended;
       diagnosticKind =
           fallbackDiagnosticKind ?? ReviewDiagnosticKind.validated;
-      summaryText = _defaultSummaryForState(overallState, findings.length);
     } else if (fallbackDiagnosticKind ==
         ReviewDiagnosticKind.failedModelInference) {
       overallState = ReviewOverallState.insufficientEvidence;
       diagnosticKind = ReviewDiagnosticKind.failedModelInference;
-      final detail = (failureDetail ?? '').trim();
-      summaryText =
-          'Model inference failed${detail.isNotEmpty ? ' ($detail)' : ''}. '
-          'A local keyword scan matched no common risk phrases, so a full review could not be completed.';
     } else if (fallbackDiagnosticKind ==
         ReviewDiagnosticKind.cloudUnavailableLocalFallback) {
       overallState = ReviewOverallState.insufficientEvidence;
       diagnosticKind = ReviewDiagnosticKind.cloudUnavailableLocalFallback;
-      summaryText =
-          'Cloud inference was unavailable. A deterministic local keyword scan matched no flagged clauses, but full semantic analysis did not run.';
     } else {
       overallState = ReviewOverallState.noConcern;
       diagnosticKind = ReviewDiagnosticKind.validated;
-      summaryText = _defaultSummaryForState(overallState, findings.length);
     }
+
+    final summaryText = formatDeterministicSummary(
+      overallState: overallState,
+      findingCount: findings.length,
+      fallbackDiagnosticKind: fallbackDiagnosticKind,
+      failureDetail: failureDetail,
+    );
 
     return PolicyReviewReceipt(
       id: 'local_${DateTime.now().millisecondsSinceEpoch}',
@@ -1145,43 +1059,6 @@ class ReviewCoordinator {
       diagnosticKind: diagnosticKind,
       sourceSnapshot: sourceSnapshot,
       languageCode: languageCode,
-    );
-  }
-
-  VerifiedFinding _buildVerifiedLocalFinding({
-    required String id,
-    required String title,
-    required FindingCategory category,
-    required FindingSeverity severity,
-    required String excerpt,
-    required String explanation,
-    required String unknown,
-    required String snapshotText,
-  }) {
-    final validated = EvidenceValidator.validateFinding(
-      rawFinding: {'id': id, 'exact_excerpt': excerpt},
-      snapshotText: snapshotText,
-      validEvidenceIds: {id},
-    );
-    final isMatched = validated['status'] == 'SOURCE_MATCHED';
-    return VerifiedFinding(
-      id: id,
-      title: title,
-      category: category,
-      severity: severity,
-      exactExcerpt: EvidenceValidator.normalize(excerpt),
-      explanation: explanation,
-      whatPolicySays:
-          'Exact match found in this policy (${EvidenceValidator.normalize(excerpt).length} chars).',
-      whatAndroidReports: 'Text-only check. Pick this app under Check an app to see what Android actually allows.',
-      unknowns: [unknown],
-      status: isMatched
-          ? EvidenceStatus.sourceMatched
-          : EvidenceStatus.unverified,
-      contextWindow: EvidenceValidator.extractContextWindow(
-        quote: excerpt,
-        snapshotText: snapshotText,
-      ),
     );
   }
 
@@ -1238,18 +1115,6 @@ class ReviewCoordinator {
       'HIGH' => FindingSeverity.high,
       'LOW' => FindingSeverity.low,
       _ => FindingSeverity.medium,
-    };
-  }
-
-  static String _defaultSummaryForState(
-    ReviewOverallState state,
-    int findingCount,
-  ) {
-    return switch (state) {
-      ReviewOverallState.reviewRecommended =>
-        '$findingCount ${findingCount == 1 ? 'part of this policy needs' : 'parts of this policy need'} a closer look before a child uses this app.',
-      ReviewOverallState.noConcern => 'No data sharing, tracking, or long-term retention clauses stood out in the text we reviewed.',
-      ReviewOverallState.insufficientEvidence => 'There wasn’t enough clear policy text here to verify what the app collects.',
     };
   }
 }

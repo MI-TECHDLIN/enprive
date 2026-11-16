@@ -178,5 +178,12 @@
   "copyDigestBtn": "ダイジェストをコピー",
   "digestCopiedMsg": "スナップショットダイジェストをコピーしました",
   "permissionGrantedBadge": "許可済み",
-  "permissionNotGrantedBadge": "未許可"
+  "permissionNotGrantedBadge": "未許可",
+  "checkingPolicyWithCloudAi": "クラウド AI でポリシーを確認中。",
+  "preparingCloudAiStream": "個人情報を伏せたクラウド確認を準備中…",
+  "cancellingAnalysis": "キャンセル中…",
+  "analysisCancelledNotice": "確認をキャンセルしました。",
+  "cloudTimedOutNotice": "クラウド AI の応答がタイムアウトしました。自動再試行は行っていません。",
+  "cloudFallbackBannerTitle": "クラウド AI が利用できません — ローカルスキャンを表示",
+  "cloudFallbackBannerBody": "クラウド分析を利用できなかったため、この結果は Enprive のローカル決定論的スキャナーによって生成されました。"
 }
