@@ -1321,8 +1321,53 @@
   - `flutter build apk --debug --target-platform android-arm64`: Built `build/app/outputs/flutter-apk/app-debug.apk` cleanly.
   - `git diff --check`: **0 issues**.
 - **Next Immediate Action & Recommended Model**:
-  - Await D5.3-B review before starting D5.3-C (`InstalledAppPickerSheet` redesign) or D5.3-D (`UnifiedPolicyIntakeSheet`). Do not commit or push yet.
+  - Committed (`5d21de73dc502b122f1c57350030090148e698b7`) and pushed D5.3-B to `origin/feature/m3-expressive-rebrand`, followed by D5.3-C below.
   - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+## Iteration 39: D5.3-C — Installed App Picker Redesign (2026-11-18)
+
+- **Branch / Commit State**: `feature/m3-expressive-rebrand` atop `5d21de7` (uncommitted D5.3-C working tree awaiting review; zero commits/pushes made)
+- **What Was Built & Modified**:
+  1. **Redesigned `InstalledAppPickerSheet` (`lib/widgets/installed_app_picker_sheet.dart`)**:
+     - Added pure `InstalledAppPickerModel` helpers (`latestSavedReceiptByPackage`, `statusForPackage`, `recentCheckedApps`, `filterApps`, `toIdentityCandidates` mapping to D5.3-B `AppIdentityCandidate`) and enums `InstalledAppFilter` / `InstalledAppReviewStatus`.
+     - Removed the duplicate full EduTrack Classroom and CalmMath Kids bento cards when real installed applications exist; retained a single compact optional sample action (`Key('app_picker_empty_sample_action')`) only when `listLaunchableApps()` returns an empty list and sample policy text is supplied.
+     - Removed the silent `.take(25)` cap and switched the app list from eager `Column` cards inside `ListView` to a lazy `SliverList.builder` inside `CustomScrollView` with a pinned `M3ESearchBar` and wrapped `EnpriveFilterChip` filters (`All apps`, `Downloaded`, `System`) that remain accessible while scrolling large lists without rescanning `PackageManager`.
+     - Rendered transparent application rows combining `InstalledAppIcon` (cached), wrapped/ellipsized app name, LTR full package identifier, neutral receipt-backed status (`Policy review saved`, `Permissions inspected`, `Not reviewed`), and RTL-mirrored chevron, with `48dp` minimum interactive touch targets and compact `<600dp` (`16dp` margins) / expanded (`720dp` max width) responsive rules.
+     - Added in-memory **Recently checked** section (up to 3 unique installed packages sorted by latest saved receipt `createdAt`, excluding standalone and synthetic sample receipts, hidden during active search/filtering).
+  2. **Persisted Receipt Wiring (`lib/main.dart`, `lib/screens/companion_screen.dart`)**:
+     - Passed `savedReceipts` from `HomeScreen` (`_savedReceipts`) and `CompanionScreen` (`widget.savedReceipts` — persisted receipts only, excluding unsaved session drafts) to `InstalledAppPickerSheet.show(...)`.
+  3. **Localization Template Keys (`lib/l10n/app_en.arb`, regenerated `lib/l10n/app_localizations*.dart` & `untranslated_messages.json`)**:
+     - Added 10 template English ARB keys (`appPickerFilterAll`, `appPickerFilterDownloaded`, `appPickerFilterSystem`, `appPickerRecentlyChecked`, `appPickerStatusPolicySaved`, `appPickerStatusPermissionsInspected`, `appPickerStatusNotReviewed`, `appPickerSearchHint`, `appPickerEmptyInstalledTitle`, `appPickerEmptyInstalledBody`) and regenerated localizations via `flutter gen-l10n` without adding unreviewed machine translations to the other 11 `.arb` files.
+  4. **Regression Tests (`test/installed_app_picker_sheet_test.dart`, `test/theme_and_deni_lod_test.dart`, `test/quick_settings_companion_test.dart`)**:
+     - Added comprehensive tests covering empty state + compact optional sample action, absence of duplicate synthetic cards when apps exist, lazy 120-app rendering without rescanning, name & package search, Downloaded & System filtering, Recently checked deduplication/ordering/3-cap, neutral receipt statuses + `AppIdentityCandidate` conversion, distinguishable same-name apps, `360dp`/`900dp`/`200%` text scale + `>=48dp` targets, Arabic RTL, Light/Dark WCAG AA (`>=4.5:1`) contrast, and `AndroidManifest.xml` non-`QUERY_ALL_PACKAGES` guard.
+- **Challenges & Root-Cause Fixes**:
+  - Moving `M3ESearchBar` into the pinned header placed `EditableText`'s internal horizontal `Scrollable` before `CustomScrollView` in tree order, so explicit `find.descendant(of: find.byType(CustomScrollView), matching: find.byType(Scrollable))` keeps scroll tests targeting the vertical app list; `M3EMaterialApp` requires `EnpriveM3ETheme.localizationsDelegates` (modern + legacy Material localization delegates) for Arabic locale rendering.
+- **Verification Status**:
+  - `flutter analyze`: **0 issues**
+  - `flutter test`: **162 / 162 passed** (`test/installed_app_picker_sheet_test.dart` + all existing suites)
+  - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks --console=plain`: **48 / 48 passed** (`CompanionTileAndResolverTest`: 19, `DocumentTextExtractorTest`: 4, `HybridAiPolicyTest`: 17, `IncomingShareRouterTest`: 8)
+  - `flutter build apk --debug --target-platform android-arm64`: Built cleanly.
+- **Next Immediate Action & Recommended Model**:
+  - Await D5.3-C review before starting D5.3-D (`UnifiedPolicyIntakeSheet`). Do not commit or push yet.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+### Iteration 39a: D5.3-C — Accessibility & State-Synchronization Hardening (P1-1, P2-1, P2-2, P2-3) (2026-11-18/19)
+
+- **Branch / Commit State**: `feature/m3-expressive-rebrand` atop `5d21de7` (uncommitted; zero commits/pushes). Model: Claude Opus 5.5.
+- **What Was Changed**:
+  1. **P1-1 Duplicate TalkBack announcements** (`installed_app_picker_sheet.dart`): `M3ECard` forwards the curated `semanticLabel` with `excludeSemantics: false`, so child `Text` widgets merged into the button node. Wrapped the visual children of `_InstalledAppRowTile` and `_CompactEmptySampleAction` in `ExcludeSemantics`; button role and tap action preserved on the parent.
+     - Before (observed via `tester.ensureSemantics()`): `"Talkback Notes, com.example.talkback, Not reviewed\nTalkback Notes\ncom.example.talkback\nNot reviewed"` and `"Try a sample app check, Synthetic example\nTry a sample app check\n…"`.
+     - After: `"Talkback Notes, com.example.talkback, Not reviewed"` / `"Try a sample app check, Synthetic example"`, `isButton`, `SemanticsAction.tap`, each element announced once.
+  2. **P2-1 Companion Recently-checked freshness** (`companion_screen.dart`): added `_persistedReceiptsForPicker()` merging `widget.savedReceipts` with session receipts passing `_isSessionReceiptPersisted` (dedup by ID); unsaved drafts excluded. Negative control: test fails when reverted to `widget.savedReceipts`.
+  3. **P2-2 Insufficient policy material status**: new `InstalledAppPickerModel.hasCompletedPolicyReview` (only `validated` / `cloudUnavailableLocalFallback`, non-empty `snapshotText`, not permission-only). Used by `statusForPackage` and both equal-timestamp tie-breakers; everything else with a receipt reports `Permissions inspected`.
+  4. **P2-3 Coverage**: `receiptRepository` fallback when `savedReceipts` omitted; empty app list with empty sample text hides sample action; with valid sample text shows it.
+  5. **Localization manifest**: `untranslated_messages.json` contains exactly the 10 new picker keys for all 11 secondary locales; secondary `.arb` files unchanged; retained as tracked manifest for D5.3-F.
+- **Tests added**: `test/installed_app_picker_sheet_test.dart` 16–28 (TalkBack ×2, P2-2 ×8, P2-3 ×3); `test/receipt_save_state_machine_test.dart` 13 (P2-1, additive-only diff with opt-in `withLaunchableApps` mock).
+- **Challenges**: `dart format` on `receipt_save_state_machine_test.dart` reformatted 113 unrelated lines; reconstructed an additive-only version from HEAD (verified identical after formatting). `companion_screen.dart` edited via script to avoid IDE format churn (+16 lines only).
+- **Verification Status**: `git diff --check` clean; `flutter analyze` 0 issues; `flutter test` **176 / 176 passed**; Gradle `:app:testDebugUnitTest --rerun-tasks` **48 / 48 passed** (19 / 4 / 17 / 8); debug arm64 APK build recorded in the hardening report. Physical-device TalkBack verification **not executed** (widget-test semantics only).
+- **Next**: Await D5.3-C commit authorization; then D5.3-D. Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
 
 ---
 

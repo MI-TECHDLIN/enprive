@@ -1,1 +1,144 @@
-{}
+{
+  "ar": [
+    "appPickerFilterAll",
+    "appPickerFilterDownloaded",
+    "appPickerFilterSystem",
+    "appPickerRecentlyChecked",
+    "appPickerStatusPolicySaved",
+    "appPickerStatusPermissionsInspected",
+    "appPickerStatusNotReviewed",
+    "appPickerSearchHint",
+    "appPickerEmptyInstalledTitle",
+    "appPickerEmptyInstalledBody"
+  ],
+
+  "de": [
+    "appPickerFilterAll",
+    "appPickerFilterDownloaded",
+    "appPickerFilterSystem",
+    "appPickerRecentlyChecked",
+    "appPickerStatusPolicySaved",
+    "appPickerStatusPermissionsInspected",
+    "appPickerStatusNotReviewed",
+    "appPickerSearchHint",
+    "appPickerEmptyInstalledTitle",
+    "appPickerEmptyInstalledBody"
+  ],
+
+  "es": [
+    "appPickerFilterAll",
+    "appPickerFilterDownloaded",
+    "appPickerFilterSystem",
+    "appPickerRecentlyChecked",
+    "appPickerStatusPolicySaved",
+    "appPickerStatusPermissionsInspected",
+    "appPickerStatusNotReviewed",
+    "appPickerSearchHint",
+    "appPickerEmptyInstalledTitle",
+    "appPickerEmptyInstalledBody"
+  ],
+
+  "fr": [
+    "appPickerFilterAll",
+    "appPickerFilterDownloaded",
+    "appPickerFilterSystem",
+    "appPickerRecentlyChecked",
+    "appPickerStatusPolicySaved",
+    "appPickerStatusPermissionsInspected",
+    "appPickerStatusNotReviewed",
+    "appPickerSearchHint",
+    "appPickerEmptyInstalledTitle",
+    "appPickerEmptyInstalledBody"
+  ],
+
+  "hi": [
+    "appPickerFilterAll",
+    "appPickerFilterDownloaded",
+    "appPickerFilterSystem",
+    "appPickerRecentlyChecked",
+    "appPickerStatusPolicySaved",
+    "appPickerStatusPermissionsInspected",
+    "appPickerStatusNotReviewed",
+    "appPickerSearchHint",
+    "appPickerEmptyInstalledTitle",
+    "appPickerEmptyInstalledBody"
+  ],
+
+  "it": [
+    "appPickerFilterAll",
+    "appPickerFilterDownloaded",
+    "appPickerFilterSystem",
+    "appPickerRecentlyChecked",
+    "appPickerStatusPolicySaved",
+    "appPickerStatusPermissionsInspected",
+    "appPickerStatusNotReviewed",
+    "appPickerSearchHint",
+    "appPickerEmptyInstalledTitle",
+    "appPickerEmptyInstalledBody"
+  ],
+
+  "ja": [
+    "appPickerFilterAll",
+    "appPickerFilterDownloaded",
+    "appPickerFilterSystem",
+    "appPickerRecentlyChecked",
+    "appPickerStatusPolicySaved",
+    "appPickerStatusPermissionsInspected",
+    "appPickerStatusNotReviewed",
+    "appPickerSearchHint",
+    "appPickerEmptyInstalledTitle",
+    "appPickerEmptyInstalledBody"
+  ],
+
+  "ko": [
+    "appPickerFilterAll",
+    "appPickerFilterDownloaded",
+    "appPickerFilterSystem",
+    "appPickerRecentlyChecked",
+    "appPickerStatusPolicySaved",
+    "appPickerStatusPermissionsInspected",
+    "appPickerStatusNotReviewed",
+    "appPickerSearchHint",
+    "appPickerEmptyInstalledTitle",
+    "appPickerEmptyInstalledBody"
+  ],
+
+  "pt": [
+    "appPickerFilterAll",
+    "appPickerFilterDownloaded",
+    "appPickerFilterSystem",
+    "appPickerRecentlyChecked",
+    "appPickerStatusPolicySaved",
+    "appPickerStatusPermissionsInspected",
+    "appPickerStatusNotReviewed",
+    "appPickerSearchHint",
+    "appPickerEmptyInstalledTitle",
+    "appPickerEmptyInstalledBody"
+  ],
+
+  "ru": [
+    "appPickerFilterAll",
+    "appPickerFilterDownloaded",
+    "appPickerFilterSystem",
+    "appPickerRecentlyChecked",
+    "appPickerStatusPolicySaved",
+    "appPickerStatusPermissionsInspected",
+    "appPickerStatusNotReviewed",
+    "appPickerSearchHint",
+    "appPickerEmptyInstalledTitle",
+    "appPickerEmptyInstalledBody"
+  ],
+
+  "zh": [
+    "appPickerFilterAll",
+    "appPickerFilterDownloaded",
+    "appPickerFilterSystem",
+    "appPickerRecentlyChecked",
+    "appPickerStatusPolicySaved",
+    "appPickerStatusPermissionsInspected",
+    "appPickerStatusNotReviewed",
+    "appPickerSearchHint",
+    "appPickerEmptyInstalledTitle",
+    "appPickerEmptyInstalledBody"
+  ]
+}

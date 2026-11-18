@@ -1245,6 +1245,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cloud analysis was unavailable, so this result came from Enprive’s local deterministic scanner.'**
   String get cloudFallbackBannerBody;
+
+  /// Filter chip showing all launchable installed apps
+  ///
+  /// In en, this message translates to:
+  /// **'All apps'**
+  String get appPickerFilterAll;
+
+  /// Filter chip showing user-downloaded apps
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get appPickerFilterDownloaded;
+
+  /// Filter chip showing pre-installed system apps
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get appPickerFilterSystem;
+
+  /// Section heading for up to three recently checked installed apps
+  ///
+  /// In en, this message translates to:
+  /// **'Recently checked'**
+  String get appPickerRecentlyChecked;
+
+  /// Neutral status indicator when a policy review receipt is saved for this app
+  ///
+  /// In en, this message translates to:
+  /// **'Policy review saved'**
+  String get appPickerStatusPolicySaved;
+
+  /// Neutral status indicator when only device permissions were inspected and saved
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions inspected'**
+  String get appPickerStatusPermissionsInspected;
+
+  /// Neutral status indicator when no saved receipt exists for this app
+  ///
+  /// In en, this message translates to:
+  /// **'Not reviewed'**
+  String get appPickerStatusNotReviewed;
+
+  /// Search input placeholder in the installed app picker
+  ///
+  /// In en, this message translates to:
+  /// **'Search by app or package name…'**
+  String get appPickerSearchHint;
+
+  /// Title shown when Android reports no launchable installed applications
+  ///
+  /// In en, this message translates to:
+  /// **'No installed apps available'**
+  String get appPickerEmptyInstalledTitle;
+
+  /// Body shown when no launchable apps are available on the device
+  ///
+  /// In en, this message translates to:
+  /// **'No launchable apps were reported on this device.'**
+  String get appPickerEmptyInstalledBody;
 }
 
 class _AppLocalizationsDelegate

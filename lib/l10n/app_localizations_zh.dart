@@ -603,4 +603,35 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cloudFallbackBannerBody => '云端分析不可用，因此本结果由 Enprive 本地确定性扫描器生成。';
+
+  @override
+  String get appPickerFilterAll => 'All apps';
+
+  @override
+  String get appPickerFilterDownloaded => 'Downloaded';
+
+  @override
+  String get appPickerFilterSystem => 'System';
+
+  @override
+  String get appPickerRecentlyChecked => 'Recently checked';
+
+  @override
+  String get appPickerStatusPolicySaved => 'Policy review saved';
+
+  @override
+  String get appPickerStatusPermissionsInspected => 'Permissions inspected';
+
+  @override
+  String get appPickerStatusNotReviewed => 'Not reviewed';
+
+  @override
+  String get appPickerSearchHint => 'Search by app or package name…';
+
+  @override
+  String get appPickerEmptyInstalledTitle => 'No installed apps available';
+
+  @override
+  String get appPickerEmptyInstalledBody =>
+      'No launchable apps were reported on this device.';
 }

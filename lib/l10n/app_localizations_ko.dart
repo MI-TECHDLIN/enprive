@@ -612,4 +612,35 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get cloudFallbackBannerBody =>
       '클라우드 분석을 사용할 수 없어 Enprive의 로컬 결정적 스캐너 결과를 표시하고 있습니다.';
+
+  @override
+  String get appPickerFilterAll => 'All apps';
+
+  @override
+  String get appPickerFilterDownloaded => 'Downloaded';
+
+  @override
+  String get appPickerFilterSystem => 'System';
+
+  @override
+  String get appPickerRecentlyChecked => 'Recently checked';
+
+  @override
+  String get appPickerStatusPolicySaved => 'Policy review saved';
+
+  @override
+  String get appPickerStatusPermissionsInspected => 'Permissions inspected';
+
+  @override
+  String get appPickerStatusNotReviewed => 'Not reviewed';
+
+  @override
+  String get appPickerSearchHint => 'Search by app or package name…';
+
+  @override
+  String get appPickerEmptyInstalledTitle => 'No installed apps available';
+
+  @override
+  String get appPickerEmptyInstalledBody =>
+      'No launchable apps were reported on this device.';
 }

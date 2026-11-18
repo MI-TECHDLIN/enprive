@@ -1474,6 +1474,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
       bridge: _bridge,
       eduTrackPolicyText: eduText,
       calmMathPolicyText: calmText,
+      savedReceipts: List<PolicyReviewReceipt>.unmodifiable(_savedReceipts),
     );
     if (selected == null || !mounted) return;
 
