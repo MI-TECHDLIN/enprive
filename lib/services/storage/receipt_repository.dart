@@ -78,11 +78,40 @@ class ReceiptRepository {
           // Skip malformed historical rows safely
         }
       }
+      _memoryFallback
+        ..clear()
+        ..addEntries(receipts.map((r) => MapEntry(r.id, r)));
       return receipts;
     } catch (_) {
       final list = _memoryFallback.values.toList();
       list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return list;
+    }
+  }
+
+  /// Synchronously checks whether a receipt with [id] is present in the
+  /// synchronized local repository cache.
+  bool containsReceiptSync(String id) => _memoryFallback.containsKey(id);
+
+  /// Synchronously retrieves a cached persisted receipt by [id], if loaded.
+  PolicyReviewReceipt? getReceiptSync(String id) => _memoryFallback[id];
+
+  /// Checks local repository storage (in-memory or SQLite) for a receipt with [id].
+  Future<bool> containsReceipt(String id) async {
+    if (_memoryFallback.containsKey(id)) return true;
+    final db = await _getDatabase();
+    if (db == null) return false;
+    try {
+      final rows = await db.query(
+        _tableName,
+        columns: ['id'],
+        where: 'id = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+      return rows.isNotEmpty;
+    } catch (_) {
+      return _memoryFallback.containsKey(id);
     }
   }
 

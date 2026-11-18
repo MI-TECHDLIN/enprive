@@ -1258,16 +1258,46 @@
   - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks --console=plain`: **43 / 43 passed** (`0` failed, `0` skipped)
   - `flutter build apk --debug --target-platform android-arm64`: Built & installed onto `emulator-5554` (`RMX5303` physical walkthrough Sections A & C completed pre-fix; post-fix live verification completed on `emulator-5554` across Light/Dark themes, Arabic RTL, `360dp`, `200%` text scaling, `900dp` rail breakpoint, Companion `411dp`, and 1/2/all-card filters).
 - **Next Immediate Action & Recommended Model**:
-  - Await user commit authorization for D5.2 on `feature/m3-expressive-rebrand` before starting D5.3.
+  - Committed on `feature/m3-expressive-rebrand` (`757a970`) and pushed to `origin/feature/m3-expressive-rebrand`, followed by D5.3 Read-Only Audit and authorized D5.3-A implementation below.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+## Iteration 37: D5.3-A — Explicit Receipt Persistence & Lifecycle Integrity (2026-11-18)
+
+- **Branch / Commit State**: `feature/m3-expressive-rebrand` atop `757a970` (uncommitted D5.3-A working tree awaiting review; zero commits/pushes made)
+- **Model(s)**: Orchestrator / Gemini 4 Argon (Planning) + Gemini Flash (Execution)
+- **What Was Built & Modified**:
+  1. **Explicit Receipt Lifecycle & Historical Lineage (`lib/domain/review/review_models.dart`, `lib/services/storage/receipt_repository.dart`)**:
+     - Added `ReceiptLifecycleState` (`draft`, `saved`, `modifiedSavedDraft`, `saving`, `saveFailure`, `discarded`, `deleted`), `PolicyReviewReceipt.supersedesReceiptId` (stored inside `payload_json` with zero SQLite schema changes), and `PolicyReviewReceipt.copyWith(...)`.
+     - Synchronized `ReceiptRepository._memoryFallback` on `loadReceipts()` and added `containsReceiptSync`, `getReceiptSync`, and `containsReceipt` so `ReceiptRepository` serves as the persistence source of truth across callers.
+  2. **Unsaved Exit Confirmation (`lib/widgets/review/unsaved_review_exit_sheet.dart`)**:
+     - Created M3 Expressive `UnsavedReviewExitSheet` (`"Save this privacy review?"`, `"Save to Receipts"`, `"Discard without saving"`, `"Continue reviewing"`).
+  3. **Removed Auto-Save & Protected Historical Receipts (`lib/screens/review_result_screen.dart`)**:
+     - Removed silent `widget.onSaveReceipt?.call(updated)` from `_openAttachPolicySheet`, assigned distinct non-colliding draft IDs with `supersedesReceiptId`, added `"Attach updated privacy policy"` for app-linked receipts, added explicit Delete (`Key('review_result_delete_btn')`), guarded concurrent Save operations (`ReceiptLifecycleState.saving`), retained drafts on save error (`Key('review_result_save_failure_banner')`), and integrated `PopScope` + Close (`X`) with duplicate-prompt suppression.
+  4. **Synchronized Callers & Companion Explicit Save (`lib/main.dart`, `lib/screens/receipts_screen.dart`, `lib/screens/companion_screen.dart`)**:
+     - Passed `onSaveReceipt`, `onDeleteReceipt`, `receiptRepository`, `isReceiptSaved`, and `isInitiallySaved` across all 4 `ReviewResultScreen` entry points (`_openReviewResult`, `Recently Reviewed`, `_showCheckAppModal`, `ReceiptsScreen`) plus `EnpriveApp(..., receiptRepository:)`.
+     - Removed auto-save in `CompanionScreen._attachAndAnalyzePolicy`, kept Companion policy drafts strictly in `_sessionReceipts`, added explicit `"Save receipt to Enprive"` UI (`Key('companion_receipt_persistence_card')` / `Key('companion_save_receipt_btn')`), and preserved Quick Settings `returnToPreviousApp()` (`moveTaskToBack`).
+  5. **Regression Tests (`test/receipt_save_state_machine_test.dart`, `test/p0_blocker_closure_widget_test.dart`, `test/widget_test.dart`)**:
+     - Added 12 dedicated scenarios covering all D5.3-A lifecycle states, historical snapshot protection, System Back/`X` exit flows, save failure draft retention, and Companion session isolation; updated 6 existing unsaved `ReviewResultScreen` Close taps to confirm `"Discard without saving"`.
+- **Challenges & Root-Cause Fixes**:
+  - Companion tests exposed `A TextEditingController was used after being disposed` and bottom `RenderFlex` overflow in `_openAttachPolicyModal` caused by disposing local controllers before the modal close animation finished; refactored into a stateful `_CompanionAttachPolicySheet` with `SingleChildScrollView` and `SafeArea`.
+- **Verification Status**:
+  - `flutter analyze`: **0 issues** (`4.2s`)
+  - `flutter test`: **119 / 119 passed** (`107` existing + `12` new scenarios in `test/receipt_save_state_machine_test.dart`)
+  - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks --console=plain`: **43 / 43 passed** (`0` failed, `0` skipped)
+  - `flutter build apk --debug --target-platform android-arm64`: Built `build/app/outputs/flutter-apk/app-debug.apk` (`151M`) cleanly.
+- **Next Immediate Action & Recommended Model**:
+  - Await user review of D5.3-A before implementing D5.3-B (`InstalledAppPickerSheet` redesign, `UnifiedPolicyIntakeSheet`, association evaluator, native helpers, or ARB localization). Do not commit or push.
   - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
 
 ---
 
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
-1. **D5.3 Core Flow Streamlining & D5.4 Offline Learn MVP**
+1. **D5.3 Core Flow Streamlining (D5.3-B+) & D5.4 Offline Learn MVP**
    - **Assigned Model**: **Gemini 4 Argon / Claude Opus 5.5**
-   - **Scope**: Consolidate the 3 duplicate policy-intake sheets into `UnifiedPolicyIntakeSheet`, add Play Store / App Settings / two-way App↔Policy Compare links, clean up `InstalledAppPickerSheet`, sync explicit Save state, localize Companion/Settings strings across 12 ARBs, then build the offline Learn MVP (`8–12` micro-lessons + `4–6` interactive scenarios + local progress).
+   - **Scope**: Redesign `InstalledAppPickerSheet`, add `AppPolicyAssociationEvaluator` + Play Store/App Settings native intents, consolidate into `UnifiedPolicyIntakeSheet`, complete two-way App↔Policy links, localize Companion/Settings strings across 12 ARBs, then build the offline Learn MVP (`8–12` micro-lessons + `4–6` interactive scenarios + local progress).
 2. **Pre-Release Sign-Off & Phase B Production Signing / Play Integrity**
    - **Assigned Model**: **Gemini 4 Argon / Claude Opus 5.5**
    - **Scope**: Complete physical `RMX5303` walkthrough, standalone `dev.enprive.qa.permissionprobe` runtime dialog E2E, interactive keyguard PIN check, and signed release + Play Integrity App Check verification.

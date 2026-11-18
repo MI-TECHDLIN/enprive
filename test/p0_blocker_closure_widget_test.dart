@@ -162,6 +162,8 @@ void main() {
         // Return to Home
         await tester.tap(find.byTooltip('Close'));
         await _pumpAndFlush(tester);
+        await tester.tap(find.text('Discard without saving'));
+        await _pumpAndFlush(tester);
 
         // 2) Enter CalmMath domain URL serving real "GreenLeaf Journal" HTML -> analyzes GreenLeaf HTML, NOT CalmMath fixture
         await tester.tap(find.text('Paste terms or URL'));
@@ -288,6 +290,8 @@ void main() {
 
         await tester.tap(find.byTooltip('Close'));
         await _pumpAndFlush(tester);
+        await tester.tap(find.text('Discard without saving'));
+        await _pumpAndFlush(tester);
 
         // 2) Password-protected PDF -> INSUFFICIENT_EVIDENCE with manual paste fallback prompt
         returnCorruptDoc = true;
@@ -380,6 +384,8 @@ void main() {
         expect(find.textContaining('Shared Browser App'), findsWidgets);
 
         await tester.tap(find.byTooltip('Close'));
+        await _pumpAndFlush(tester);
+        await tester.tap(find.text('Discard without saving'));
         await _pumpAndFlush(tester);
 
         // Now deliver a warm incoming ACTION_SEND DOCX intent via onIncomingPayload channel push
@@ -779,6 +785,8 @@ void main() {
 
         // 3. Navigate back & verify timeout cancellation propagates without creating a fallback receipt
         await tester.tap(find.byTooltip('Close'));
+        await _pumpAndFlush(tester);
+        await tester.tap(find.text('Discard without saving'));
         await _pumpAndFlush(tester);
         nextCloudMode = 'timeout';
 

@@ -13,6 +13,7 @@ import '../services/intake/policy_intake_helper.dart';
 import '../services/network/policy_url_retriever.dart';
 import '../services/platform/companion_bridge.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
+import '../services/storage/receipt_repository.dart';
 import '../widgets/cloud_consent_sheet.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_provenance_chip.dart';
@@ -35,6 +36,7 @@ class CompanionScreen extends StatefulWidget {
   final PolicyUrlRetriever urlRetriever;
   final List<PolicyReviewReceipt> savedReceipts;
   final Future<void> Function(PolicyReviewReceipt receipt)? onSaveReceipt;
+  final ReceiptRepository? receiptRepository;
   final String languageCode;
 
   const CompanionScreen({
@@ -46,6 +48,7 @@ class CompanionScreen extends StatefulWidget {
     required this.urlRetriever,
     required this.savedReceipts,
     this.onSaveReceipt,
+    this.receiptRepository,
     this.languageCode = 'en',
   });
 
@@ -76,6 +79,9 @@ class _CompanionScreenState extends State<CompanionScreen>
   bool _showUnsureGuide = false;
 
   final List<PolicyReviewReceipt> _sessionReceipts = [];
+  final Set<String> _persistedReceiptIds = <String>{};
+  bool _isSavingSessionReceipt = false;
+  String? _companionSaveError;
   bool _isAttachingPolicy = false;
   bool _isCloudPolicyInFlight = false;
   bool _isCancellingPolicy = false;
@@ -98,6 +104,7 @@ class _CompanionScreenState extends State<CompanionScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _sessionReceipts.addAll(widget.savedReceipts);
+    _persistedReceiptIds.addAll(widget.savedReceipts.map((r) => r.id));
     _isDeviceLocked = widget.invocation?.deviceLocked ?? false;
     unawaited(_bootstrapCompanionContext());
   }
@@ -381,6 +388,66 @@ class _CompanionScreenState extends State<CompanionScreen>
     );
   }
 
+  bool _isSessionReceiptPersisted(String receiptId) =>
+      _persistedReceiptIds.contains(receiptId) ||
+      (widget.receiptRepository?.containsReceiptSync(receiptId) ?? false);
+
+  bool get _canPersistSessionReceipts =>
+      widget.onSaveReceipt != null || widget.receiptRepository != null;
+
+  Future<void> _saveCompanionSessionReceipt(
+    PolicyReviewReceipt receipt,
+  ) async {
+    if (_isSavingSessionReceipt ||
+        _isSessionReceiptPersisted(receipt.id) ||
+        !_canPersistSessionReceipts) {
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() {
+      _isSavingSessionReceipt = true;
+      _companionSaveError = null;
+    });
+
+    try {
+      if (widget.onSaveReceipt != null) {
+        await widget.onSaveReceipt!(receipt);
+      } else if (widget.receiptRepository != null) {
+        await widget.receiptRepository!.saveReceipt(receipt);
+      }
+      if (!mounted) return;
+      setState(() {
+        _isSavingSessionReceipt = false;
+        _persistedReceiptIds.add(receipt.id);
+        _companionSaveError = null;
+      });
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Saved to local Receipts.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    } catch (_) {
+      if (!mounted) return;
+      const err = 'Could not save receipt. Kept in this session — try again.';
+      setState(() {
+        _isSavingSessionReceipt = false;
+        _companionSaveError = err;
+      });
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(err),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    }
+  }
+
   PolicyReviewReceipt? _activeMatchedReceipt() {
     return CompanionPolicyResolver.findVerifiedReceiptForPackage(
       _confirmedPackageName,
@@ -403,115 +470,16 @@ class _CompanionScreenState extends State<CompanionScreen>
 
   Future<void> _openAttachPolicyModal() async {
     if (_isAttachingPolicy || _confirmedPackageName == null) return;
-    final urlController = TextEditingController();
-    final textController = TextEditingController();
-    var isUrlMode = true;
+    final appDisplay = _confirmedAppLabel ?? _confirmedPackageName!;
 
     final input = await showModalBottomSheet<({bool isUrl, String value})>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (sheetContext, setSheetState) {
-            final m3e = EnpriveM3ETheme.of(sheetContext);
-            final scheme = m3e.colorScheme;
-            final surfaces = sheetContext.enpriveSurfaces;
-
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: surfaces.card,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(28),
-                  ),
-                  border: Border.all(color: surfaces.hairlineBorder),
-                ),
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Verify policy for ${_confirmedAppLabel ?? _confirmedPackageName}',
-                      style: m3e.typography.emphasized.titleLarge.copyWith(
-                        color: scheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Paste the developer privacy policy URL or excerpt. Enprive verifies quotes deterministically against this snapshot.',
-                      style: m3e.typeScale.bodyMedium.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ChoiceChip(
-                            label: const Text('Policy URL'),
-                            selected: isUrlMode,
-                            onSelected: (_) =>
-                                setSheetState(() => isUrlMode = true),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ChoiceChip(
-                            label: const Text('Paste text'),
-                            selected: !isUrlMode,
-                            onSelected: (_) =>
-                                setSheetState(() => isUrlMode = false),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: isUrlMode ? urlController : textController,
-                      minLines: isUrlMode ? 1 : 4,
-                      maxLines: isUrlMode ? 2 : 7,
-                      keyboardType: isUrlMode
-                          ? TextInputType.url
-                          : TextInputType.multiline,
-                      decoration: InputDecoration(
-                        hintText: isUrlMode
-                            ? 'https://developer.example/privacy'
-                            : 'Paste privacy policy paragraphs here...',
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    EnpriveTactileButton(
-                      label: isUrlMode ? 'Fetch & inspect policy' : 'Inspect pasted policy',
-                      onPressed: () {
-                        final val = (isUrlMode
-                                ? urlController.text
-                                : textController.text)
-                            .trim();
-                        if (val.isEmpty) return;
-                        Navigator.of(sheetContext).pop((
-                          isUrl: isUrlMode,
-                          value: val,
-                        ));
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+      builder: (_) => _CompanionAttachPolicySheet(appDisplayName: appDisplay),
     );
 
-    urlController.dispose();
-    textController.dispose();
     if (!mounted || input == null) return;
 
     await _attachAndAnalyzePolicy(isUrl: input.isUrl, rawInput: input.value);
@@ -656,12 +624,29 @@ class _CompanionScreenState extends State<CompanionScreen>
       }
 
       if (outcome.receipt != null) {
-        final saved = outcome.receipt!;
-        _sessionReceipts.removeWhere((r) => r.id == saved.id);
-        _sessionReceipts.insert(0, saved);
-        await widget.onSaveReceipt?.call(saved);
+        final rawDraft = outcome.receipt!;
+        final baseline = CompanionPolicyResolver.findVerifiedReceiptForPackage(
+          pkg,
+          widget.savedReceipts,
+        );
+        final distinctId = (rawDraft.id == baseline?.id ||
+                _isSessionReceiptPersisted(rawDraft.id))
+            ? 'comp_draft_${DateTime.now().microsecondsSinceEpoch}'
+            : rawDraft.id;
+        final draft = rawDraft.copyWith(
+          id: distinctId,
+          supersedesReceiptId: baseline?.id,
+        );
+        // Privacy Guardrail: Never auto-save Companion policy reviews to SQLite.
+        // Hold the draft in session memory until the user explicitly taps
+        // "Save receipt to Enprive".
+        _sessionReceipts.removeWhere((r) => r.id == draft.id);
+        _sessionReceipts.insert(0, draft);
         if (mounted) {
-          setState(() => _deniAnswer = null);
+          setState(() {
+            _deniAnswer = null;
+            _companionSaveError = null;
+          });
         }
       }
     } on HybridOperationCancelledException catch (e) {
@@ -922,6 +907,18 @@ class _CompanionScreenState extends State<CompanionScreen>
                               surfaces,
                               semantics,
                             ),
+                            if (_buildActiveExplanation() == null &&
+                                _activeMatchedReceipt() != null) ...[
+                              const SizedBox(height: 12),
+                              _buildCompanionReceiptPersistenceCard(
+                                context,
+                                _activeMatchedReceipt()!,
+                                m3e,
+                                scheme,
+                                surfaces,
+                                semantics,
+                              ),
+                            ],
                             const SizedBox(height: 16),
                             _buildPermissionSelectorSection(
                               context,
@@ -1843,6 +1840,18 @@ class _CompanionScreenState extends State<CompanionScreen>
                   const SizedBox(height: 8),
                 ],
               ],
+              if (explanation.hasVerifiedPolicy &&
+                  explanation.matchedReceipt != null) ...[
+                const SizedBox(height: 12),
+                _buildCompanionReceiptPersistenceCard(
+                  context,
+                  explanation.matchedReceipt!,
+                  m3e,
+                  scheme,
+                  surfaces,
+                  semantics,
+                ),
+              ],
               if (!explanation.hasVerifiedPolicy &&
                   _confirmedPackageName != null) ...[
                 const SizedBox(height: 10),
@@ -2011,6 +2020,109 @@ class _CompanionScreenState extends State<CompanionScreen>
     );
   }
 
+  Widget _buildCompanionReceiptPersistenceCard(
+    BuildContext context,
+    PolicyReviewReceipt receipt,
+    M3EThemeData m3e,
+    M3EColorScheme scheme,
+    EnpriveSurfaceTokens surfaces,
+    EnpriveSemanticColors semantics,
+  ) {
+    final isSaved = _isSessionReceiptPersisted(receipt.id);
+
+    return Container(
+      key: const Key('companion_receipt_persistence_card'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isSaved
+            ? semantics.noConcern.background.withValues(alpha: 0.45)
+            : surfaces.cardMuted,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isSaved
+              ? semantics.noConcern.border
+              : surfaces.hairlineBorder,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                isSaved ? LucideIcons.bookmarkCheck : LucideIcons.bookmarkPlus,
+                size: 18,
+                color: isSaved
+                    ? semantics.noConcern.foreground
+                    : scheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isSaved
+                          ? 'Saved in Enprive Receipts'
+                          : 'Review not saved to Enprive yet',
+                      key: isSaved
+                          ? const Key('companion_receipt_saved_badge')
+                          : const Key('companion_receipt_unsaved_label'),
+                      style: m3e.typeScale.labelLarge.copyWith(
+                        color: isSaved
+                            ? semantics.noConcern.foreground
+                            : scheme.onSurface,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isSaved
+                          ? 'Stored locally in your Enprive Receipts archive.'
+                          : 'Kept in this session only. Leaving Companion will discard it unless you save it.',
+                      style: m3e.typeScale.bodySmall.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (_companionSaveError != null && !isSaved) ...[
+            const SizedBox(height: 8),
+            Text(
+              _companionSaveError!,
+              style: m3e.typeScale.bodySmall.copyWith(
+                color: semantics.reviewRecommended.foreground,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          if (!isSaved && _canPersistSessionReceipts) ...[
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              key: const Key('companion_save_receipt_btn'),
+              onPressed: _isSavingSessionReceipt
+                  ? null
+                  : () => unawaited(_saveCompanionSessionReceipt(receipt)),
+              icon: _isSavingSessionReceipt
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(LucideIcons.bookmarkPlus, size: 16),
+              label: const Text('Save receipt to Enprive'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   static String? _formatSha256Footer(String? hash) {
     final trimmed = hash?.trim();
     if (trimmed == null || trimmed.isEmpty) return null;
@@ -2054,6 +2166,140 @@ class _CompanionScreenState extends State<CompanionScreen>
           ),
         ),
       ],
+    );
+  }
+}
+
+class _CompanionAttachPolicySheet extends StatefulWidget {
+  final String appDisplayName;
+
+  const _CompanionAttachPolicySheet({required this.appDisplayName});
+
+  @override
+  State<_CompanionAttachPolicySheet> createState() =>
+      _CompanionAttachPolicySheetState();
+}
+
+class _CompanionAttachPolicySheetState
+    extends State<_CompanionAttachPolicySheet> {
+  final TextEditingController _urlController = TextEditingController();
+  final TextEditingController _textController = TextEditingController();
+  bool _isUrlMode = true;
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    _textController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return EnpriveM3EBridgeScope.ensure(
+      context,
+      child: Builder(
+        builder: (sheetContext) {
+          final m3e = EnpriveM3ETheme.of(sheetContext);
+          final scheme = m3e.colorScheme;
+          final surfaces = sheetContext.enpriveSurfaces;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: surfaces.card,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+                border: Border.all(color: surfaces.hairlineBorder),
+              ),
+              child: SafeArea(
+                top: false,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Verify policy for ${widget.appDisplayName}',
+                        style: m3e.typography.emphasized.titleLarge.copyWith(
+                          color: scheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Paste the developer privacy policy URL or excerpt. Enprive verifies quotes deterministically against this snapshot.',
+                        style: m3e.typeScale.bodyMedium.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ChoiceChip(
+                              label: const Text('Policy URL'),
+                              selected: _isUrlMode,
+                              onSelected: (_) =>
+                                  setState(() => _isUrlMode = true),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ChoiceChip(
+                              label: const Text('Paste text'),
+                              selected: !_isUrlMode,
+                              onSelected: (_) =>
+                                  setState(() => _isUrlMode = false),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _isUrlMode
+                            ? _urlController
+                            : _textController,
+                        minLines: _isUrlMode ? 1 : 4,
+                        maxLines: _isUrlMode ? 2 : 7,
+                        keyboardType: _isUrlMode
+                            ? TextInputType.url
+                            : TextInputType.multiline,
+                        decoration: InputDecoration(
+                          hintText: _isUrlMode
+                              ? 'https://developer.example/privacy'
+                              : 'Paste privacy policy paragraphs here...',
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      EnpriveTactileButton(
+                        label: _isUrlMode
+                            ? 'Fetch & inspect policy'
+                            : 'Inspect pasted policy',
+                        onPressed: () {
+                          final val = (_isUrlMode
+                                  ? _urlController.text
+                                  : _textController.text)
+                              .trim();
+                          if (val.isEmpty) return;
+                          Navigator.of(sheetContext).pop((
+                            isUrl: _isUrlMode,
+                            value: val,
+                          ));
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

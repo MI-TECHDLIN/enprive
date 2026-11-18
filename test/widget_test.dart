@@ -791,6 +791,8 @@ void main() {
       // Navigate back to Home
       await tester.tap(find.byTooltip('Close').last);
       await _flushBridgeAndPump(tester);
+      await tester.tap(find.text('Discard without saving'));
+      await _flushBridgeAndPump(tester);
 
       // 4. Trigger again and explicitly choose "Use cloud for this check"
       await Scrollable.ensureVisible(
@@ -830,6 +832,8 @@ void main() {
       // Navigate back to Home and verify comprehensive EduTrack pauses BEFORE
       // even calling native analyseText (0 calls without consent)
       await tester.tap(find.byTooltip('Close').last);
+      await _flushBridgeAndPump(tester);
+      await tester.tap(find.text('Discard without saving'));
       await _flushBridgeAndPump(tester);
       final eduTrackFinder = find.text('EduTrack Classroom');
       await Scrollable.ensureVisible(

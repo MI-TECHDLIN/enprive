@@ -328,6 +328,32 @@ class DeniExplanation {
   }
 }
 
+/// Explicit user-controlled persistence lifecycle state for a [PolicyReviewReceipt].
+enum ReceiptLifecycleState {
+  /// Freshly generated review that has not been saved to local SQLite storage.
+  draft,
+
+  /// Persisted receipt loaded from or saved to `ReceiptRepository` with no pending modifications.
+  saved,
+
+  /// A new in-memory draft created by modifying (e.g. attaching a policy to)
+  /// a previously saved receipt. The original historical receipt remains
+  /// intact in storage unless/until this new draft is explicitly saved as a new record.
+  modifiedSavedDraft,
+
+  /// Asynchronous save operation currently in flight.
+  saving,
+
+  /// Most recent explicit save attempt failed; the user's draft is retained in memory for retry.
+  saveFailure,
+
+  /// User explicitly chose to discard an unsaved draft or modified draft upon exit.
+  discarded,
+
+  /// User explicitly deleted a previously saved receipt from local storage.
+  deleted,
+}
+
 class PolicyReviewReceipt {
   final String id;
   final String subjectTitle;
@@ -347,6 +373,7 @@ class PolicyReviewReceipt {
   final ReviewDiagnosticKind diagnosticKind;
   final PolicySourceSnapshot? sourceSnapshot;
   final String languageCode;
+  final String? supersedesReceiptId;
 
   const PolicyReviewReceipt({
     required this.id,
@@ -367,7 +394,54 @@ class PolicyReviewReceipt {
     this.diagnosticKind = ReviewDiagnosticKind.validated,
     this.sourceSnapshot,
     this.languageCode = 'en',
+    this.supersedesReceiptId,
   });
+
+  /// Creates a copy of this receipt with selective field overrides while
+  /// preserving provenance and optional historical linkage (`supersedesReceiptId`).
+  PolicyReviewReceipt copyWith({
+    String? id,
+    String? subjectTitle,
+    String? sourceLabel,
+    String? snapshotText,
+    String? snapshotDigest,
+    DateTime? createdAt,
+    ReviewOverallState? overallState,
+    InferenceSource? inferenceSource,
+    String? summary,
+    String? calibratedDisclaimer,
+    List<VerifiedFinding>? findings,
+    AppPermissionComparisonReport? permissionReport,
+    List<String>? processSteps,
+    String? thoughtSummary,
+    String? thoughtSignature,
+    ReviewDiagnosticKind? diagnosticKind,
+    PolicySourceSnapshot? sourceSnapshot,
+    String? languageCode,
+    String? supersedesReceiptId,
+  }) {
+    return PolicyReviewReceipt(
+      id: id ?? this.id,
+      subjectTitle: subjectTitle ?? this.subjectTitle,
+      sourceLabel: sourceLabel ?? this.sourceLabel,
+      snapshotText: snapshotText ?? this.snapshotText,
+      snapshotDigest: snapshotDigest ?? this.snapshotDigest,
+      createdAt: createdAt ?? this.createdAt,
+      overallState: overallState ?? this.overallState,
+      inferenceSource: inferenceSource ?? this.inferenceSource,
+      summary: summary ?? this.summary,
+      calibratedDisclaimer: calibratedDisclaimer ?? this.calibratedDisclaimer,
+      findings: findings ?? this.findings,
+      permissionReport: permissionReport ?? this.permissionReport,
+      processSteps: processSteps ?? this.processSteps,
+      thoughtSummary: thoughtSummary ?? this.thoughtSummary,
+      thoughtSignature: thoughtSignature ?? this.thoughtSignature,
+      diagnosticKind: diagnosticKind ?? this.diagnosticKind,
+      sourceSnapshot: sourceSnapshot ?? this.sourceSnapshot,
+      languageCode: languageCode ?? this.languageCode,
+      supersedesReceiptId: supersedesReceiptId ?? this.supersedesReceiptId,
+    );
+  }
 
   String? get sourceSha256Hash =>
       sourceSnapshot?.sourceSha256Hash.isNotEmpty == true
@@ -413,6 +487,8 @@ class PolicyReviewReceipt {
         'diagnosticKind': diagnosticKind.name,
         if (sourceSnapshot != null) 'sourceSnapshot': sourceSnapshot!.toJson(),
         'languageCode': languageCode,
+        if (supersedesReceiptId != null)
+          'supersedesReceiptId': supersedesReceiptId,
       };
 
   factory PolicyReviewReceipt.fromJson(Map<String, dynamic> json) {
@@ -474,6 +550,10 @@ class PolicyReviewReceipt {
       languageCode: (json['languageCode'] as String?)?.trim().isNotEmpty == true
           ? (json['languageCode'] as String).trim()
           : 'en',
+      supersedesReceiptId:
+          (json['supersedesReceiptId'] as String?)?.trim().isNotEmpty == true
+          ? (json['supersedesReceiptId'] as String).trim()
+          : null,
     );
   }
 }

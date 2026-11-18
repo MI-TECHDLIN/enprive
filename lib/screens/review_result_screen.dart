@@ -14,12 +14,14 @@ import '../l10n/app_localizations.dart';
 import '../services/intake/policy_intake_helper.dart';
 import '../services/network/policy_url_retriever.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
+import '../services/storage/receipt_repository.dart';
 import '../widgets/analysis_process_trace.dart';
 import '../widgets/cloud_consent_sheet.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_provenance_chip.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/m3e/enprive_m3e_components.dart';
+import '../widgets/review/unsaved_review_exit_sheet.dart';
 import '../widgets/review_progress_sheet.dart';
 import '../widgets/why_this_finding_sheet.dart';
 
@@ -28,11 +30,16 @@ import '../widgets/why_this_finding_sheet.dart';
 ///   overlapping Deni Standard LOD medallion, borderless 3-column metrics, and
 ///   leading-arrow tactile CTA)
 /// - Segmented quote-first `M3ECard` finding cards (`EnpriveRadii.groupedCardRadius`)
-/// - Contextual bookmark save action in top bar when reviewing unsaved results
+/// - Explicit user-controlled persistence (`ReceiptLifecycleState`), historical
+///   receipt protection on policy attachment, and calm unsaved-exit confirmation
 class ReviewResultScreen extends StatefulWidget {
   final PolicyReviewReceipt receipt;
   final ReviewCoordinator coordinator;
-  final ValueChanged<PolicyReviewReceipt>? onSaveReceipt;
+  final FutureOr<void> Function(PolicyReviewReceipt)? onSaveReceipt;
+  final FutureOr<void> Function(String receiptId)? onDeleteReceipt;
+  final ReceiptRepository? receiptRepository;
+  final bool Function(String receiptId)? isReceiptSaved;
+  final bool isInitiallySaved;
   final bool cloudConsentGrantedForSession;
   final PolicyUrlRetriever? urlRetriever;
 
@@ -41,6 +48,10 @@ class ReviewResultScreen extends StatefulWidget {
     required this.receipt,
     required this.coordinator,
     this.onSaveReceipt,
+    this.onDeleteReceipt,
+    this.receiptRepository,
+    this.isReceiptSaved,
+    this.isInitiallySaved = false,
     this.cloudConsentGrantedForSession = false,
     this.urlRetriever,
   });
@@ -51,19 +62,99 @@ class ReviewResultScreen extends StatefulWidget {
 
 class _ReviewResultScreenState extends State<ReviewResultScreen> {
   late PolicyReviewReceipt _activeReceipt = widget.receipt;
-  bool _isSaved = false;
+  PolicyReviewReceipt? _persistedBaselineReceipt;
+  late ReceiptLifecycleState _lifecycleState;
+  String? _saveErrorMessage;
+  bool _isExitSheetOpen = false;
+  bool _allowImmediatePop = false;
+  bool _isDeleting = false;
   bool _isSpeaking = false;
   bool _isAttachingPolicy = false;
   bool _isAttachingCloud = false;
   bool _isCancellingAttach = false;
   int _attachSequence = 0;
+  int _draftCounter = 0;
   String? _attachRequestId;
+
+  @override
+  void initState() {
+    super.initState();
+    _initLifecycleFromTruthSource();
+  }
+
+  bool _isPersistedInTruthSource(String receiptId) {
+    final hasExternalTruth =
+        widget.isReceiptSaved != null || widget.receiptRepository != null;
+    if (hasExternalTruth) {
+      final inCallback = widget.isReceiptSaved?.call(receiptId) ?? false;
+      final inRepo =
+          widget.receiptRepository?.containsReceiptSync(receiptId) ?? false;
+      return inCallback || inRepo;
+    }
+    return receiptId == widget.receipt.id && widget.isInitiallySaved;
+  }
+
+  void _initLifecycleFromTruthSource() {
+    final initiallyPersisted = _isPersistedInTruthSource(_activeReceipt.id);
+    if (initiallyPersisted) {
+      _lifecycleState = ReceiptLifecycleState.saved;
+      _persistedBaselineReceipt = _activeReceipt;
+    } else {
+      _lifecycleState = ReceiptLifecycleState.draft;
+      _persistedBaselineReceipt = null;
+    }
+    _saveErrorMessage = null;
+    if (!initiallyPersisted && widget.receiptRepository != null) {
+      unawaited(_syncFromRepositoryAsync(_activeReceipt.id));
+    }
+  }
+
+  Future<void> _syncFromRepositoryAsync(String receiptId) async {
+    final repo = widget.receiptRepository;
+    if (repo == null) return;
+    final exists = await repo.containsReceipt(receiptId);
+    if (!mounted) return;
+    if (exists &&
+        _activeReceipt.id == receiptId &&
+        _lifecycleState == ReceiptLifecycleState.draft) {
+      setState(() {
+        _lifecycleState = ReceiptLifecycleState.saved;
+        _persistedBaselineReceipt = _activeReceipt;
+        _saveErrorMessage = null;
+      });
+    }
+  }
+
+  bool get _isSaved => _lifecycleState == ReceiptLifecycleState.saved;
+
+  bool get _canPersist =>
+      widget.onSaveReceipt != null || widget.receiptRepository != null;
+
+  bool get _canDelete =>
+      widget.onDeleteReceipt != null || widget.receiptRepository != null;
+
+  bool get _requiresExitConfirmation =>
+      _canPersist &&
+      !_allowImmediatePop &&
+      (_lifecycleState == ReceiptLifecycleState.draft ||
+          _lifecycleState == ReceiptLifecycleState.modifiedSavedDraft ||
+          _lifecycleState == ReceiptLifecycleState.saveFailure);
 
   @override
   void didUpdateWidget(covariant ReviewResultScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.receipt != widget.receipt) {
+    if (oldWidget.receipt.id != widget.receipt.id ||
+        oldWidget.receipt != widget.receipt) {
       _activeReceipt = widget.receipt;
+      _allowImmediatePop = false;
+      _initLifecycleFromTruthSource();
+    } else if (oldWidget.isInitiallySaved != widget.isInitiallySaved ||
+        oldWidget.receiptRepository != widget.receiptRepository ||
+        oldWidget.isReceiptSaved != widget.isReceiptSaved) {
+      if (_lifecycleState == ReceiptLifecycleState.draft ||
+          _lifecycleState == ReceiptLifecycleState.saved) {
+        _initLifecycleFromTruthSource();
+      }
     }
   }
 
@@ -202,7 +293,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     if (attached == null || !mounted) return;
 
     final seq = ++_attachSequence;
-    var reqId = 'att_${DateTime.now().millisecondsSinceEpoch}';
+    var reqId = 'att_${DateTime.now().microsecondsSinceEpoch}';
     setState(() {
       _isAttachingPolicy = true;
       _isAttachingCloud = false;
@@ -210,7 +301,9 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       _attachRequestId = reqId;
     });
     try {
-      final sourceLabel = '${receipt.sourceLabel} · ${attached.sourceLabel}';
+      final sourceLabel = receipt.isPermissionOnlyInspection
+          ? '${receipt.sourceLabel} · ${attached.sourceLabel}'
+          : '${snapshot.appName} · ${attached.sourceLabel}';
       var outcome = await widget.coordinator.runPolicyReview(
         requestId: reqId,
         subjectTitle: receipt.subjectTitle,
@@ -239,7 +332,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
             decision == CloudConsentDecision.cancelled) {
           return;
         }
-        reqId = 'att_${DateTime.now().millisecondsSinceEpoch}';
+        reqId = 'att_${DateTime.now().microsecondsSinceEpoch}';
         setState(() {
           _attachRequestId = reqId;
           _isAttachingCloud = decision == CloudConsentDecision.useCloudOnce;
@@ -262,11 +355,28 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       }
 
       if (!mounted || seq != _attachSequence || outcome.receipt == null) return;
-      final updated = outcome.receipt!;
+      final rawUpdated = outcome.receipt!;
+      final baseId = _persistedBaselineReceipt?.id;
+      final needsDistinctDraftId =
+          rawUpdated.id == baseId ||
+          rawUpdated.id == _activeReceipt.id ||
+          _isPersistedInTruthSource(rawUpdated.id);
+      final safeDraftId = needsDistinctDraftId
+          ? 'draft_${DateTime.now().microsecondsSinceEpoch}_${++_draftCounter}'
+          : rawUpdated.id;
+      final updated = rawUpdated.copyWith(
+        id: safeDraftId,
+        supersedesReceiptId: baseId ?? _activeReceipt.supersedesReceiptId,
+      );
+      // Do NOT auto-save when attaching or updating a policy: keep historical
+      // receipts untouched and require an explicit Save action.
       setState(() {
         _activeReceipt = updated;
+        _lifecycleState = _persistedBaselineReceipt != null
+            ? ReceiptLifecycleState.modifiedSavedDraft
+            : ReceiptLifecycleState.draft;
+        _saveErrorMessage = null;
       });
-      widget.onSaveReceipt?.call(updated);
     } on HybridOperationCancelledException catch (e) {
       if (mounted && seq == _attachSequence && e.isTimeout) {
         messenger
@@ -290,20 +400,148 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     }
   }
 
-  void _handleSave(
+  Future<bool> _handleSave(
     BuildContext context,
     AppLocalizations l10n,
     PolicyReviewReceipt receipt,
-  ) {
-    if (_isSaved) return;
-    setState(() => _isSaved = true);
-    widget.onSaveReceipt?.call(receipt);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l10n.savedToLocalReceiptsSnack),
-        behavior: SnackBarBehavior.floating,
-      ),
+  ) async {
+    if (_lifecycleState == ReceiptLifecycleState.saved) return true;
+    if (_lifecycleState == ReceiptLifecycleState.saving) return false;
+    if (!_canPersist) return false;
+
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() {
+      _lifecycleState = ReceiptLifecycleState.saving;
+      _saveErrorMessage = null;
+    });
+
+    try {
+      if (widget.onSaveReceipt != null) {
+        await widget.onSaveReceipt!(receipt);
+      } else if (widget.receiptRepository != null) {
+        await widget.receiptRepository!.saveReceipt(receipt);
+      }
+      if (!mounted) return true;
+      setState(() {
+        _lifecycleState = ReceiptLifecycleState.saved;
+        _persistedBaselineReceipt = receipt;
+        _saveErrorMessage = null;
+      });
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(l10n.savedToLocalReceiptsSnack),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      return true;
+    } catch (_) {
+      if (!mounted) return false;
+      const errMsg =
+          'Could not save receipt. Your review draft is still open.';
+      setState(() {
+        _lifecycleState = ReceiptLifecycleState.saveFailure;
+        _saveErrorMessage = errMsg;
+      });
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(errMsg),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      return false;
+    }
+  }
+
+  Future<void> _handleDelete(
+    BuildContext context,
+    AppLocalizations l10n,
+    PolicyReviewReceipt receipt,
+  ) async {
+    if (_lifecycleState != ReceiptLifecycleState.saved ||
+        !_canDelete ||
+        _isDeleting) {
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _isDeleting = true);
+    try {
+      if (widget.onDeleteReceipt != null) {
+        await widget.onDeleteReceipt!(receipt.id);
+      } else if (widget.receiptRepository != null) {
+        await widget.receiptRepository!.deleteReceipt(receipt.id);
+      }
+      if (!mounted) return;
+      setState(() {
+        _isDeleting = false;
+        _lifecycleState = ReceiptLifecycleState.deleted;
+        _persistedBaselineReceipt = null;
+        _saveErrorMessage = null;
+      });
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Removed from saved receipts.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isDeleting = false);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Could not remove saved receipt.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    }
+  }
+
+  Future<void> _handleExitRequest(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
+    if (!_requiresExitConfirmation) {
+      await Navigator.of(context).maybePop();
+      return;
+    }
+    if (_isExitSheetOpen || _lifecycleState == ReceiptLifecycleState.saving) {
+      return;
+    }
+    _isExitSheetOpen = true;
+    final decision = await UnsavedReviewExitSheet.show(
+      context,
+      isModifiedSavedDraft:
+          _lifecycleState == ReceiptLifecycleState.modifiedSavedDraft,
     );
+    _isExitSheetOpen = false;
+    if (!mounted || !context.mounted) return;
+
+    switch (decision) {
+      case UnsavedReviewExitDecision.continueReviewing:
+      case null:
+        return;
+      case UnsavedReviewExitDecision.discard:
+        setState(() {
+          _lifecycleState = ReceiptLifecycleState.discarded;
+          _allowImmediatePop = true;
+        });
+        Navigator.of(context).pop();
+        return;
+      case UnsavedReviewExitDecision.save:
+        final savedOk = await _handleSave(context, l10n, _activeReceipt);
+        if (savedOk && mounted && context.mounted) {
+          setState(() => _allowImmediatePop = true);
+          Navigator.of(context).pop();
+        }
+        return;
+    }
   }
 
   void _showSnapshotReceiptSheet(
@@ -528,172 +766,374 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
               ? matL10n.formatShortMonthDay(receipt.createdAt)
               : '${receipt.createdAt.year}-${receipt.createdAt.month.toString().padLeft(2, '0')}-${receipt.createdAt.day.toString().padLeft(2, '0')}';
 
-          return Scaffold(
-            backgroundColor: surfaces.canvas,
-            body: SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  // Top Navigation Row on calm editorial canvas
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        Material(
-                          color: surfaces.card.withValues(alpha: 0.90),
-                          shape: CircleBorder(
-                            side: BorderSide(color: surfaces.hairlineBorder),
-                          ),
-                          child: IconButton(
-                            tooltip: l10n.tooltipClose,
-                            onPressed: () => Navigator.pop(context),
-                            icon: Icon(
-                              LucideIcons.x,
-                              size: 20,
-                              color: scheme.onSurface,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(999),
-                          onTap: () =>
-                              _showSnapshotReceiptSheet(context, l10n, receipt),
-                          child: EnpriveProvenanceChip(
-                            source: receipt.inferenceSource,
-                          ),
-                        ),
-                        if (widget.onSaveReceipt != null) ...[
-                          const SizedBox(width: 8),
+          return PopScope(
+            canPop: !_requiresExitConfirmation,
+            onPopInvokedWithResult: (didPop, _) {
+              if (didPop) return;
+              unawaited(_handleExitRequest(context, l10n));
+            },
+            child: Scaffold(
+              backgroundColor: surfaces.canvas,
+              body: SafeArea(
+                bottom: false,
+                child: Column(
+                  children: [
+                    // Top Navigation Row on calm editorial canvas
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: [
                           Material(
-                            color: _isSaved
-                                ? semantics.noConcern.background
-                                : surfaces.card.withValues(alpha: 0.90),
+                            color: surfaces.card.withValues(alpha: 0.90),
                             shape: CircleBorder(
-                              side: BorderSide(
-                                color: _isSaved
-                                    ? semantics.noConcern.border
-                                    : surfaces.hairlineBorder,
-                              ),
+                              side: BorderSide(color: surfaces.hairlineBorder),
                             ),
                             child: IconButton(
-                              tooltip: _isSaved
-                                  ? l10n.btnSavedToReceipts
-                                  : l10n.btnSaveToReceipts,
+                              tooltip: l10n.tooltipClose,
                               onPressed: () =>
-                                  _handleSave(context, l10n, receipt),
+                                  unawaited(_handleExitRequest(context, l10n)),
                               icon: Icon(
-                                _isSaved
-                                    ? LucideIcons.bookmarkCheck
-                                    : LucideIcons.bookmarkPlus,
-                                size: 19,
-                                color: _isSaved
-                                    ? semantics.noConcern.foreground
-                                    : scheme.onSurface,
+                                LucideIcons.x,
+                                size: 20,
+                                color: scheme.onSurface,
                               ),
                             ),
                           ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  // Scrollable M3E Hero Posture Card + Editorial Evidence Sheet
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(
-                        20,
-                        4,
-                        20,
-                        MediaQuery.of(context).padding.bottom + 28,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          EnpriveReviewHeroCard(
-                            subjectTitle: receipt.subjectTitle,
-                            subtitle: '${receipt.sourceLabel} · $formattedDate',
-                            overallState: receipt.overallState,
-                            stateBadgeLabel: stateTitle,
-                            findingsCountValue: '${receipt.findings.length}',
-                            findingsLabel: l10n.statFindings,
-                            verifiedCountValue: '${receipt.sourceMatchedCount}',
-                            verifiedLabel: l10n.statVerified,
-                            secondaryMetricValue:
-                                receipt.permissionReport != null
-                                ? '${receipt.permissionReport!.grantedSensitiveCount}'
-                                : '${receipt.unverifiedCount}',
-                            secondaryMetricLabel:
-                                receipt.permissionReport != null
-                                ? l10n.statOsGranted
-                                : l10n.statUnverified,
-                            hasPermissionReport:
-                                receipt.permissionReport != null,
-                            mascotPose: _statePose,
-                            sourceActionLabel: receipt.isPermissionOnlyInspection
-                                ? l10n.permissionInspectionTitle
-                                : l10n.snapshotSourcePrefix,
-                            sourceActionTooltip: receipt.isPermissionOnlyInspection
-                                ? l10n.addAppPrivacyPolicyBtn
-                                : l10n.viewReviewedSnapshot,
-                            onSourceAction: () {
-                              if (receipt.isPermissionOnlyInspection) {
-                                _openAttachPolicySheet(context, l10n, receipt);
-                              } else {
-                                _showSnapshotReceiptSheet(
-                                  context,
-                                  l10n,
-                                  receipt,
-                                );
-                              }
-                            },
-                            isSpeaking: _isSpeaking,
-                            voiceTooltip: _isSpeaking
-                                ? 'Stop reading aloud'
-                                : 'Read summary aloud',
-                            onVoiceAction: () =>
-                                _toggleVoicePlayback(stateTitle),
-                            primaryCtaLabel: receipt.isPermissionOnlyInspection
-                                ? l10n.addAppPrivacyPolicyBtn
-                                : (receipt.findings.isNotEmpty
-                                      ? l10n.btnAskDeni
-                                      : (widget.onSaveReceipt != null
-                                            ? (_isSaved
-                                                  ? l10n.btnSavedToReceipts
-                                                  : l10n.btnSaveToReceipts)
-                                            : l10n.viewReviewedSnapshot)),
-                            onPrimaryCta: () {
-                              if (receipt.isPermissionOnlyInspection) {
-                                _openAttachPolicySheet(context, l10n, receipt);
-                              } else if (receipt.findings.isNotEmpty) {
-                                _openFindingDetails(receipt.findings.first);
-                              } else if (widget.onSaveReceipt != null) {
-                                _handleSave(context, l10n, receipt);
-                              } else {
-                                _showSnapshotReceiptSheet(
-                                  context,
-                                  l10n,
-                                  receipt,
-                                );
-                              }
-                            },
-                            onMascotTap: () => _toggleVoicePlayback(stateTitle),
-                          ),
-                          const SizedBox(height: 22),
-
-                          if (_isAttachingPolicy) ...[
-                            ReviewProgressCard(
-                              subjectTitle: receipt.subjectTitle,
-                              isCloudCheck: _isAttachingCloud,
-                              processStream: widget.coordinator.analysisEvents,
-                              onCancel: () => _cancelAttachPolicy(l10n),
-                              isCancelling: _isCancellingAttach,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Align(
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: AlignmentDirectional.centerEnd,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(999),
+                                  onTap: () => _showSnapshotReceiptSheet(
+                                    context,
+                                    l10n,
+                                    receipt,
+                                  ),
+                                  child: EnpriveProvenanceChip(
+                                    source: receipt.inferenceSource,
+                                  ),
+                                ),
+                              ),
                             ),
-                            const SizedBox(height: 18),
+                          ),
+                          if (_canPersist || _isSaved) ...[
+                            const SizedBox(width: 8),
+                            Material(
+                              color: _isSaved
+                                  ? semantics.noConcern.background
+                                  : surfaces.card.withValues(alpha: 0.90),
+                              shape: CircleBorder(
+                                side: BorderSide(
+                                  color: _isSaved
+                                      ? semantics.noConcern.border
+                                      : surfaces.hairlineBorder,
+                                ),
+                              ),
+                              child: IconButton(
+                                key: const Key('review_result_save_btn'),
+                                tooltip: _isSaved
+                                    ? l10n.btnSavedToReceipts
+                                    : l10n.btnSaveToReceipts,
+                                onPressed:
+                                    _lifecycleState ==
+                                        ReceiptLifecycleState.saving
+                                    ? null
+                                    : () => unawaited(
+                                        _handleSave(context, l10n, receipt),
+                                      ),
+                                icon:
+                                    _lifecycleState ==
+                                        ReceiptLifecycleState.saving
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Icon(
+                                        _isSaved
+                                            ? LucideIcons.bookmarkCheck
+                                            : LucideIcons.bookmarkPlus,
+                                        size: 19,
+                                        color: _isSaved
+                                            ? semantics.noConcern.foreground
+                                            : scheme.onSurface,
+                                      ),
+                              ),
+                            ),
                           ],
+                          if (_isSaved && _canDelete) ...[
+                            const SizedBox(width: 8),
+                            Material(
+                              color: surfaces.card.withValues(alpha: 0.90),
+                              shape: CircleBorder(
+                                side: BorderSide(
+                                  color: surfaces.hairlineBorder,
+                                ),
+                              ),
+                              child: IconButton(
+                                key: const Key('review_result_delete_btn'),
+                                tooltip: l10n.btnDelete,
+                                onPressed: _isDeleting
+                                    ? null
+                                    : () => unawaited(
+                                        _handleDelete(context, l10n, receipt),
+                                      ),
+                                icon: Icon(
+                                  LucideIcons.trash2,
+                                  size: 18,
+                                  color: semantics.reviewRecommended.foreground,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    // Scrollable M3E Hero Posture Card + Editorial Evidence Sheet
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.fromLTRB(
+                          20,
+                          4,
+                          20,
+                          MediaQuery.of(context).padding.bottom + 28,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            EnpriveReviewHeroCard(
+                              subjectTitle: receipt.subjectTitle,
+                              subtitle: '${receipt.sourceLabel} · $formattedDate',
+                              overallState: receipt.overallState,
+                              stateBadgeLabel: stateTitle,
+                              findingsCountValue: '${receipt.findings.length}',
+                              findingsLabel: l10n.statFindings,
+                              verifiedCountValue:
+                                  '${receipt.sourceMatchedCount}',
+                              verifiedLabel: l10n.statVerified,
+                              secondaryMetricValue:
+                                  receipt.permissionReport != null
+                                  ? '${receipt.permissionReport!.grantedSensitiveCount}'
+                                  : '${receipt.unverifiedCount}',
+                              secondaryMetricLabel:
+                                  receipt.permissionReport != null
+                                  ? l10n.statOsGranted
+                                  : l10n.statUnverified,
+                              hasPermissionReport:
+                                  receipt.permissionReport != null,
+                              mascotPose: _statePose,
+                              sourceActionLabel:
+                                  receipt.isPermissionOnlyInspection
+                                  ? l10n.permissionInspectionTitle
+                                  : l10n.snapshotSourcePrefix,
+                              sourceActionTooltip:
+                                  receipt.isPermissionOnlyInspection
+                                  ? l10n.addAppPrivacyPolicyBtn
+                                  : l10n.viewReviewedSnapshot,
+                              onSourceAction: () {
+                                if (receipt.isPermissionOnlyInspection) {
+                                  _openAttachPolicySheet(
+                                    context,
+                                    l10n,
+                                    receipt,
+                                  );
+                                } else {
+                                  _showSnapshotReceiptSheet(
+                                    context,
+                                    l10n,
+                                    receipt,
+                                  );
+                                }
+                              },
+                              isSpeaking: _isSpeaking,
+                              voiceTooltip: _isSpeaking
+                                  ? 'Stop reading aloud'
+                                  : 'Read summary aloud',
+                              onVoiceAction: () =>
+                                  _toggleVoicePlayback(stateTitle),
+                              primaryCtaLabel:
+                                  receipt.isPermissionOnlyInspection
+                                  ? l10n.addAppPrivacyPolicyBtn
+                                  : (receipt.findings.isNotEmpty
+                                        ? l10n.btnAskDeni
+                                        : (_canPersist
+                                              ? (_isSaved
+                                                    ? l10n.btnSavedToReceipts
+                                                    : l10n.btnSaveToReceipts)
+                                              : l10n.viewReviewedSnapshot)),
+                              onPrimaryCta: () {
+                                if (receipt.isPermissionOnlyInspection) {
+                                  _openAttachPolicySheet(
+                                    context,
+                                    l10n,
+                                    receipt,
+                                  );
+                                } else if (receipt.findings.isNotEmpty) {
+                                  _openFindingDetails(receipt.findings.first);
+                                } else if (_canPersist) {
+                                  unawaited(
+                                    _handleSave(context, l10n, receipt),
+                                  );
+                                } else {
+                                  _showSnapshotReceiptSheet(
+                                    context,
+                                    l10n,
+                                    receipt,
+                                  );
+                                }
+                              },
+                              onMascotTap: () =>
+                                  _toggleVoicePlayback(stateTitle),
+                            ),
+                            const SizedBox(height: 22),
+
+                            if (_isAttachingPolicy) ...[
+                              ReviewProgressCard(
+                                subjectTitle: receipt.subjectTitle,
+                                isCloudCheck: _isAttachingCloud,
+                                processStream: widget.coordinator.analysisEvents,
+                                onCancel: () => _cancelAttachPolicy(l10n),
+                                isCancelling: _isCancellingAttach,
+                              ),
+                              const SizedBox(height: 18),
+                            ],
+
+                            if (_lifecycleState ==
+                                ReceiptLifecycleState.modifiedSavedDraft) ...[
+                              EnpriveMaterialCardSurface(
+                                key: const Key(
+                                  'review_result_modified_draft_banner',
+                                ),
+                                variant: EnpriveCardVariant.outlined,
+                                backgroundColor: semantics.onDevice.background
+                                    .withValues(alpha: 0.55),
+                                borderColor: semantics.onDevice.border,
+                                borderRadius: BorderRadius.circular(
+                                  EnpriveRadii.lg,
+                                ),
+                                padding: const EdgeInsets.all(14),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      LucideIcons.gitBranch,
+                                      size: 18,
+                                      color: semantics.onDevice.foreground,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'New draft from saved receipt',
+                                            style: m3e.typeScale.labelLarge
+                                                .copyWith(
+                                                  fontWeight: FontWeight.w800,
+                                                  color: scheme.onSurface,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            'Save to Receipts to keep this updated review — your original saved receipt remains unchanged.',
+                                            style: m3e.typeScale.bodySmall
+                                                .copyWith(
+                                                  color:
+                                                      scheme.onSurfaceVariant,
+                                                  height: 1.38,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+
+                            if (_lifecycleState ==
+                                    ReceiptLifecycleState.saveFailure &&
+                                _saveErrorMessage != null) ...[
+                              EnpriveMaterialCardSurface(
+                                key: const Key(
+                                  'review_result_save_failure_banner',
+                                ),
+                                variant: EnpriveCardVariant.outlined,
+                                backgroundColor: semantics
+                                    .reviewRecommended
+                                    .background
+                                    .withValues(alpha: 0.55),
+                                borderColor: semantics.reviewRecommended.border,
+                                borderRadius: BorderRadius.circular(
+                                  EnpriveRadii.lg,
+                                ),
+                                padding: const EdgeInsets.all(14),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      LucideIcons.triangleAlert,
+                                      size: 18,
+                                      color: semantics
+                                          .reviewRecommended
+                                          .foreground,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _saveErrorMessage!,
+                                            style: m3e.typeScale.bodySmall
+                                                .copyWith(
+                                                  color: scheme.onSurface,
+                                                  height: 1.38,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                          ),
+                                          if (_canPersist) ...[
+                                            const SizedBox(height: 6),
+                                            TextButton(
+                                              style: TextButton.styleFrom(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 4,
+                                                    ),
+                                                minimumSize: const Size(48, 36),
+                                              ),
+                                              onPressed: () => unawaited(
+                                                _handleSave(
+                                                  context,
+                                                  l10n,
+                                                  receipt,
+                                                ),
+                                              ),
+                                              child: const Text('Retry save'),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
 
                           // Summary & Calibrated Note
                           Text(
@@ -912,6 +1352,24 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               l10n: l10n,
                             ),
                           ],
+                          if (receipt.permissionReport != null &&
+                              !receipt.isPermissionOnlyInspection) ...[
+                            const SizedBox(height: 16),
+                            EnpriveTactileButton(
+                              key: const Key(
+                                'review_result_attach_new_policy_btn',
+                              ),
+                              label: 'Attach updated privacy policy',
+                              isSecondary: true,
+                              onPressed: _isAttachingPolicy
+                                  ? null
+                                  : () => _openAttachPolicySheet(
+                                      context,
+                                      l10n,
+                                      receipt,
+                                    ),
+                            ),
+                          ],
                           if (receipt.sourceSnapshot != null &&
                               (receipt.sourceSnapshot!.canonicalUrl != null ||
                                   receipt.sourceSnapshot!.originalFilename !=
@@ -984,7 +1442,8 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                       ),
                     ),
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
           );

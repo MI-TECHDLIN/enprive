@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -8,6 +10,7 @@ import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
 import '../services/network/policy_url_retriever.dart';
+import '../services/storage/receipt_repository.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/m3e/enprive_m3e_components.dart';
@@ -36,8 +39,10 @@ String _formatReceiptTimestamp(BuildContext context, DateTime dt) {
 class ReceiptsScreen extends StatefulWidget {
   final List<PolicyReviewReceipt> receipts;
   final ReviewCoordinator coordinator;
-  final ValueChanged<String> onDeleteReceipt;
-  final Future<void> Function(PolicyReviewReceipt)? onSaveReceipt;
+  final FutureOr<void> Function(String) onDeleteReceipt;
+  final FutureOr<void> Function(PolicyReviewReceipt)? onSaveReceipt;
+  final ReceiptRepository? receiptRepository;
+  final bool Function(String receiptId)? isReceiptSaved;
   final VoidCallback onStartReviewRequested;
   final ScrollController? scrollController;
   final VoidCallback? onOpenSettings;
@@ -50,6 +55,8 @@ class ReceiptsScreen extends StatefulWidget {
     required this.coordinator,
     required this.onDeleteReceipt,
     this.onSaveReceipt,
+    this.receiptRepository,
+    this.isReceiptSaved,
     required this.onStartReviewRequested,
     this.scrollController,
     this.onOpenSettings,
@@ -234,12 +241,25 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                             coordinator: widget.coordinator,
                                             urlRetriever: widget.urlRetriever,
                                             onSaveReceipt: widget.onSaveReceipt,
+                                            onDeleteReceipt:
+                                                widget.onDeleteReceipt,
+                                            receiptRepository:
+                                                widget.receiptRepository,
+                                            isReceiptSaved:
+                                                widget.isReceiptSaved ??
+                                                (id) => widget.receipts.any(
+                                                  (r) => r.id == id,
+                                                ),
+                                            isInitiallySaved: true,
                                           ),
                                         ),
                                       );
                                     },
-                                    onDelete: () =>
-                                        widget.onDeleteReceipt(receipt.id),
+                                    onDelete: () => unawaited(
+                                      Future.sync(
+                                        () => widget.onDeleteReceipt(receipt.id),
+                                      ),
+                                    ),
                                   );
                                 },
                               ),

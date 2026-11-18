@@ -43,12 +43,14 @@ class EnpriveApp extends StatefulWidget {
   final bool showSplashOnLaunch;
   final Duration splashDuration;
   final PolicyUrlRetriever? urlRetriever;
+  final ReceiptRepository? receiptRepository;
 
   const EnpriveApp({
     super.key,
     this.showSplashOnLaunch = true,
     this.splashDuration = const Duration(milliseconds: 1400),
     this.urlRetriever,
+    this.receiptRepository,
   });
 
   @override
@@ -124,6 +126,7 @@ class _EnpriveAppState extends State<EnpriveApp> with WidgetsBindingObserver {
         showSplashOnLaunch: widget.showSplashOnLaunch,
         splashDuration: widget.splashDuration,
         urlRetriever: widget.urlRetriever,
+        receiptRepository: widget.receiptRepository,
       ),
     );
   }
@@ -139,6 +142,7 @@ class HomeScreen extends StatefulWidget {
   final bool showSplashOnLaunch;
   final Duration splashDuration;
   final PolicyUrlRetriever? urlRetriever;
+  final ReceiptRepository? receiptRepository;
 
   const HomeScreen({
     super.key,
@@ -149,6 +153,7 @@ class HomeScreen extends StatefulWidget {
     this.showSplashOnLaunch = true,
     this.splashDuration = const Duration(milliseconds: 1400),
     this.urlRetriever,
+    this.receiptRepository,
   });
 
   @override
@@ -176,7 +181,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
   late final ReviewCoordinator _coordinator = ReviewCoordinator(
     bridge: _bridge,
   );
-  final ReceiptRepository _receiptRepo = ReceiptRepository();
+  late final ReceiptRepository _receiptRepo =
+      widget.receiptRepository ?? ReceiptRepository();
   final UserPreferencesRepository _prefsRepo = UserPreferencesRepository();
   DeviceCapability? _deviceCapability;
   bool _isRunningReview = false;
@@ -371,6 +377,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
     _notifySettingsRoute();
   }
 
+  bool _isReceiptPersisted(String id) =>
+      _savedReceipts.any((r) => r.id == id) ||
+      _receiptRepo.containsReceiptSync(id);
+
   Future<void> _saveReceipt(PolicyReviewReceipt saved) async {
     await _receiptRepo.saveReceipt(saved);
     if (!mounted) return;
@@ -518,6 +528,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
             urlRetriever: _urlRetriever,
             savedReceipts: List<PolicyReviewReceipt>.unmodifiable(_savedReceipts),
             onSaveReceipt: _saveReceipt,
+            receiptRepository: _receiptRepo,
             languageCode: widget.currentLocale.languageCode,
           ),
         ),
@@ -623,6 +634,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
           cloudConsentGrantedForSession: false,
           urlRetriever: _urlRetriever,
           onSaveReceipt: _saveReceipt,
+          onDeleteReceipt: _deleteReceipt,
+          receiptRepository: _receiptRepo,
+          isReceiptSaved: _isReceiptPersisted,
+          isInitiallySaved: _isReceiptPersisted(receipt.id),
         ),
       ),
     );
@@ -945,6 +960,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
               scrollController: _receiptsScrollController,
               onDeleteReceipt: _deleteReceipt,
               onSaveReceipt: _saveReceipt,
+              receiptRepository: _receiptRepo,
+              isReceiptSaved: _isReceiptPersisted,
               onOpenSettings: isCompactLayout ? _openSettingsScreen : null,
               isActiveTab: _selectedTabIndex == 1,
               onStartReviewRequested: () {
@@ -1360,6 +1377,12 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                   coordinator: _coordinator,
                                   urlRetriever: _urlRetriever,
                                   onSaveReceipt: _saveReceipt,
+                                  onDeleteReceipt: _deleteReceipt,
+                                  receiptRepository: _receiptRepo,
+                                  isReceiptSaved: _isReceiptPersisted,
+                                  isInitiallySaved: _isReceiptPersisted(
+                                    receipt.id,
+                                  ),
                                 ),
                               ),
                             );
@@ -1475,6 +1498,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
             cloudConsentGrantedForSession: false,
             urlRetriever: _urlRetriever,
             onSaveReceipt: _saveReceipt,
+            onDeleteReceipt: _deleteReceipt,
+            receiptRepository: _receiptRepo,
+            isReceiptSaved: _isReceiptPersisted,
+            isInitiallySaved: _isReceiptPersisted(permReceipt.id),
           ),
         ),
       );
