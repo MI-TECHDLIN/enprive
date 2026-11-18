@@ -5,6 +5,7 @@ import android.app.StatusBarManager
 import android.app.usage.UsageEvents
 import android.content.Intent
 import android.content.pm.PackageInfo
+import android.provider.Settings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -413,5 +414,157 @@ class CompanionTileAndResolverTest {
             CompanionContract.mapTileAddRequestResult(StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_NOT_ADDED),
         )
         assertEquals("failed", CompanionContract.mapTileAddRequestResult(1002))
+    }
+
+    @Test
+    fun `15 buildPlayStoreLaunchSpecs constructs market and web fallback specs cleanly`() {
+        val specs = CompanionContract.buildPlayStoreLaunchSpecs(" com.example.focusreader ")
+        assertEquals(2, specs.size)
+
+        assertEquals(Intent.ACTION_VIEW, specs[0].action)
+        assertEquals("market://details?id=com.example.focusreader", specs[0].uriString)
+        assertEquals(Intent.FLAG_ACTIVITY_NEW_TASK, specs[0].flags)
+
+        assertEquals(Intent.ACTION_VIEW, specs[1].action)
+        assertEquals(
+            "https://play.google.com/store/apps/details?id=com.example.focusreader",
+            specs[1].uriString,
+        )
+        assertEquals(Intent.FLAG_ACTIVITY_NEW_TASK, specs[1].flags)
+    }
+
+    @Test
+    fun `16 executeOpenPlayStoreListing opens store directly and falls back to HTTPS when market missing`() {
+        val launchedUris = mutableListOf<String>()
+        val directResult = CompanionContract.executeOpenPlayStoreListing(
+            packageName = "com.example.focusreader",
+        ) { spec ->
+            launchedUris.add(spec.uriString)
+            CompanionContract.ExternalLaunchOutcome.LAUNCHED
+        }
+
+        assertEquals(CompanionContract.ExternalNavigationStatus.OPENED_STORE, directResult.status)
+        assertTrue(directResult.isSuccess)
+        assertEquals("market://details?id=com.example.focusreader", directResult.launchedUri)
+        assertEquals(CompanionContract.PLAY_STORE_SHARE_BACK_INSTRUCTION, directResult.guidanceTip)
+        assertEquals(listOf("market://details?id=com.example.focusreader"), launchedUris)
+        val directMap = directResult.toMap()
+        assertEquals("opened_store", directMap["status"])
+        assertEquals(true, directMap["isSuccess"])
+        assertEquals(CompanionContract.PLAY_STORE_SHARE_BACK_INSTRUCTION, directMap["guidanceTip"])
+
+        val fallbackUris = mutableListOf<String>()
+        val fallbackResult = CompanionContract.executeOpenPlayStoreListing(
+            packageName = "com.example.focusreader",
+        ) { spec ->
+            fallbackUris.add(spec.uriString)
+            if (spec.uriString.startsWith("market://")) {
+                CompanionContract.ExternalLaunchOutcome.ACTIVITY_NOT_FOUND
+            } else {
+                CompanionContract.ExternalLaunchOutcome.LAUNCHED
+            }
+        }
+
+        assertEquals(
+            CompanionContract.ExternalNavigationStatus.OPENED_WEB_FALLBACK,
+            fallbackResult.status,
+        )
+        assertTrue(fallbackResult.isSuccess)
+        assertEquals(
+            "https://play.google.com/store/apps/details?id=com.example.focusreader",
+            fallbackResult.launchedUri,
+        )
+        assertEquals(CompanionContract.PLAY_STORE_SHARE_BACK_INSTRUCTION, fallbackResult.guidanceTip)
+        val fallbackMap = fallbackResult.toMap()
+        assertEquals("opened_web_fallback", fallbackMap["status"])
+        assertEquals(true, fallbackMap["isSuccess"])
+        assertEquals(
+            listOf(
+                "market://details?id=com.example.focusreader",
+                "https://play.google.com/store/apps/details?id=com.example.focusreader",
+            ),
+            fallbackUris,
+        )
+    }
+
+    @Test
+    fun `17 executeOpenPlayStoreListing reports activity_not_found with calm guidance when store and browser absent`() {
+        val result = CompanionContract.executeOpenPlayStoreListing(
+            packageName = "com.example.focusreader",
+        ) {
+            CompanionContract.ExternalLaunchOutcome.ACTIVITY_NOT_FOUND
+        }
+
+        assertEquals(CompanionContract.ExternalNavigationStatus.ACTIVITY_NOT_FOUND, result.status)
+        assertFalse(result.isSuccess)
+        assertNull(result.launchedUri)
+        assertEquals(CompanionContract.PLAY_STORE_GUIDANCE_TIP, result.guidanceTip)
+
+        val map = result.toMap()
+        assertEquals("activity_not_found", map["status"])
+        assertEquals("com.example.focusreader", map["packageName"])
+        assertEquals(false, map["isSuccess"])
+        assertEquals(CompanionContract.PLAY_STORE_GUIDANCE_TIP, map["guidanceTip"])
+    }
+
+    @Test
+    fun `18 executeOpenAppSystemSettings constructs ACTION_APPLICATION_DETAILS_SETTINGS and handles missing activity`() {
+        val spec = CompanionContract.buildAppSettingsLaunchSpec(" com.example.focusreader ")
+        assertEquals(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, spec.action)
+        assertEquals("package:com.example.focusreader", spec.uriString)
+        assertEquals(Intent.FLAG_ACTIVITY_NEW_TASK, spec.flags)
+
+        val okResult = CompanionContract.executeOpenAppSystemSettings(
+            packageName = "com.example.focusreader",
+        ) { launchedSpec ->
+            assertEquals(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, launchedSpec.action)
+            assertEquals("package:com.example.focusreader", launchedSpec.uriString)
+            CompanionContract.ExternalLaunchOutcome.LAUNCHED
+        }
+        assertEquals(CompanionContract.ExternalNavigationStatus.OPENED_SETTINGS, okResult.status)
+        assertTrue(okResult.isSuccess)
+        assertEquals("package:com.example.focusreader", okResult.launchedUri)
+        assertNull(okResult.guidanceTip)
+        val okMap = okResult.toMap()
+        assertEquals("opened_settings", okMap["status"])
+        assertEquals(true, okMap["isSuccess"])
+        assertEquals("package:com.example.focusreader", okMap["launchedUri"])
+
+        val missingResult = CompanionContract.executeOpenAppSystemSettings(
+            packageName = "com.example.focusreader",
+        ) {
+            CompanionContract.ExternalLaunchOutcome.ACTIVITY_NOT_FOUND
+        }
+        assertEquals(
+            CompanionContract.ExternalNavigationStatus.ACTIVITY_NOT_FOUND,
+            missingResult.status,
+        )
+        assertFalse(missingResult.isSuccess)
+        assertEquals(CompanionContract.APP_SETTINGS_GUIDANCE_TIP, missingResult.guidanceTip)
+    }
+
+    @Test
+    fun `19 external navigation helpers reject invalid package names without invoking launcher`() {
+        var launcherInvoked = false
+        for (invalid in listOf(null, "", "   ", "singleword", "com.example.app!", "bad/pkg")) {
+            val storeRes = CompanionContract.executeOpenPlayStoreListing(invalid) {
+                launcherInvoked = true
+                CompanionContract.ExternalLaunchOutcome.LAUNCHED
+            }
+            assertEquals(CompanionContract.ExternalNavigationStatus.INVALID_PACKAGE, storeRes.status)
+            assertFalse(storeRes.isSuccess)
+            assertEquals("invalid_package", storeRes.toMap()["status"])
+            assertEquals(false, storeRes.toMap()["isSuccess"])
+
+            val settingsRes = CompanionContract.executeOpenAppSystemSettings(invalid) {
+                launcherInvoked = true
+                CompanionContract.ExternalLaunchOutcome.LAUNCHED
+            }
+            assertEquals(CompanionContract.ExternalNavigationStatus.INVALID_PACKAGE, settingsRes.status)
+            assertFalse(settingsRes.isSuccess)
+            assertEquals("invalid_package", settingsRes.toMap()["status"])
+            assertEquals(false, settingsRes.toMap()["isSuccess"])
+        }
+        assertFalse(launcherInvoked)
     }
 }

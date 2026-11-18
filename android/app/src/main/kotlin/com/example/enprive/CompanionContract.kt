@@ -4,6 +4,7 @@ import android.app.StatusBarManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 import java.util.Collections
 import java.util.UUID
 
@@ -157,13 +158,214 @@ object CompanionContract {
         )
     }
 
+    const val PLAY_STORE_SHARE_BACK_INSTRUCTION =
+        "Locate the developer's privacy policy on the Play Store listing, " +
+            "then share or copy the link back into Enprive to review."
+
+    const val PLAY_STORE_GUIDANCE_TIP =
+        "No Play Store app or web browser could open the listing on this device. " +
+            "Locate the developer's privacy policy manually and share the link back into Enprive."
+
+    const val APP_SETTINGS_GUIDANCE_TIP =
+        "Android's App info screen could not be opened on this device."
+
+    const val INVALID_PACKAGE_GUIDANCE_TIP =
+        "The selected package identifier does not match a valid Android package format."
+
+    enum class ExternalLaunchOutcome {
+        LAUNCHED,
+        ACTIVITY_NOT_FOUND,
+        FAILED,
+    }
+
+    object ExternalNavigationStatus {
+        const val OPENED_STORE = "opened_store"
+        const val OPENED_WEB_FALLBACK = "opened_web_fallback"
+        const val OPENED_SETTINGS = "opened_settings"
+        const val ACTIVITY_NOT_FOUND = "activity_not_found"
+        const val INVALID_PACKAGE = "invalid_package"
+        const val FAILED = "failed"
+    }
+
     /**
-     * Validates an Android package name strictly before touching PackageManager.
+     * Pure-Kotlin external Activity launch specification so URI/action construction
+     * and fallback behavior are testable in JVM unit tests without Robolectric.
+     */
+    data class ExternalLaunchSpec(
+        val action: String,
+        val uriString: String,
+        val flags: Int = Intent.FLAG_ACTIVITY_NEW_TASK,
+    )
+
+    /**
+     * Structured outcome returned across `com.enprive/companion` for user-initiated
+     * external navigation helpers (`openPlayStoreListing`, `openAppSystemSettings`).
+     */
+    data class ExternalNavigationResult(
+        val status: String,
+        val packageName: String?,
+        val launchedUri: String? = null,
+        val guidanceTip: String? = null,
+    ) {
+        val isSuccess: Boolean
+            get() = status == ExternalNavigationStatus.OPENED_STORE ||
+                status == ExternalNavigationStatus.OPENED_WEB_FALLBACK ||
+                status == ExternalNavigationStatus.OPENED_SETTINGS
+
+        fun toMap(): Map<String, Any?> {
+            return mapOf(
+                "status" to status,
+                "packageName" to packageName,
+                "launchedUri" to launchedUri,
+                "guidanceTip" to guidanceTip,
+                "isSuccess" to isSuccess,
+            )
+        }
+    }
+
+    /**
+     * Validates an Android package name strictly before touching PackageManager
+     * or building Play Store / Settings intents.
      */
     fun isValidAndroidPackageName(packageName: String?): Boolean {
         val trimmed = packageName?.trim() ?: return false
         if (trimmed.isEmpty() || trimmed.length > 255) return false
         return PACKAGE_NAME_REGEX.matches(trimmed)
+    }
+
+    fun buildPlayStoreMarketUri(packageName: String): String {
+        val trimmed = packageName.trim()
+        return "market://details?id=$trimmed"
+    }
+
+    fun buildPlayStoreWebUri(packageName: String): String {
+        val trimmed = packageName.trim()
+        return "https://play.google.com/store/apps/details?id=$trimmed"
+    }
+
+    fun buildAppSystemSettingsUri(packageName: String): String {
+        val trimmed = packageName.trim()
+        return "package:$trimmed"
+    }
+
+    fun buildPlayStoreLaunchSpecs(packageName: String): List<ExternalLaunchSpec> {
+        return listOf(
+            ExternalLaunchSpec(
+                action = Intent.ACTION_VIEW,
+                uriString = buildPlayStoreMarketUri(packageName),
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK,
+            ),
+            ExternalLaunchSpec(
+                action = Intent.ACTION_VIEW,
+                uriString = buildPlayStoreWebUri(packageName),
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK,
+            ),
+        )
+    }
+
+    fun buildAppSettingsLaunchSpec(packageName: String): ExternalLaunchSpec {
+        return ExternalLaunchSpec(
+            action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            uriString = buildAppSystemSettingsUri(packageName),
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK,
+        )
+    }
+
+    /**
+     * User-initiated Play Store listing coordinator: validates package syntax,
+     * tries `market://details?id=...`, falls back on [ExternalLaunchOutcome.ACTIVITY_NOT_FOUND]
+     * to the HTTPS Play Store URL, and returns calm guidance if neither handles it.
+     */
+    fun executeOpenPlayStoreListing(
+        packageName: String?,
+        launcher: (ExternalLaunchSpec) -> ExternalLaunchOutcome,
+    ): ExternalNavigationResult {
+        val trimmed = packageName?.trim()
+        if (!isValidAndroidPackageName(trimmed)) {
+            return ExternalNavigationResult(
+                status = ExternalNavigationStatus.INVALID_PACKAGE,
+                packageName = trimmed,
+                guidanceTip = INVALID_PACKAGE_GUIDANCE_TIP,
+            )
+        }
+
+        val specs = buildPlayStoreLaunchSpecs(trimmed!!)
+        val marketSpec = specs[0]
+        val webSpec = specs[1]
+
+        return when (launcher(marketSpec)) {
+            ExternalLaunchOutcome.LAUNCHED -> ExternalNavigationResult(
+                status = ExternalNavigationStatus.OPENED_STORE,
+                packageName = trimmed,
+                launchedUri = marketSpec.uriString,
+                guidanceTip = PLAY_STORE_SHARE_BACK_INSTRUCTION,
+            )
+
+            ExternalLaunchOutcome.ACTIVITY_NOT_FOUND -> when (launcher(webSpec)) {
+                ExternalLaunchOutcome.LAUNCHED -> ExternalNavigationResult(
+                    status = ExternalNavigationStatus.OPENED_WEB_FALLBACK,
+                    packageName = trimmed,
+                    launchedUri = webSpec.uriString,
+                    guidanceTip = PLAY_STORE_SHARE_BACK_INSTRUCTION,
+                )
+
+                ExternalLaunchOutcome.ACTIVITY_NOT_FOUND -> ExternalNavigationResult(
+                    status = ExternalNavigationStatus.ACTIVITY_NOT_FOUND,
+                    packageName = trimmed,
+                    guidanceTip = PLAY_STORE_GUIDANCE_TIP,
+                )
+
+                ExternalLaunchOutcome.FAILED -> ExternalNavigationResult(
+                    status = ExternalNavigationStatus.FAILED,
+                    packageName = trimmed,
+                    guidanceTip = PLAY_STORE_GUIDANCE_TIP,
+                )
+            }
+
+            ExternalLaunchOutcome.FAILED -> ExternalNavigationResult(
+                status = ExternalNavigationStatus.FAILED,
+                packageName = trimmed,
+                guidanceTip = PLAY_STORE_GUIDANCE_TIP,
+            )
+        }
+    }
+
+    /**
+     * User-initiated Android App info screen coordinator (`ACTION_APPLICATION_DETAILS_SETTINGS`).
+     */
+    fun executeOpenAppSystemSettings(
+        packageName: String?,
+        launcher: (ExternalLaunchSpec) -> ExternalLaunchOutcome,
+    ): ExternalNavigationResult {
+        val trimmed = packageName?.trim()
+        if (!isValidAndroidPackageName(trimmed)) {
+            return ExternalNavigationResult(
+                status = ExternalNavigationStatus.INVALID_PACKAGE,
+                packageName = trimmed,
+                guidanceTip = INVALID_PACKAGE_GUIDANCE_TIP,
+            )
+        }
+
+        val spec = buildAppSettingsLaunchSpec(trimmed!!)
+        return when (launcher(spec)) {
+            ExternalLaunchOutcome.LAUNCHED -> ExternalNavigationResult(
+                status = ExternalNavigationStatus.OPENED_SETTINGS,
+                packageName = trimmed,
+                launchedUri = spec.uriString,
+            )
+
+            ExternalLaunchOutcome.ACTIVITY_NOT_FOUND -> ExternalNavigationResult(
+                status = ExternalNavigationStatus.ACTIVITY_NOT_FOUND,
+                packageName = trimmed,
+                guidanceTip = APP_SETTINGS_GUIDANCE_TIP,
+            )
+
+            ExternalLaunchOutcome.FAILED -> ExternalNavigationResult(
+                status = ExternalNavigationStatus.FAILED,
+                packageName = trimmed,
+                guidanceTip = APP_SETTINGS_GUIDANCE_TIP,
+            )
+        }
     }
 
     /**

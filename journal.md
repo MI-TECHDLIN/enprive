@@ -1288,7 +1288,40 @@
   - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks --console=plain`: **43 / 43 passed** (`0` failed, `0` skipped)
   - `flutter build apk --debug --target-platform android-arm64`: Built `build/app/outputs/flutter-apk/app-debug.apk` (`151M`) cleanly.
 - **Next Immediate Action & Recommended Model**:
-  - Await user review of D5.3-A before implementing D5.3-B (`InstalledAppPickerSheet` redesign, `UnifiedPolicyIntakeSheet`, association evaluator, native helpers, or ARB localization). Do not commit or push.
+  - Committed on `feature/m3-expressive-rebrand` (`dc627b3c65903aaee018197b1bfa94bb80f9ab96` / `dc627b3`).
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+## Iteration 38: D5.3-B — Application Identity & Association Intelligence (2026-11-18)
+
+- **Branch / Commit State**: `feature/m3-expressive-rebrand` atop `dc627b3` (uncommitted D5.3-B working tree awaiting review; zero commits/pushes made)
+- **What Was Built & Modified**:
+  1. **Pure Dart Association Model & Evaluator (`lib/domain/review/app_policy_association.dart`)**:
+     - Added 7 evidence-calibrated states (`unlinked`, `userLinkedUnverified`, `packageIdentifierMentioned`, `appNameMentioned`, `unmatched`, `ambiguousIdentity`, `sampleFixture`), `AssociationMatchSource` (`policyText`, `policyUrl`, `sampleFixture`), `TrustedSampleFixture` (`eduTrackDemo`, `calmMathDemo` matching `PermissionComparator`), `AppIdentityCandidate`, `AppPolicyAssociationInput` (with optional deterministic `evaluatedAt`), immutable `AppPolicyAssociationReport` (`provesDeveloperOwnership => false`, zero embedded raw policy text/permissions, additive `toJson`/`fromJson`), and deterministic `AppPolicyAssociationEvaluator`.
+     - Enforced strict package boundary matching (`com.example.app` never matches `.pro`, `mycom.*`, `*2`, or `-beta`), stopword filtering (`Free Mobile App`, `My Games`, `Kids Study App`), Latin diacritic folding + CJK/Hangul non-spaced script handling, URL host vs policy text distinction, `?id=` vs domain/email filtering, peer `AppIdentityCandidate` display-name collision detection, and metadata-only `TrustedSampleFixture` matching.
+  2. **Native Android Helper Intents (`android/app/src/main/kotlin/com/example/enprive/CompanionContract.kt`, `MainActivity.kt`)**:
+     - Added user-initiated `openPlayStoreListing` (`market://details?id=...` with `ActivityNotFoundException` fallback to `https://play.google.com/store/apps/details?id=...` plus calm share-back instruction and missing-activity guidance tip) and `openAppSystemSettings` (`Settings.ACTION_APPLICATION_DETAILS_SETTINGS` scoped via `package:` URI), validated via `CompanionContract.isValidAndroidPackageName` and wired through `com.enprive/companion`.
+     - Explicitly deferred `PackageManager.getInstallSourceInfo()` after scoping review: no D5.3-B product workflow requires installer metadata yet, and omitting it avoids implying Play-distributed apps are publisher-verified or safe. Zero new Android permissions requested.
+  3. **Flutter Bridge Extensions (`lib/services/platform/companion_bridge.dart`)**:
+     - Added `ExternalAppNavigationStatus`, `ExternalAppNavigationResult` (`isSuccess`, `fromMap`), strict local package validation before MethodChannel calls, `openPlayStoreListing(packageName)`, and `openAppSystemSettings(packageName)` with `PlatformException`/`MissingPluginException` handling.
+  4. **Unit & Regression Tests (`test/app_policy_association_test.dart`, `android/app/src/test/kotlin/com/example/enprive/CompanionTileAndResolverTest.kt`)**:
+     - Added 32 Flutter unit/channel tests covering all 16+ association scenarios, display-name ambiguity (`AppIdentityCandidate`), strict non-ownership invariants across all 7 states, UTC `evaluatedAt`/JSON round-tripping, P2-1 `fromJson` sample-fixture hardening (missing/unknown/mismatched/malformed JSON + non-fixture preservation), P2-2 embedded prose Play Store `?id=` attribution + single trailing sentence punctuation trimming + malformed URL rejection, and `CompanionBridge` MethodChannel behaviors.
+     - Extended `CompanionTileAndResolverTest` with JVM unit tests 15–19 covering Play Store `market://` and HTTPS fallback specs, share-back instructions, unavailable store/browser guidance, `Settings.ACTION_APPLICATION_DETAILS_SETTINGS` `package:` specs, invalid package rejection, and `ExternalNavigationResult.toMap()`.
+  5. **Post-Audit P2 Hardening (`app_policy_association.dart`)**:
+     - **P2-1**: Hardened `AppPolicyAssociationReport.fromJson()` so `sampleFixture` is restored only with a registered `sampleFixtureId` matching `selectedPackageName` (degrading invalid/unknown/mismatched records to `userLinkedUnverified` while stripping `sampleFixture`/`AssociationMatchSource.sampleFixture`), and required blank `packageName` in `evaluate()` rather than matching `normalizedPackage == null` on invalid non-blank strings.
+     - **P2-2**: Attributed embedded `?id=<selected_pkg>` URLs inside `policyText` to `AssociationMatchSource.policyText` rather than canonical `policyUrl`, trimmed single trailing sentence punctuation (`,` `;` `:` `!` `?` and single `.` while preserving malformed `..`), and rejected hostless URLs in `_parseWebOrMarketUri()`.
+     - **P2-3**: Explicitly documented the boundary between standalone policy review (`unlinked`), permission-only inspection (`missingPolicyPermissionOnly`), and `unlinked` association for D5.3-C/D callers.
+- **Challenges & Root-Cause Fixes**:
+  - Japanese test phrase `'学習アプリのプライバシーポリシーです'` initially missed `[\p{L}\p{N}]+` token matching because CJK/Japanese text does not separate app nouns from trailing particles (`アプリ`) with spaces; added a compact contiguous script match limited strictly to CJK/Kana/Hangul tokens while keeping Latin matching word-boundary strict.
+- **Verification Status**:
+  - `flutter analyze`: **0 issues**
+  - `flutter test`: **151 / 151 passed** (`119` existing + `32` tests in `test/app_policy_association_test.dart`)
+  - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks --console=plain`: **48 / 48 passed** across 4 suites (`CompanionTileAndResolverTest`: 19, `DocumentTextExtractorTest`: 4, `HybridAiPolicyTest`: 17, `IncomingShareRouterTest`: 8; `0` skipped, `0` failures, `0` errors)
+  - `flutter build apk --debug --target-platform android-arm64`: Built `build/app/outputs/flutter-apk/app-debug.apk` cleanly.
+  - `git diff --check`: **0 issues**.
+- **Next Immediate Action & Recommended Model**:
+  - Await D5.3-B review before starting D5.3-C (`InstalledAppPickerSheet` redesign) or D5.3-D (`UnifiedPolicyIntakeSheet`). Do not commit or push yet.
   - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
 
 ---

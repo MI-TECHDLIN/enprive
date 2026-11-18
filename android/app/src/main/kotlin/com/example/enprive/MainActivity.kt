@@ -1122,6 +1122,18 @@ class MainActivity : FlutterActivity() {
                     requestQuickSettingsTileInstallation(result)
                 }
 
+                "openPlayStoreListing" -> {
+                    val requestedPkg = call.argument<String>("packageName")
+                    val navResult = openPlayStoreListingOnDevice(requestedPkg)
+                    result.success(navResult.toMap())
+                }
+
+                "openAppSystemSettings" -> {
+                    val requestedPkg = call.argument<String>("packageName")
+                    val navResult = openAppSystemSettingsOnDevice(requestedPkg)
+                    result.success(navResult.toMap())
+                }
+
                 "returnToPreviousApp" -> {
                     val moved = try {
                         moveTaskToBack(true)
@@ -1165,6 +1177,40 @@ class MainActivity : FlutterActivity() {
             }
         } catch (_: Throwable) {
             false
+        }
+    }
+
+    private fun openPlayStoreListingOnDevice(
+        packageName: String?,
+    ): CompanionContract.ExternalNavigationResult {
+        return CompanionContract.executeOpenPlayStoreListing(
+            packageName = packageName,
+            launcher = ::launchExternalSpec,
+        )
+    }
+
+    private fun openAppSystemSettingsOnDevice(
+        packageName: String?,
+    ): CompanionContract.ExternalNavigationResult {
+        return CompanionContract.executeOpenAppSystemSettings(
+            packageName = packageName,
+            launcher = ::launchExternalSpec,
+        )
+    }
+
+    private fun launchExternalSpec(
+        spec: CompanionContract.ExternalLaunchSpec,
+    ): CompanionContract.ExternalLaunchOutcome {
+        val intent = Intent(spec.action, Uri.parse(spec.uriString)).apply {
+            addFlags(spec.flags)
+        }
+        return try {
+            startActivity(intent)
+            CompanionContract.ExternalLaunchOutcome.LAUNCHED
+        } catch (_: ActivityNotFoundException) {
+            CompanionContract.ExternalLaunchOutcome.ACTIVITY_NOT_FOUND
+        } catch (_: Throwable) {
+            CompanionContract.ExternalLaunchOutcome.FAILED
         }
     }
 

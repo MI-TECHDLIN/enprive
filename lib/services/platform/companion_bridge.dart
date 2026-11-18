@@ -45,6 +45,57 @@ enum TileAddOutcome {
   unavailable,
 }
 
+enum ExternalAppNavigationStatus {
+  openedStore,
+  openedWebFallback,
+  openedSettings,
+  activityNotFound,
+  invalidPackage,
+  failed,
+  unavailable,
+}
+
+class ExternalAppNavigationResult {
+  const ExternalAppNavigationResult({
+    required this.status,
+    required this.packageName,
+    this.launchedUri,
+    this.guidanceTip,
+  });
+
+  factory ExternalAppNavigationResult.fromMap(
+    Map<dynamic, dynamic> map, {
+    required String fallbackPackageName,
+  }) {
+    final rawStatus = map['status']?.toString();
+    final status = switch (rawStatus) {
+      'opened_store' => ExternalAppNavigationStatus.openedStore,
+      'opened_web_fallback' => ExternalAppNavigationStatus.openedWebFallback,
+      'opened_settings' => ExternalAppNavigationStatus.openedSettings,
+      'activity_not_found' => ExternalAppNavigationStatus.activityNotFound,
+      'invalid_package' => ExternalAppNavigationStatus.invalidPackage,
+      'unavailable' => ExternalAppNavigationStatus.unavailable,
+      _ => ExternalAppNavigationStatus.failed,
+    };
+    return ExternalAppNavigationResult(
+      status: status,
+      packageName: map['packageName']?.toString() ?? fallbackPackageName,
+      launchedUri: map['launchedUri']?.toString(),
+      guidanceTip: map['guidanceTip']?.toString(),
+    );
+  }
+
+  final ExternalAppNavigationStatus status;
+  final String packageName;
+  final String? launchedUri;
+  final String? guidanceTip;
+
+  bool get isSuccess =>
+      status == ExternalAppNavigationStatus.openedStore ||
+      status == ExternalAppNavigationStatus.openedWebFallback ||
+      status == ExternalAppNavigationStatus.openedSettings;
+}
+
 class CompanionInvocation {
   final String invocationId;
   final String source;
@@ -511,6 +562,83 @@ class CompanionBridge {
       return TileAddOutcome.failed;
     } on MissingPluginException {
       return TileAddOutcome.unavailable;
+    }
+  }
+
+  static final RegExp _strictPackageNamePattern = RegExp(
+    r'^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)+$',
+  );
+
+  static bool _isValidAndroidPackageName(String packageName) {
+    final trimmed = packageName.trim();
+    if (trimmed.isEmpty || trimmed.length > 255) return false;
+    return _strictPackageNamePattern.hasMatch(trimmed);
+  }
+
+  /// Opens the user-selected Android app's Google Play Store listing via
+  /// `market://details?id=...`, falling back to the Play Store web URL if no
+  /// store client is installed. Never executes background scraping or network lookups.
+  Future<ExternalAppNavigationResult> openPlayStoreListing(
+    String packageName,
+  ) async {
+    final trimmed = packageName.trim();
+    if (!_isValidAndroidPackageName(trimmed)) {
+      return ExternalAppNavigationResult(
+        status: ExternalAppNavigationStatus.invalidPackage,
+        packageName: trimmed,
+        guidanceTip:
+            'Select a valid Android package identifier before opening its store listing.',
+      );
+    }
+    return _invokeExternalNavigation('openPlayStoreListing', trimmed);
+  }
+
+  /// Opens Android's App info settings screen (`ACTION_APPLICATION_DETAILS_SETTINGS`)
+  /// for the user-selected package identifier.
+  Future<ExternalAppNavigationResult> openAppSystemSettings(
+    String packageName,
+  ) async {
+    final trimmed = packageName.trim();
+    if (!_isValidAndroidPackageName(trimmed)) {
+      return ExternalAppNavigationResult(
+        status: ExternalAppNavigationStatus.invalidPackage,
+        packageName: trimmed,
+        guidanceTip:
+            'Select a valid Android package identifier before opening Android App info.',
+      );
+    }
+    return _invokeExternalNavigation('openAppSystemSettings', trimmed);
+  }
+
+  Future<ExternalAppNavigationResult> _invokeExternalNavigation(
+    String method,
+    String packageName,
+  ) async {
+    try {
+      final raw = await _channel.invokeMapMethod<dynamic, dynamic>(
+        method,
+        <String, Object?>{'packageName': packageName},
+      );
+      if (raw == null) {
+        return ExternalAppNavigationResult(
+          status: ExternalAppNavigationStatus.failed,
+          packageName: packageName,
+        );
+      }
+      return ExternalAppNavigationResult.fromMap(
+        raw,
+        fallbackPackageName: packageName,
+      );
+    } on PlatformException {
+      return ExternalAppNavigationResult(
+        status: ExternalAppNavigationStatus.failed,
+        packageName: packageName,
+      );
+    } on MissingPluginException {
+      return ExternalAppNavigationResult(
+        status: ExternalAppNavigationStatus.unavailable,
+        packageName: packageName,
+      );
     }
   }
 
