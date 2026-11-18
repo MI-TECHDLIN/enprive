@@ -60,6 +60,7 @@ class _EnpriveTactileButtonState extends State<EnpriveTactileButton> {
         _isPressed && !reduceMotion ? 16.0 : widget.height / 2;
 
     return Semantics(
+      container: true,
       button: true,
       enabled: isEnabled,
       label: widget.label,
@@ -105,26 +106,28 @@ class _EnpriveTactileButtonState extends State<EnpriveTactileButton> {
           child: Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (widget.leading != null) ...[
-                      widget.leading!,
-                      const SizedBox(width: 8),
-                    ],
-                    Text(
-                      widget.label,
-                      maxLines: 1,
-                      style: TextStyle(
-                        fontFamily: EnpriveTheme.primaryDisplayFontFamily,
-                        color: textColor,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
+              child: ExcludeSemantics(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.leading != null) ...[
+                        widget.leading!,
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        widget.label,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontFamily: EnpriveTheme.primaryDisplayFontFamily,
+                          color: textColor,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

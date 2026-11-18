@@ -58,12 +58,11 @@ class EnpriveFindingM3ECard extends StatelessWidget {
       FindingSeverity.low => semantics.onDevice,
     };
 
-    final bool isVerified =
-        finding.status == EvidenceStatus.sourceMatched ||
-        finding.status == EvidenceStatus.deviceObserved;
-    final SemanticColorPair verifyPair = isVerified
+    final bool isSourceMatched = finding.isSourceMatched;
+    final bool isDeviceObserved = finding.isDeviceObserved;
+    final SemanticColorPair verifyPair = isSourceMatched
         ? semantics.onDevice
-        : semantics.unknown;
+        : (isDeviceObserved ? semantics.inCloud : semantics.unknown);
 
     final BorderRadius cardRadius = EnpriveRadii.groupedCardRadius(
       index: index,
@@ -84,7 +83,9 @@ class EnpriveFindingM3ECard extends StatelessWidget {
 
     final String effectiveVerificationText =
         verificationLabel ??
-        (isVerified ? 'QUOTE MATCHED' : 'UNVERIFIED');
+        (isSourceMatched
+            ? 'QUOTE MATCHED'
+            : (isDeviceObserved ? 'DEVICE OBSERVED' : 'UNVERIFIED'));
 
     final bool hasActionCardTap = onTapCard != null;
 
@@ -167,9 +168,11 @@ class EnpriveFindingM3ECard extends StatelessWidget {
                   borderColor: severityPair.border,
                 ),
               _MetaPill(
-                icon: isVerified
+                icon: isSourceMatched
                     ? LucideIcons.circleCheck
-                    : LucideIcons.circleHelp,
+                    : (isDeviceObserved
+                          ? LucideIcons.smartphone
+                          : LucideIcons.circleHelp),
                 label: effectiveVerificationText,
                 background: verifyPair.background,
                 foreground: verifyPair.foreground,
@@ -216,9 +219,11 @@ class EnpriveFindingM3ECard extends StatelessWidget {
                     width: 3.5,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: isVerified
+                        color: isSourceMatched
                             ? severityPair.icon
-                            : surfaces.strongBorder,
+                            : (isDeviceObserved
+                                  ? semantics.inCloud.icon
+                                  : surfaces.strongBorder),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -233,25 +238,49 @@ class EnpriveFindingM3ECard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '“${finding.exactExcerpt}”',
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: typeExt.policyQuotation.copyWith(
-                            fontSize: 13.5,
-                            color: scheme.onSurface,
-                          ),
-                        ),
-                        if (sha256Preview != null &&
-                            sha256Preview!.isNotEmpty) ...[
-                          const SizedBox(height: 6),
+                        if (isDeviceObserved) ...[
                           Text(
-                            'Snapshot digest · FNV-1a 64-bit · $sha256Preview',
-                            style: typeExt.sha256Hash.copyWith(
-                              fontSize: 11,
+                            finding.exactExcerpt.trim().isNotEmpty
+                                ? finding.exactExcerpt
+                                : finding.whatAndroidReports,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: m3e.typeScale.bodySmall.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurface,
+                              height: 1.38,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            finding.whatPolicySays,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: m3e.typeScale.labelSmall.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
+                        ] else ...[
+                          Text(
+                            '“${finding.exactExcerpt}”',
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: typeExt.policyQuotation.copyWith(
+                              fontSize: 13.5,
+                              color: scheme.onSurface,
+                            ),
+                          ),
+                          if (sha256Preview != null &&
+                              sha256Preview!.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              'Snapshot digest · FNV-1a 64-bit · $sha256Preview',
+                              style: typeExt.sha256Hash.copyWith(
+                                fontSize: 11,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ],
                       ],
                     ),

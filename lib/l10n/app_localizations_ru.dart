@@ -116,7 +116,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get navHome => 'Главная';
 
   @override
+  String get navCheck => 'Проверка';
+
+  @override
   String get navReceipts => 'Чеки';
+
+  @override
+  String get navLearn => 'Обучение';
 
   @override
   String get navSettings => 'Настройки';

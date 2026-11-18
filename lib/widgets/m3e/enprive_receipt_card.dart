@@ -27,6 +27,7 @@ class EnpriveReceiptCard extends StatelessWidget {
   final VoidCallback onDelete;
   final String? findingsLabel;
   final String? verifiedLabel;
+  final String? deviceObservedLabel;
 
   const EnpriveReceiptCard({
     super.key,
@@ -39,6 +40,7 @@ class EnpriveReceiptCard extends StatelessWidget {
     required this.onDelete,
     this.findingsLabel,
     this.verifiedLabel,
+    this.deviceObservedLabel,
   });
 
   @override
@@ -69,10 +71,15 @@ class EnpriveReceiptCard extends StatelessWidget {
 
     final int findingsCount = receipt.findings.length;
     final int verifiedCount = receipt.sourceMatchedCount;
+    final int deviceCount = receipt.deviceObservedCount;
     final String resolvedFindings = findingsLabel ?? 'Findings';
     final String resolvedVerified = verifiedLabel ?? 'Verified';
-    final String metricsSummary =
+    final String resolvedObserved = deviceObservedLabel ?? 'Device';
+    final String baseMetrics =
         '$findingsCount $resolvedFindings · $verifiedCount $resolvedVerified';
+    final String metricsSummary = deviceCount > 0
+        ? '$baseMetrics · $deviceCount $resolvedObserved'
+        : baseMetrics;
 
     return Semantics(
       container: true,
@@ -241,7 +248,7 @@ class EnpriveReceiptCard extends StatelessWidget {
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final bool stackVertically =
-                            isLargeScale || constraints.maxWidth < 260;
+                            isLargeScale || constraints.maxWidth < 300;
 
                         final Widget originCluster = Row(
                           mainAxisSize: MainAxisSize.min,
@@ -274,7 +281,7 @@ class EnpriveReceiptCard extends StatelessWidget {
                                   const SizedBox(height: 2),
                                   Text(
                                     metricsSummary,
-                                    maxLines: isLargeScale ? 2 : 1,
+                                    maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: m3e.typeScale.labelSmall.copyWith(
                                       color: scheme.onSurfaceVariant,

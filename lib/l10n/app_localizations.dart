@@ -316,11 +316,23 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get navHome;
 
+  /// No description provided for @navCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get navCheck;
+
   /// No description provided for @navReceipts.
   ///
   /// In en, this message translates to:
   /// **'Receipts'**
   String get navReceipts;
+
+  /// No description provided for @navLearn.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn'**
+  String get navLearn;
 
   /// No description provided for @navSettings.
   ///

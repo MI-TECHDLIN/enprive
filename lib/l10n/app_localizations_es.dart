@@ -116,7 +116,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get navHome => 'Inicio';
 
   @override
+  String get navCheck => 'Revisar';
+
+  @override
   String get navReceipts => 'Recibos';
+
+  @override
+  String get navLearn => 'Aprender';
 
   @override
   String get navSettings => 'Ajustes';

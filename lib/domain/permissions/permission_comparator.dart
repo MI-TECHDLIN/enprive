@@ -237,8 +237,8 @@ class PermissionComparator {
       severity: FindingSeverity.high,
       policyKeywords: ['microphone', 'voice recording', 'audio recording', 'speech'],
       disclaimPhrases: [
-        'microphone audio, or camera input',
         'do not collect microphone',
+        'never collect microphone',
         'do not record audio',
       ],
       capabilityDescription:
@@ -251,9 +251,10 @@ class PermissionComparator {
       severity: FindingSeverity.high,
       policyKeywords: ['camera input', 'camera', 'photo capture', 'video capture', 'selfie'],
       disclaimPhrases: [
-        'camera input',
         'do not collect camera',
+        'never collect camera',
         'do not access the camera',
+        'never access the camera',
       ],
       capabilityDescription:
           'Allows taking photos or recording video through the device cameras.',
@@ -602,5 +603,111 @@ class PermissionComparator {
     }
 
     return updated;
+  }
+
+  static const Map<String, List<String>> _companionCategoryKeywords = {
+    'location': [
+      'gps',
+      'precise location',
+      'exact location',
+      'geolocation coordinates',
+      'background location',
+      'background gps',
+      'location data',
+      'location',
+    ],
+    'camera': ['camera input', 'camera', 'photo capture', 'video capture', 'selfie'],
+    'microphone': ['microphone', 'voice recording', 'audio recording', 'speech'],
+    'contacts': ['contacts', 'address book', 'phonebook'],
+    'calendar': ['calendar', 'calendar events', 'schedule'],
+    'phone': ['phone number', 'phone numbers', 'call log', 'call history', 'device phone'],
+    'sms': ['sms', 'text message', 'text messages', 'verification code'],
+    'photos_media': ['photo library', 'photos', 'videos', 'media files', 'gallery', 'storage'],
+    'nearby_devices': ['bluetooth', 'nearby devices', 'wi-fi direct', 'beacons'],
+    'notifications': ['notifications', 'push notification', 'push notifications', 'alerts'],
+    'advertising_id': [
+      'advertising id',
+      'advertising identifier',
+      'advertising identifiers',
+      'android advertising id',
+      'ad_id',
+      'behavioral promotions',
+      'third-party advertising partners',
+      'advertising partner',
+      'advertising partners',
+      'ad networks',
+      'personalized ads',
+    ],
+  };
+
+  /// Reuses [PermissionComparator]'s negation-aware & coarse-IP-aware matching
+  /// for a single declared permission or companion category against [policyText].
+  static ({
+    bool isMentioned,
+    bool isDisclaimed,
+    List<String> matchingExcerpts,
+  }) inspectPermissionMentionInPolicy({
+    required String androidPermission,
+    required String policyText,
+    String? categoryId,
+  }) {
+    if (policyText.trim().isEmpty) {
+      return (isMentioned: false, isDisclaimed: false, matchingExcerpts: const []);
+    }
+
+    final lowerPolicy = policyText.toLowerCase();
+    final catalogMatch = _catalog
+        .where((s) => s.permission == androidPermission)
+        .cast<_SensitivePermissionSpec?>()
+        .firstWhere((_) => true, orElse: () => null);
+
+    final keywords = catalogMatch?.policyKeywords ??
+        _companionCategoryKeywords[categoryId] ??
+        const <String>[];
+    final disclaimPhrases = catalogMatch?.disclaimPhrases ?? const <String>[];
+
+    final spec = catalogMatch ??
+        _SensitivePermissionSpec(
+          permission: androidPermission,
+          friendlyName: categoryId ?? androidPermission,
+          category: FindingCategory.dataCollection,
+          severity: FindingSeverity.medium,
+          policyKeywords: keywords,
+          disclaimPhrases: disclaimPhrases,
+          capabilityDescription: '',
+        );
+
+    final clauseMatch = _assessKeywordDisclosure(
+      policyText: policyText,
+      lowerPolicy: lowerPolicy,
+      spec: spec,
+    );
+
+    final matchingExcerpts = <String>[];
+    final sentences = policyText
+        .split(_sentenceSplit)
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty);
+
+    for (final sentence in sentences) {
+      final sentenceLower = sentence.toLowerCase();
+      final matchesKw = keywords.any((kw) {
+        final escaped = RegExp.escape(kw);
+        return RegExp('(?:^|[^a-z0-9_])$escaped(?:\$|[^a-z0-9_])')
+            .hasMatch(sentenceLower);
+      });
+      final matchesDisclaim =
+          disclaimPhrases.any((phrase) => sentenceLower.contains(phrase));
+      if (matchesKw || matchesDisclaim) {
+        matchingExcerpts.add(sentence);
+      }
+      if (matchingExcerpts.length >= 3) break;
+    }
+
+    return (
+      isMentioned: clauseMatch.isMentioned,
+      isDisclaimed: clauseMatch.isDisclaimed,
+      matchingExcerpts: List<String>.unmodifiable(matchingExcerpts),
+    );
   }
 }

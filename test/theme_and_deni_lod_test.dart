@@ -379,9 +379,10 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 200));
 
-        // Navigate to Settings tab
-        await tester.tap(find.text('Settings'));
-        await tester.pump(const Duration(milliseconds: 200));
+        // Open Settings via top AppBar / Rail Settings control
+        await tester.tap(find.byKey(const Key('nav_settings_btn')));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
 
         expect(find.text('Appearance'), findsOneWidget);
         // Verify developer-only Stage 0 PoC link is not exposed in user Settings.
@@ -1063,26 +1064,26 @@ void main() {
         await verifyPickerContrast(expectDark: false);
 
         // 3. Explicit Dark via Settings without restart
-        await tester.tap(find.text('Settings'));
+        await tester.tap(find.byKey(const Key('nav_settings_btn')));
         await flushAndPump();
         final darkOption = find.byKey(const Key('theme_mode_option_dark'));
         await tester.ensureVisible(darkOption);
         await tester.pump();
         await tester.tap(darkOption);
         await flushAndPump();
-        await tester.tap(find.text('Home'));
+        await tester.tap(find.byKey(const Key('settings_back_btn')));
         await flushAndPump();
         await verifyPickerContrast(expectDark: true);
 
         // 4. Explicit Light via Settings without restart
-        await tester.tap(find.text('Settings'));
+        await tester.tap(find.byKey(const Key('nav_settings_btn')));
         await flushAndPump();
         final lightOption = find.byKey(const Key('theme_mode_option_light'));
         await tester.ensureVisible(lightOption);
         await tester.pump();
         await tester.tap(lightOption);
         await flushAndPump();
-        await tester.tap(find.text('Home'));
+        await tester.tap(find.byKey(const Key('settings_back_btn')));
         await flushAndPump();
         await verifyPickerContrast(expectDark: false);
       },

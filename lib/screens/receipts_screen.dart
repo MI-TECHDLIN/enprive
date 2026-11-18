@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -7,9 +9,12 @@ import '../core/theme/enprive_theme.dart';
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
+import '../services/network/policy_url_retriever.dart';
+import '../services/storage/receipt_repository.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/m3e/enprive_m3e_components.dart';
+import '../widgets/navigation/enprive_navigation_shell.dart';
 import 'review_result_screen.dart';
 
 enum _ReceiptFilter {
@@ -34,9 +39,15 @@ String _formatReceiptTimestamp(BuildContext context, DateTime dt) {
 class ReceiptsScreen extends StatefulWidget {
   final List<PolicyReviewReceipt> receipts;
   final ReviewCoordinator coordinator;
-  final ValueChanged<String> onDeleteReceipt;
-  final Future<void> Function(PolicyReviewReceipt)? onSaveReceipt;
+  final FutureOr<void> Function(String) onDeleteReceipt;
+  final FutureOr<void> Function(PolicyReviewReceipt)? onSaveReceipt;
+  final ReceiptRepository? receiptRepository;
+  final bool Function(String receiptId)? isReceiptSaved;
   final VoidCallback onStartReviewRequested;
+  final ScrollController? scrollController;
+  final VoidCallback? onOpenSettings;
+  final bool isActiveTab;
+  final PolicyUrlRetriever? urlRetriever;
 
   const ReceiptsScreen({
     super.key,
@@ -44,7 +55,13 @@ class ReceiptsScreen extends StatefulWidget {
     required this.coordinator,
     required this.onDeleteReceipt,
     this.onSaveReceipt,
+    this.receiptRepository,
+    this.isReceiptSaved,
     required this.onStartReviewRequested,
+    this.scrollController,
+    this.onOpenSettings,
+    this.isActiveTab = false,
+    this.urlRetriever,
   });
 
   @override
@@ -101,122 +118,155 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
           final scheme = m3e.colorScheme;
 
           return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 12),
-
-                  // Top Header Row: Title on left, Search toggle on right
-                  Row(
+            bottom: false,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 840),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        l10n.receiptsTitle,
-                        style: m3e.typography.emphasized.headlineMedium.copyWith(
-                          color: scheme.onSurface,
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        tooltip: l10n.tooltipSearch,
-                        onPressed: () {
-                          setState(() {
-                            _isSearching = !_isSearching;
-                            if (!_isSearching) {
-                              _searchController.clear();
-                              _searchQuery = '';
-                            }
-                          });
-                        },
-                        style: IconButton.styleFrom(
-                          backgroundColor: _isSearching
-                              ? scheme.primaryContainer
-                              : context.enpriveSurfaces.card,
-                          foregroundColor: _isSearching
-                              ? scheme.onPrimaryContainer
-                              : scheme.onSurface,
-                          fixedSize: const Size(44, 44),
-                          tapTargetSize: MaterialTapTargetSize.padded,
-                          padding: EdgeInsets.zero,
-                          side: BorderSide(
-                            color: _isSearching
-                                ? scheme.primary.withValues(alpha: 0.25)
-                                : context.enpriveSurfaces.hairlineBorder,
+                      const SizedBox(height: 12),
+
+                      // Single clean top header row: Title on start, Search + optional Settings on end
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              l10n.receiptsTitle,
+                              style: m3e.typography.emphasized.headlineMedium
+                                  .copyWith(color: scheme.onSurface),
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                          IconButton(
+                            tooltip: l10n.tooltipSearch,
+                            onPressed: () {
+                              setState(() {
+                                _isSearching = !_isSearching;
+                                if (!_isSearching) {
+                                  _searchController.clear();
+                                  _searchQuery = '';
+                                }
+                              });
+                            },
+                            style: IconButton.styleFrom(
+                              backgroundColor: _isSearching
+                                  ? scheme.primaryContainer
+                                  : context.enpriveSurfaces.card,
+                              foregroundColor: _isSearching
+                                  ? scheme.onPrimaryContainer
+                                  : scheme.onSurface,
+                              fixedSize: const Size(44, 44),
+                              minimumSize: const Size(48, 48),
+                              tapTargetSize: MaterialTapTargetSize.padded,
+                              padding: EdgeInsets.zero,
+                              side: BorderSide(
+                                color: _isSearching
+                                    ? scheme.primary.withValues(alpha: 0.25)
+                                    : context.enpriveSurfaces.hairlineBorder,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            icon: Icon(
+                              _isSearching ? LucideIcons.x : LucideIcons.search,
+                              size: 19,
+                            ),
                           ),
-                        ),
-                        icon: Icon(
-                          _isSearching ? LucideIcons.x : LucideIcons.search,
-                          size: 19,
-                        ),
+                          if (widget.onOpenSettings != null) ...[
+                            const SizedBox(width: 8),
+                            EnpriveSettingsAppBarButton(
+                              key: widget.isActiveTab
+                                  ? const Key('nav_settings_btn')
+                                  : null,
+                              tooltip: l10n.navSettings,
+                              onPressed: widget.onOpenSettings!,
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
-                  ),
 
-                  if (_isSearching) ...[
-                    const SizedBox(height: 8),
-                    M3ESearchBar(
-                      controller: _searchController,
-                      hintText: l10n.hintSearchReceipts,
-                      leading: Icon(
-                        LucideIcons.search,
-                        size: 19,
-                        color: scheme.onSurfaceVariant,
+                      if (_isSearching) ...[
+                        const SizedBox(height: 8),
+                        M3ESearchBar(
+                          controller: _searchController,
+                          hintText: l10n.hintSearchReceipts,
+                          leading: Icon(
+                            LucideIcons.search,
+                            size: 19,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                          onChanged: (v) => setState(() => _searchQuery = v),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+
+                      // M3E Filter Chips Row
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 2,
+                        children: _ReceiptFilter.values.map((filter) {
+                          final isSelected = _activeFilter == filter;
+                          return EnpriveFilterChip(
+                            selected: isSelected,
+                            label: _filterLabel(l10n, filter),
+                            onPressed: () =>
+                                setState(() => _activeFilter = filter),
+                          );
+                        }).toList(),
                       ),
-                      onChanged: (v) => setState(() => _searchQuery = v),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
+                      const SizedBox(height: 20),
 
-                  // M3E Filter Chips Row
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _ReceiptFilter.values.map((filter) {
-                      final isSelected = _activeFilter == filter;
-                      return M3EChip(
-                        selected: isSelected,
-                        label: _filterLabel(l10n, filter),
-                        onPressed: () => setState(() => _activeFilter = filter),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 20),
-
-                  Expanded(
-                    child: filtered.isEmpty
-                        ? _buildEmptyState(context, l10n, m3e)
-                        : ListView.separated(
-                            padding: const EdgeInsets.only(bottom: 100),
-                            itemCount: filtered.length,
-                            separatorBuilder: (_, _) =>
-                                const SizedBox(height: 16),
-                            itemBuilder: (context, index) {
-                              final receipt = filtered[index];
-                              return _M3EReceiptCard(
-                                receipt: receipt,
-                                l10n: l10n,
-                                onOpen: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => ReviewResultScreen(
-                                        receipt: receipt,
-                                        coordinator: widget.coordinator,
-                                        onSaveReceipt: widget.onSaveReceipt,
+                      Expanded(
+                        child: filtered.isEmpty
+                            ? _buildEmptyState(context, l10n, m3e)
+                            : ListView.separated(
+                                controller: widget.scrollController,
+                                padding: const EdgeInsets.only(bottom: 28),
+                                itemCount: filtered.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(height: 16),
+                                itemBuilder: (context, index) {
+                                  final receipt = filtered[index];
+                                  return _M3EReceiptCard(
+                                    receipt: receipt,
+                                    l10n: l10n,
+                                    onOpen: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) => ReviewResultScreen(
+                                            receipt: receipt,
+                                            coordinator: widget.coordinator,
+                                            urlRetriever: widget.urlRetriever,
+                                            onSaveReceipt: widget.onSaveReceipt,
+                                            onDeleteReceipt:
+                                                widget.onDeleteReceipt,
+                                            receiptRepository:
+                                                widget.receiptRepository,
+                                            isReceiptSaved:
+                                                widget.isReceiptSaved ??
+                                                (id) => widget.receipts.any(
+                                                  (r) => r.id == id,
+                                                ),
+                                            isInitiallySaved: true,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    onDelete: () => unawaited(
+                                      Future.sync(
+                                        () => widget.onDeleteReceipt(receipt.id),
                                       ),
                                     ),
                                   );
                                 },
-                                onDelete: () =>
-                                    widget.onDeleteReceipt(receipt.id),
-                              );
-                            },
-                          ),
+                              ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           );
@@ -314,6 +364,7 @@ class _M3EReceiptCard extends StatelessWidget {
       deleteTooltip: l10n.btnDelete,
       findingsLabel: l10n.statFindings,
       verifiedLabel: l10n.statVerified,
+      deviceObservedLabel: l10n.statusDeviceObserved,
       onOpen: onOpen,
       onDelete: onDelete,
     );

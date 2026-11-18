@@ -259,7 +259,8 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
           ];
           final activeQuestion = presetQuestions[_selectedQuestionIndex];
           final finding = widget.finding;
-          final isVerified = finding.isVerified;
+          final isSourceMatched = finding.isSourceMatched;
+          final isDeviceObserved = finding.isDeviceObserved;
 
           final m3e = EnpriveM3ETheme.of(context);
           final scheme = m3e.colorScheme;
@@ -367,20 +368,20 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                                             width: 10,
                                             height: 10,
                                             decoration: BoxDecoration(
-                                              color: isVerified
+                                              color: isSourceMatched
                                                   ? semantics.onDevice.icon
-                                                  : scheme.onSurfaceVariant,
+                                                  : (isDeviceObserved
+                                                        ? semantics.inCloud.icon
+                                                        : scheme.onSurfaceVariant),
                                               shape: BoxShape.circle,
                                             ),
                                           ),
                                           const SizedBox(width: 8),
                                           Flexible(
                                             child: Text(
-                                              finding.status ==
-                                                      EvidenceStatus
-                                                          .deviceObserved
+                                              isDeviceObserved
                                                   ? l10n.statusDeviceObserved
-                                                  : (isVerified
+                                                  : (isSourceMatched
                                                         ? l10n.statusSourceMatched
                                                         : l10n.statusUnverified),
                                               style: m3e.typeScale.labelLarge
@@ -445,9 +446,11 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                                         start: 0,
                                         width: 4,
                                         child: ColoredBox(
-                                          color: isVerified
+                                          color: isSourceMatched
                                               ? semantics.onDevice.icon
-                                              : surfaces.strongBorder,
+                                              : (isDeviceObserved
+                                                    ? semantics.inCloud.icon
+                                                    : surfaces.strongBorder),
                                         ),
                                       ),
                                       Padding(
@@ -462,7 +465,40 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            if (finding.contextWindow != null &&
+                                            if (isDeviceObserved) ...[
+                                              Text(
+                                                finding.exactExcerpt.trim().isNotEmpty
+                                                    ? finding.exactExcerpt
+                                                    : finding.whatAndroidReports,
+                                                maxLines: _isQuoteCollapsed
+                                                    ? 2
+                                                    : null,
+                                                overflow: _isQuoteCollapsed
+                                                    ? TextOverflow.ellipsis
+                                                    : TextOverflow.visible,
+                                                style: m3e.typeScale.bodyMedium
+                                                    .copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: scheme.onSurface,
+                                                      height: 1.4,
+                                                    ),
+                                              ),
+                                              if (finding.whatPolicySays
+                                                  .trim()
+                                                  .isNotEmpty) ...[
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  finding.whatPolicySays,
+                                                  style: m3e.typeScale.bodySmall
+                                                      .copyWith(
+                                                        color: scheme
+                                                            .onSurfaceVariant,
+                                                      ),
+                                                ),
+                                              ],
+                                            ] else if (finding.contextWindow !=
+                                                    null &&
                                                 !_isQuoteCollapsed)
                                               RichText(
                                                 text: TextSpan(
