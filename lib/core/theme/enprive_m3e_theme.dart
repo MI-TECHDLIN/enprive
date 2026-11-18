@@ -268,6 +268,11 @@ abstract final class EnpriveM3ETheme {
         smallHeight: 64,
         titleInset: 20,
       ),
+      chipTheme: const M3EChipTheme(
+        height: 36,
+        cornerRadius: 12,
+        outlineWidth: 1.2,
+      ),
       navigationBarTheme: const M3ENavigationBarTheme(
         elevation: M3EElevation.level0,
         activeLabelWeight: FontWeight.w800,

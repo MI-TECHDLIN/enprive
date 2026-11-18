@@ -116,7 +116,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get navHome => 'Accueil';
 
   @override
+  String get navCheck => 'Vérifier';
+
+  @override
   String get navReceipts => 'Reçus';
+
+  @override
+  String get navLearn => 'Apprendre';
 
   @override
   String get navSettings => 'Paramètres';

@@ -115,7 +115,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get navHome => 'الرئيسية';
 
   @override
+  String get navCheck => 'فحص';
+
+  @override
   String get navReceipts => 'الإيصالات';
+
+  @override
+  String get navLearn => 'تعلّم';
 
   @override
   String get navSettings => 'الإعدادات';

@@ -115,7 +115,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get navHome => 'ホーム';
 
   @override
+  String get navCheck => 'チェック';
+
+  @override
   String get navReceipts => 'レシート';
+
+  @override
+  String get navLearn => '学ぶ';
 
   @override
   String get navSettings => '設定';

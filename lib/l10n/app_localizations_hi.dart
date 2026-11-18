@@ -115,7 +115,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get navHome => 'होम';
 
   @override
+  String get navCheck => 'जाँचें';
+
+  @override
   String get navReceipts => 'रसीदें';
+
+  @override
+  String get navLearn => 'सीखें';
 
   @override
   String get navSettings => 'सेटिंग्स';

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:lucide_icons_flutter/lucide_icons_500.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 
 import 'core/theme/enprive_theme.dart';
@@ -14,6 +13,7 @@ import 'domain/review/review_models.dart';
 import 'l10n/app_localizations.dart';
 import 'l10n/enprive_languages.dart';
 import 'screens/companion_screen.dart';
+import 'screens/learn_home_screen.dart';
 import 'screens/onboarding_flow_screen.dart';
 import 'screens/receipts_screen.dart';
 import 'screens/review_result_screen.dart';
@@ -28,8 +28,8 @@ import 'widgets/cloud_consent_sheet.dart';
 import 'widgets/deni_animated_mascot.dart';
 import 'widgets/enprive_tactile_button.dart';
 import 'widgets/installed_app_picker_sheet.dart';
-import 'widgets/language_picker_sheet.dart';
 import 'widgets/m3e/enprive_m3e_components.dart';
+import 'widgets/navigation/enprive_navigation_shell.dart';
 import 'widgets/review_progress_sheet.dart';
 
 void main() {
@@ -198,6 +198,14 @@ We do not collect personal identifiers, precise location data, microphone audio,
   StreamSubscription<CompanionInvocation>? _companionInvocationSub;
   final Set<String> _handledCompanionIds = <String>{};
   bool _isCompanionRouteOpen = false;
+  final ScrollController _checkScrollController = ScrollController();
+  final ScrollController _receiptsScrollController = ScrollController();
+  final ScrollController _learnScrollController = ScrollController();
+  final ValueNotifier<int> _settingsRouteRevision = ValueNotifier<int>(0);
+
+  void _notifySettingsRoute() {
+    _settingsRouteRevision.value++;
+  }
 
   @override
   void initState() {
@@ -213,6 +221,17 @@ We do not collect personal identifiers, precise location data, microphone audio,
   }
 
   @override
+  void didUpdateWidget(covariant HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentLocale != widget.currentLocale ||
+        oldWidget.currentThemeMode != widget.currentThemeMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _notifySettingsRoute();
+      });
+    }
+  }
+
+  @override
   void dispose() {
     final sub = _incomingPayloadSub;
     if (sub != null) {
@@ -222,6 +241,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
     if (companionSub != null) {
       unawaited(companionSub.cancel());
     }
+    _checkScrollController.dispose();
+    _receiptsScrollController.dispose();
+    _learnScrollController.dispose();
+    _settingsRouteRevision.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -345,6 +368,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
     setState(() {
       _deviceCapability = cap;
     });
+    _notifySettingsRoute();
   }
 
   Future<void> _saveReceipt(PolicyReviewReceipt saved) async {
@@ -354,6 +378,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
       _savedReceipts.removeWhere((r) => r.id == saved.id);
       _savedReceipts.insert(0, saved);
     });
+    _notifySettingsRoute();
   }
 
   Future<void> _deleteReceipt(String id) async {
@@ -362,6 +387,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
     setState(() {
       _savedReceipts.removeWhere((r) => r.id == id);
     });
+    _notifySettingsRoute();
   }
 
   Future<void> _clearAllReceipts() async {
@@ -370,6 +396,73 @@ We do not collect personal identifiers, precise location data, microphone audio,
     setState(() {
       _savedReceipts.clear();
     });
+    _notifySettingsRoute();
+  }
+
+  void _scrollActiveDestinationToTop(int index) {
+    final controller = switch (index) {
+      0 => _checkScrollController,
+      1 => _receiptsScrollController,
+      2 => _learnScrollController,
+      _ => null,
+    };
+    if (controller == null || !controller.hasClients) return;
+    final disableAnimations =
+        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (disableAnimations) {
+      controller.jumpTo(0);
+    } else {
+      unawaited(
+        controller.animateTo(
+          0,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+        ),
+      );
+    }
+  }
+
+  Future<void> _openSettingsScreen() async {
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: 'enprive_settings'),
+        builder: (_) => ValueListenableBuilder<int>(
+          valueListenable: _settingsRouteRevision,
+          builder: (routeContext, _, _) {
+            return SettingsScreen(
+              showAppBar: true,
+              bridge: _bridge,
+              companionBridge: _companionBridge,
+              capability: _deviceCapability,
+              explanationDepth: _explanationDepth,
+              currentLocale: widget.currentLocale,
+              currentThemeMode: widget.currentThemeMode,
+              savedReceiptsCount: _savedReceipts.length,
+              onExplanationDepthChanged: (depth) {
+                setState(() => _explanationDepth = depth);
+                _notifySettingsRoute();
+                unawaited(_prefsRepo.update(explanationDepth: depth));
+              },
+              onLocaleChanged: (locale) {
+                widget.onLocaleChange(locale);
+                _notifySettingsRoute();
+                unawaited(_prefsRepo.update(languageCode: locale.languageCode));
+              },
+              onThemeModeChanged: (mode) {
+                widget.onThemeModeChange?.call(mode);
+                _notifySettingsRoute();
+                unawaited(_prefsRepo.update(themeMode: mode));
+              },
+              onRefreshCapability: _refreshCapability,
+              onClearAllReceipts: _clearAllReceipts,
+              onReplayOnboarding: _openOnboardingFlow,
+              onOpenCompanion: () => _openCompanionScreen(null),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _checkCompanionInvocation() async {
@@ -407,8 +500,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
   Future<void> _openCompanionScreen(CompanionInvocation? invocation) async {
     if (!mounted) return;
-    // Prevent duplicate stacked companion routes on repeated Quick Settings taps.
-    if (_isCompanionRouteOpen) {
+    // Clear any open secondary/modal routes before opening Quick Settings Companion
+    // so warm invocations never stack on top of stale ReviewResult/Settings routes.
+    if (_isCompanionRouteOpen || invocation != null) {
       Navigator.of(context).popUntil((route) => route.isFirst);
     }
     _isCompanionRouteOpen = true;
@@ -462,6 +556,13 @@ We do not collect personal identifiers, precise location data, microphone audio,
       _pendingIncomingPayload = payload;
       _completeSplash();
       return;
+    }
+
+    // Bring incoming shares / text selections cleanly to the foreground Check tab
+    // without leaving them buried behind an already pushed secondary route.
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    if (_selectedTabIndex != 0) {
+      setState(() => _selectedTabIndex = 0);
     }
 
     if (payload.kind == 'document') {
@@ -823,16 +924,88 @@ We do not collect personal identifiers, precise location data, microphone audio,
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final activeLang = enpriveLanguageByCode(widget.currentLocale.languageCode);
     final disableAnimations =
         MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    final surfaces = context.surfaceTokens;
-    final colorScheme = context.colorScheme;
 
-    final mainScaffold = Scaffold(
-      extendBody: true,
+    final mainShell = EnpriveNavigationShell(
+      selectedIndex: _selectedTabIndex,
+      receiptsCount: _savedReceipts.length,
+      onSelectDestination: (index) => setState(() => _selectedTabIndex = index),
+      onReselectDestination: _scrollActiveDestinationToTop,
+      onOpenSettings: _openSettingsScreen,
+      bodyBuilder: (shellContext, isCompactLayout) {
+        return IndexedStack(
+          index: _selectedTabIndex,
+          children: [
+            _buildCheckTab(shellContext, l10n, isCompactLayout),
+            ReceiptsScreen(
+              receipts: _savedReceipts,
+              coordinator: _coordinator,
+              urlRetriever: _urlRetriever,
+              scrollController: _receiptsScrollController,
+              onDeleteReceipt: _deleteReceipt,
+              onSaveReceipt: _saveReceipt,
+              onOpenSettings: isCompactLayout ? _openSettingsScreen : null,
+              isActiveTab: _selectedTabIndex == 1,
+              onStartReviewRequested: () {
+                setState(() => _selectedTabIndex = 0);
+              },
+            ),
+            LearnHomeScreen(
+              scrollController: _learnScrollController,
+              onOpenSettings: isCompactLayout ? _openSettingsScreen : null,
+              isActiveTab: _selectedTabIndex == 2,
+              onCheckAppRequested: () {
+                setState(() => _selectedTabIndex = 0);
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    return Stack(
+      children: [
+        ExcludeSemantics(
+          excluding: _isSplashVisible,
+          child: IgnorePointer(
+            ignoring: _isSplashVisible,
+            child: mainShell,
+          ),
+        ),
+        AnimatedSwitcher(
+          duration: disableAnimations
+              ? Duration.zero
+              : const Duration(milliseconds: 320),
+          switchOutCurve: Curves.easeOutCubic,
+          child: _isSplashVisible
+              ? EnpriveSplashScreen(
+                  key: const ValueKey<String>('enprive_splash'),
+                  displayDuration: widget.splashDuration,
+                  onCompleted: _completeSplash,
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCheckTab(
+    BuildContext context,
+    AppLocalizations l10n,
+    bool isCompactLayout,
+  ) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final semantics = context.enpriveSemantics;
+    final surfaces = context.enpriveSurfaces;
+
+    return Scaffold(
+      backgroundColor: scheme.surface,
       appBar: AppBar(
-        titleSpacing: 24,
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        titleSpacing: 20,
         title: Row(
           children: [
             Container(
@@ -858,160 +1031,38 @@ We do not collect personal identifiers, precise location data, microphone audio,
             Text(
               l10n.appTitle,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: colorScheme.onSurface,
+                color: scheme.onSurface,
                 fontWeight: FontWeight.w800,
               ),
             ),
           ],
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsetsDirectional.only(end: 20.0),
-            child: Tooltip(
-              message: l10n.chooseLanguage,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(999),
-                onTap: () async {
-                  final picked = await EnpriveLanguagePickerSheet.show(
-                    context,
-                    currentLocale: widget.currentLocale,
-                  );
-                  if (picked == null) return;
-                  widget.onLocaleChange(picked);
-                  unawaited(
-                    _prefsRepo.update(languageCode: picked.languageCode),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 11,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: surfaces.cardMuted,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: surfaces.hairlineBorder),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        LucideIcons.globe,
-                        size: 14,
-                        color: colorScheme.onSurface,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        activeLang.shortBadge,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w800,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(
-                        LucideIcons.chevronDown,
-                        size: 13,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                ),
+          if (isCompactLayout)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 16.0),
+              child: EnpriveSettingsAppBarButton(
+                key: _selectedTabIndex == 0
+                    ? const Key('nav_settings_btn')
+                    : null,
+                tooltip: l10n.navSettings,
+                onPressed: _openSettingsScreen,
               ),
             ),
-          ),
         ],
       ),
-      body: IndexedStack(
-        index: _selectedTabIndex,
-        children: [
-          _buildHomeTab(context, l10n),
-          ReceiptsScreen(
-            receipts: _savedReceipts,
-            coordinator: _coordinator,
-            onDeleteReceipt: _deleteReceipt,
-            onSaveReceipt: _saveReceipt,
-            onStartReviewRequested: () {
-              setState(() => _selectedTabIndex = 0);
-            },
-          ),
-          SettingsScreen(
-            bridge: _bridge,
-            companionBridge: _companionBridge,
-            capability: _deviceCapability,
-            explanationDepth: _explanationDepth,
-            currentLocale: widget.currentLocale,
-            currentThemeMode: widget.currentThemeMode,
-            savedReceiptsCount: _savedReceipts.length,
-            onExplanationDepthChanged: (depth) {
-              setState(() => _explanationDepth = depth);
-              unawaited(_prefsRepo.update(explanationDepth: depth));
-            },
-            onLocaleChanged: (locale) {
-              widget.onLocaleChange(locale);
-              unawaited(_prefsRepo.update(languageCode: locale.languageCode));
-            },
-            onThemeModeChanged: (mode) {
-              widget.onThemeModeChange?.call(mode);
-              unawaited(_prefsRepo.update(themeMode: mode));
-            },
-            onRefreshCapability: _refreshCapability,
-            onClearAllReceipts: _clearAllReceipts,
-            onReplayOnboarding: _openOnboardingFlow,
-            onOpenCompanion: () => _openCompanionScreen(null),
-          ),
-        ],
-      ),
-      bottomNavigationBar: _FloatingBottomNavDock(
-        selectedIndex: _selectedTabIndex,
-        receiptsCount: _savedReceipts.length,
-        l10n: l10n,
-        onSelect: (index) => setState(() => _selectedTabIndex = index),
-      ),
-    );
-
-    return Stack(
-      children: [
-        ExcludeSemantics(
-          excluding: _isSplashVisible,
-          child: IgnorePointer(
-            ignoring: _isSplashVisible,
-            child: mainScaffold,
-          ),
-        ),
-        AnimatedSwitcher(
-          duration: disableAnimations
-              ? Duration.zero
-              : const Duration(milliseconds: 320),
-          switchOutCurve: Curves.easeOutCubic,
-          child: _isSplashVisible
-              ? EnpriveSplashScreen(
-                  key: const ValueKey<String>('enprive_splash'),
-                  displayDuration: widget.splashDuration,
-                  onCompleted: _completeSplash,
-                )
-              : const SizedBox.shrink(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHomeTab(
-    BuildContext context,
-    AppLocalizations l10n,
-  ) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final semantics = context.enpriveSemantics;
-    final surfaces = context.enpriveSurfaces;
-
-    return SafeArea(
-      bottom: false,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
-        child: Column(
-          children: [
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: SingleChildScrollView(
+              controller: _checkScrollController,
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+              child: Column(
+                children: [
             // 1. Editorial Hero Stage with Deni (LOD 2 · 88dp)
             Center(
               child: DeniAnimatedMascot(
@@ -1071,40 +1122,100 @@ We do not collect personal identifiers, precise location data, microphone audio,
                   _showPasteModal(context, l10n);
                 },
               ),
+              const SizedBox(height: 14),
+              EnpriveMaterialCardSurface(
+                key: const Key('check_quick_settings_card'),
+                variant: EnpriveCardVariant.outlined,
+                backgroundColor: surfaces.card,
+                borderRadius: BorderRadius.circular(20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                onPressed: () => _openCompanionScreen(null),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: semantics.onDevice.background,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: semantics.onDevice.border),
+                      ),
+                      child: Icon(
+                        LucideIcons.panelTopOpen,
+                        size: 19,
+                        color: semantics.onDevice.foreground,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Quick Settings Companion',
+                            style: m3e.typography.emphasized.titleSmall
+                                .copyWith(color: scheme.onSurface),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Ask Deni about the app you\'re using anytime',
+                            style: m3e.typeScale.bodySmall.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      LucideIcons.chevronRight,
+                      size: 18,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
             ],
 
             const SizedBox(height: 28),
 
-            // 4. Quick Sample App Checks (M3E Bento Cards inspired by Music OS & colo.jpeg)
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
+            // 4. Quick Sample App Checks (Sculpted Archival Folder Cards)
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
                     l10n.trySampleCheck,
                     style: m3e.typography.emphasized.titleMedium.copyWith(
                       fontSize: 17,
                       color: scheme.onSurface,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    l10n.sampleSyntheticBadge,
-                    style: m3e.typography.emphasized.labelSmall.copyWith(
-                      color: scheme.onSurfaceVariant,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      l10n.sampleSyntheticBadge,
+                      style: m3e.typography.emphasized.labelSmall.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             LayoutBuilder(
@@ -1176,15 +1287,14 @@ We do not collect personal identifiers, precise location data, microphone audio,
             const SizedBox(height: 12),
             _WhatWeCheckSegmentedGroup(l10n: l10n),
 
-            // 6. Recently Reviewed (Tactile Segmented M3E Cards)
+            // 6. Recently Reviewed (Layered Archival Folder Deck)
             if (_savedReceipts.isNotEmpty) ...[
               const SizedBox(height: 28),
-              EnpriveMaterialCardSurface(
-                variant: EnpriveCardVariant.elevated,
-                backgroundColor: surfaces.card,
-                borderRadius: BorderRadius.circular(28),
-                lipHeight: 3.0,
-                padding: const EdgeInsets.all(20),
+              EnpriveStackedFolderDeck(
+                frontColor: surfaces.card,
+                frontBorderColor: surfaces.hairlineBorder,
+                middleLayerColor: semantics.onDevice.background,
+                backLayerColor: semantics.reviewRecommended.background,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1313,7 +1423,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
                 ),
               ),
             ],
-          ],
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -1737,8 +1850,8 @@ We do not collect personal identifiers, precise location data, microphone audio,
   }
 }
 
-/// Expressive Bento Sample App Card inspired by the "Music OS" and Dark Bento
-/// Grid reference boards.
+/// Sculpted Material 3 Expressive archival folder-tab sample card combining
+/// Enprive's brand-locked HCT semantic fills with a high-contrast icon medallion.
 class _SampleAppM3EBentoCard extends StatelessWidget {
   final String title;
   final String value;
@@ -1760,17 +1873,60 @@ class _SampleAppM3EBentoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return EnpriveBentoChoiceCard(
-      title: title,
-      metricHighlight: value,
-      metricHighlightColor: semanticPair.foreground,
-      subtitle: subtitle,
-      footerTag: trendBadge,
-      icon: icon,
-      accentColor: semanticPair.foreground,
-      accentBackground: semanticPair.background,
-      accentBorder: semanticPair.border.withValues(alpha: 0.45),
-      onPressed: onTap,
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return EnpriveFolderTabCard(
+      backgroundColor: semanticPair.background,
+      borderColor: semanticPair.border.withValues(alpha: 0.7),
+      leadingIcon: icon,
+      iconBadgeColor: isDark ? scheme.surfaceContainerLowest : scheme.onSurface,
+      iconColor: isDark ? semanticPair.foreground : scheme.surface,
+      trailingHeader: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+        decoration: BoxDecoration(
+          color: scheme.surface.withValues(alpha: isDark ? 0.25 : 0.72),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: semanticPair.border.withValues(alpha: 0.5)),
+        ),
+        child: Text(
+          trendBadge,
+          style: m3e.typography.emphasized.labelSmall.copyWith(
+            color: semanticPair.foreground,
+            fontSize: 10.5,
+          ),
+        ),
+      ),
+      semanticLabel: '$title. $value. $subtitle. $trendBadge.',
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: m3e.typography.emphasized.titleLarge.copyWith(
+              color: semanticPair.foreground,
+              height: 1.15,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: m3e.typography.emphasized.titleSmall.copyWith(
+              color: scheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: m3e.typeScale.bodySmall.copyWith(
+              color: scheme.onSurfaceVariant,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1885,120 +2041,6 @@ class _WhatWeCheckSegmentedGroup extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-/// Material 3 Expressive Floating Pill Bottom Navigation Dock inspired by
-/// `plan check up.jpeg` and `x-monday-home.jpeg`.
-class _FloatingBottomNavDock extends StatelessWidget {
-  final int selectedIndex;
-  final int receiptsCount;
-  final AppLocalizations l10n;
-  final ValueChanged<int> onSelect;
-
-  const _FloatingBottomNavDock({
-    required this.selectedIndex,
-    required this.receiptsCount,
-    required this.l10n,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final surfaces = context.enpriveSurfaces;
-
-    final items = [
-      (icon: LucideIcons500.house, label: l10n.navHome),
-      (icon: LucideIcons500.receiptText, label: l10n.navReceipts),
-      (icon: LucideIcons500.slidersHorizontal, label: l10n.navSettings),
-    ];
-
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 14),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 68),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: surfaces.card,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: surfaces.hairlineBorder),
-            boxShadow: [
-              BoxShadow(
-                color: surfaces.ambientShadowColor,
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(items.length, (index) {
-              final item = items[index];
-              final isSelected = selectedIndex == index;
-              final showBadge = index == 1 && receiptsCount > 0;
-
-              return Expanded(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => onSelect(index),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? scheme.secondaryContainer
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Badge(
-                          isLabelVisible: showBadge,
-                          label: Text('$receiptsCount'),
-                          backgroundColor: scheme.primary,
-                          textColor: scheme.onPrimary,
-                          child: Icon(
-                            item.icon,
-                            size: 22,
-                            color: isSelected
-                                ? scheme.onSecondaryContainer
-                                : scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        item.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: m3e.typeScale.labelSmall.copyWith(
-                          fontSize: 12,
-                          fontWeight: isSelected
-                              ? FontWeight.w800
-                              : FontWeight.w600,
-                          color: isSelected
-                              ? scheme.onSurface
-                              : scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ),
-        ),
-      ),
     );
   }
 }

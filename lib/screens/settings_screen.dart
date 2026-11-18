@@ -35,6 +35,7 @@ class SettingsScreen extends StatefulWidget {
   final VoidCallback onClearAllReceipts;
   final VoidCallback? onReplayOnboarding;
   final VoidCallback? onOpenCompanion;
+  final bool showAppBar;
 
   const SettingsScreen({
     super.key,
@@ -52,6 +53,7 @@ class SettingsScreen extends StatefulWidget {
     required this.onClearAllReceipts,
     this.onReplayOnboarding,
     this.onOpenCompanion,
+    this.showAppBar = false,
   });
 
   @override
@@ -361,19 +363,30 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ];
 
-          return SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 110),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.settingsTitle,
-                    style: m3e.typography.emphasized.headlineMedium.copyWith(
-                      color: scheme.onSurface,
-                    ),
+          final scrollBody = SafeArea(
+            top: !widget.showAppBar,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    widget.showAppBar ? 8 : 12,
+                    20,
+                    32,
                   ),
-                  const SizedBox(height: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (!widget.showAppBar) ...[
+                        Text(
+                          l10n.settingsTitle,
+                          style: m3e.typography.emphasized.headlineMedium
+                              .copyWith(color: scheme.onSurface),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
 
                   // 1. Deni Companion Status M3ECard (LOD 2: 76dp standard companion)
                   Center(
@@ -602,9 +615,36 @@ class _SettingsScreenState extends State<SettingsScreen>
                     scheme,
                     semantics,
                   ),
-                ],
+                    ],
+                  ),
+                ),
               ),
             ),
+          );
+
+          if (!widget.showAppBar) {
+            return scrollBody;
+          }
+
+          return Scaffold(
+            backgroundColor: scheme.surface,
+            appBar: AppBar(
+              backgroundColor: scheme.surface,
+              surfaceTintColor: Colors.transparent,
+              leading: IconButton(
+                key: const Key('settings_back_btn'),
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                icon: Icon(LucideIcons.arrowLeft, color: scheme.onSurface),
+                onPressed: () => Navigator.of(context).maybePop(),
+              ),
+              title: Text(
+                l10n.settingsTitle,
+                style: m3e.typography.emphasized.titleLarge.copyWith(
+                  color: scheme.onSurface,
+                ),
+              ),
+            ),
+            body: scrollBody,
           );
         },
       ),

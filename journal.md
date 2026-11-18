@@ -18,9 +18,9 @@
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
 - **Current `main` HEAD**: `a5c69d1`
-- **Active Feature Branch**: `feature/m3-expressive-rebrand` (baseline HEAD `b8c2169`, Quick Settings Companion `QS-0`–`QS-5` + physical `RMX5303` & `Pixel_9` verification uncommitted in working tree pending user approval)
+- **Active Feature Branch**: `feature/m3-expressive-rebrand` (baseline HEAD `6aff3b363adeee0f9f8a37e45c0426a8becf7e3e`, D5.2 adaptive navigation shell + authorized accessibility/layout fix pass uncommitted in working tree awaiting commit approval)
 - **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 24 November 2026)
-- **Next Queued Action**: Review & commit/PR Quick Settings Companion + D1–D4 validation changes on explicit user approval before starting D5 navigation redesign / Phase B release signing.
+- **Next Queued Action**: Review D5.2 defect-closure report & commit D5.2 on `feature/m3-expressive-rebrand` before starting D5.3.
 
 ---
 
@@ -1197,16 +1197,77 @@
   3. Interactive keyguard PIN validation (`EnpriveCheckTileService.unlockAndRun` end-to-end user unlock).
   4. Signed release build (`signingConfig`) and production Play Integrity App Check verification.
 - **Next Immediate Action & Recommended Model**:
-  - Committed on `feature/m3-expressive-rebrand` (awaiting user instruction before push/PR, pre-release sign-off execution, or starting D5 navigation redesign).
+  - Committed on `feature/m3-expressive-rebrand` (`6aff3b3`), followed by approved D5.1 audit and D5.2 implementation below.
   - Recommended Model: **Claude Opus 5.5 / Gemini Argon**.
+
+---
+
+## Iteration 35: D5.1 Navigation Audit & D5.2 Adaptive M3 Expressive Navigation Shell (2026-11-18)
+
+- **Branch / Commit State**: `feature/m3-expressive-rebrand` atop `6aff3b3` (uncommitted D5.2 working tree awaiting user review before D5.3/D5.4 or commit)
+- **Model(s)**: Claude Opus 5.5 / Gemini 4 Argon
+- **What Was Built & Modified**:
+  1. **D5.1 Read-Only Audit & Locked Decisions**: Completed 16-section navigation & Protect/Understand/Learn IA investigation, evaluated 4 navigation concepts against Material 3 Expressive and `android-design` rules, and locked Concept A (`Check` · `Receipts` · `Learn`, secondary `Settings`, explicit manual Save, calm Quick Settings card on `Check`, offline Learn MVP scoped for D5.4).
+  2. **Adaptive M3E Navigation Shell (`lib/widgets/navigation/enprive_navigation_shell.dart`)**:
+     - Replaced custom `_FloatingBottomNavDock` (`extendBody: true`) with grounded `M3ENavigationBar` on Compact (`< 600dp`) and leading `M3ENavigationRail` on Medium (`600–839dp`, collapsed) / Expanded (`>= 840dp`) / Large (`>= 1200dp`, expanded), using `material_3_expressive: 1.2.1` directly with zero new packages.
+     - Relocated `Settings` to a single accessible `48dp` AppBar trailing button (`Key('nav_settings_btn')`) on Compact and to the `M3ENavigationRail` footer (`trailingAtBottom: true`) on `>= 600dp`.
+     - Added `PopScope` tab-back restoration (`Receipts`/`Learn` -> `Check` before exiting), reselect-to-scroll-top per destination, and removed duplicated headers across `Check`, `Receipts`, `Learn`, and `Settings`.
+  3. **Sculpted Archival Folder-Tab M3E Cards (`lib/widgets/m3e/enprive_folder_tab_card.dart`) & Offline Learn Foundation (`lib/screens/learn_home_screen.dart`)**:
+     - Added RTL-aware `EnpriveFolderTabCard` (smooth S-curve raised top-start folder tab + hairline stroke + high-contrast circular icon medallion) and `EnpriveStackedFolderDeck` (3-layer peeking archival deck) strictly on brand-locked `EnpriveM3ETheme` tokens (zero hardcoded hexes).
+     - Styled sample dossiers and Recently Reviewed deck on `Check`, added a calm `Quick Settings Companion` entry tile (`Key('check_quick_settings_card')`), and created the offline `LearnHomeScreen` (`2x2` folder-tab pillars + stacked deck + interactive offline guide sheets + Check bridge).
+  4. **Quick Settings Back/Restoration & Warm-Intent Hygiene (`lib/screens/companion_screen.dart`, `lib/main.dart`, `lib/screens/settings_screen.dart`, `lib/screens/receipts_screen.dart`)**:
+     - Added `PopScope` on `CompanionScreen` so System Back, AppBar Close (`X`), and `"Done · Return to <App>"` uniformly call `returnToPreviousApp()` (`moveTaskToBack(true)`) + pop when launched from Quick Settings, plus a secondary `"Open full Enprive app"` exit option.
+     - Cleared transient pushed routes on warm `OPEN_COMPANION` and `ACTION_SEND` / `ACTION_PROCESS_TEXT` intents, synced live state updates into pushed `SettingsScreen` via `ValueListenableBuilder`, passed `urlRetriever` from `ReceiptsScreen`, and localized `navCheck` & `navLearn` across all 12 ARB files (`flutter gen-l10n`).
+  5. **Tests (`test/d5_navigation_shell_test.dart`, `test/widget_test.dart`, `test/theme_and_deni_lod_test.dart`)**:
+     - Added 4 dedicated D5.2 widget tests covering Compact/Medium/Large adaptive switching, `PopScope` tab back, Quick Settings `PopScope` + AppBar Close + warm launch over Settings + `"Open full Enprive app"`, and Arabic RTL + Dark Mode + `200%` text scale.
+     - Updated 4 navigation selectors in existing widget/theme tests without weakening any behavioral assertions.
+- **Challenges & Root-Cause Fixes**:
+  - **200% text-scale horizontal overflow (`lib/main.dart:1185`)**: Caught by the new `360dp` + `200%` Arabic RTL test (`RenderFlex overflowed by 91 pixels`) on the `"Try a sample app check"` + `"Synthetic example"` `Row`. Switched to `Wrap` so badge wraps cleanly below title at extreme text scales.
+  - **Selected `Receipts` icon currency glyph**: Live `Pixel_9` screenshot inspection caught `LucideIcons.receipt` rendering a `$` sign when selected; switched to `LucideIcons.receiptText` across `M3ENavigationBar` and `M3ENavigationRail`.
+- **Verification Status**:
+  - `flutter analyze`: **0 issues**
+  - `flutter test`: **106 / 106 passed** (see post-edit verification run)
+  - Live `Pixel_9` (`emulator-5554`) visual screen check completed across Light & Dark modes (`Check`, `Learn`, `Receipts`, `Settings`) + debug `arm64` APK installed to both `Pixel_9` and physical `RMX5303`.
+- **Next Immediate Action & Recommended Model**:
+  - Present D5.2 results + live visual captures for user review before starting **Phase D5.3** (Unified smart policy intake sheet, two-way App ↔ Policy links, `InstalledAppPickerSheet` cleanup, synced `isAlreadySaved` state + unsaved-exit hint, Companion/Settings ARB localization) and **Phase D5.4** (full offline Learn MVP: 8–12 micro-lessons, 4–6 interactive permission/scam scenarios, local progress).
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+### Iteration 36: D5.2 Acceptance Walkthrough & Authorized Accessibility/Layout Fix Pass (2026-11-18)
+
+- **Branch / Commit State**: `feature/m3-expressive-rebrand` atop `6aff3b363adeee0f9f8a37e45c0426a8becf7e3e` (uncommitted working tree awaiting user commit review; zero commits/pushes made)
+- **Model(s)**: Orchestrator / Gemini 4 Argon (Planning) + Gemini Flash (Execution)
+- **What Was Built & Modified**:
+  1. **P1 Top-Alignment of Scrollable Destinations (`lib/screens/learn_home_screen.dart`, `lib/main.dart`, `lib/screens/settings_screen.dart`)**:
+     - Replaced `Center(...)` wrapping `ConstrainedBox -> SingleChildScrollView` with `Align(alignment: Alignment.topCenter, ...)` so `Learn` headers remain pinned cleanly at the top (`174px` on `411dp`, `165px`/`82.5dp` on `900×1200dp`) when filtering to a single category or rendering on tall tablet viewports.
+  2. **P2 Accessible High-Contrast Filter Chips (`lib/widgets/m3e/enprive_filter_chip.dart`, `lib/core/theme/enprive_m3e_theme.dart`, `lib/widgets/m3e/enprive_m3e_components.dart`, `lib/screens/learn_home_screen.dart`, `lib/screens/receipts_screen.dart`)**:
+     - Added `EnpriveFilterChip` built on `M3EChip(type: M3EChipType.filter)` with a leading `LucideIcons.check` indicator and brand-locked token contrast (`surfaces.tactilePrimaryBg` / `surfaces.tactilePrimaryFg` + `surfaces.strongBorder`, leaving global `NavigationBar` indicators untouched), `48×48dp` minimum hit targets, and unified `Semantics(container: true, button: true, selected: ..., onTap: ..., excludeSemantics: true)` exposing `clickable="true"` and `selected` accurately to TalkBack/UIAutomator.
+  3. **P2 Duplicate Screen-Reader Semantics Cleanup (`lib/widgets/m3e/enprive_folder_tab_card.dart`, `lib/widgets/enprive_tactile_button.dart`)**:
+     - Added conditional `excludeSemantics: widget.onTap != null` and `onTap: widget.onTap` on `EnpriveFolderTabCard` when `semanticLabel` is provided (so tappable cards emit one summary announcement without silencing nested buttons inside `EnpriveStackedFolderDeck`).
+     - Added `container: true` + `ExcludeSemantics` around the visual `FittedBox` inside `EnpriveTactileButton`.
+  4. **Section 4 Responsive Polish (`lib/widgets/m3e/enprive_receipt_card.dart`, `lib/screens/companion_screen.dart`, `lib/widgets/navigation/enprive_navigation_shell.dart`)**:
+     - Raised `EnpriveReceiptCard` footer vertical-stack threshold to `constraints.maxWidth < 300` (`maxLines: 2` on `metricsSummary`) so `360dp` stacks without footer ellipsis and `411dp` displays `"7 Findings · 6 Verified · 1 Device observed"` cleanly.
+     - Replaced `Row -> Expanded` secondary Companion actions (`Choose another app`, `Without app context`) with `Wrap` so neither label truncates at `411dp`.
+     - Added adaptive `badgeTheme` vertical offset + compact bar top padding when `textScale > 1.25` in `EnpriveNavigationShell` so the `Receipts` count badge does not clip at `200%` text scaling.
+  5. **Regression Tests (`test/d5_navigation_shell_test.dart`)**:
+     - Added widget tests verifying `900×1200dp` top alignment and `0px` filter jump on `Learn`, `EnpriveFilterChip` `>= 48dp` target / `M3EChip` / `Tristate.isSelected` / `SemanticsAction.tap`, and single non-duplicated card/button semantics while keeping nested `EnpriveStackedFolderDeck` CTA semantics intact.
+- **Verification Status**:
+  - `flutter analyze`: **0 issues** (`7.5s`)
+  - `flutter test`: **107 / 107 passed**
+  - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks --console=plain`: **43 / 43 passed** (`0` failed, `0` skipped)
+  - `flutter build apk --debug --target-platform android-arm64`: Built & installed onto `emulator-5554` (`RMX5303` physical walkthrough Sections A & C completed pre-fix; post-fix live verification completed on `emulator-5554` across Light/Dark themes, Arabic RTL, `360dp`, `200%` text scaling, `900dp` rail breakpoint, Companion `411dp`, and 1/2/all-card filters).
+- **Next Immediate Action & Recommended Model**:
+  - Await user commit authorization for D5.2 on `feature/m3-expressive-rebrand` before starting D5.3.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
 
 ---
 
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
-1. **D5 Navigation Redesign & Phase B Production Signing / Play Integrity**
-   - **Assigned Model**: **Claude Opus 5.5 / Gemini 4 Argon**
-   - **Scope**: Push/PR Quick Settings Companion + evidence-integrity hardening on `feature/m3-expressive-rebrand`, execute pre-release sign-off checklist items (1–4 above), then implement approved D5 UX streamlining (`Open in Play Store`, unified intake sheet, compact Compare trigger, small-screen dock spacing) and production release signing.
-2. **Phase B/C Planning (`LocalPromptRegistry` & POC Server Prompt Template)**
+1. **D5.3 Core Flow Streamlining & D5.4 Offline Learn MVP**
    - **Assigned Model**: **Gemini 4 Argon / Claude Opus 5.5**
-   - **Scope**: Begin Phase B only after physical-device sign-off.
+   - **Scope**: Consolidate the 3 duplicate policy-intake sheets into `UnifiedPolicyIntakeSheet`, add Play Store / App Settings / two-way App↔Policy Compare links, clean up `InstalledAppPickerSheet`, sync explicit Save state, localize Companion/Settings strings across 12 ARBs, then build the offline Learn MVP (`8–12` micro-lessons + `4–6` interactive scenarios + local progress).
+2. **Pre-Release Sign-Off & Phase B Production Signing / Play Integrity**
+   - **Assigned Model**: **Gemini 4 Argon / Claude Opus 5.5**
+   - **Scope**: Complete physical `RMX5303` walkthrough, standalone `dev.enprive.qa.permissionprobe` runtime dialog E2E, interactive keyguard PIN check, and signed release + Play Integrity App Check verification.

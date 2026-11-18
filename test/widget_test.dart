@@ -97,8 +97,11 @@ void main() {
         (appBarLogo.image as AssetImage).assetName,
         'assets/images/enprive_logo.png',
       );
-      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Check'), findsOneWidget);
       expect(find.text('Receipts'), findsWidgets);
+      expect(find.text('Learn'), findsOneWidget);
+      expect(find.byKey(const Key('nav_settings_btn')), findsOneWidget);
+      expect(find.byKey(const Key('check_quick_settings_card')), findsOneWidget);
       expect(find.text('Try a sample app check'), findsOneWidget);
       expect(find.text('EduTrack Classroom'), findsOneWidget);
       expect(find.text('CalmMath Kids'), findsOneWidget);
@@ -133,9 +136,10 @@ void main() {
 
       expect(find.text('Enprive'), findsOneWidget);
 
-      // Switch to Settings tab at 200% text scale
-      await tester.tap(find.text('Settings').last);
+      // Open Settings secondary route at 200% text scale
+      await tester.tap(find.byKey(const Key('nav_settings_btn')));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
       expect(find.text('Preferences'), findsOneWidget);
       expect(find.text('Show Deni companion'), findsNothing);
     },

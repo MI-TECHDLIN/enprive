@@ -115,7 +115,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get navHome => 'Início';
 
   @override
+  String get navCheck => 'Verificar';
+
+  @override
   String get navReceipts => 'Recibos';
+
+  @override
+  String get navLearn => 'Aprender';
 
   @override
   String get navSettings => 'Ajustes';

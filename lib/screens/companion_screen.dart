@@ -85,6 +85,7 @@ class _CompanionScreenState extends State<CompanionScreen>
   bool _isAskingDeni = false;
   bool _isAskingCloud = false;
   bool _isCancellingAsk = false;
+  bool _isFinishingCompanion = false;
   String? _activeAskReqId;
   int _askOpSequence = 0;
   DeniExplanation? _deniAnswer;
@@ -811,12 +812,18 @@ class _CompanionScreenState extends State<CompanionScreen>
     }
   }
 
-  Future<void> _finishCompanion() async {
-    if (widget.invocation != null) {
-      await widget.companionBridge.returnToPreviousApp();
-    }
-    if (mounted) {
-      Navigator.of(context).pop();
+  Future<void> _finishCompanion({bool returnToCallerApp = true}) async {
+    if (_isFinishingCompanion) return;
+    _isFinishingCompanion = true;
+    try {
+      if (returnToCallerApp && widget.invocation != null) {
+        await widget.companionBridge.returnToPreviousApp();
+      }
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } finally {
+      _isFinishingCompanion = false;
     }
   }
 
@@ -849,21 +856,40 @@ class _CompanionScreenState extends State<CompanionScreen>
           final surfaces = context.enpriveSurfaces;
           final semantics = context.enpriveSemantics;
 
-          return Scaffold(
-            backgroundColor: scheme.surface,
-            appBar: AppBar(
-              leading: IconButton(
-                icon: Icon(LucideIcons.chevronLeft, color: scheme.onSurface),
-                tooltip: 'Back',
-                onPressed: () => Navigator.of(context).maybePop(),
-              ),
-              title: Text(
-                'Deni — Enprive Companion',
-                style: m3e.typography.emphasized.titleMedium.copyWith(
-                  color: scheme.onSurface,
+          final launchedFromQuickSettings = widget.invocation != null;
+
+          return PopScope(
+            canPop: !launchedFromQuickSettings,
+            onPopInvokedWithResult: (didPop, _) {
+              if (!didPop && launchedFromQuickSettings) {
+                unawaited(_finishCompanion(returnToCallerApp: true));
+              }
+            },
+            child: Scaffold(
+              backgroundColor: scheme.surface,
+              appBar: AppBar(
+                leading: IconButton(
+                  key: const Key('companion_appbar_back_btn'),
+                  icon: Icon(
+                    launchedFromQuickSettings
+                        ? LucideIcons.x
+                        : LucideIcons.arrowLeft,
+                    color: scheme.onSurface,
+                  ),
+                  tooltip: launchedFromQuickSettings
+                      ? 'Return to previous app'
+                      : 'Back',
+                  onPressed: launchedFromQuickSettings
+                      ? () => _finishCompanion(returnToCallerApp: true)
+                      : () => Navigator.of(context).maybePop(),
+                ),
+                title: Text(
+                  'Deni — Enprive Companion',
+                  style: m3e.typography.emphasized.titleMedium.copyWith(
+                    color: scheme.onSurface,
+                  ),
                 ),
               ),
-            ),
             body: SafeArea(
               child: _isDeviceLocked
                   ? _buildLockedGuard(context, m3e, scheme, surfaces, semantics)
@@ -936,12 +962,31 @@ class _CompanionScreenState extends State<CompanionScreen>
                                       ? 'Done · Return to previous app'
                                       : 'Done'),
                             isSecondary: true,
-                            onPressed: _finishCompanion,
+                            onPressed: () =>
+                                _finishCompanion(returnToCallerApp: true),
                           ),
+                          if (launchedFromQuickSettings) ...[
+                            const SizedBox(height: 8),
+                            Center(
+                              child: TextButton(
+                                key: const Key('companion_open_enprive_btn'),
+                                onPressed: () =>
+                                    _finishCompanion(returnToCallerApp: false),
+                                child: Text(
+                                  'Open full Enprive app',
+                                  style: m3e.typeScale.labelLarge.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
             ),
+          ),
           );
         },
       ),
@@ -1139,40 +1184,30 @@ class _CompanionScreenState extends State<CompanionScreen>
                   ),
                 ),
                 const SizedBox(height: 10),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 10,
-                          ),
-                        ),
-                        onPressed: _openManualAppPicker,
-                        child: const Text(
-                          'Choose another app',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
                         ),
                       ),
+                      onPressed: _openManualAppPicker,
+                      child: const Text('Choose another app'),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextButton(
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 10,
-                          ),
-                        ),
-                        onPressed: _continueWithoutAppContext,
-                        child: const Text(
-                          'Without app context',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 10,
                         ),
                       ),
+                      onPressed: _continueWithoutAppContext,
+                      child: const Text('Without app context'),
                     ),
                   ],
                 ),
@@ -1259,40 +1294,30 @@ class _CompanionScreenState extends State<CompanionScreen>
                   ),
                 ],
                 const SizedBox(height: 6),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 10,
-                          ),
-                        ),
-                        onPressed: _openManualAppPicker,
-                        child: const Text(
-                          'Choose another app',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
                         ),
                       ),
+                      onPressed: _openManualAppPicker,
+                      child: const Text('Choose another app'),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextButton(
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 10,
-                          ),
-                        ),
-                        onPressed: _continueWithoutAppContext,
-                        child: const Text(
-                          'Without app context',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 10,
                         ),
                       ),
+                      onPressed: _continueWithoutAppContext,
+                      child: const Text('Without app context'),
                     ),
                   ],
                 ),

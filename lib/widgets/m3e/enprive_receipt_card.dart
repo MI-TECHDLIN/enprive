@@ -248,7 +248,7 @@ class EnpriveReceiptCard extends StatelessWidget {
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final bool stackVertically =
-                            isLargeScale || constraints.maxWidth < 260;
+                            isLargeScale || constraints.maxWidth < 300;
 
                         final Widget originCluster = Row(
                           mainAxisSize: MainAxisSize.min,
@@ -281,7 +281,7 @@ class EnpriveReceiptCard extends StatelessWidget {
                                   const SizedBox(height: 2),
                                   Text(
                                     metricsSummary,
-                                    maxLines: isLargeScale ? 2 : 1,
+                                    maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: m3e.typeScale.labelSmall.copyWith(
                                       color: scheme.onSurfaceVariant,
