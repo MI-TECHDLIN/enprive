@@ -18,9 +18,9 @@
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
 - **Current `main` HEAD**: `a5c69d1`
-- **Active Feature Branch**: `feature/m3-expressive-rebrand` (D1–D4 Real-Device Reliability Remediation atop `fe3b99d`, uncommitted working changes for user review)
+- **Active Feature Branch**: `feature/m3-expressive-rebrand` (baseline HEAD `b8c2169`, Quick Settings Companion `QS-0`–`QS-5` + physical `RMX5303` & `Pixel_9` verification uncommitted in working tree pending user approval)
 - **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 24 November 2026)
-- **Next Queued Action**: Reconnect physical `RMX5303` (`007446c410310e84`) over USB to run on-device D1–D4 verification + complete `Knowunity`, `Quizlet`, `Transave`, and `5E` journeys; commit/PR only upon user approval before starting D5/Phase B.
+- **Next Queued Action**: Review & commit/PR Quick Settings Companion + D1–D4 validation changes on explicit user approval before starting D5 navigation redesign / Phase B release signing.
 
 ---
 
@@ -1139,11 +1139,74 @@
 
 ---
 
+## Iteration 33: Quick Settings Companion (`QS-0`–`QS-5`) & Physical `RMX5303` Validation (2026-11-16 to 2026-11-18)
+
+- **Branch / Commit State**: `feature/m3-expressive-rebrand` atop `b8c2169` (uncommitted working tree awaiting user commit/PR approval)
+- **Model(s)**: Claude Opus 5.5 / Gemini Argon
+- **What Was Built & Modified**:
+  - **Native Quick Settings Tile & Resolver (`android/app/src/main/`)**:
+    - Created `EnpriveCheckTileService.kt`, `CompanionContract.kt`, `ForegroundAppResolver.kt`, `AppPackageInspector.kt`, `res/drawable/ic_qs_enprive_check.xml` (24dp monochrome white silhouette), `res/values/strings.xml`, and updated `AndroidManifest.xml` & `MainActivity.kt`.
+    - Implemented normal action `TileService` (`ACTIVE_TILE=false`, `unlockAndRun` + `KeyguardManager` lock-screen gating, API 34+ `PendingIntent` `startActivityAndCollapse`), `StatusBarManager.requestAddTileService` tile onboarding, `ACTION_USAGE_ACCESS_SETTINGS` launcher, bounded one-time `UsageStatsManager.queryEvents()` lookup (`30s` active, `120s` stale, `8s` ambiguity, skipping transient SystemUI/PermissionController/Launcher without discarding Chrome/preinstalled apps), shared `AppPackageInspector` curating sensitive runtime permissions + `AD_ID` (`manifestDeclaredOnly`), single-instance `OPEN_COMPANION` routing + `InvocationTracker` deduplication, and `moveTaskToBack` return helper. Zero new dependencies (`quick_settings`, `usage_stats`, Accessibility, overlay libraries rejected).
+  - **Flutter Evidence Engine & Contextual Deni Companion (`lib/`)**:
+    - Added `lib/services/platform/companion_bridge.dart`, `lib/domain/companion/companion_policy_resolver.dart`, `lib/screens/companion_screen.dart`, `inspectPermissionMentionInPolicy` in `permission_comparator.dart`, `askDeniAboutPermission` in `review_coordinator.dart`, non-intrusive Quick Settings & Usage Access setup in `settings_screen.dart`, and cold/warm launch routing in `main.dart`.
+    - Enforced strict privacy boundaries (never fabricating policy URLs, never sending `packageName` or full Android permission inventory to cloud AI or consent previews, zero cloud calls when policy is unverified, reusing existing `DeniAnimatedMascot`, M3E semantic tokens, `InstalledAppPickerSheet`, and `CloudConsentSheet`).
+  - **Tests & Documentation (`test/`, `android/app/src/test/`, `docs/quick_settings_companion/`)**:
+    - Added 14 Kotlin JUnit cases in `CompanionTileAndResolverTest.kt` and 5 domain/E2E/privacy/Settings widget test groups in `test/quick_settings_companion_test.dart`.
+    - Authored 7 deliverables under `docs/quick_settings_companion/`: `README.md`, `architecture.md`, `permission_and_data_flow.md`, `dependency_decisions.md`, `implementation_report.md`, `test_matrix.md`, and `physical_device_validation.md` with RMX5303 & Pixel 9 screenshot evidence.
+- **Challenges & Exact Root-Cause Fixes**:
+  1. **Cold-start splash deduplication race (caught on `Pixel_9`)**: `_handleCompanionInvocation` recorded `invocationId` in `_handledCompanionIds` before dismissing the splash screen, causing post-splash continuation to skip opening `CompanionScreen`. Fixed in `lib/main.dart` to record `_handledCompanionIds` only when `CompanionScreen` pushes and to query `getInitialCompanionInvocation()` before capability polling.
+  2. **`DEVICE_OBSERVED` quote leak into Section 3 (caught on physical `RMX5303` over `Math Makers`)**: `CompanionPolicyResolver.buildExplanation` inspected `verifiedReceipt.findings` where `f.isVerified` is true for both `sourceMatched` and `deviceObserved`, matching `"Android Manifest Observation: android.permission.CAMERA (REQUESTED) — no matching disclosure found in policy snapshot."` under `FindingCategory.dataCollection` and falsely reporting `"Mentioned in verified policy text"`. Fixed to require `f.status == EvidenceStatus.sourceMatched` plus explicit keyword matching via `inspectPermissionMentionInPolicy`, tightened button padding on `360dp` screens in `CompanionScreen`, added regression coverage, and re-verified on `RMX5303` (`Camera` -> `"Not clearly explained in verified policy text"`; `Google Advertising ID` -> verbatim Ululab AppsFlyer quotes).
+- **Verification Status**:
+  - `flutter analyze`: **0 issues** (`6.3s` pre-hardening -> **3.9s** post-hardening below)
+  - `flutter test`: **99 / 99 passed (`41s`)** pre-hardening (updated to **102 / 102** after Iteration 34 pre-commit hardening)
+  - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks --console=plain`: **43 / 43 passed** (`CompanionTileAndResolverTest`: 14, `DocumentTextExtractorTest`: 4, `HybridAiPolicyTest`: 17, `IncomingShareRouterTest`: 8)
+  - Builds (`android-arm64`, pre-hardening baseline): `app-debug.apk` (`151M`), `app-profile.apk` (`59M` / `62.4MB`), `app-release.apk` (`30M` / `31.6MB`, unsigned `signingConfig = null`).
+  - **Physical `RMX5303` (`007446c410310e84`, Android 15 SDK 35)**: Verified ColorOS `requestAddTileService` (`Add tile` -> `Added` + button tile in QS), `ACTION_USAGE_ACCESS_SETTINGS` -> live `Granted` refresh, live QS launches & returns across **Math Makers**, **Knowunity**, **Quizlet**, and **Transave**, fixed `DEVICE_OBSERVED` separation, `GET_USAGE_STATS ignore` + `"Continue without app context"`, single `MainActivity` reuse (`dumpsys activity activities`), zero Accessibility/overlay permissions, ColorOS lock-screen QS gating, and live Chrome `ACTION_SEND` URL+thumbnail -> `PolicyUrlRetriever` + masked `CloudConsentSheet` (`D1`/`D2` sanity). Open boundaries recorded honestly in `docs/quick_settings_companion/physical_device_validation.md` (passive launches did not trigger an external `PermissionController` dialog and interactive keyguard PIN entry was not automated).
+- **Next Immediate Action & Recommended Model**:
+  - Proceeded to **Iteration 34 (Final Pre-Commit Hardening)** to resolve the two P1 evidence-classification findings identified during read-only pre-commit audit before requesting commit approval.
+  - Recommended Model: **Claude Opus 5.5 / Gemini Argon**.
+
+---
+
+## Iteration 34: Final Pre-Commit Hardening — Evidence Classification, Quotation Fallback & QA Housekeeping (2026-11-18)
+
+- **Branch / Commit State**: `feature/m3-expressive-rebrand` atop `b8c2169` (uncommitted working tree awaiting user commit/PR approval; D5 not started)
+- **Model(s)**: Claude Opus 5.5
+- **What Was Built & Modified**:
+  1. **P1 Quotation-Fallback Fix (`lib/domain/companion/companion_policy_resolver.dart`, `lib/domain/review/review_coordinator.dart`, `lib/domain/permissions/permission_comparator.dart`)**:
+     - Added `CompanionDisclosureStatus` (`unverifiedPolicy`, `missingDisclosure`, `ambiguousDisclosure`, `verifiedDisclosure`) and `_hasAmbiguousCondition` in `CompanionPolicyResolver`.
+     - Removed the `snapshotText` opening-sentence quotation fallback in `ReviewCoordinator.askDeniAboutPermission` so missing policy excerpts keep `exactExcerpt: ''` and `EvidenceStatus.unverified`, emit `Matched Policy Excerpt: None` (instead of `Quoted Clause: "..."`) in `askDeniAboutFinding`, and render honest missing-disclosure guidance in `_buildDeterministicDeniExplanation` without `'Policy quote: “”'`.
+     - Fixed pre-existing `'camera input'` / `'microphone audio, or camera input'` substring bug in `PermissionComparator` `disclaimPhrases` so affirmative `"Camera input..."` disclosures are not misclassified as disclaimed.
+  2. **P1 Source-Matched Evidence Metrics & UI Separation (`review_models.dart`, `enprive_finding_m3e_card.dart`, `enprive_receipt_card.dart`, `why_this_finding_sheet.dart`, `review_result_screen.dart`, `receipts_screen.dart`, `main.dart`)**:
+     - Added `VerifiedFinding.isSourceMatched` and `VerifiedFinding.isDeviceObserved` while keeping `VerifiedFinding.isVerified` (`isSourceMatched || isDeviceObserved`), changed `PolicyReviewReceipt.sourceMatchedCount` to count strictly `EvidenceStatus.sourceMatched`, and added `PolicyReviewReceipt.verifiedEvidenceCount`.
+     - Separated `QUOTE MATCHED` vs `DEVICE OBSERVED` vs `UNVERIFIED` badges/typography across `EnpriveFindingM3ECard` and `WhyThisFindingSheet` (rendering `DEVICE_OBSERVED` without curly quotation marks or snapshot digests), and appended `· N observed on phone` alongside policy quote counts on `EnpriveReceiptCard`, `ReceiptsScreen`, `main.dart`, and `ReviewResultScreen`.
+  3. **Regression Tests & Documentation Housekeeping (`test/`, `docs/quick_settings_companion/`)**:
+     - Added missing/unrelated-opening/ambiguous/verified quotation regression coverage in `test/quick_settings_companion_test.dart` and `VerifiedFinding` / `PolicyReviewReceipt` / card / sheet / result-screen regression tests in `test/m3e_custom_cards_test.dart`.
+     - Authored `docs/quick_settings_companion/native_permission_dialog_qa_strategy.md` defining an isolated standalone helper APK (`dev.enprive.qa.permissionprobe`) protocol without modifying Enprive's production manifest.
+     - Pruned `docs/quick_settings_companion/screenshots/` from `33` -> `15` representative captures and updated `README.md`, `physical_device_validation.md`, `implementation_report.md`, and `test_matrix.md` with zero broken links.
+- **Challenges & Root-Cause Fixes**:
+  - Regression testing `askDeniAboutPermission` exposed that `PermissionComparator` listed bare `'camera input'` inside `CAMERA`'s `disclaimPhrases`, causing affirmative disclosures (`"Camera input is used to scan printed math worksheets locally on the tablet."`) to classify as `ambiguousDisclosure` (`isDisclaimed == true`). Scoped disclaimer phrases to negated phrasing (alongside `DeterministicClauseScanner.isNegatedClause`).
+- **Verification Status**:
+  - `flutter analyze`: **0 issues** (`3.7s` final post-edit run)
+  - `flutter test`: **102 / 102 passed** (zero assertions weakened)
+  - `cd android && ./gradlew :app:testDebugUnitTest --rerun-tasks --console=plain`: **43 / 43 passed** (`0` failures, `0` skipped, `0` errors)
+  - Debug build (`flutter build apk --debug --target-platform android-arm64`): Built `app-debug.apk` (`151M`) cleanly.
+- **Outstanding Items for Pre-Release Sign-Off**:
+  1. Physical `RMX5303` (`007446c410310e84`) post-hardening UI walkthrough (disconnected during Iteration 34 hardening pass).
+  2. Standalone Android runtime permission-dialog E2E test (`dev.enprive.qa.permissionprobe` per `docs/quick_settings_companion/native_permission_dialog_qa_strategy.md`).
+  3. Interactive keyguard PIN validation (`EnpriveCheckTileService.unlockAndRun` end-to-end user unlock).
+  4. Signed release build (`signingConfig`) and production Play Integrity App Check verification.
+- **Next Immediate Action & Recommended Model**:
+  - Committed on `feature/m3-expressive-rebrand` (awaiting user instruction before push/PR, pre-release sign-off execution, or starting D5 navigation redesign).
+  - Recommended Model: **Claude Opus 5.5 / Gemini Argon**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
-1. **Physical `RMX5303` Re-Validation (`D1`–`D4` + `Knowunity`/`Quizlet`/`Transave`/`5E`) & D5 Navigation UX**
+1. **D5 Navigation Redesign & Phase B Production Signing / Play Integrity**
    - **Assigned Model**: **Claude Opus 5.5 / Gemini 4 Argon**
-   - **Scope**: Run physical `RMX5303` verification on the fixed arm64 APK, then implement approved D5 UX streamlining (`Open in Play Store`, unified intake sheet, compact Compare trigger, small-screen dock spacing).
+   - **Scope**: Push/PR Quick Settings Companion + evidence-integrity hardening on `feature/m3-expressive-rebrand`, execute pre-release sign-off checklist items (1–4 above), then implement approved D5 UX streamlining (`Open in Play Store`, unified intake sheet, compact Compare trigger, small-screen dock spacing) and production release signing.
 2. **Phase B/C Planning (`LocalPromptRegistry` & POC Server Prompt Template)**
    - **Assigned Model**: **Gemini 4 Argon / Claude Opus 5.5**
    - **Scope**: Begin Phase B only after physical-device sign-off.

@@ -1,11 +1,15 @@
 import 'package:enprive/core/theme/enprive_m3e_theme.dart';
 import 'package:enprive/core/theme/enprive_tokens.dart';
+import 'package:enprive/domain/permissions/permission_comparator.dart';
 import 'package:enprive/domain/review/review_coordinator.dart';
 import 'package:enprive/domain/review/review_models.dart';
 import 'package:enprive/l10n/app_localizations.dart';
+import 'package:enprive/screens/review_result_screen.dart';
+import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/widgets/deni_animated_mascot.dart';
 import 'package:enprive/widgets/enprive_provenance_chip.dart';
 import 'package:enprive/widgets/m3e/enprive_m3e_components.dart';
+import 'package:enprive/widgets/why_this_finding_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -664,6 +668,238 @@ void main() {
         await tester.tap(copyButton);
         await tester.pump();
         expect(copiedDigestText, equals('1234abcd5678ef90'));
+      },
+    );
+
+    test(
+      'VerifiedFinding predicates and PolicyReviewReceipt metrics count policy matches independently from DEVICE_OBSERVED findings',
+      () {
+        const policyMatched = sampleFinding;
+        const deviceCam = VerifiedFinding(
+          id: 'perm_camera',
+          title: 'Undisclosed Android Permission: Camera',
+          category: FindingCategory.dataCollection,
+          severity: FindingSeverity.medium,
+          exactExcerpt:
+              'Android Manifest Observation: android.permission.CAMERA (REQUESTED) — no matching disclosure found in policy snapshot.',
+          explanation: 'Camera permission declared without matching policy clause.',
+          whatPolicySays:
+              'No clause in the provided policy snapshot mentions camera.',
+          whatAndroidReports: 'Declared · Currently denied',
+          unknowns: ['Not a safety certification.'],
+          status: EvidenceStatus.deviceObserved,
+        );
+        const deviceMic = VerifiedFinding(
+          id: 'perm_mic',
+          title: 'Undisclosed Android Permission: Microphone',
+          category: FindingCategory.retention,
+          severity: FindingSeverity.high,
+          exactExcerpt:
+              'Android Manifest Observation: android.permission.RECORD_AUDIO (GRANTED) — no matching disclosure found in policy snapshot.',
+          explanation: 'Microphone granted without matching policy clause.',
+          whatPolicySays:
+              'No clause in the provided policy snapshot mentions microphone.',
+          whatAndroidReports: 'Declared · Currently granted',
+          unknowns: ['Not a safety certification.'],
+          status: EvidenceStatus.deviceObserved,
+        );
+        const unverifiedClaim = VerifiedFinding(
+          id: 'f_unverified',
+          title: 'Retained Logs',
+          category: FindingCategory.retention,
+          severity: FindingSeverity.low,
+          exactExcerpt: 'Server logs may persist.',
+          explanation: 'Unmatched claim.',
+          whatPolicySays: 'No verbatim clause found.',
+          whatAndroidReports: 'None',
+          unknowns: ['Duration unknown'],
+          status: EvidenceStatus.unverified,
+        );
+
+        expect(policyMatched.isSourceMatched, isTrue);
+        expect(policyMatched.isDeviceObserved, isFalse);
+        expect(policyMatched.isVerified, isTrue);
+
+        expect(deviceCam.isSourceMatched, isFalse);
+        expect(deviceCam.isDeviceObserved, isTrue);
+        expect(deviceCam.isVerified, isTrue);
+
+        expect(unverifiedClaim.isSourceMatched, isFalse);
+        expect(unverifiedClaim.isDeviceObserved, isFalse);
+        expect(unverifiedClaim.isVerified, isFalse);
+
+        final mixedReceipt = PolicyReviewReceipt(
+          id: 'rcpt_mixed_metrics',
+          subjectTitle: 'Mixed Evidence App',
+          sourceLabel: 'https://mixed.example/privacy',
+          snapshotText: sampleFinding.exactExcerpt,
+          snapshotDigest: 'fnv_mixed',
+          createdAt: DateTime(2026, 11, 18),
+          overallState: ReviewOverallState.reviewRecommended,
+          inferenceSource: InferenceSource.offlineDeterministic,
+          summary: 'Mixed evidence summary.',
+          calibratedDisclaimer: ReviewCoordinator.calibratedDefaultDisclaimer,
+          findings: const [
+            policyMatched,
+            deviceCam,
+            deviceMic,
+            unverifiedClaim,
+          ],
+        );
+
+        expect(mixedReceipt.sourceMatchedCount, 1);
+        expect(mixedReceipt.deviceObservedCount, 2);
+        expect(mixedReceipt.unverifiedCount, 1);
+        expect(mixedReceipt.verifiedEvidenceCount, 3);
+      },
+    );
+
+    testWidgets(
+      'EnpriveFindingM3ECard, WhyThisFindingSheet, EnpriveReceiptCard, and ReviewResultScreen separate DEVICE_OBSERVED from verified policy quotes',
+      (WidgetTester tester) async {
+        const observationText =
+            'Android Manifest Observation: android.permission.CAMERA (REQUESTED) — no matching disclosure found in policy snapshot.';
+        const deviceFinding = VerifiedFinding(
+          id: 'perm_camera',
+          title: 'Undisclosed Android Permission: Camera',
+          category: FindingCategory.dataCollection,
+          severity: FindingSeverity.medium,
+          exactExcerpt: observationText,
+          explanation: 'App declares CAMERA in APK manifest.',
+          whatPolicySays:
+              'No clause in the provided policy snapshot mentions camera.',
+          whatAndroidReports: 'Camera: Denied on this device',
+          unknowns: ['Actual camera usage cannot be seen statically.'],
+          status: EvidenceStatus.deviceObserved,
+        );
+
+        final mixedReceipt = PolicyReviewReceipt(
+          id: 'rcpt_ui_sep',
+          subjectTitle: 'Math Makers',
+          sourceLabel: 'https://ululab.com/privacy-policy/',
+          snapshotText: sampleFinding.exactExcerpt,
+          snapshotDigest: '1234abcd5678ef90',
+          createdAt: DateTime(2026, 11, 18, 12, 0),
+          overallState: ReviewOverallState.reviewRecommended,
+          inferenceSource: InferenceSource.offlineDeterministic,
+          summary: '1 policy match and 1 Android observation.',
+          calibratedDisclaimer: ReviewCoordinator.calibratedDefaultDisclaimer,
+          findings: const [sampleFinding, deviceFinding],
+          permissionReport: const AppPermissionComparisonReport(
+            snapshot: AppPermissionSnapshot(
+              packageName: 'com.ululab.numbers',
+              appName: 'Math Makers',
+              requestedPermissions: ['android.permission.CAMERA'],
+              grantedPermissions: [],
+            ),
+            items: [],
+            limitationNotice: 'Permission list comes from APK manifest.',
+          ),
+        );
+
+        // 1. Default EnpriveFindingM3ECard without manual verificationLabel override
+        await tester.pumpWidget(
+          _wrapInM3EApp(
+            disableAnimations: true,
+            child: Column(
+              children: [
+                EnpriveFindingM3ECard(
+                  finding: deviceFinding,
+                  index: 0,
+                  totalCount: 2,
+                  sha256Preview: '1234abcd5678ef90',
+                  onTapCard: () {},
+                ),
+                const SizedBox(height: 12),
+                EnpriveReceiptCard(
+                  receipt: mixedReceipt,
+                  stateBadgeLabel: 'Review recommended',
+                  metaLine: 'ululab.com · Nov 18',
+                  openLabel: 'Open',
+                  deleteTooltip: 'Delete',
+                  findingsLabel: 'Findings',
+                  verifiedLabel: 'Verified',
+                  deviceObservedLabel: 'Device observed',
+                  onOpen: () {},
+                  onDelete: () {},
+                ),
+              ],
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('DEVICE OBSERVED'), findsOneWidget);
+        expect(find.text('QUOTE MATCHED'), findsNothing);
+        expect(find.text('“$observationText”'), findsNothing);
+        expect(find.text(observationText), findsOneWidget);
+        expect(
+          find.text('No clause in the provided policy snapshot mentions camera.'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Snapshot digest'), findsNothing);
+        expect(
+          find.text('2 Findings · 1 Verified · 1 Device observed'),
+          findsOneWidget,
+        );
+
+        // 2. WhyThisFindingSheet on a DEVICE_OBSERVED finding never quotes manifest note in curly quotes
+        final coordinator = ReviewCoordinator();
+        await tester.pumpWidget(
+          _wrapInM3EApp(
+            disableAnimations: true,
+            child: SizedBox(
+              height: 760,
+              child: WhyThisFindingSheet(
+                finding: deviceFinding,
+                snapshotText: sampleFinding.exactExcerpt,
+                snapshotDigest: '1234abcd5678ef90',
+                coordinator: coordinator,
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('Device observed'), findsOneWidget);
+        expect(find.text('Source matched'), findsNothing);
+        expect(find.text('“$observationText”'), findsNothing);
+        expect(find.text(observationText), findsOneWidget);
+
+        // 3. ReviewResultScreen hero count reflects ONLY sourceMatchedCount (1) vs Findings (2)
+        final activeData = EnpriveM3ETheme.resolve(
+          mode: ThemeMode.light,
+          platformBrightness: Brightness.light,
+        );
+        await tester.pumpWidget(
+          MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: M3EMaterialApp(
+              data: activeData,
+              typeface: EnpriveM3ETheme.typefaceConfig,
+              autoTheming: false,
+              dynamicColoring: false,
+              initialTheme: activeData.brightness,
+              theme: EnpriveM3ETheme.lightThemeData.toThemeData(),
+              darkTheme: EnpriveM3ETheme.darkThemeData.toThemeData(),
+              locale: const Locale('en'),
+              localizationsDelegates: EnpriveM3ETheme.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: ReviewResultScreen(
+                receipt: mixedReceipt,
+                coordinator: coordinator,
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('Quote verified in policy'), findsOneWidget);
+        expect(find.text('Observed on this phone'), findsOneWidget);
+        expect(
+          find.text('1 Quote verified in policy · 1 Observed on this phone'),
+          findsOneWidget,
+        );
       },
     );
   });

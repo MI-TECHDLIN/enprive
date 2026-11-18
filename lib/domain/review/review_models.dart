@@ -209,9 +209,18 @@ class VerifiedFinding {
     this.contextWindow,
   });
 
-  bool get isVerified =>
-      status == EvidenceStatus.sourceMatched ||
-      status == EvidenceStatus.deviceObserved;
+  /// Whether this finding is directly verified by a verbatim policy quote match.
+  bool get isSourceMatched => status == EvidenceStatus.sourceMatched;
+
+  /// Whether this finding was directly observed from on-device Android state.
+  bool get isDeviceObserved => status == EvidenceStatus.deviceObserved;
+
+  /// Whether this finding is backed by deterministic verification (either a
+  /// verbatim quote match in the policy snapshot OR a live on-device Android
+  /// inspection). Callers presenting policy quotes or counting policy-matched
+  /// clauses MUST use [isSourceMatched] so Android observations are never
+  /// presented as developer-disclosed policy text.
+  bool get isVerified => isSourceMatched || isDeviceObserved;
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -369,19 +378,20 @@ class PolicyReviewReceipt {
       diagnosticKind == ReviewDiagnosticKind.devicePermissionInspection ||
       (snapshotText.trim().isEmpty && permissionReport != null);
 
-  int get sourceMatchedCount => findings
-      .where(
-        (f) =>
-            f.status == EvidenceStatus.sourceMatched ||
-            f.status == EvidenceStatus.deviceObserved,
-      )
-      .length;
+  /// Number of findings directly matched to a verbatim clause in the reviewed
+  /// privacy policy text. Excludes [EvidenceStatus.deviceObserved] findings.
+  int get sourceMatchedCount =>
+      findings.where((f) => f.status == EvidenceStatus.sourceMatched).length;
 
+  /// Number of findings derived from on-device Android manifest/permission state.
   int get deviceObservedCount =>
       findings.where((f) => f.status == EvidenceStatus.deviceObserved).length;
 
   int get unverifiedCount =>
       findings.where((f) => f.status == EvidenceStatus.unverified).length;
+
+  /// Total findings backed by either verified policy quotes OR device inspection.
+  int get verifiedEvidenceCount => sourceMatchedCount + deviceObservedCount;
 
   Map<String, dynamic> toJson() => {
         'id': id,

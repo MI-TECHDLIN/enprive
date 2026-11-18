@@ -1,22 +1,25 @@
 package com.example.enprive
 
 import android.app.Activity
+import android.app.KeyguardManager
+import android.app.StatusBarManager
+import android.content.ActivityNotFoundException
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
-import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.drawable.AdaptiveIconDrawable
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
+import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
-import java.io.ByteArrayOutputStream
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.Firebase
 import com.google.firebase.ai.InferenceMode
@@ -55,10 +58,13 @@ class MainActivity : FlutterActivity() {
     private val PICK_DOCUMENT_REQUEST_CODE = 4091
     private var initialSelectedText: String? = null
     private var initialIncomingPayload: Map<String, Any?>? = null
+    private var initialCompanionInvocation: CompanionContract.CompanionInvocation? = null
+    private val companionInvocationTracker = CompanionContract.InvocationTracker()
     private var pendingDocumentResult: MethodChannel.Result? = null
     private var tts: TextToSpeech? = null
     private var isTtsReady: Boolean = false
     private var methodChannel: MethodChannel? = null
+    private var companionChannel: MethodChannel? = null
     private val activeAnalysisJobs = ConcurrentHashMap<String, Job>()
     private val userCancelledRequestIds = ConcurrentHashMap.newKeySet<String>()
 
@@ -152,6 +158,25 @@ class MainActivity : FlutterActivity() {
         incomingIntent: Intent?,
         dispatchIfAttached: Boolean,
     ) {
+        if (incomingIntent?.action == CompanionContract.ACTION_OPEN_COMPANION) {
+            val invocation = CompanionContract.parseCompanionInvocation(
+                intent = incomingIntent,
+                isDeviceLocked = isDeviceLockedNow(),
+            ) ?: return
+            if (!companionInvocationTracker.consumeIfUnprocessed(invocation.invocationId)) {
+                return
+            }
+            val activeCompanionChannel = companionChannel
+            if (dispatchIfAttached && activeCompanionChannel != null) {
+                initialCompanionInvocation = null
+                activeCompanionChannel.invokeMethod("onCompanionInvocation", invocation.toMap())
+            } else {
+                initialCompanionInvocation = invocation
+            }
+            Log.d(TAG, "Received OPEN_COMPANION invocation (source=${invocation.source})")
+            return
+        }
+
         when (incomingIntent?.action) {
             Intent.ACTION_PROCESS_TEXT -> {
                 val text = incomingIntent
@@ -571,43 +596,10 @@ class MainActivity : FlutterActivity() {
                 "listLaunchableApps" -> {
                     lifecycleScope.launch(Dispatchers.IO) {
                         val apps = try {
-                            val pm = packageManager
-                            val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
-                                addCategory(Intent.CATEGORY_LAUNCHER)
-                            }
-                            val resolveInfos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                pm.queryIntentActivities(
-                                    mainIntent,
-                                    PackageManager.ResolveInfoFlags.of(0L)
-                                )
-                            } else {
-                                @Suppress("DEPRECATION")
-                                pm.queryIntentActivities(mainIntent, 0)
-                            }
-
-                            val seen = mutableSetOf<String>()
-                            resolveInfos.mapNotNull { info ->
-                                val pkg = info.activityInfo?.packageName ?: return@mapNotNull null
-                                if (pkg == applicationContext.packageName || !seen.add(pkg)) {
-                                    return@mapNotNull null
-                                }
-                                val appInfo = info.activityInfo?.applicationInfo
-                                val label = info.loadLabel(pm).toString().takeIf { it.isNotBlank() }
-                                    ?: appInfo?.loadLabel(pm)?.toString()
-                                    ?: pkg
-                                val isSystem = ((appInfo?.flags ?: 0) and ApplicationInfo.FLAG_SYSTEM) != 0
-                                mapOf(
-                                    "packageName" to pkg,
-                                    "appName" to label,
-                                    "isSystemApp" to isSystem
-                                )
-                            }.sortedWith(
-                                compareBy<Map<String, Any>> { it["isSystemApp"] as Boolean }
-                                    .thenBy { (it["appName"] as String).lowercase() }
-                            )
+                            AppPackageInspector.listLaunchableApps(applicationContext)
                         } catch (e: Exception) {
                             Log.w(TAG, "listLaunchableApps error (${e.javaClass.simpleName})")
-                            emptyList<Map<String, Any>>()
+                            emptyList()
                         }
 
                         withContext(Dispatchers.Main) {
@@ -625,7 +617,11 @@ class MainActivity : FlutterActivity() {
                     val requestedSize = call.argument<Int>("sizePx") ?: 112
                     val targetSize = requestedSize.coerceIn(32, 192)
                     lifecycleScope.launch(Dispatchers.IO) {
-                        val iconBytes = loadAppIconPngBytes(packageName, targetSize)
+                        val iconBytes = AppPackageInspector.loadAppIconPngBytes(
+                            applicationContext,
+                            packageName,
+                            targetSize,
+                        )
                         withContext(Dispatchers.Main) {
                             result.success(iconBytes)
                         }
@@ -639,41 +635,21 @@ class MainActivity : FlutterActivity() {
                         return@setMethodCallHandler
                     }
 
-                    try {
-                        val pm = packageManager
-                        val pkgInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            pm.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(PackageManager.GET_PERMISSIONS.toLong()))
-                        } else {
-                            @Suppress("DEPRECATION")
-                            pm.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
-                        }
-
-                        val appName = pkgInfo.applicationInfo?.loadLabel(pm)?.toString() ?: packageName
-                        val requested = pkgInfo.requestedPermissions?.toList() ?: emptyList<String>()
-                        val granted = mutableListOf<String>()
-
-                        pkgInfo.requestedPermissions?.forEachIndexed { index, perm ->
-                            val isGranted = (pkgInfo.requestedPermissionsFlags?.getOrNull(index) ?: 0) and
-                                    PackageInfo.REQUESTED_PERMISSION_GRANTED != 0
-                            if (isGranted) {
-                                granted.add(perm)
-                            }
-                        }
-
-                        // Strictly local on-device result - never leaves the device
-                        result.success(mapOf(
-                            "packageName" to packageName,
-                            "appName" to appName,
-                            "requestedPermissions" to requested,
-                            "grantedPermissions" to granted
-                        ))
+                    val snapshotMap = try {
+                        AppPackageInspector.inspectRawPermissionSnapshot(packageManager, packageName)
                     } catch (_: Exception) {
+                        null
+                    }
+                    if (snapshotMap == null) {
                         result.error(
                             "PACKAGE_NOT_FOUND",
                             "Selected application package could not be inspected.",
                             null,
                         )
+                        return@setMethodCallHandler
                     }
+                    // Strictly local on-device result - never leaves the device
+                    result.success(snapshotMap)
                 }
 
                 "analyseText" -> {
@@ -1043,6 +1019,208 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        val companionCh = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CompanionContract.CHANNEL)
+        companionChannel = companionCh
+        companionCh.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getInitialCompanionInvocation" -> {
+                    val pending = initialCompanionInvocation
+                    initialCompanionInvocation = null
+                    result.success(pending?.toMap())
+                }
+
+                "checkUsageAccess" -> {
+                    val status = ForegroundAppResolver.checkUsageAccess(applicationContext)
+                    result.success(
+                        mapOf(
+                            "schemaVersion" to 1,
+                            "status" to status.wireValue,
+                            "deviceLocked" to isDeviceLockedNow(),
+                        ),
+                    )
+                }
+
+                "openUsageAccessSettings" -> {
+                    val launched = openUsageAccessSettingsScreen()
+                    result.success(launched)
+                }
+
+                "resolveForegroundApp" -> {
+                    if (isDeviceLockedNow()) {
+                        result.success(
+                            mapOf(
+                                "schemaVersion" to 1,
+                                "resolutionStatus" to "deviceLocked",
+                                "packageName" to null,
+                                "applicationLabel" to null,
+                                "eventTimestamp" to null,
+                                "eventAgeMillis" to null,
+                                "confidence" to "none",
+                                "fallbackReason" to "Unlock your device before viewing app context.",
+                                "candidates" to emptyList<Map<String, Any?>>(),
+                                "permissionMetadataAvailable" to false,
+                            ),
+                        )
+                        return@setMethodCallHandler
+                    }
+                    val endTimeMs = call.argument<Number>("invocationTimestampMs")?.toLong()
+                        ?: System.currentTimeMillis()
+                    val windowMs = call.argument<Number>("windowMs")?.toLong()
+                        ?: ForegroundAppResolver.DEFAULT_CANDIDATE_WINDOW_MS
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val resolution = ForegroundAppResolver.resolveCurrentForegroundApp(
+                            context = applicationContext,
+                            queryEndTimeMs = endTimeMs,
+                            windowMs = windowMs,
+                        )
+                        withContext(Dispatchers.Main) {
+                            result.success(resolution.toMap())
+                        }
+                    }
+                }
+
+                "getDeclaredSensitivePermissions" -> {
+                    if (isDeviceLockedNow()) {
+                        result.success(
+                            mapOf(
+                                "schemaVersion" to 1,
+                                "status" to "device_locked",
+                                "packageName" to "",
+                                "permissions" to emptyList<Map<String, Any?>>(),
+                                "errorMessage" to "Unlock your device to view declared permissions.",
+                            ),
+                        )
+                        return@setMethodCallHandler
+                    }
+                    val packageName = call.argument<String>("packageName") ?: ""
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val inspected = AppPackageInspector.inspectDeclaredSensitivePermissions(
+                            packageManager = packageManager,
+                            packageName = packageName,
+                        )
+                        withContext(Dispatchers.Main) {
+                            result.success(inspected.toMap())
+                        }
+                    }
+                }
+
+                "getQuickSettingsTileStatus" -> {
+                    val tileState = QuickSettingsTileStateStore.read(applicationContext)
+                    result.success(
+                        mapOf(
+                            "schemaVersion" to 1,
+                            "canRequestDirectAdd" to (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU),
+                            "isTileAdded" to tileState.isTileAdded,
+                            "hasDeclinedBefore" to tileState.hasDeclinedBefore,
+                            "apiLevel" to Build.VERSION.SDK_INT,
+                        ),
+                    )
+                }
+
+                "requestQuickSettingsTile" -> {
+                    requestQuickSettingsTileInstallation(result)
+                }
+
+                "returnToPreviousApp" -> {
+                    val moved = try {
+                        moveTaskToBack(true)
+                    } catch (_: Throwable) {
+                        false
+                    }
+                    result.success(moved)
+                }
+
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    private fun isDeviceLockedNow(): Boolean {
+        return try {
+            val km = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+            km?.isKeyguardLocked == true
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    private fun openUsageAccessSettingsScreen(): Boolean {
+        val packageSpecificIntent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+            data = Uri.fromParts("package", packageName, null)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        return try {
+            startActivity(packageSpecificIntent)
+            true
+        } catch (_: ActivityNotFoundException) {
+            try {
+                val genericIntent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(genericIntent)
+                true
+            } catch (_: Throwable) {
+                false
+            }
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    private fun requestQuickSettingsTileInstallation(result: MethodChannel.Result) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            result.success(
+                mapOf(
+                    "outcome" to "manual_required",
+                    "apiLevel" to Build.VERSION.SDK_INT,
+                ),
+            )
+            return
+        }
+        val sbm = getSystemService(Context.STATUS_BAR_SERVICE) as? StatusBarManager
+        if (sbm == null) {
+            result.success(
+                mapOf(
+                    "outcome" to "unavailable",
+                    "apiLevel" to Build.VERSION.SDK_INT,
+                ),
+            )
+            return
+        }
+
+        val replied = AtomicBoolean(false)
+        try {
+            sbm.requestAddTileService(
+                ComponentName(this, EnpriveCheckTileService::class.java),
+                getString(R.string.qs_tile_label),
+                Icon.createWithResource(this, R.drawable.ic_qs_enprive_check),
+                mainExecutor,
+            ) { code ->
+                if (!replied.compareAndSet(false, true)) return@requestAddTileService
+                val outcome = CompanionContract.mapTileAddRequestResult(code)
+                when (outcome) {
+                    "tile_added", "already_added" -> QuickSettingsTileStateStore.markTileAdded(applicationContext)
+                    "declined" -> QuickSettingsTileStateStore.markTileDeclined(applicationContext)
+                }
+                result.success(
+                    mapOf(
+                        "outcome" to outcome,
+                        "apiLevel" to Build.VERSION.SDK_INT,
+                    ),
+                )
+            }
+        } catch (e: Throwable) {
+            Log.w(TAG, "requestAddTileService failed (${e.javaClass.simpleName})")
+            if (replied.compareAndSet(false, true)) {
+                result.success(
+                    mapOf(
+                        "outcome" to "failed",
+                        "apiLevel" to Build.VERSION.SDK_INT,
+                    ),
+                )
+            }
+        }
     }
 
     private fun resolveBcp47Locale(languageCode: String): Locale {
@@ -1110,51 +1288,5 @@ class MainActivity : FlutterActivity() {
             list.add(value)
         }
         return list
-    }
-
-    /**
-     * Loads the launcher icon for [packageName] strictly on-device and encodes it
-     * as a bounded PNG byte array for local UI display only.
-     */
-    private fun loadAppIconPngBytes(packageName: String, sizePx: Int): ByteArray? {
-        return try {
-            val drawable = packageManager.getApplicationIcon(packageName)
-            val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-            try {
-                val canvas = Canvas(bitmap)
-                if (drawable is AdaptiveIconDrawable) {
-                    // Trim adaptive outer mask bleed (~16.7% per side) so launcher artwork
-                    // fills the rounded squircle tile with crisp optical balance.
-                    val bleed = (sizePx * 0.18f).toInt()
-                    drawable.setBounds(-bleed, -bleed, sizePx + bleed, sizePx + bleed)
-                } else {
-                    val intrinsicW = drawable.intrinsicWidth
-                    val intrinsicH = drawable.intrinsicHeight
-                    if (intrinsicW > 0 && intrinsicH > 0 && intrinsicW != intrinsicH) {
-                        val scale = minOf(
-                            sizePx.toFloat() / intrinsicW,
-                            sizePx.toFloat() / intrinsicH,
-                        )
-                        val drawW = (intrinsicW * scale).toInt().coerceAtLeast(1)
-                        val drawH = (intrinsicH * scale).toInt().coerceAtLeast(1)
-                        val left = (sizePx - drawW) / 2
-                        val top = (sizePx - drawH) / 2
-                        drawable.setBounds(left, top, left + drawW, top + drawH)
-                    } else {
-                        drawable.setBounds(0, 0, sizePx, sizePx)
-                    }
-                }
-                drawable.draw(canvas)
-                val stream = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-                stream.toByteArray()
-            } finally {
-                bitmap.recycle()
-            }
-        } catch (_: PackageManager.NameNotFoundException) {
-            null
-        } catch (_: Throwable) {
-            null
-        }
     }
 }

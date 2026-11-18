@@ -314,6 +314,7 @@ class _M3EReceiptCard extends StatelessWidget {
       deleteTooltip: l10n.btnDelete,
       findingsLabel: l10n.statFindings,
       verifiedLabel: l10n.statVerified,
+      deviceObservedLabel: l10n.statusDeviceObserved,
       onOpen: onOpen,
       onDelete: onDelete,
     );

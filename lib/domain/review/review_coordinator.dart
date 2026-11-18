@@ -2,6 +2,7 @@ import '../../l10n/app_localizations.dart';
 import '../../l10n/enprive_languages.dart';
 import '../../services/platform/hybrid_ai_bridge.dart';
 import '../../widgets/enprive_provenance_chip.dart';
+import '../companion/companion_policy_resolver.dart';
 import '../evidence/evidence_validator.dart';
 import '../permissions/permission_comparator.dart';
 import '../privacy/pii_redactor.dart';
@@ -573,8 +574,12 @@ class ReviewCoordinator {
     final reqId = (requestId != null && requestId.trim().isNotEmpty)
         ? requestId.trim()
         : 'deni_${DateTime.now().millisecondsSinceEpoch}';
-    final compositeInput =
-        'Question: ${question.trim()}\nQuoted Clause: "${finding.exactExcerpt.trim()}"\n\n${snapshotText.trim()}';
+    final trimmedExcerpt = finding.exactExcerpt.trim();
+    final hasMatchedPolicyQuote =
+        finding.isSourceMatched && trimmedExcerpt.isNotEmpty;
+    final compositeInput = hasMatchedPolicyQuote
+        ? 'Question: ${question.trim()}\nQuoted Clause: "$trimmedExcerpt"\n\n${snapshotText.trim()}'
+        : 'Question: ${question.trim()}\nMatched Policy Excerpt: None (no clause in the captured snapshot explicitly mentions this topic).\n\n${snapshotText.trim()}';
     final processSteps = <String>[];
     String? streamedThought;
     String? streamedSignature;
@@ -759,11 +764,18 @@ class ReviewCoordinator {
     String? thoughtSummary,
     String? thoughtSignature,
   }) {
+    final trimmedExcerpt = finding.exactExcerpt.trim();
+    final hasMatchedPolicyQuote =
+        finding.isSourceMatched && trimmedExcerpt.isNotEmpty;
     _recordAndEmitStep(
       requestId: requestId,
       steps: steps,
       stage: 'offline_fallback',
-      label: 'Answering directly from verified quote',
+      label: hasMatchedPolicyQuote
+          ? 'Answering directly from verified quote'
+          : (finding.isDeviceObserved
+                ? 'Answering from on-device inspection (no matching policy quote)'
+                : 'Answering locally (no matching policy disclosure found)'),
       inferenceSource: 'OFFLINE_DETERMINISTIC',
       isCompleted: true,
     );
@@ -771,11 +783,24 @@ class ReviewCoordinator {
     final isOptOutQuestion =
         intentHint == 'opt_out' ||
         qLower.contains('turn this off') ||
-        qLower.contains('opt out');
+        qLower.contains('opt out') ||
+        qLower.contains('without granting') ||
+        qLower.contains('deny');
     final isUnknownQuestion =
         intentHint == 'unknown' || qLower.contains('unknown');
     final String groundedAnswer;
-    if (isOptOutQuestion) {
+    if (!hasMatchedPolicyQuote) {
+      if (isOptOutQuestion) {
+        groundedAnswer =
+            'No matching disclosure was found in the reviewed policy snapshot, so there is no verified opt-out quote to cite. Check the app’s in-app settings or Android App Permissions to control or deny this access directly.';
+      } else if (isUnknownQuestion) {
+        groundedAnswer = finding.unknowns.isNotEmpty
+            ? finding.unknowns.first
+            : 'No matching clause was found in the reviewed policy snapshot, so whether the developer uses or shares this data remains unspecified.';
+      } else {
+        groundedAnswer = finding.explanation;
+      }
+    } else if (isOptOutQuestion) {
       groundedAnswer =
           'Look for a toggle in the app’s settings or Android App Permissions, '
           'and check whether a parent or school admin must request deletion. '
@@ -791,7 +816,9 @@ class ReviewCoordinator {
     return DeniExplanation(
       question: question,
       answer: groundedAnswer,
-      whatPolicySays: 'Policy quote: “${finding.exactExcerpt}”',
+      whatPolicySays: hasMatchedPolicyQuote
+          ? 'Policy quote: “$trimmedExcerpt”'
+          : finding.whatPolicySays,
       unknownBoundary: finding.unknowns.isNotEmpty
           ? finding.unknowns.first
           : 'The policy text alone cannot show whether the app transmits this data right now.',
@@ -800,6 +827,185 @@ class ReviewCoordinator {
       thoughtSummary: thoughtSummary,
       thoughtSignature: thoughtSignature,
     );
+  }
+
+  /// Explains a selected Android permission context for the Quick Settings
+  /// Companion using [askDeniAboutFinding] when verified policy text exists,
+  /// or strictly local Android permission guidance when no policy is verified.
+  ///
+  /// Privacy Guardrail: Never transmits Android package names or installed-app
+  /// permission inventories to cloud endpoints.
+  Future<DeniExplanation> askDeniAboutPermission({
+    required CompanionPermissionExplanation explanation,
+    required String question,
+    String? userFeatureContext,
+    String? confirmedPackageName,
+    bool cloudConsent = false,
+    bool forceLocalManualFallback = false,
+    String languageCode = 'en',
+    String? requestId,
+  }) async {
+    final trimmedQ = question.trim();
+    final trimmedCtx = userFeatureContext?.trim() ?? '';
+    final verifiedReceipt = explanation.matchedReceipt;
+
+    // Without verified developer policy text, answer deterministically from
+    // Android permission definitions + user feature context without cloud calls.
+    if (!explanation.hasVerifiedPolicy ||
+        verifiedReceipt == null ||
+        verifiedReceipt.snapshotText.trim().isEmpty) {
+      return _buildUnverifiedPermissionDeniExplanation(
+        explanation: explanation,
+        question: trimmedQ,
+        userFeatureContext: trimmedCtx,
+      );
+    }
+
+    final snapshotText = verifiedReceipt.snapshotText;
+    final matchedQuote = explanation.verbatimExcerpts.isNotEmpty
+        ? explanation.verbatimExcerpts.first.trim()
+        : '';
+    final hasMatchedExcerpt = matchedQuote.isNotEmpty;
+
+    final scrubbedFeature = trimmedCtx.isNotEmpty
+        ? _stripPackageIdentifier(
+            PiiRedactor.redact(trimmedCtx).redactedText,
+            confirmedPackageName,
+          )
+        : '';
+    final scrubbedQ = _stripPackageIdentifier(
+      PiiRedactor.redact(trimmedQ).redactedText,
+      confirmedPackageName,
+    );
+    final disclosureNote = switch (explanation.disclosureStatus) {
+      CompanionDisclosureStatus.missingDisclosure =>
+        'Disclosure status: Missing in reviewed policy (no verified clause matches this capability).',
+      CompanionDisclosureStatus.ambiguousDisclosure =>
+        'Disclosure status: Ambiguous or conditional mention in reviewed policy.',
+      CompanionDisclosureStatus.verifiedDisclosure =>
+        'Disclosure status: Explicitly matched in reviewed policy.',
+      CompanionDisclosureStatus.unverifiedPolicy =>
+        'Disclosure status: No verified policy attached.',
+    };
+    final sanitizedCompositeQ = [
+      'Permission topic: ${explanation.title}.',
+      disclosureNote,
+      if (scrubbedFeature.isNotEmpty)
+        'User feature context: $scrubbedFeature.',
+      'Question: $scrubbedQ',
+    ].join(' ');
+
+    final findingCategory = switch (explanation.categoryId) {
+      'location' => FindingCategory.tracking,
+      'advertising_id' || 'contacts' => FindingCategory.sharing,
+      'microphone' => FindingCategory.retention,
+      _ => FindingCategory.dataCollection,
+    };
+
+    final groundedFinding = VerifiedFinding(
+      id: 'companion_${explanation.categoryId}',
+      title: '${explanation.title} access',
+      category: findingCategory,
+      severity: FindingSeverity.medium,
+      exactExcerpt: matchedQuote,
+      explanation: explanation.whatPolicySays,
+      whatPolicySays: explanation.whatPolicySays,
+      whatAndroidReports: 'Selected in local companion UI (${explanation.title}).',
+      unknowns: explanation.unknowns,
+      status: hasMatchedExcerpt
+          ? EvidenceStatus.sourceMatched
+          : EvidenceStatus.unverified,
+    );
+
+    final aiResult = await askDeniAboutFinding(
+      finding: groundedFinding,
+      question: sanitizedCompositeQ,
+      snapshotText: snapshotText,
+      cloudConsent: cloudConsent,
+      forceLocalManualFallback: forceLocalManualFallback,
+      languageCode: languageCode,
+      intentHint: _companionIntentHint(trimmedQ),
+      requestId: requestId,
+    );
+
+    // Keep user-facing question clean & never substitute policy claims on undisclosed gaps.
+    return DeniExplanation(
+      question: trimmedQ,
+      answer: aiResult.answer,
+      whatPolicySays: aiResult.whatPolicySays,
+      unknownBoundary: aiResult.unknownBoundary,
+      inferenceSource: aiResult.inferenceSource,
+      requiresCloudConsent: aiResult.requiresCloudConsent,
+      consentReason: aiResult.consentReason,
+      redactedPreview: aiResult.redactedPreview,
+      processSteps: aiResult.processSteps,
+      thoughtSummary: aiResult.thoughtSummary,
+      thoughtSignature: aiResult.thoughtSignature,
+    );
+  }
+
+  DeniExplanation _buildUnverifiedPermissionDeniExplanation({
+    required CompanionPermissionExplanation explanation,
+    required String question,
+    required String userFeatureContext,
+  }) {
+    final qLower = question.toLowerCase();
+    final hasFeature = userFeatureContext.isNotEmpty;
+    final needsFeaturePrompt =
+        !hasFeature &&
+        (qLower.contains('feature') ||
+            qLower.contains('need') ||
+            qLower.contains('why'));
+
+    final String answer;
+    if (qLower.contains('deny') || qLower.contains('without granting')) {
+      answer =
+          'If you deny ${explanation.title}, Android keeps this access blocked and blocks only app features that directly depend on it. Many apps remain usable, though any action tied specifically to ${explanation.title.toLowerCase()} (and only that workflow) may ask again or stay unavailable until allowed in Android App Settings. ${CompanionPolicyResolver.unverifiedPolicyHeadline}';
+    } else if (qLower.contains('policy') || qLower.contains('shared')) {
+      answer =
+          '${CompanionPolicyResolver.unverifiedPolicyHeadline} Because no developer policy has been verified for this app yet, Enprive cannot say whether the developer states this information is shared or retained. Add the developer\'s privacy policy link or text above to check quoted disclosures.';
+    } else if (needsFeaturePrompt) {
+      answer =
+          '${explanation.whatPermissionMeans} Because Enprive cannot read which screen you were using and we could not verify a privacy policy for this app yet, tell me what you were trying to do right before seeing the prompt so I can explain if it aligns with typical Android usage.';
+    } else if (hasFeature) {
+      answer =
+          'For "$userFeatureContext": ${explanation.whatPermissionMeans} Check whether that task genuinely requires ${explanation.title.toLowerCase()} access right now. Because no developer privacy policy has been verified yet, only the immediate on-device purpose you can see applies.';
+    } else {
+      answer =
+          '${explanation.whatPermissionMeans} ${explanation.grantStatusSummary}. ${CompanionPolicyResolver.unverifiedPolicyHeadline}';
+    }
+
+    return DeniExplanation(
+      question: question,
+      answer: answer,
+      whatPolicySays: CompanionPolicyResolver.unverifiedPolicyHeadline,
+      unknownBoundary: explanation.unknowns.isNotEmpty
+          ? explanation.unknowns.first
+          : 'No verified developer privacy policy is attached yet.',
+      inferenceSource: InferenceSource.offlineDeterministic,
+      processSteps: const [
+        'Answered locally from Android permission semantics (no verified policy attached)',
+      ],
+    );
+  }
+
+  static String _companionIntentHint(String question) {
+    final qLower = question.toLowerCase();
+    if (qLower.contains('deny') ||
+        qLower.contains('without') ||
+        qLower.contains('turn off')) {
+      return 'opt_out';
+    }
+    if (qLower.contains('unknown') || qLower.contains('feature')) {
+      return 'unknown';
+    }
+    return 'meaning';
+  }
+
+  static String _stripPackageIdentifier(String input, String? packageName) {
+    final pkg = packageName?.trim();
+    if (pkg == null || pkg.isEmpty) return input;
+    return input.replaceAll(pkg, '[APP_ID]');
   }
 
   PolicyReviewReceipt _parseAndValidateBridgeOutput({

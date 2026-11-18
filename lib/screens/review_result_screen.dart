@@ -790,6 +790,17 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                   color: scheme.onSurface,
                                 ),
                           ),
+                          if (!receipt.isPermissionOnlyInspection &&
+                              receipt.deviceObservedCount > 0) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              '${receipt.sourceMatchedCount} ${l10n.quoteVerifiedLabel} · ${receipt.deviceObservedCount} ${l10n.observedOnPhoneLabel}',
+                              style: m3e.typeScale.labelMedium.copyWith(
+                                color: scheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 12),
 
                           if (receipt.isPermissionOnlyInspection)
@@ -1010,10 +1021,11 @@ class _M3EFindingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isVerified = finding.isVerified;
-    final String verifyLabel = finding.status == EvidenceStatus.deviceObserved
+    final String verifyLabel = finding.isDeviceObserved
         ? l10n.observedOnPhoneLabel
-        : (isVerified ? l10n.quoteVerifiedLabel : l10n.unverifiedClaimLabel);
+        : (finding.isSourceMatched
+              ? l10n.quoteVerifiedLabel
+              : l10n.unverifiedClaimLabel);
 
     return EnpriveFindingM3ECard(
       finding: finding,

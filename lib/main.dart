@@ -13,6 +13,7 @@ import 'domain/review/review_coordinator.dart';
 import 'domain/review/review_models.dart';
 import 'l10n/app_localizations.dart';
 import 'l10n/enprive_languages.dart';
+import 'screens/companion_screen.dart';
 import 'screens/onboarding_flow_screen.dart';
 import 'screens/receipts_screen.dart';
 import 'screens/review_result_screen.dart';
@@ -20,6 +21,7 @@ import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/intake/policy_intake_helper.dart';
 import 'services/network/policy_url_retriever.dart';
+import 'services/platform/companion_bridge.dart';
 import 'services/platform/hybrid_ai_bridge.dart';
 import 'services/storage/receipt_repository.dart';
 import 'widgets/cloud_consent_sheet.dart';
@@ -168,6 +170,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
 ''';
 
   final HybridAiBridge _bridge = HybridAiBridge();
+  final CompanionBridge _companionBridge = CompanionBridge();
   late final PolicyUrlRetriever _urlRetriever =
       widget.urlRetriever ?? PolicyUrlRetriever();
   late final ReviewCoordinator _coordinator = ReviewCoordinator(
@@ -191,6 +194,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
   bool _pendingFirstRunOnboarding = false;
   IncomingIntentPayload? _pendingIncomingPayload;
   StreamSubscription<IncomingIntentPayload>? _incomingPayloadSub;
+  CompanionInvocation? _pendingCompanionInvocation;
+  StreamSubscription<CompanionInvocation>? _companionInvocationSub;
+  final Set<String> _handledCompanionIds = <String>{};
+  bool _isCompanionRouteOpen = false;
 
   @override
   void initState() {
@@ -198,6 +205,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
     WidgetsBinding.instance.addObserver(this);
     _incomingPayloadSub = _bridge.incomingPayloads.listen(
       _handleIncomingPayload,
+    );
+    _companionInvocationSub = _companionBridge.invocations.listen(
+      _handleCompanionInvocation,
     );
     _initializeDeviceAndIntent();
   }
@@ -208,6 +218,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
     if (sub != null) {
       unawaited(sub.cancel());
     }
+    final companionSub = _companionInvocationSub;
+    if (companionSub != null) {
+      unawaited(companionSub.cancel());
+    }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -216,12 +230,23 @@ We do not collect personal identifiers, precise location data, microphone audio,
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkIncomingTextIntent();
+      unawaited(_checkCompanionInvocation());
     }
   }
 
   void _completeSplash() {
     if (!_isSplashVisible || !mounted) return;
     setState(() => _isSplashVisible = false);
+
+    if (_pendingCompanionInvocation != null) {
+      final inv = _pendingCompanionInvocation!;
+      _pendingCompanionInvocation = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(_handleCompanionInvocation(inv));
+      });
+      return;
+    }
 
     if (_pendingIncomingPayload != null) {
       final pending = _pendingIncomingPayload!;
@@ -260,14 +285,11 @@ We do not collect personal identifiers, precise location data, microphone audio,
       if (prefs.themeMode != widget.currentThemeMode) {
         widget.onThemeModeChange?.call(prefs.themeMode);
       }
-      if (!prefs.hasCompletedOnboarding) {
-        if (_isSplashVisible) {
-          _pendingFirstRunOnboarding = true;
-        } else {
-          unawaited(_openOnboardingFlow());
-        }
-      }
     }
+
+    // Prioritize Quick Settings companion invocation immediately before device model polling.
+    await _checkCompanionInvocation();
+    await _checkIncomingTextIntent();
 
     final cap = await _bridge.getDeviceCapability();
     if (mounted) {
@@ -278,7 +300,18 @@ We do not collect personal identifiers, precise location data, microphone audio,
     if (cap.isSupported && cap.modelStatus == ModelDownloadStatus.available) {
       unawaited(_bridge.warmUpModel());
     }
-    await _checkIncomingTextIntent();
+
+    if (mounted &&
+        !prefs.hasCompletedOnboarding &&
+        !_isCompanionRouteOpen &&
+        _pendingCompanionInvocation == null &&
+        _pendingIncomingPayload == null) {
+      if (_isSplashVisible) {
+        _pendingFirstRunOnboarding = true;
+      } else {
+        unawaited(_openOnboardingFlow());
+      }
+    }
   }
 
   Future<void> _openOnboardingFlow() async {
@@ -337,6 +370,67 @@ We do not collect personal identifiers, precise location data, microphone audio,
     setState(() {
       _savedReceipts.clear();
     });
+  }
+
+  Future<void> _checkCompanionInvocation() async {
+    final invocation = await _companionBridge.getInitialCompanionInvocation();
+    if (!mounted || invocation == null) return;
+    await _handleCompanionInvocation(invocation);
+  }
+
+  Future<void> _handleCompanionInvocation(CompanionInvocation invocation) async {
+    if (!mounted) return;
+    final id = invocation.invocationId.trim();
+    if (id.isNotEmpty && _handledCompanionIds.contains(id)) {
+      return;
+    }
+
+    if (_isSplashVisible) {
+      if (_pendingCompanionInvocation?.invocationId.trim() == id &&
+          id.isNotEmpty) {
+        return;
+      }
+      _pendingCompanionInvocation = invocation;
+      _completeSplash();
+      return;
+    }
+
+    if (id.isNotEmpty) {
+      if (_handledCompanionIds.length >= 64) {
+        _handledCompanionIds.remove(_handledCompanionIds.first);
+      }
+      _handledCompanionIds.add(id);
+    }
+
+    await _openCompanionScreen(invocation);
+  }
+
+  Future<void> _openCompanionScreen(CompanionInvocation? invocation) async {
+    if (!mounted) return;
+    // Prevent duplicate stacked companion routes on repeated Quick Settings taps.
+    if (_isCompanionRouteOpen) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+    _isCompanionRouteOpen = true;
+    try {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          settings: const RouteSettings(name: 'enprive_companion'),
+          builder: (_) => CompanionScreen(
+            invocation: invocation,
+            hybridBridge: _bridge,
+            companionBridge: _companionBridge,
+            coordinator: _coordinator,
+            urlRetriever: _urlRetriever,
+            savedReceipts: List<PolicyReviewReceipt>.unmodifiable(_savedReceipts),
+            onSaveReceipt: _saveReceipt,
+            languageCode: widget.currentLocale.languageCode,
+          ),
+        ),
+      );
+    } finally {
+      _isCompanionRouteOpen = false;
+    }
   }
 
   Future<void> _checkIncomingTextIntent() async {
@@ -844,6 +938,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
           ),
           SettingsScreen(
             bridge: _bridge,
+            companionBridge: _companionBridge,
             capability: _deviceCapability,
             explanationDepth: _explanationDepth,
             currentLocale: widget.currentLocale,
@@ -864,6 +959,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
             onRefreshCapability: _refreshCapability,
             onClearAllReceipts: _clearAllReceipts,
             onReplayOnboarding: _openOnboardingFlow,
+            onOpenCompanion: () => _openCompanionScreen(null),
           ),
         ],
       ),
@@ -1191,9 +1287,11 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      l10n.verifiedClausesCount(
-                                        receipt.sourceMatchedCount,
-                                      ),
+                                      receipt.deviceObservedCount > 0
+                                          ? '${l10n.verifiedClausesCount(receipt.sourceMatchedCount)} · ${receipt.deviceObservedCount} ${l10n.statusDeviceObserved}'
+                                          : l10n.verifiedClausesCount(
+                                              receipt.sourceMatchedCount,
+                                            ),
                                       style: m3e.typeScale.bodySmall.copyWith(
                                         color: scheme.onSurfaceVariant,
                                       ),
