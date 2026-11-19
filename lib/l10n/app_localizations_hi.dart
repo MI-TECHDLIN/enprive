@@ -633,4 +633,35 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get cloudFallbackBannerBody =>
       'क्लाउड विश्लेषण उपलब्ध नहीं था, इसलिए यह परिणाम Enprive के स्थानीय निर्धारित स्कैनर से आया है।';
+
+  @override
+  String get appPickerFilterAll => 'All apps';
+
+  @override
+  String get appPickerFilterDownloaded => 'Downloaded';
+
+  @override
+  String get appPickerFilterSystem => 'System';
+
+  @override
+  String get appPickerRecentlyChecked => 'Recently checked';
+
+  @override
+  String get appPickerStatusPolicySaved => 'Policy review saved';
+
+  @override
+  String get appPickerStatusPermissionsInspected => 'Permissions inspected';
+
+  @override
+  String get appPickerStatusNotReviewed => 'Not reviewed';
+
+  @override
+  String get appPickerSearchHint => 'Search by app or package name…';
+
+  @override
+  String get appPickerEmptyInstalledTitle => 'No installed apps available';
+
+  @override
+  String get appPickerEmptyInstalledBody =>
+      'No launchable apps were reported on this device.';
 }

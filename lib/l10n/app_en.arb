@@ -230,5 +230,45 @@
   "analysisCancelledNotice": "Review cancelled.",
   "cloudTimedOutNotice": "Cloud AI timed out before responding. No automatic retry was sent.",
   "cloudFallbackBannerTitle": "Cloud AI unavailable — local scan shown",
-  "cloudFallbackBannerBody": "Cloud analysis was unavailable, so this result came from Enprive’s local deterministic scanner."
+  "cloudFallbackBannerBody": "Cloud analysis was unavailable, so this result came from Enprive’s local deterministic scanner.",
+  "appPickerFilterAll": "All apps",
+  "@appPickerFilterAll": {
+    "description": "Filter chip showing all launchable installed apps"
+  },
+  "appPickerFilterDownloaded": "Downloaded",
+  "@appPickerFilterDownloaded": {
+    "description": "Filter chip showing user-downloaded apps"
+  },
+  "appPickerFilterSystem": "System",
+  "@appPickerFilterSystem": {
+    "description": "Filter chip showing pre-installed system apps"
+  },
+  "appPickerRecentlyChecked": "Recently checked",
+  "@appPickerRecentlyChecked": {
+    "description": "Section heading for up to three recently checked installed apps"
+  },
+  "appPickerStatusPolicySaved": "Policy review saved",
+  "@appPickerStatusPolicySaved": {
+    "description": "Neutral status indicator when a policy review receipt is saved for this app"
+  },
+  "appPickerStatusPermissionsInspected": "Permissions inspected",
+  "@appPickerStatusPermissionsInspected": {
+    "description": "Neutral status indicator when only device permissions were inspected and saved"
+  },
+  "appPickerStatusNotReviewed": "Not reviewed",
+  "@appPickerStatusNotReviewed": {
+    "description": "Neutral status indicator when no saved receipt exists for this app"
+  },
+  "appPickerSearchHint": "Search by app or package name…",
+  "@appPickerSearchHint": {
+    "description": "Search input placeholder in the installed app picker"
+  },
+  "appPickerEmptyInstalledTitle": "No installed apps available",
+  "@appPickerEmptyInstalledTitle": {
+    "description": "Title shown when Android reports no launchable installed applications"
+  },
+  "appPickerEmptyInstalledBody": "No launchable apps were reported on this device.",
+  "@appPickerEmptyInstalledBody": {
+    "description": "Body shown when no launchable apps are available on the device"
+  }
 }

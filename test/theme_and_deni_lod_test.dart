@@ -647,9 +647,11 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         expect(find.byType(M3ESearchBar), findsOneWidget);
-        expect(find.text('EduTrack'), findsOneWidget);
-        expect(find.text('CalmMath'), findsOneWidget);
+        expect(find.byType(EnpriveFilterChip), findsNWidgets(3));
+        expect(find.text('EduTrack'), findsNothing);
+        expect(find.text('CalmMath'), findsNothing);
         expect(find.text('StudyBuddy Reader'), findsOneWidget);
+        expect(find.text('org.example.studybuddy'), findsOneWidget);
 
         // Filter to non-existent app to trigger DeniAnimatedMascot empty state
         await tester.enterText(find.byType(EditableText), 'NonExistentAppXYZ');
@@ -1028,7 +1030,7 @@ void main() {
           final sectionWidget = tester.widget<Text>(
             find.descendant(
               of: sheetFinder,
-              matching: find.text('Try a sample kids app'),
+              matching: find.text('Apps on this phone'),
             ),
           );
           expect(

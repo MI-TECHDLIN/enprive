@@ -236,6 +236,7 @@ class _CompanionScreenState extends State<CompanionScreen>
       bridge: widget.hybridBridge,
       eduTrackPolicyText: '',
       calmMathPolicyText: '',
+      savedReceipts: _persistedReceiptsForPicker(),
     );
     if (!mounted || choice == null) return;
 
@@ -386,6 +387,21 @@ class _CompanionScreenState extends State<CompanionScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
+  }
+
+  /// Saved receipts for the picker: the caller-supplied history merged with
+  /// receipts explicitly saved during this Companion session (deduplicated by
+  /// receipt ID). Unsaved session drafts are never included.
+  List<PolicyReviewReceipt> _persistedReceiptsForPicker() {
+    final byId = <String, PolicyReviewReceipt>{
+      for (final receipt in widget.savedReceipts) receipt.id: receipt,
+    };
+    for (final receipt in _sessionReceipts) {
+      if (_isSessionReceiptPersisted(receipt.id)) {
+        byId[receipt.id] = receipt;
+      }
+    }
+    return List<PolicyReviewReceipt>.unmodifiable(byId.values);
   }
 
   bool _isSessionReceiptPersisted(String receiptId) =>

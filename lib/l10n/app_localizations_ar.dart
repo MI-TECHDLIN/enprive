@@ -641,4 +641,35 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get cloudFallbackBannerBody =>
       'تعذّر التحليل السحابي، لذا جاءت هذه النتيجة من الماسح الحتمي المحلي في Enprive.';
+
+  @override
+  String get appPickerFilterAll => 'All apps';
+
+  @override
+  String get appPickerFilterDownloaded => 'Downloaded';
+
+  @override
+  String get appPickerFilterSystem => 'System';
+
+  @override
+  String get appPickerRecentlyChecked => 'Recently checked';
+
+  @override
+  String get appPickerStatusPolicySaved => 'Policy review saved';
+
+  @override
+  String get appPickerStatusPermissionsInspected => 'Permissions inspected';
+
+  @override
+  String get appPickerStatusNotReviewed => 'Not reviewed';
+
+  @override
+  String get appPickerSearchHint => 'Search by app or package name…';
+
+  @override
+  String get appPickerEmptyInstalledTitle => 'No installed apps available';
+
+  @override
+  String get appPickerEmptyInstalledBody =>
+      'No launchable apps were reported on this device.';
 }

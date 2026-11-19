@@ -1064,7 +1064,7 @@ void main() {
           find.byKey(const Key('companion_choose_app_manual_btn')),
         );
         await _pumpFrames(tester);
-        final knowunityFinder2 = find.text('Knowunity');
+        final knowunityFinder2 = find.text('Knowunity').first;
         await tester.ensureVisible(knowunityFinder2);
         await tester.pump();
         await tester.tap(knowunityFinder2);

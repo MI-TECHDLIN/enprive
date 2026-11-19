@@ -17,6 +17,7 @@ import 'package:enprive/services/platform/companion_bridge.dart';
 import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/services/storage/receipt_repository.dart';
 import 'package:enprive/widgets/enprive_provenance_chip.dart';
+import 'package:enprive/widgets/installed_app_picker_sheet.dart';
 import 'package:enprive/widgets/review/unsaved_review_exit_sheet.dart';
 
 Future<void> _pumpAndFlush(WidgetTester tester, {int steps = 6}) async {
@@ -109,6 +110,7 @@ void main() {
 
   void installStandardMocks({
     List<String>? companionReturnedCalls,
+    bool withLaunchableApps = false,
   }) {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(hybridChannel, (call) async {
@@ -124,6 +126,15 @@ void main() {
         case 'getInitialIncomingPayload':
         case 'getInitialSelectedText':
           return null;
+        case 'listLaunchableApps':
+          if (!withLaunchableApps) return null;
+          return <Map<String, Object?>>[
+            {
+              'packageName': 'com.ululab.numbers',
+              'appName': 'Math Makers',
+              'isSystemApp': false,
+            },
+          ];
         case 'inspectSelectedApp':
           final pkg = (call.arguments as Map?)?['packageName'] as String? ??
               'com.focus.reader';
@@ -947,6 +958,115 @@ void main() {
         expect(find.byType(CompanionScreen), findsNothing);
         expect(returnedCalls, ['returned']);
         expect(await repo.loadReceipts(), isEmpty);
+      },
+    );
+
+    testWidgets(
+      '13. D5.3-C P2-1: picker reopened in the same Companion session reflects a just-saved receipt but never an unsaved draft',
+      (WidgetTester tester) async {
+        installStandardMocks(withLaunchableApps: true);
+        final repo = ReceiptRepository(useInMemoryOnly: true);
+
+        await tester.pumpWidget(
+          _wrapWithM3EApp(
+            child: CompanionScreen(
+              hybridBridge: HybridAiBridge(),
+              companionBridge: CompanionBridge(),
+              coordinator: ReviewCoordinator(),
+              urlRetriever: PolicyUrlRetriever(),
+              savedReceipts: const [],
+              receiptRepository: repo,
+              onSaveReceipt: repo.saveReceipt,
+            ),
+          ),
+        );
+        await _pumpAndFlush(tester);
+
+        await tester.tap(find.byKey(const Key('companion_confirm_app_btn')));
+        await _pumpAndFlush(tester);
+
+        final cameraTile = find.byKey(
+          const Key('companion_perm_android.permission.CAMERA'),
+        );
+        await tester.ensureVisible(cameraTile);
+        await tester.pump();
+        await tester.tap(cameraTile);
+        await _pumpAndFlush(tester);
+
+        final attachBtn = find.byKey(const Key('companion_attach_policy_btn'));
+        await tester.ensureVisible(attachBtn);
+        await tester.pump();
+        await tester.tap(attachBtn);
+        await _pumpAndFlush(tester);
+
+        await tester.tap(find.text('Paste text'));
+        await _pumpAndFlush(tester);
+        await tester.enterText(
+          find.descendant(
+            of: find.byType(BottomSheet),
+            matching: find.byType(TextField),
+          ),
+          'Math Makers uses the camera strictly when scanning worksheets on your device and never sells camera photos.',
+        );
+        await tester.tap(find.text('Inspect pasted policy'));
+        await _pumpAndFlush(tester, steps: 8);
+
+        expect(
+          find.byKey(const Key('companion_receipt_unsaved_label')),
+          findsOneWidget,
+        );
+
+        final rowFinder = find.byKey(
+          const ValueKey('app_picker_row_com.ululab.numbers'),
+        );
+
+        Future<void> openPicker() async {
+          final switchBtn = find.text('Switch app');
+          await tester.ensureVisible(switchBtn);
+          await tester.pump();
+          await tester.tap(switchBtn);
+          await _pumpAndFlush(tester);
+          expect(find.byType(InstalledAppPickerSheet), findsOneWidget);
+        }
+
+        Future<void> closePicker() async {
+          Navigator.of(tester.element(find.byType(InstalledAppPickerSheet)))
+              .pop();
+          await _pumpAndFlush(tester);
+          expect(find.byType(InstalledAppPickerSheet), findsNothing);
+        }
+
+        // Unsaved session draft must NOT surface as a saved review.
+        await openPicker();
+        expect(
+          find.descendant(of: rowFinder, matching: find.text('Not reviewed')),
+          findsOneWidget,
+        );
+        expect(find.text('Recently checked'), findsNothing);
+        await closePicker();
+
+        final saveCompanionBtn = find.byKey(
+          const Key('companion_save_receipt_btn'),
+        );
+        await tester.ensureVisible(saveCompanionBtn);
+        await tester.pump();
+        await tester.tap(saveCompanionBtn);
+        await _pumpAndFlush(tester);
+        expect(await repo.loadReceipts(), hasLength(1));
+
+        // Reopen within the same session: explicitly saved receipt is reflected
+        // even though widget.savedReceipts is still the original empty list.
+        await openPicker();
+        expect(
+          find.descendant(
+            of: rowFinder,
+            matching: find.text('Policy review saved'),
+          ),
+          findsWidgets,
+        );
+        expect(find.text('Recently checked'), findsOneWidget);
+        await closePicker();
+        expect(await repo.loadReceipts(), hasLength(1));
       },
     );
   });
