@@ -1385,6 +1385,22 @@
 
 ---
 
+## Iteration 41: D5.3-D Phase 2 — UnifiedPolicyIntakeSheet (2026-11-19)
+
+- **Branch / Commit State**: `feature/m3-expressive-rebrand` atop pushed Phase 1 commit `72f0bff0db1c40982575281e7c5c053f2bafc305`; audited and committed locally as `feat(intake): add reusable unified policy intake sheet` (not pushed). Model: **Claude Opus 5.5 / Gemini 4 Argon** (planned/executed cleanly across Plan-Execute cadence).
+- **What Was Built & Verified**:
+  1. **Reusable M3E Intake Sheet (`lib/widgets/intake/unified_policy_intake_sheet.dart`)**: Implemented `UnifiedPolicyIntakeSheet.show(...)`, `PolicyIntakeSheetConfig`, `PolicyIntakeMode`, `InstalledAppSelector`, and `PlayStoreListingOpener`, supporting Paste text, Public URL, and Local Document (`PDF`, `TXT`, `DOCX`) while delegating all retrieval, SSRF/redirect checks, sufficiency validation, SHA-256 provenance, and D5.3-B identity evaluation strictly to a required `PolicyIntakeCoordinator` (zero duplicated Phase 1 logic, zero AI/consent/SQLite side effects, and zero caller migrations yet).
+  2. **Final Audit Config & Lifecycle Hardening**: Removed redundant `hybridBridge`, `urlRetriever`, and `savedReceipts` dependencies from `PolicyIntakeSheetConfig`; narrowed imports; fixed unlocked pre-selected `_selectedApp` card visibility when `onSelectInstalledApp` is omitted (showing Remove without Change); added `_hasPopped` double-pop protection (`_popOnce`), `_isSelectingApp` re-entrancy locking, unified `_cancelInFlightOperation()`, synchronous cancel-on-dismiss via Close button and `PopScope` (barrier scrim & system Back), title-edit invalidation of stale warnings, and calm idle reset on document picker cancel.
+  3. **Optional & Locked App Context + Association Warnings + Play Store Link**: Supported optional installed-app selection/change/removal, locked app context via `initialSelectedApp` or `initialFailure?.selectedApp`, Play Store convenience linking via `onOpenPlayStoreListing` or `CompanionBridge.openPlayStoreListing` (without scraping or discarding URL/app/mode/title/error state), and non-blocking D5.3-B warning actions (`Continue anyway`, `Change selected app`, and `Inspect policy without app` for Paste/URL).
+  4. **Localization (`lib/l10n/app_en.arb`, `app_localizations*.dart`, `untranslated_messages.json`)**: Added 29 English template `intake*` keys strictly to `lib/l10n/app_en.arb`, regenerated localization files via `flutter gen-l10n`, preserved root `untranslated_messages.json` with 39 keys (10 D5.3-C + 29 D5.3-D) across all 11 secondary locales (`ar`, `de`, `es`, `fr`, `hi`, `it`, `ja`, `ko`, `pt`, `ru`, `zh`), and left all 11 secondary `.arb` files untouched.
+  5. **Widget Tests (`test/unified_policy_intake_sheet_test.dart`)**: Added 11 deterministic fake-backed widget tests covering all 3 modes, failure recovery, busy/mode-switch locks, Cancel fetch, System Back/scrim dismissal, late document disposal, double-pop guard, prefilled OS shares, optional removal -> `unlinked`, URL without-app, genuine `ambiguousIdentity`, fresh `Change selected app` re-evaluation, locked `unmatched` warning, callback + native `CompanionBridge` Play Store state preservation, TalkBack semantics (`>= 48dp` targets), Arabic RTL (with LTR package/URL), `360dp` compact + `200%` text scaling, `900dp` tablet width clamp (`<= 720dp`), and Light/Dark WCAG AA (`>= 4.5:1`) contrast. Physical-device TalkBack verification was not executed in this CLI pass.
+- **Verification Status**: `git diff --check` clean; `flutter analyze` **0 issues**; `flutter test test/unified_policy_intake_sheet_test.dart` **11 / 11 passed**; full `flutter test` **204 / 204 passed**.
+- **Next Immediate Action & Recommended Model**:
+  - Await explicit approval (and push decision if desired) before starting **Phase 3 (Caller Migration across `CompanionScreen`, `ReviewResultScreen`, `HomeScreen`, and OS intents)**; keep physical-device TalkBack validation scheduled on hardware.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **D5.3 Core Flow Streamlining (D5.3-B+) & D5.4 Offline Learn MVP**

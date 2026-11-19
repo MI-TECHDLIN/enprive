@@ -634,4 +634,99 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get appPickerEmptyInstalledBody =>
       'No launchable apps were reported on this device.';
+
+  @override
+  String get intakeModeDocument => 'Document';
+
+  @override
+  String get intakeActionInspectText => 'Inspect policy text';
+
+  @override
+  String get intakeActionFetchUrl => 'Fetch & inspect policy';
+
+  @override
+  String get intakeActionChooseDocument => 'Choose PDF, TXT, or DOCX';
+
+  @override
+  String get intakeActionReplaceDocument => 'Choose replacement document';
+
+  @override
+  String get intakeWorkingLabel => 'Working…';
+
+  @override
+  String get intakeCancelFetch => 'Cancel fetch';
+
+  @override
+  String get intakeUrlHint => 'https://example.com/privacy-policy';
+
+  @override
+  String get intakeUrlDisclosure =>
+      'Fetches the public web page directly. A user-supplied link does not prove app ownership.';
+
+  @override
+  String get intakePasteLocalNote =>
+      'Checked locally on this phone first. Nothing is uploaded without your permission.';
+
+  @override
+  String get intakeDocumentCardTitle => 'Import PDF, TXT, or DOCX policy file';
+
+  @override
+  String get intakeDocumentCardBody =>
+      'Text is extracted strictly on this phone (up to 10 MB) with a local SHA-256 snapshot hash. Files are never uploaded.';
+
+  @override
+  String get intakeCompareWithAppPrompt =>
+      'Compare with an installed app (optional)';
+
+  @override
+  String get intakeCompareWithAppHint =>
+      'Runs locally on this phone. App lists never leave your device.';
+
+  @override
+  String get intakeCompareWithAppChange => 'Change';
+
+  @override
+  String get intakeCompareWithAppRemove => 'Remove';
+
+  @override
+  String get intakeLockedAppContextLabel => 'Selected app';
+
+  @override
+  String get intakeFindPolicyOnPlayStore => 'Find policy link on Play Store';
+
+  @override
+  String get intakePlayStoreHelperNote =>
+      'Opens the app\'s Play Store listing so you can copy its privacy policy link. Enprive never scrapes Play Store or assumes link ownership.';
+
+  @override
+  String get intakePlayStoreUnavailable =>
+      'Could not open Google Play Store on this device. Paste the policy URL or text manually instead.';
+
+  @override
+  String get intakeRecoverySwitchPaste => 'Paste text instead';
+
+  @override
+  String get intakeRecoverySwitchDocument => 'Import document';
+
+  @override
+  String get intakeRecoveryRetryUrl => 'Retry fetch';
+
+  @override
+  String get intakeExpiredDocumentShareNotice =>
+      'The originally shared file link can no longer be reopened. Choose a replacement PDF, TXT, or DOCX file or paste the policy text manually.';
+
+  @override
+  String get intakeAssociationWarningTitle => 'App-policy identity check';
+
+  @override
+  String get intakeAssociationContinueAnyway => 'Continue anyway';
+
+  @override
+  String get intakeAssociationChangeApp => 'Change selected app';
+
+  @override
+  String get intakeAssociationInspectWithoutApp => 'Inspect policy without app';
+
+  @override
+  String get intakeModeSelectorSemanticLabel => 'Policy input method';
 }

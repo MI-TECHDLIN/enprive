@@ -1305,6 +1305,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No launchable apps were reported on this device.'**
   String get appPickerEmptyInstalledBody;
+
+  /// Segmented mode label for local document import (PDF, TXT, DOCX)
+  ///
+  /// In en, this message translates to:
+  /// **'Document'**
+  String get intakeModeDocument;
+
+  /// Primary action button label in Paste text mode of the unified intake sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect policy text'**
+  String get intakeActionInspectText;
+
+  /// Primary action button label in Public URL mode of the unified intake sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch & inspect policy'**
+  String get intakeActionFetchUrl;
+
+  /// Primary action button label in Document mode of the unified intake sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Choose PDF, TXT, or DOCX'**
+  String get intakeActionChooseDocument;
+
+  /// Primary action button label when replacing an expired incoming document share
+  ///
+  /// In en, this message translates to:
+  /// **'Choose replacement document'**
+  String get intakeActionReplaceDocument;
+
+  /// Primary action button label while a URL fetch or document extraction is active
+  ///
+  /// In en, this message translates to:
+  /// **'Working…'**
+  String get intakeWorkingLabel;
+
+  /// Secondary button label cancelling an active public URL fetch
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel fetch'**
+  String get intakeCancelFetch;
+
+  /// Placeholder hint for the public privacy policy URL input field
+  ///
+  /// In en, this message translates to:
+  /// **'https://example.com/privacy-policy'**
+  String get intakeUrlHint;
+
+  /// Disclosure clarifying direct public URL retrieval and non-ownership
+  ///
+  /// In en, this message translates to:
+  /// **'Fetches the public web page directly. A user-supplied link does not prove app ownership.'**
+  String get intakeUrlDisclosure;
+
+  /// Privacy note beneath the policy text input box
+  ///
+  /// In en, this message translates to:
+  /// **'Checked locally on this phone first. Nothing is uploaded without your permission.'**
+  String get intakePasteLocalNote;
+
+  /// Title of the local document import information card
+  ///
+  /// In en, this message translates to:
+  /// **'Import PDF, TXT, or DOCX policy file'**
+  String get intakeDocumentCardTitle;
+
+  /// Description of strictly local document extraction and size limit
+  ///
+  /// In en, this message translates to:
+  /// **'Text is extracted strictly on this phone (up to 10 MB) with a local SHA-256 snapshot hash. Files are never uploaded.'**
+  String get intakeDocumentCardBody;
+
+  /// Optional action prompt allowing the user to pair an installed app during policy-first intake
+  ///
+  /// In en, this message translates to:
+  /// **'Compare with an installed app (optional)'**
+  String get intakeCompareWithAppPrompt;
+
+  /// Privacy note explaining that optional installed app comparison remains on-device
+  ///
+  /// In en, this message translates to:
+  /// **'Runs locally on this phone. App lists never leave your device.'**
+  String get intakeCompareWithAppHint;
+
+  /// Action label to change the optionally selected installed app
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get intakeCompareWithAppChange;
+
+  /// Action label to remove the optionally selected installed app
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get intakeCompareWithAppRemove;
+
+  /// Label identifying the locked Android application in app-first or Companion intake
+  ///
+  /// In en, this message translates to:
+  /// **'Selected app'**
+  String get intakeLockedAppContextLabel;
+
+  /// Optional action opening the selected app listing on Google Play Store to look up its policy link
+  ///
+  /// In en, this message translates to:
+  /// **'Find policy link on Play Store'**
+  String get intakeFindPolicyOnPlayStore;
+
+  /// Clarification beneath the Play Store convenience link button
+  ///
+  /// In en, this message translates to:
+  /// **'Opens the app\'s Play Store listing so you can copy its privacy policy link. Enprive never scrapes Play Store or assumes link ownership.'**
+  String get intakePlayStoreHelperNote;
+
+  /// Inline message shown if launching Play Store fails or is unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open Google Play Store on this device. Paste the policy URL or text manually instead.'**
+  String get intakePlayStoreUnavailable;
+
+  /// Inline recovery action switching the intake sheet to Paste text mode
+  ///
+  /// In en, this message translates to:
+  /// **'Paste text instead'**
+  String get intakeRecoverySwitchPaste;
+
+  /// Inline recovery action switching the intake sheet to Document import mode
+  ///
+  /// In en, this message translates to:
+  /// **'Import document'**
+  String get intakeRecoverySwitchDocument;
+
+  /// Inline recovery action retrying the failed URL retrieval
+  ///
+  /// In en, this message translates to:
+  /// **'Retry fetch'**
+  String get intakeRecoveryRetryUrl;
+
+  /// Explanation shown when an incoming Android document share failed and its content URI cannot be reused
+  ///
+  /// In en, this message translates to:
+  /// **'The originally shared file link can no longer be reopened. Choose a replacement PDF, TXT, or DOCX file or paste the policy text manually.'**
+  String get intakeExpiredDocumentShareNotice;
+
+  /// Heading for the non-blocking app-policy association warning banner
+  ///
+  /// In en, this message translates to:
+  /// **'App-policy identity check'**
+  String get intakeAssociationWarningTitle;
+
+  /// Action accepting an unmatched or ambiguous app-policy association warning
+  ///
+  /// In en, this message translates to:
+  /// **'Continue anyway'**
+  String get intakeAssociationContinueAnyway;
+
+  /// Action to pick a different installed app after an association mismatch or ambiguity
+  ///
+  /// In en, this message translates to:
+  /// **'Change selected app'**
+  String get intakeAssociationChangeApp;
+
+  /// Action to drop the optional app association and inspect only the supplied policy
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect policy without app'**
+  String get intakeAssociationInspectWithoutApp;
+
+  /// Accessibility label for the Paste text / Policy link / Document mode selector
+  ///
+  /// In en, this message translates to:
+  /// **'Policy input method'**
+  String get intakeModeSelectorSemanticLabel;
 }
 
 class _AppLocalizationsDelegate
