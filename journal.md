@@ -1369,6 +1369,20 @@
 - **Verification Status**: `git diff --check` clean; `flutter analyze` 0 issues; `flutter test` **176 / 176 passed**; Gradle `:app:testDebugUnitTest --rerun-tasks` **48 / 48 passed** (19 / 4 / 17 / 8); debug arm64 APK build recorded in the hardening report. Physical-device TalkBack verification **not executed** (widget-test semantics only).
 - **Next**: Await D5.3-C commit authorization; then D5.3-D. Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
 
+## Iteration 40: D5.3-D Phase 0 & Phase 1 — Working-Tree Recovery, Intake Domain Models & PolicyIntakeCoordinator (2026-11-19)
+
+- **Branch / Commit State**: `feature/m3-expressive-rebrand` atop `fa2aaf651146351aac769459c83a5bac9fde5050` (D5.3-C pushed; Phase 1 audited and authorized for commit without pushing). Model: Orchestrator.
+- **What Was Built & Verified**:
+  1. **Phase 0 (Trustworthy Working-Tree Recovery)**: Backed up IDE-modified diffs for `lib/screens/companion_screen.dart` and `lib/widgets/why_this_finding_sheet.dart` outside the repo (`scratch/d53d_phase0_backup.diff`), verified zero intentional work (100% whitespace/formatting churn + an accidental stale-buffer revert of D5.3-C's `_persistedReceiptsForPicker()`), restored both files cleanly to `HEAD` (`fa2aaf65`), and confirmed `_persistedReceiptsForPicker()` intact.
+  2. **Phase 1A (`lib/domain/intake/policy_intake_models.dart`)**: Created immutable domain contracts separating `SelectedAppReference` (on-device identity & `forTrustedSample` factory), sealed `PolicyLocator` (`TextPolicyLocator`, `UrlPolicyLocator`, `DocumentPolicyLocator`, `SampleFixturePolicyLocator`), `CapturedPolicySnapshot` (runtime-enforced sufficiency + non-empty SHA-256 + URL `retrieved` requirement + non-failed status), `PolicyIntakeFailureKind`, and sealed `PolicyIntakeOutcome` (`PolicyIntakeSuccess` / `PolicyIntakeFailure` preserving locator on every failure and blocking non-fixture `sampleFixture` provenance).
+  3. **Phase 1B/1C (`lib/services/intake/policy_intake_coordinator.dart`)**: Created UI-independent `PolicyIntakeCoordinator` and injectable `PolicyDocumentPlatformBridge` / `HybridAiDocumentPlatformBridge`, orchestrating `PolicyUrlRetriever`, `PolicySufficiencyValidator`, `PolicyIntakeHelper`, `AppPolicyAssociationEvaluator` (D5.3-B), and document extraction without triggering AI inference, `CloudConsentSheet`, or SQLite writes.
+  4. **Phase 1D (`lib/services/network/policy_url_retriever.dart`)**: Added `PolicyUrlCancellationToken` (with `hasActiveListeners` inspection hook) and additive `cancelToken` + `hasSelectedApp` parameters on `fetchPolicy(...)` and `validateDestination(...)`, closing each created `http.Client` once across DNS validation, redirects, headers, and response-body streaming while cancelling timers, detaching streams, removing listeners on every completion path, and guarding synchronous streams.
+  5. **Phase 1F Tests (`test/policy_intake_coordinator_test.dart`, `test/policy_url_retriever_test.dart`)**: Added comprehensive pure-Dart coordinator and URL cancellation/provenance tests (including exact-once client close, listener cleanup, initial DNS cancel, and synchronous stream coverage).
+- **Verification Status**: `git diff --check` clean; `flutter analyze` **0 issues**; full `flutter test` **193 / 193 passed**.
+- **Next Immediate Action & Recommended Model**:
+  - Commit Phase 1 on `feature/m3-expressive-rebrand` (`feat(intake): establish unified policy intake domain and coordinator`) without pushing, and await explicit approval before starting **Phase 2 (`UnifiedPolicyIntakeSheet`)**.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
 ---
 
 ## Upcoming Iterations Queue (From Docs & Architecture Review)

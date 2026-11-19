@@ -11,6 +11,59 @@ import '../../domain/review/review_models.dart';
 
 typedef DnsLookupFn = Future<List<InternetAddress>> Function(String host);
 
+/// Cooperative cancellation token for [PolicyUrlRetriever.fetchPolicy].
+///
+/// Safe to invoke [cancel] repeatedly before a fetch begins or while DNS
+/// lookup, redirects, HTTP headers, or response-body streaming are in flight.
+class PolicyUrlCancellationToken {
+  bool _isCancelled = false;
+  final Completer<void> _cancelledCompleter = Completer<void>();
+  final List<void Function()> _listeners = <void Function()>[];
+
+  bool get isCancelled => _isCancelled;
+
+  /// Exposed for deterministic cleanup assertions in unit tests.
+  bool get hasActiveListeners => _listeners.isNotEmpty;
+
+  /// Resolves as soon as [cancel] has been called.
+  Future<void> get whenCancelled => _cancelledCompleter.future;
+
+  /// Marks this token cancelled and notifies active listeners once.
+  void cancel() {
+    if (_isCancelled) return;
+    _isCancelled = true;
+    if (!_cancelledCompleter.isCompleted) {
+      _cancelledCompleter.complete();
+    }
+    final activeListeners = List<void Function()>.of(_listeners);
+    _listeners.clear();
+    for (final listener in activeListeners) {
+      try {
+        listener();
+      } catch (_) {
+        // Cancellation listeners perform best-effort socket/client cleanup.
+      }
+    }
+  }
+
+  /// Registers a callback invoked immediately if already cancelled or when
+  /// [cancel] is called. Returns a disposer that removes the callback.
+  void Function() addListener(void Function() listener) {
+    if (_isCancelled) {
+      try {
+        listener();
+      } catch (_) {}
+      return () {};
+    }
+    _listeners.add(listener);
+    return () => _listeners.remove(listener);
+  }
+}
+
+class _RetrievalCancelledException implements Exception {
+  const _RetrievalCancelledException();
+}
+
 /// Outcome from attempting genuine public HTTP(S) privacy-policy retrieval.
 class PolicyUrlRetrievalResult {
   final PolicyRetrievalStatus status;
@@ -127,7 +180,10 @@ class PolicyUrlRetriever {
   /// Validates URI syntax, public HTTP(S) scheme, unsafe hosts/IPs, and DNS
   /// resolution before any socket connection is attempted.
   Future<({Uri? uri, PolicyRetrievalStatus? errorStatus, String? message})>
-  validateDestination(String rawUrl) async {
+  validateDestination(
+    String rawUrl, {
+    PolicyUrlCancellationToken? cancelToken,
+  }) async {
     final trimmed = rawUrl.trim();
     if (trimmed.isEmpty || RegExp(r'[\r\n\t\x00-\x1f]').hasMatch(trimmed)) {
       return (
@@ -215,7 +271,12 @@ class PolicyUrlRetriever {
     }
 
     try {
-      final resolved = await _dnsLookup(host).timeout(const Duration(seconds: 5));
+      final resolved = await _awaitWithCancellation(
+        _dnsLookup(host),
+        cancelToken,
+        timeout: const Duration(seconds: 5),
+        timeoutMessage: 'DNS lookup timed out for "$host".',
+      );
       if (resolved.isEmpty) {
         return (
           uri: null,
@@ -254,10 +315,60 @@ class PolicyUrlRetriever {
   /// Fetches and extracts a public privacy-policy URL, recording redirects,
   /// canonical URL, retrieval timestamp, SHA-256 snapshot hash, and explicit
   /// app-identity limitation notes.
-  Future<PolicyUrlRetrievalResult> fetchPolicy(String rawUrl) async {
+  ///
+  /// When [hasSelectedApp] is `false`, recorded snapshots use
+  /// [AppIdentityMatchStatus.notApplicable] (standalone URL review). When
+  /// [hasSelectedApp] is `true` or omitted (preserving existing callers),
+  /// recorded snapshots use [AppIdentityMatchStatus.unverifiedUserSupplied].
+  /// Neither case asserts verified developer ownership.
+  Future<PolicyUrlRetrievalResult> fetchPolicy(
+    String rawUrl, {
+    PolicyUrlCancellationToken? cancelToken,
+    bool? hasSelectedApp,
+  }) async {
     final retrievedAt = _clock().toUtc();
     final trimmedInput = rawUrl.trim();
-    final initialCheck = await validateDestination(trimmedInput);
+    final identityStatus = hasSelectedApp == false
+        ? AppIdentityMatchStatus.notApplicable
+        : AppIdentityMatchStatus.unverifiedUserSupplied;
+
+    if (cancelToken?.isCancelled == true) {
+      return _cancelledResult(
+        requestedUrl: trimmedInput,
+        canonicalUrl: null,
+        redirectChain: const [],
+        retrievedAt: retrievedAt,
+        identityStatus: identityStatus,
+      );
+    }
+
+    final ({Uri? uri, PolicyRetrievalStatus? errorStatus, String? message})
+    initialCheck;
+    try {
+      initialCheck = await validateDestination(
+        trimmedInput,
+        cancelToken: cancelToken,
+      );
+    } on _RetrievalCancelledException {
+      return _cancelledResult(
+        requestedUrl: trimmedInput,
+        canonicalUrl: null,
+        redirectChain: const [],
+        retrievedAt: retrievedAt,
+        identityStatus: identityStatus,
+      );
+    }
+
+    if (cancelToken?.isCancelled == true) {
+      return _cancelledResult(
+        requestedUrl: trimmedInput,
+        canonicalUrl: null,
+        redirectChain: const [],
+        retrievedAt: retrievedAt,
+        identityStatus: identityStatus,
+      );
+    }
+
     if (initialCheck.uri == null) {
       return _failureResult(
         status: initialCheck.errorStatus ?? PolicyRetrievalStatus.invalidUrl,
@@ -265,6 +376,7 @@ class PolicyUrlRetriever {
         canonicalUrl: null,
         redirectChain: const [],
         retrievedAt: retrievedAt,
+        identityStatus: identityStatus,
         message:
             initialCheck.message ??
             'Could not validate the supplied privacy policy URL.',
@@ -272,12 +384,32 @@ class PolicyUrlRetriever {
     }
 
     final client = _clientFactory();
+    var clientClosed = false;
+    void closeClientOnce() {
+      if (clientClosed) return;
+      clientClosed = true;
+      try {
+        client.close();
+      } catch (_) {}
+    }
+
+    final removeCancelListener = cancelToken?.addListener(closeClientOnce);
     final redirectChain = <String>[initialCheck.uri.toString()];
     var currentUri = initialCheck.uri!;
     final overallStopwatch = Stopwatch()..start();
 
     try {
       for (var hop = 0; hop <= maxRedirects; hop++) {
+        if (cancelToken?.isCancelled == true) {
+          return _cancelledResult(
+            requestedUrl: trimmedInput,
+            canonicalUrl: currentUri.toString(),
+            redirectChain: redirectChain,
+            retrievedAt: retrievedAt,
+            identityStatus: identityStatus,
+          );
+        }
+
         final remaining = totalTimeout - overallStopwatch.elapsed;
         if (remaining <= Duration.zero) {
           return _failureResult(
@@ -286,8 +418,8 @@ class PolicyUrlRetriever {
             canonicalUrl: currentUri.toString(),
             redirectChain: redirectChain,
             retrievedAt: retrievedAt,
-            message:
-                'Privacy policy retrieval timed out before the page finished loading.',
+            identityStatus: identityStatus,
+            message: 'Privacy policy retrieval timed out before the page finished loading.',
           );
         }
 
@@ -296,18 +428,34 @@ class PolicyUrlRetriever {
           ..maxRedirects = 0
           ..headers['User-Agent'] =
               'EnprivePrivacyInspector/1.0 (On-Device Policy Verification)'
-          ..headers['Accept'] =
-              'text/html,application/xhtml+xml,text/plain,text/markdown;q=0.9,*/*;q=0.1'
+          ..headers['Accept'] = 'text/html,application/xhtml+xml,text/plain,text/markdown;q=0.9,*/*;q=0.1'
           ..headers['Accept-Language'] = 'en-US,en;q=0.9';
 
         final perHopTimeout = remaining < requestTimeout
             ? remaining
             : requestTimeout;
-        final streamed = await client.send(request).timeout(perHopTimeout);
+        final streamed = await _awaitWithCancellation(
+          client.send(request),
+          cancelToken,
+          timeout: perHopTimeout,
+          timeoutMessage: 'Timed out while loading "$currentUri".',
+          onCancelledLateResult: (response) => _detachStream(response.stream),
+        );
         final statusCode = streamed.statusCode;
 
+        if (cancelToken?.isCancelled == true) {
+          _detachStream(streamed.stream);
+          return _cancelledResult(
+            requestedUrl: trimmedInput,
+            canonicalUrl: currentUri.toString(),
+            redirectChain: redirectChain,
+            retrievedAt: retrievedAt,
+            identityStatus: identityStatus,
+          );
+        }
+
         if (_isRedirectStatus(statusCode)) {
-          await streamed.stream.drain<void>().catchError((_) {});
+          _detachStream(streamed.stream);
           final location = streamed.headers['location']?.trim();
           if (location == null || location.isEmpty) {
             return _failureResult(
@@ -317,6 +465,7 @@ class PolicyUrlRetriever {
               redirectChain: redirectChain,
               httpStatusCode: statusCode,
               retrievedAt: retrievedAt,
+              identityStatus: identityStatus,
               message:
                   'Server returned a redirect ($statusCode) without a destination URL.',
             );
@@ -329,13 +478,25 @@ class PolicyUrlRetriever {
               redirectChain: redirectChain,
               httpStatusCode: statusCode,
               retrievedAt: retrievedAt,
-              message:
-                  'Too many redirects occurred while retrieving the privacy policy.',
+              identityStatus: identityStatus,
+              message: 'Too many redirects occurred while retrieving the privacy policy.',
             );
           }
 
           final nextUri = currentUri.resolve(location);
-          final nextCheck = await validateDestination(nextUri.toString());
+          final nextCheck = await validateDestination(
+            nextUri.toString(),
+            cancelToken: cancelToken,
+          );
+          if (cancelToken?.isCancelled == true) {
+            return _cancelledResult(
+              requestedUrl: trimmedInput,
+              canonicalUrl: currentUri.toString(),
+              redirectChain: redirectChain,
+              retrievedAt: retrievedAt,
+              identityStatus: identityStatus,
+            );
+          }
           if (nextCheck.uri == null) {
             redirectChain.add(nextUri.toString());
             return _failureResult(
@@ -347,6 +508,7 @@ class PolicyUrlRetriever {
               redirectChain: redirectChain,
               httpStatusCode: statusCode,
               retrievedAt: retrievedAt,
+              identityStatus: identityStatus,
               message:
                   'Redirect destination was blocked: ${nextCheck.message ?? "unsafe URL"}.',
             );
@@ -357,7 +519,16 @@ class PolicyUrlRetriever {
         }
 
         if (statusCode < 200 || statusCode >= 300) {
-          await streamed.stream.drain<void>().catchError((_) {});
+          _detachStream(streamed.stream);
+          if (cancelToken?.isCancelled == true) {
+            return _cancelledResult(
+              requestedUrl: trimmedInput,
+              canonicalUrl: currentUri.toString(),
+              redirectChain: redirectChain,
+              retrievedAt: retrievedAt,
+              identityStatus: identityStatus,
+            );
+          }
           return _failureResult(
             status: PolicyRetrievalStatus.httpError,
             requestedUrl: trimmedInput,
@@ -366,6 +537,7 @@ class PolicyUrlRetriever {
             httpStatusCode: statusCode,
             mimeType: _parseMimeType(streamed.headers['content-type']),
             retrievedAt: retrievedAt,
+            identityStatus: identityStatus,
             message:
                 'The server returned HTTP $statusCode while loading the policy page. Paste the policy text manually or import a downloaded document instead.',
           );
@@ -373,6 +545,7 @@ class PolicyUrlRetriever {
 
         final contentLength = streamed.contentLength;
         if (contentLength != null && contentLength > maxResponseBytes) {
+          _detachStream(streamed.stream);
           return _failureResult(
             status: PolicyRetrievalStatus.sizeExceeded,
             requestedUrl: trimmedInput,
@@ -381,6 +554,7 @@ class PolicyUrlRetriever {
             httpStatusCode: statusCode,
             mimeType: _parseMimeType(streamed.headers['content-type']),
             retrievedAt: retrievedAt,
+            identityStatus: identityStatus,
             message:
                 'The linked page exceeds the ${(maxResponseBytes / (1024 * 1024)).toStringAsFixed(1)} MB download limit.',
           );
@@ -389,7 +563,16 @@ class PolicyUrlRetriever {
         final rawContentType = streamed.headers['content-type'];
         final mimeType = _parseMimeType(rawContentType);
         if (mimeType != null && !_isSupportedWebContentType(mimeType)) {
-          await streamed.stream.drain<void>().catchError((_) {});
+          _detachStream(streamed.stream);
+          if (cancelToken?.isCancelled == true) {
+            return _cancelledResult(
+              requestedUrl: trimmedInput,
+              canonicalUrl: currentUri.toString(),
+              redirectChain: redirectChain,
+              retrievedAt: retrievedAt,
+              identityStatus: identityStatus,
+            );
+          }
           return _failureResult(
             status: PolicyRetrievalStatus.unsupportedContentType,
             requestedUrl: trimmedInput,
@@ -398,6 +581,7 @@ class PolicyUrlRetriever {
             httpStatusCode: statusCode,
             mimeType: mimeType,
             retrievedAt: retrievedAt,
+            identityStatus: identityStatus,
             message: mimeType == 'application/pdf'
                 ? 'This URL points directly to a PDF file ($mimeType). Save it locally and open it with "Import document" instead.'
                 : 'Unsupported content type "$mimeType". Only public HTML or plain-text privacy policy pages can be fetched directly.',
@@ -407,7 +591,18 @@ class PolicyUrlRetriever {
         final bytes = await _readBoundedBytes(
           streamed.stream,
           remainingTime: totalTimeout - overallStopwatch.elapsed,
+          cancelToken: cancelToken,
+          onCancel: closeClientOnce,
         );
+        if (cancelToken?.isCancelled == true) {
+          return _cancelledResult(
+            requestedUrl: trimmedInput,
+            canonicalUrl: currentUri.toString(),
+            redirectChain: redirectChain,
+            retrievedAt: retrievedAt,
+            identityStatus: identityStatus,
+          );
+        }
         if (bytes == null) {
           return _failureResult(
             status: PolicyRetrievalStatus.sizeExceeded,
@@ -417,6 +612,7 @@ class PolicyUrlRetriever {
             httpStatusCode: statusCode,
             mimeType: mimeType,
             retrievedAt: retrievedAt,
+            identityStatus: identityStatus,
             message:
                 'The policy response exceeded the ${(maxResponseBytes / (1024 * 1024)).toStringAsFixed(1)} MB safety limit.',
           );
@@ -431,8 +627,8 @@ class PolicyUrlRetriever {
             httpStatusCode: statusCode,
             mimeType: mimeType ?? 'application/octet-stream',
             retrievedAt: retrievedAt,
-            message:
-                'The downloaded response appears to be binary rather than readable HTML or plain-text privacy policy content.',
+            identityStatus: identityStatus,
+            message: 'The downloaded response appears to be binary rather than readable HTML or plain-text privacy policy content.',
           );
         }
 
@@ -441,6 +637,16 @@ class PolicyUrlRetriever {
         final extracted = isHtml
             ? extractPolicyTextFromHtml(decodedBody)
             : _normalizePlainText(decodedBody);
+
+        if (cancelToken?.isCancelled == true) {
+          return _cancelledResult(
+            requestedUrl: trimmedInput,
+            canonicalUrl: currentUri.toString(),
+            redirectChain: redirectChain,
+            retrievedAt: retrievedAt,
+            identityStatus: identityStatus,
+          );
+        }
 
         final canonicalUrl = currentUri.toString();
         final snapshotHash = EvidenceValidator.computeSha256SourceHash(
@@ -453,7 +659,8 @@ class PolicyUrlRetriever {
         );
 
         if (extracted.isEmpty ||
-            (isHtml && _looksLikeErrorOrChallengePage(decodedBody, extracted))) {
+            (isHtml &&
+                _looksLikeErrorOrChallengePage(decodedBody, extracted))) {
           final snapshot = PolicySourceSnapshot(
             snapshotId: 'snap_${retrievedAt.millisecondsSinceEpoch}',
             sourceType: PolicySourceType.url,
@@ -462,7 +669,7 @@ class PolicyUrlRetriever {
             redirectChain: List<String>.unmodifiable(redirectChain),
             retrievedAt: retrievedAt,
             retrievalStatus: PolicyRetrievalStatus.emptyOrErrorPage,
-            appIdentityMatchStatus: AppIdentityMatchStatus.unverifiedUserSupplied,
+            appIdentityMatchStatus: identityStatus,
             sourceSha256Hash: snapshotHash,
             mimeType: mimeType ?? (isHtml ? 'text/html' : 'text/plain'),
             byteLength: bytes.length,
@@ -481,15 +688,23 @@ class PolicyUrlRetriever {
             sourceSnapshot: snapshot,
             sufficiencyResult: const PolicySufficiencyResult.insufficient(
               reason: PolicyInsufficiencyReason.placeholderOrUnavailable,
-              explanation:
-                  'Retrieved web page appeared to be an error, challenge, or login screen rather than readable privacy policy disclosures.',
+              explanation: 'Retrieved web page appeared to be an error, challenge, or login screen rather than readable privacy policy disclosures.',
             ),
-            userMessage:
-                'The page loaded, but only error, verification, or navigation content could be extracted. Paste the privacy policy text directly or import a saved PDF/TXT/DOCX document instead.',
+            userMessage: 'The page loaded, but only error, verification, or navigation content could be extracted. Paste the privacy policy text directly or import a saved PDF/TXT/DOCX document instead.',
           );
         }
 
         final sufficiency = PolicySufficiencyValidator.assess(extracted);
+        if (cancelToken?.isCancelled == true) {
+          return _cancelledResult(
+            requestedUrl: trimmedInput,
+            canonicalUrl: canonicalUrl,
+            redirectChain: redirectChain,
+            retrievedAt: retrievedAt,
+            identityStatus: identityStatus,
+          );
+        }
+
         final status = sufficiency.isSufficient
             ? PolicyRetrievalStatus.retrieved
             : PolicyRetrievalStatus.insufficientPolicy;
@@ -502,7 +717,7 @@ class PolicyUrlRetriever {
           redirectChain: List<String>.unmodifiable(redirectChain),
           retrievedAt: retrievedAt,
           retrievalStatus: status,
-          appIdentityMatchStatus: AppIdentityMatchStatus.unverifiedUserSupplied,
+          appIdentityMatchStatus: identityStatus,
           sourceSha256Hash: snapshotHash,
           mimeType: mimeType ?? (isHtml ? 'text/html' : 'text/plain'),
           byteLength: bytes.length,
@@ -527,38 +742,77 @@ class PolicyUrlRetriever {
               : sufficiency.explanation,
         );
       }
+    } on _RetrievalCancelledException {
+      return _cancelledResult(
+        requestedUrl: trimmedInput,
+        canonicalUrl: currentUri.toString(),
+        redirectChain: redirectChain,
+        retrievedAt: retrievedAt,
+        identityStatus: identityStatus,
+      );
     } on TimeoutException {
+      if (cancelToken?.isCancelled == true) {
+        return _cancelledResult(
+          requestedUrl: trimmedInput,
+          canonicalUrl: currentUri.toString(),
+          redirectChain: redirectChain,
+          retrievedAt: retrievedAt,
+          identityStatus: identityStatus,
+        );
+      }
       return _failureResult(
         status: PolicyRetrievalStatus.timeout,
         requestedUrl: trimmedInput,
         canonicalUrl: currentUri.toString(),
         redirectChain: redirectChain,
         retrievedAt: retrievedAt,
+        identityStatus: identityStatus,
         message:
             'Timed out while loading "$currentUri". Check connectivity or paste the policy text manually.',
       );
     } on SocketException {
+      if (cancelToken?.isCancelled == true) {
+        return _cancelledResult(
+          requestedUrl: trimmedInput,
+          canonicalUrl: currentUri.toString(),
+          redirectChain: redirectChain,
+          retrievedAt: retrievedAt,
+          identityStatus: identityStatus,
+        );
+      }
       return _failureResult(
         status: PolicyRetrievalStatus.networkError,
         requestedUrl: trimmedInput,
         canonicalUrl: currentUri.toString(),
         redirectChain: redirectChain,
         retrievedAt: retrievedAt,
+        identityStatus: identityStatus,
         message:
             'Network connection failed while contacting "${currentUri.host}". Paste the policy text manually or import a downloaded document.',
       );
     } on http.ClientException {
+      if (cancelToken?.isCancelled == true) {
+        return _cancelledResult(
+          requestedUrl: trimmedInput,
+          canonicalUrl: currentUri.toString(),
+          redirectChain: redirectChain,
+          retrievedAt: retrievedAt,
+          identityStatus: identityStatus,
+        );
+      }
       return _failureResult(
         status: PolicyRetrievalStatus.networkError,
         requestedUrl: trimmedInput,
         canonicalUrl: currentUri.toString(),
         redirectChain: redirectChain,
         retrievedAt: retrievedAt,
+        identityStatus: identityStatus,
         message:
             'Could not complete the HTTP request to "${currentUri.host}". Paste the policy text manually instead.',
       );
     } finally {
-      client.close();
+      removeCancelListener?.call();
+      closeClientOnce();
     }
 
     return _failureResult(
@@ -567,6 +821,7 @@ class PolicyUrlRetriever {
       canonicalUrl: currentUri.toString(),
       redirectChain: redirectChain,
       retrievedAt: retrievedAt,
+      identityStatus: identityStatus,
       message: 'Could not retrieve the requested privacy policy URL.',
     );
   }
@@ -604,6 +859,24 @@ class PolicyUrlRetriever {
     return _htmlFragmentToPlainText(fallbackTarget);
   }
 
+  PolicyUrlRetrievalResult _cancelledResult({
+    required String requestedUrl,
+    required String? canonicalUrl,
+    required List<String> redirectChain,
+    required DateTime retrievedAt,
+    required AppIdentityMatchStatus identityStatus,
+  }) {
+    return _failureResult(
+      status: PolicyRetrievalStatus.cancelled,
+      requestedUrl: requestedUrl,
+      canonicalUrl: canonicalUrl,
+      redirectChain: redirectChain,
+      retrievedAt: retrievedAt,
+      identityStatus: identityStatus,
+      message: 'Privacy policy retrieval was cancelled before completing.',
+    );
+  }
+
   PolicyUrlRetrievalResult _failureResult({
     required PolicyRetrievalStatus status,
     required String requestedUrl,
@@ -611,6 +884,8 @@ class PolicyUrlRetriever {
     required List<String> redirectChain,
     required DateTime retrievedAt,
     required String message,
+    AppIdentityMatchStatus identityStatus =
+        AppIdentityMatchStatus.unverifiedUserSupplied,
     int? httpStatusCode,
     String? mimeType,
   }) {
@@ -622,11 +897,12 @@ class PolicyUrlRetriever {
       redirectChain: List<String>.unmodifiable(redirectChain),
       retrievedAt: retrievedAt,
       retrievalStatus: status,
-      appIdentityMatchStatus: AppIdentityMatchStatus.unverifiedUserSupplied,
+      appIdentityMatchStatus: identityStatus,
       sourceSha256Hash: '',
       mimeType: mimeType,
-      limitationNote:
-          '$message Source link was user-supplied and does not establish verified app ownership.',
+      limitationNote: identityStatus == AppIdentityMatchStatus.notApplicable
+          ? '$message Source link had no linked app and does not establish verified app ownership.'
+          : '$message Source link was user-supplied and does not establish verified app ownership.',
     );
     return PolicyUrlRetrievalResult(
       status: status,
@@ -648,27 +924,199 @@ class PolicyUrlRetriever {
     required String canonicalUrl,
     required List<String> redirectChain,
   }) {
-    final redirectNote = redirectChain.length > 1 || canonicalUrl != requestedUrl
+    final redirectNote =
+        redirectChain.length > 1 || canonicalUrl != requestedUrl
         ? 'Redirected (${redirectChain.length - 1} hop${redirectChain.length - 1 == 1 ? '' : 's'}) to $canonicalUrl. '
         : '';
     return '${redirectNote}Retrieved from user-supplied URL; this does not prove app ownership of the page.';
   }
 
+  void _detachStream(http.ByteStream stream) {
+    unawaited(
+      stream
+          .listen((_) {}, onError: (_) {}, cancelOnError: true)
+          .cancel()
+          .catchError((_) {}),
+    );
+  }
+
+  Future<T> _awaitWithCancellation<T>(
+    Future<T> future,
+    PolicyUrlCancellationToken? cancelToken, {
+    Duration? timeout,
+    String timeoutMessage = 'Operation timed out.',
+    void Function(T value)? onCancelledLateResult,
+  }) {
+    if (cancelToken == null && timeout == null) return future;
+    if (cancelToken?.isCancelled == true) {
+      future.then(
+        (value) => onCancelledLateResult?.call(value),
+        onError: (_) {},
+      );
+      return Future<T>.error(const _RetrievalCancelledException());
+    }
+
+    final completer = Completer<T>();
+    Timer? timer;
+    void Function()? removeListener;
+    var settled = false;
+
+    void cleanup() {
+      timer?.cancel();
+      removeListener?.call();
+    }
+
+    removeListener = cancelToken?.addListener(() {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if (!completer.isCompleted) {
+        completer.completeError(const _RetrievalCancelledException());
+      }
+    });
+
+    if (timeout != null && !settled) {
+      timer = Timer(timeout, () {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (!completer.isCompleted) {
+          completer.completeError(TimeoutException(timeoutMessage));
+        }
+      });
+    }
+
+    future.then(
+      (value) {
+        if (settled) {
+          onCancelledLateResult?.call(value);
+          return;
+        }
+        settled = true;
+        cleanup();
+        if (!completer.isCompleted) {
+          completer.complete(value);
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (!completer.isCompleted) {
+          if (cancelToken?.isCancelled == true) {
+            completer.completeError(const _RetrievalCancelledException());
+          } else {
+            completer.completeError(error, stackTrace);
+          }
+        }
+      },
+    );
+
+    return completer.future;
+  }
+
   Future<List<int>?> _readBoundedBytes(
     http.ByteStream stream, {
     required Duration remainingTime,
+    PolicyUrlCancellationToken? cancelToken,
+    void Function()? onCancel,
   }) async {
+    if (cancelToken?.isCancelled == true) {
+      onCancel?.call();
+      _detachStream(stream);
+      throw const _RetrievalCancelledException();
+    }
+
     final builder = BytesBuilder(copy: false);
     final timeout = remainingTime > Duration.zero
         ? remainingTime
         : const Duration(milliseconds: 100);
-    await for (final chunk in stream.timeout(timeout)) {
-      if (builder.length + chunk.length > maxResponseBytes) {
-        return null;
+    final completer = Completer<List<int>?>();
+    StreamSubscription<List<int>>? sub;
+    Timer? timer;
+    void Function()? removeCancelListener;
+    var finished = false;
+
+    void finishWithValue(List<int>? value) {
+      if (finished) return;
+      finished = true;
+      timer?.cancel();
+      removeCancelListener?.call();
+      if (sub != null) {
+        unawaited(sub.cancel().catchError((_) {}));
       }
-      builder.add(chunk);
+      if (!completer.isCompleted) {
+        completer.complete(value);
+      }
     }
-    return builder.takeBytes();
+
+    void finishWithError(Object error, [StackTrace? stackTrace]) {
+      if (finished) return;
+      finished = true;
+      timer?.cancel();
+      removeCancelListener?.call();
+      if (sub != null) {
+        unawaited(sub.cancel().catchError((_) {}));
+      }
+      if (!completer.isCompleted) {
+        completer.completeError(error, stackTrace ?? StackTrace.current);
+      }
+    }
+
+    sub = stream.listen(
+      (chunk) {
+        if (finished) return;
+        if (cancelToken?.isCancelled == true) {
+          onCancel?.call();
+          finishWithError(const _RetrievalCancelledException());
+          return;
+        }
+        if (builder.length + chunk.length > maxResponseBytes) {
+          finishWithValue(null);
+          return;
+        }
+        builder.add(chunk);
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (cancelToken?.isCancelled == true) {
+          finishWithError(const _RetrievalCancelledException());
+        } else {
+          finishWithError(error, stackTrace);
+        }
+      },
+      onDone: () {
+        if (cancelToken?.isCancelled == true) {
+          finishWithError(const _RetrievalCancelledException());
+        } else {
+          finishWithValue(builder.takeBytes());
+        }
+      },
+      cancelOnError: true,
+    );
+
+    if (finished) {
+      unawaited(sub.cancel().catchError((_) {}));
+      return completer.future;
+    }
+
+    timer = Timer(timeout, () {
+      if (cancelToken?.isCancelled == true) {
+        finishWithError(const _RetrievalCancelledException());
+      } else {
+        finishWithError(
+          TimeoutException('Timed out while reading policy response body.'),
+        );
+      }
+    });
+
+    if (cancelToken != null && !finished) {
+      removeCancelListener = cancelToken.addListener(() {
+        onCancel?.call();
+        finishWithError(const _RetrievalCancelledException());
+      });
+    }
+
+    return completer.future;
   }
 
   static bool _isRedirectStatus(int code) =>

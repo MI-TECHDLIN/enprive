@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -261,4 +262,357 @@ void main() {
       );
     });
   });
+
+  group('PolicyUrlRetriever cancellation & app-selection provenance (D5.3-D Phase 1)', () {
+    test('distinguishes hasSelectedApp false vs true while preserving omitted default', () async {
+      const html =
+          '<html><body><main><p>We collect email addresses solely for sign-in and never sell personal data to third parties. Users may delete data anytime.</p></main></body></html>';
+      final retriever = PolicyUrlRetriever(
+        dnsLookup: publicDns,
+        clientFactory: () => MockClient(
+          (_) async => http.Response(
+            html,
+            200,
+            headers: {'content-type': 'text/html; charset=utf-8'},
+          ),
+        ),
+      );
+
+      final omitted = await retriever.fetchPolicy('https://example.org/privacy');
+      expect(omitted.isUsablePolicy, isTrue);
+      expect(
+        omitted.sourceSnapshot!.appIdentityMatchStatus,
+        AppIdentityMatchStatus.unverifiedUserSupplied,
+      );
+
+      final standalone = await retriever.fetchPolicy(
+        'https://example.org/privacy',
+        hasSelectedApp: false,
+      );
+      expect(standalone.isUsablePolicy, isTrue);
+      expect(
+        standalone.sourceSnapshot!.appIdentityMatchStatus,
+        AppIdentityMatchStatus.notApplicable,
+      );
+
+      final linked = await retriever.fetchPolicy(
+        'https://example.org/privacy',
+        hasSelectedApp: true,
+      );
+      expect(linked.isUsablePolicy, isTrue);
+      expect(
+        linked.sourceSnapshot!.appIdentityMatchStatus,
+        AppIdentityMatchStatus.unverifiedUserSupplied,
+      );
+    });
+
+    test('pre-cancelled token skips DNS lookup and HTTP client creation and is idempotent', () async {
+      var dnsCalls = 0;
+      var clientCreated = false;
+      final token = PolicyUrlCancellationToken();
+      token.cancel();
+      token.cancel(); // Repeated cancel must be a safe no-op.
+      expect(token.isCancelled, isTrue);
+
+      final retriever = PolicyUrlRetriever(
+        dnsLookup: (host) async {
+          dnsCalls++;
+          return [fakePublicIp];
+        },
+        clientFactory: () {
+          clientCreated = true;
+          return MockClient((_) async => http.Response('', 200));
+        },
+      );
+
+      final result = await retriever.fetchPolicy(
+        'https://example.org/privacy',
+        cancelToken: token,
+        hasSelectedApp: false,
+      );
+      expect(result.isUsablePolicy, isFalse);
+      expect(result.status, PolicyRetrievalStatus.cancelled);
+      expect(dnsCalls, 0);
+      expect(clientCreated, isFalse);
+      expect(
+        result.sourceSnapshot!.appIdentityMatchStatus,
+        AppIdentityMatchStatus.notApplicable,
+      );
+    });
+
+    test('closes active HTTP client immediately when cancelled in-flight and ignores late response', () async {
+      final sendStarted = Completer<void>();
+      final lateSendCompleter = Completer<http.Response>();
+      var closeCount = 0;
+
+      final retriever = PolicyUrlRetriever(
+        dnsLookup: publicDns,
+        clientFactory: () => _SpyHttpClient(
+          MockClient((_) async {
+            if (!sendStarted.isCompleted) sendStarted.complete();
+            return lateSendCompleter.future;
+          }),
+          () => closeCount++,
+        ),
+      );
+
+      final token = PolicyUrlCancellationToken();
+      final future = retriever.fetchPolicy(
+        'https://example.org/privacy',
+        cancelToken: token,
+      );
+
+      await sendStarted.future;
+      token.cancel();
+      token.cancel(); // Repeated cancel remains safe.
+
+      final result = await future;
+      expect(result.status, PolicyRetrievalStatus.cancelled);
+      expect(result.isUsablePolicy, isFalse);
+      expect(result.extractedText, isNull);
+      expect(closeCount, 1);
+      expect(token.hasActiveListeners, isFalse);
+
+      // Late completion after cancellation must not throw or flip outcome.
+      lateSendCompleter.complete(
+        http.Response(
+          '<html><body><p>We collect personal data and share analytics with third parties.</p></body></html>',
+          200,
+          headers: {'content-type': 'text/html'},
+        ),
+      );
+      await pumpEventQueue();
+    });
+
+    test('cancelling during redirect prevents follow-up hop request', () async {
+      final requestedUrls = <String>[];
+      final redirectDnsStarted = Completer<void>();
+      final redirectDnsGate = Completer<List<InternetAddress>>();
+      final token = PolicyUrlCancellationToken();
+
+      final retriever = PolicyUrlRetriever(
+        dnsLookup: (host) async {
+          if (host == 'hop2.example.org') {
+            if (!redirectDnsStarted.isCompleted) redirectDnsStarted.complete();
+            return redirectDnsGate.future;
+          }
+          return [fakePublicIp];
+        },
+        clientFactory: () => MockClient((request) async {
+          requestedUrls.add(request.url.toString());
+          if (request.url.host == 'hop1.example.org') {
+            return http.Response(
+              '',
+              302,
+              headers: {'location': 'https://hop2.example.org/privacy'},
+            );
+          }
+          fail('Cancelled redirect hop must never execute HTTP send');
+        }),
+      );
+
+      final future = retriever.fetchPolicy(
+        'https://hop1.example.org/start',
+        cancelToken: token,
+      );
+
+      await redirectDnsStarted.future;
+      token.cancel();
+
+      final result = await future;
+      expect(result.status, PolicyRetrievalStatus.cancelled);
+      expect(result.isUsablePolicy, isFalse);
+      expect(requestedUrls, ['https://hop1.example.org/start']);
+      expect(token.hasActiveListeners, isFalse);
+
+      redirectDnsGate.complete([fakePublicIp]);
+      await pumpEventQueue();
+    });
+
+    test('cancelling during response-body streaming aborts stream and returns cancelled', () async {
+      final streamController = StreamController<List<int>>();
+      final firstChunkDelivered = Completer<void>();
+      var closeCount = 0;
+      var streamCancelled = false;
+
+      streamController.onCancel = () {
+        streamCancelled = true;
+      };
+
+      final retriever = PolicyUrlRetriever(
+        dnsLookup: publicDns,
+        clientFactory: () => _SpyHttpClient.streaming(
+          onStream: (request, _) async {
+            scheduleMicrotask(() {
+              streamController.add(
+                utf8.encode(
+                  '<html><body><main><p>We collect personal data only to ',
+                ),
+              );
+              if (!firstChunkDelivered.isCompleted) {
+                firstChunkDelivered.complete();
+              }
+            });
+            return http.StreamedResponse(
+              streamController.stream,
+              200,
+              headers: {'content-type': 'text/html; charset=utf-8'},
+            );
+          },
+          onClose: () => closeCount++,
+        ),
+      );
+
+      final token = PolicyUrlCancellationToken();
+      final future = retriever.fetchPolicy(
+        'https://stream.example.org/privacy',
+        cancelToken: token,
+      );
+
+      await firstChunkDelivered.future;
+      await pumpEventQueue();
+      token.cancel();
+
+      final result = await future;
+      expect(result.status, PolicyRetrievalStatus.cancelled);
+      expect(result.isUsablePolicy, isFalse);
+      expect(result.extractedText, isNull);
+      expect(closeCount, 1);
+      expect(streamCancelled, isTrue);
+      expect(token.hasActiveListeners, isFalse);
+    });
+
+    test('closes HTTP client once, removes listeners, and handles initial DNS cancel and sync streams', () async {
+      // 1) Normal success with non-cancelled token
+      var closeCount = 0;
+      final okToken = PolicyUrlCancellationToken();
+      final okRetriever = PolicyUrlRetriever(
+        dnsLookup: publicDns,
+        clientFactory: () => _SpyHttpClient(
+          MockClient(
+            (_) async => http.Response(
+              '<html><body><main><p>We collect email addresses solely to deliver alerts and never sell personal data to third parties.</p></main></body></html>',
+              200,
+              headers: {'content-type': 'text/html'},
+            ),
+          ),
+          () => closeCount++,
+        ),
+      );
+      final okResult = await okRetriever.fetchPolicy(
+        'https://ok.example.org/privacy',
+        cancelToken: okToken,
+      );
+      expect(okResult.isUsablePolicy, isTrue);
+      expect(closeCount, 1);
+      expect(okToken.hasActiveListeners, isFalse);
+
+      // 2) HTTP error (404) with non-cancelled token
+      var errorCloseCount = 0;
+      final errToken = PolicyUrlCancellationToken();
+      final errRetriever = PolicyUrlRetriever(
+        dnsLookup: publicDns,
+        clientFactory: () => _SpyHttpClient(
+          MockClient((_) async => http.Response('Missing', 404)),
+          () => errorCloseCount++,
+        ),
+      );
+      final errResult = await errRetriever.fetchPolicy(
+        'https://missing.example.org/privacy',
+        cancelToken: errToken,
+      );
+      expect(errResult.status, PolicyRetrievalStatus.httpError);
+      expect(errorCloseCount, 1);
+      expect(errToken.hasActiveListeners, isFalse);
+
+      // 3) Cancellation during initial DNS lookup skips client creation
+      final dnsStarted = Completer<void>();
+      final dnsGate = Completer<List<InternetAddress>>();
+      var clientCreated = false;
+      final dnsToken = PolicyUrlCancellationToken();
+      final dnsRetriever = PolicyUrlRetriever(
+        dnsLookup: (_) async {
+          if (!dnsStarted.isCompleted) dnsStarted.complete();
+          return dnsGate.future;
+        },
+        clientFactory: () {
+          clientCreated = true;
+          return MockClient((_) async => http.Response('', 200));
+        },
+      );
+      final dnsFuture = dnsRetriever.fetchPolicy(
+        'https://dns-slow.example.org/privacy',
+        cancelToken: dnsToken,
+      );
+      await dnsStarted.future;
+      dnsToken.cancel();
+      final dnsResult = await dnsFuture;
+      expect(dnsResult.status, PolicyRetrievalStatus.cancelled);
+      expect(clientCreated, isFalse);
+      expect(dnsToken.hasActiveListeners, isFalse);
+      dnsGate.complete([fakePublicIp]);
+      await pumpEventQueue();
+
+      // 4) Synchronous StreamController delivery does not throw LateInitializationError
+      var syncCloseCount = 0;
+      final syncToken = PolicyUrlCancellationToken();
+      final syncController = StreamController<List<int>>(sync: true);
+      final syncRetriever = PolicyUrlRetriever(
+        dnsLookup: publicDns,
+        clientFactory: () => _SpyHttpClient.streaming(
+          onStream: (request, _) async {
+            scheduleMicrotask(() {
+              syncController.add(
+                utf8.encode(
+                  '<html><body><p>We collect analytics only with explicit consent and retain logs for 30 days without selling personal data.</p></body></html>',
+                ),
+              );
+              syncController.close();
+            });
+            return http.StreamedResponse(
+              syncController.stream,
+              200,
+              headers: {'content-type': 'text/html'},
+            );
+          },
+          onClose: () => syncCloseCount++,
+        ),
+      );
+      final syncResult = await syncRetriever.fetchPolicy(
+        'https://sync.example.org/privacy',
+        cancelToken: syncToken,
+      );
+      expect(syncResult.isUsablePolicy, isTrue);
+      expect(syncCloseCount, 1);
+      expect(syncToken.hasActiveListeners, isFalse);
+    });
+  });
+}
+
+class _SpyHttpClient extends http.BaseClient {
+  final http.Client _inner;
+  final void Function() _onClose;
+
+  _SpyHttpClient(this._inner, this._onClose);
+
+  factory _SpyHttpClient.streaming({
+    required Future<http.StreamedResponse> Function(
+      http.BaseRequest request,
+      http.ByteStream bodyStream,
+    )
+    onStream,
+    required void Function() onClose,
+  }) {
+    return _SpyHttpClient(MockClient.streaming(onStream), onClose);
+  }
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) =>
+      _inner.send(request);
+
+  @override
+  void close() {
+    _onClose();
+    _inner.close();
+  }
 }
