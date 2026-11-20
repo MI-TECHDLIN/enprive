@@ -18,6 +18,7 @@ import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/services/storage/receipt_repository.dart';
 import 'package:enprive/widgets/enprive_provenance_chip.dart';
 import 'package:enprive/widgets/installed_app_picker_sheet.dart';
+import 'package:enprive/widgets/intake/unified_policy_intake_sheet.dart';
 import 'package:enprive/widgets/review/unsaved_review_exit_sheet.dart';
 
 Future<void> _pumpAndFlush(WidgetTester tester, {int steps = 6}) async {
@@ -60,8 +61,7 @@ PolicyReviewReceipt _buildPolicyReceipt({
   String id = 'rcpt_draft_1',
   String title = 'Focus Reader',
   String sourceLabel = 'https://focus.example.com/privacy',
-  String policyText =
-      'Focus Reader stores reading lists strictly on your device and uses camera scanning only for book barcodes.',
+  String policyText = 'Focus Reader stores reading lists strictly on your device and uses camera scanning only for book barcodes.',
   bool withPermissions = true,
 }) {
   const snapshot = AppPermissionSnapshot(
@@ -114,112 +114,113 @@ void main() {
   }) {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(hybridChannel, (call) async {
-      switch (call.method) {
-        case 'getDeviceCapability':
-          return {
-            'isSupported': true,
-            'modelStatus': 'AVAILABLE',
-            'modelCategory': 'PREVIEW',
-            'apiLevel': 35,
-            'userMessage': 'Gemini Nano 4 ready.',
-          };
-        case 'getInitialIncomingPayload':
-        case 'getInitialSelectedText':
+          switch (call.method) {
+            case 'getDeviceCapability':
+              return {
+                'isSupported': true,
+                'modelStatus': 'AVAILABLE',
+                'modelCategory': 'PREVIEW',
+                'apiLevel': 35,
+                'userMessage': 'Gemini Nano 4 ready.',
+              };
+            case 'getInitialIncomingPayload':
+            case 'getInitialSelectedText':
+              return null;
+            case 'listLaunchableApps':
+              if (!withLaunchableApps) return null;
+              return <Map<String, Object?>>[
+                {
+                  'packageName': 'com.ululab.numbers',
+                  'appName': 'Math Makers',
+                  'isSystemApp': false,
+                },
+              ];
+            case 'inspectSelectedApp':
+              final pkg =
+                  (call.arguments as Map?)?['packageName'] as String? ??
+                  'com.focus.reader';
+              return {
+                'packageName': pkg,
+                'appName': 'Focus Reader',
+                'requestedPermissions': ['android.permission.CAMERA'],
+                'grantedPermissions': [],
+              };
+            case 'analyseText':
+              final args = Map<String, dynamic>.from(call.arguments as Map);
+              return {
+                'schemaVersion': 1,
+                'requestId': args['requestId'],
+                'status': 'success',
+                'inferenceSource': 'ON_DEVICE',
+                'structuredOutput': {
+                  'overall_state': 'NO_CONCERN',
+                  'summary': 'Verified cleanly on device.',
+                  'concerns': [],
+                },
+              };
+          }
           return null;
-        case 'listLaunchableApps':
-          if (!withLaunchableApps) return null;
-          return <Map<String, Object?>>[
-            {
-              'packageName': 'com.ululab.numbers',
-              'appName': 'Math Makers',
-              'isSystemApp': false,
-            },
-          ];
-        case 'inspectSelectedApp':
-          final pkg = (call.arguments as Map?)?['packageName'] as String? ??
-              'com.focus.reader';
-          return {
-            'packageName': pkg,
-            'appName': 'Focus Reader',
-            'requestedPermissions': ['android.permission.CAMERA'],
-            'grantedPermissions': [],
-          };
-        case 'analyseText':
-          final args = Map<String, dynamic>.from(call.arguments as Map);
-          return {
-            'schemaVersion': 1,
-            'requestId': args['requestId'],
-            'status': 'success',
-            'inferenceSource': 'ON_DEVICE',
-            'structuredOutput': {
-              'overall_state': 'NO_CONCERN',
-              'summary': 'Verified cleanly on device.',
-              'concerns': [],
-            },
-          };
-      }
-      return null;
-    });
+        });
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(companionChannel, (call) async {
-      switch (call.method) {
-        case 'getInitialCompanionInvocation':
-          return null;
-        case 'checkUsageAccess':
-          return {'status': 'granted', 'deviceLocked': false};
-        case 'getQuickSettingsTileStatus':
-          return {
-            'canRequestDirectAdd': true,
-            'isTileAdded': true,
-            'hasDeclinedBefore': false,
-            'apiLevel': 35,
-          };
-        case 'resolveForegroundApp':
-          return {
-            'schemaVersion': 1,
-            'resolutionStatus': 'identified',
-            'packageName': 'com.ululab.numbers',
-            'applicationLabel': 'Math Makers',
-            'eventTimestamp': 1760000001000,
-            'eventAgeMillis': 3000,
-            'confidence': 'high',
-            'candidates': [
-              {
+          switch (call.method) {
+            case 'getInitialCompanionInvocation':
+              return null;
+            case 'checkUsageAccess':
+              return {'status': 'granted', 'deviceLocked': false};
+            case 'getQuickSettingsTileStatus':
+              return {
+                'canRequestDirectAdd': true,
+                'isTileAdded': true,
+                'hasDeclinedBefore': false,
+                'apiLevel': 35,
+              };
+            case 'resolveForegroundApp':
+              return {
+                'schemaVersion': 1,
+                'resolutionStatus': 'identified',
                 'packageName': 'com.ululab.numbers',
                 'applicationLabel': 'Math Makers',
                 'eventTimestamp': 1760000001000,
                 'eventAgeMillis': 3000,
+                'confidence': 'high',
+                'candidates': [
+                  {
+                    'packageName': 'com.ululab.numbers',
+                    'applicationLabel': 'Math Makers',
+                    'eventTimestamp': 1760000001000,
+                    'eventAgeMillis': 3000,
+                    'permissionMetadataAvailable': true,
+                  },
+                ],
                 'permissionMetadataAvailable': true,
-              },
-            ],
-            'permissionMetadataAvailable': true,
-          };
-        case 'getDeclaredSensitivePermissions':
-          return {
-            'status': 'ok',
-            'packageName': 'com.ululab.numbers',
-            'applicationLabel': 'Math Makers',
-            'versionName': '1.3.0',
-            'versionCode': 130,
-            'permissions': [
-              {
-                'permission': 'android.permission.CAMERA',
-                'categoryId': 'camera',
-                'title': 'Camera',
-                'whatPermissionMeans': 'Takes photos and video.',
-                'grantStatus': 'denied',
-                'isRuntimePermission': true,
-                'statusNote': 'Declared · Currently denied',
-              },
-            ],
-          };
-        case 'returnToPreviousApp':
-          companionReturnedCalls?.add('returned');
-          return true;
-      }
-      return null;
-    });
+              };
+            case 'getDeclaredSensitivePermissions':
+              return {
+                'status': 'ok',
+                'packageName': 'com.ululab.numbers',
+                'applicationLabel': 'Math Makers',
+                'versionName': '1.3.0',
+                'versionCode': 130,
+                'permissions': [
+                  {
+                    'permission': 'android.permission.CAMERA',
+                    'categoryId': 'camera',
+                    'title': 'Camera',
+                    'whatPermissionMeans': 'Takes photos and video.',
+                    'grantStatus': 'denied',
+                    'isRuntimePermission': true,
+                    'statusNote': 'Declared · Currently denied',
+                  },
+                ],
+              };
+            case 'returnToPreviousApp':
+              companionReturnedCalls?.add('returned');
+              return true;
+          }
+          return null;
+        });
   }
 
   setUp(() {
@@ -244,10 +245,7 @@ void main() {
       final repo = ReceiptRepository(useInMemoryOnly: true);
 
       await tester.pumpWidget(
-        EnpriveApp(
-          showSplashOnLaunch: false,
-          receiptRepository: repo,
-        ),
+        EnpriveApp(showSplashOnLaunch: false, receiptRepository: repo),
       );
       await _pumpAndFlush(tester);
 
@@ -458,16 +456,17 @@ void main() {
       final repo = ReceiptRepository(useInMemoryOnly: true);
       var saveCalls = 0;
 
-      final permOnlyReceipt = ReviewCoordinator().buildDevicePermissionInspectionReceipt(
-        subjectTitle: 'Focus Reader',
-        sourceLabel: 'Installed App',
-        appPermissions: const AppPermissionSnapshot(
-          packageName: 'com.focus.reader',
-          appName: 'Focus Reader',
-          requestedPermissions: ['android.permission.CAMERA'],
-          grantedPermissions: [],
-        ),
-      );
+      final permOnlyReceipt = ReviewCoordinator()
+          .buildDevicePermissionInspectionReceipt(
+            subjectTitle: 'Focus Reader',
+            sourceLabel: 'Installed App',
+            appPermissions: const AppPermissionSnapshot(
+              packageName: 'com.focus.reader',
+              appName: 'Focus Reader',
+              requestedPermissions: ['android.permission.CAMERA'],
+              grantedPermissions: [],
+            ),
+          );
 
       await tester.pumpWidget(
         _wrapWithM3EApp(
@@ -498,7 +497,10 @@ void main() {
       await _pumpAndFlush(tester, steps: 8);
 
       // Policy is attached & reviewed on screen, yet zero writes hit SQLite/repo
-      expect(find.textContaining('Verified cleanly on device.'), findsOneWidget);
+      expect(
+        find.textContaining('Verified cleanly on device.'),
+        findsOneWidget,
+      );
       expect(saveCalls, equals(0));
       expect(await repo.loadReceipts(), isEmpty);
       expect(find.byTooltip('Save to Receipts'), findsOneWidget);
@@ -516,10 +518,7 @@ void main() {
         await repo.saveReceipt(savedAppReceipt);
 
         await tester.pumpWidget(
-          EnpriveApp(
-            showSplashOnLaunch: false,
-            receiptRepository: repo,
-          ),
+          EnpriveApp(showSplashOnLaunch: false, receiptRepository: repo),
         );
         await _pumpAndFlush(tester);
 
@@ -736,7 +735,9 @@ void main() {
                           receiptRepository: repo,
                           onSaveReceipt: (r) async {
                             if (shouldFail) {
-                              throw StateError('Simulated SQLite write failure');
+                              throw StateError(
+                                'Simulated SQLite write failure',
+                              );
                             }
                             await repo.saveReceipt(r);
                           },
@@ -773,9 +774,8 @@ void main() {
 
       // Retry succeeds and transitions cleanly to Saved
       shouldFail = false;
-      ScaffoldMessenger.of(
-        tester.element(find.byType(ReviewResultScreen)),
-      ).removeCurrentSnackBar();
+      ScaffoldMessenger.of(tester.element(find.byType(ReviewResultScreen)))
+          .removeCurrentSnackBar();
       await _pumpAndFlush(tester);
       final retryBtn = find.text('Retry save');
       await tester.ensureVisible(retryBtn);
@@ -829,16 +829,21 @@ void main() {
         await tester.tap(attachBtn);
         await _pumpAndFlush(tester);
 
+        expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
+        expect(
+          find.byKey(const Key('intake_locked_app_header')),
+          findsOneWidget,
+        );
         await tester.tap(find.text('Paste text'));
         await _pumpAndFlush(tester);
         await tester.enterText(
-          find.descendant(
-            of: find.byType(BottomSheet),
-            matching: find.byType(TextField),
-          ),
+          find.byKey(const Key('intake_paste_field')),
           'Math Makers uses the camera strictly when scanning worksheets on your device and never sells camera photos.',
         );
-        await tester.tap(find.text('Inspect pasted policy'));
+        final submitBtn = find.byKey(const Key('intake_primary_submit_btn'));
+        await tester.ensureVisible(submitBtn);
+        await tester.pump();
+        await tester.tap(submitBtn);
         await _pumpAndFlush(tester, steps: 8);
 
         // Policy matched in session memory, NOT persisted automatically
@@ -859,7 +864,9 @@ void main() {
         await tester.tap(saveCompanionBtn);
         await _pumpAndFlush(tester);
 
-        expect((await repo.loadReceipts()), hasLength(1));
+        final savedAfterFirst = await repo.loadReceipts();
+        expect(savedAfterFirst, hasLength(1));
+        expect(savedAfterFirst.single.supersedesReceiptId, isNull);
         expect(
           find.byKey(const Key('companion_receipt_saved_badge')),
           findsOneWidget,
@@ -930,16 +937,17 @@ void main() {
         await tester.tap(attachBtn);
         await _pumpAndFlush(tester);
 
+        expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
         await tester.tap(find.text('Paste text'));
         await _pumpAndFlush(tester);
         await tester.enterText(
-          find.descendant(
-            of: find.byType(BottomSheet),
-            matching: find.byType(TextField),
-          ),
+          find.byKey(const Key('intake_paste_field')),
           'Math Makers processes camera photos strictly on your device to scan math worksheets and never sells or shares personal data.',
         );
-        await tester.tap(find.text('Inspect pasted policy'));
+        final submitBtn = find.byKey(const Key('intake_primary_submit_btn'));
+        await tester.ensureVisible(submitBtn);
+        await tester.pump();
+        await tester.tap(submitBtn);
         await _pumpAndFlush(tester, steps: 8);
 
         expect(
@@ -999,16 +1007,17 @@ void main() {
         await tester.tap(attachBtn);
         await _pumpAndFlush(tester);
 
+        expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
         await tester.tap(find.text('Paste text'));
         await _pumpAndFlush(tester);
         await tester.enterText(
-          find.descendant(
-            of: find.byType(BottomSheet),
-            matching: find.byType(TextField),
-          ),
+          find.byKey(const Key('intake_paste_field')),
           'Math Makers uses the camera strictly when scanning worksheets on your device and never sells camera photos.',
         );
-        await tester.tap(find.text('Inspect pasted policy'));
+        final submitBtn = find.byKey(const Key('intake_primary_submit_btn'));
+        await tester.ensureVisible(submitBtn);
+        await tester.pump();
+        await tester.tap(submitBtn);
         await _pumpAndFlush(tester, steps: 8);
 
         expect(
@@ -1067,6 +1076,198 @@ void main() {
         expect(find.text('Recently checked'), findsOneWidget);
         await closePicker();
         expect(await repo.loadReceipts(), hasLength(1));
+      },
+    );
+
+    testWidgets(
+      '14. D5.3-D Phase 3a: Updating an existing saved receipt in Companion creates a distinct draft with supersedesReceiptId; discard preserves original while Save keeps both',
+      (WidgetTester tester) async {
+        final returnedCalls = <String>[];
+        installStandardMocks(companionReturnedCalls: returnedCalls);
+        final repo = ReceiptRepository(useInMemoryOnly: true);
+
+        const originalV1Policy =
+            'Original 2025 Math Makers policy: camera input is strictly used for offline printed worksheet scanning.';
+        const updatedV2Policy =
+            'Updated 2026 Math Makers policy: camera scans classroom geometry exercises locally and never uploads photos to advertisers.';
+
+        final originalReceipt = PolicyReviewReceipt(
+          id: 'rcpt_math_v1',
+          subjectTitle: 'Math Makers',
+          sourceLabel: 'https://ululab.com/privacy-v1',
+          snapshotText: originalV1Policy,
+          snapshotDigest: 'digest_math_v1',
+          createdAt: DateTime(2026, 11, 18, 12, 0),
+          overallState: ReviewOverallState.noConcern,
+          inferenceSource: InferenceSource.onDevice,
+          summary: 'Original 2025 summary.',
+          calibratedDisclaimer: ReviewCoordinator.calibratedDefaultDisclaimer,
+          findings: const [],
+          permissionReport: PermissionComparator.compare(
+            snapshot: const AppPermissionSnapshot(
+              packageName: 'com.ululab.numbers',
+              appName: 'Math Makers',
+              requestedPermissions: ['android.permission.CAMERA'],
+              grantedPermissions: [],
+            ),
+            policyText: originalV1Policy,
+          ),
+          sourceSnapshot: PolicySourceSnapshot(
+            snapshotId: 'snap_math_v1',
+            sourceType: PolicySourceType.url,
+            requestedUrl: 'https://ululab.com/privacy-v1',
+            canonicalUrl: 'https://ululab.com/privacy-v1',
+            retrievedAt: DateTime.utc(2026, 11, 18, 12, 0),
+            retrievalStatus: PolicyRetrievalStatus.retrieved,
+            appIdentityMatchStatus:
+                AppIdentityMatchStatus.unverifiedUserSupplied,
+            sourceSha256Hash: 'aabbccddeeff00112233445566778899',
+          ),
+        );
+        await repo.saveReceipt(originalReceipt);
+
+        Future<void> launchCompanion(String invocationId) async {
+          await tester.pumpWidget(
+            _wrapWithM3EApp(
+              child: Builder(
+                builder: (ctx) => Scaffold(
+                  body: Center(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(ctx).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => CompanionScreen(
+                              invocation: CompanionInvocation(
+                                invocationId: invocationId,
+                                source: 'quick_settings',
+                                timestampMs: 1760000005000,
+                                deviceLocked: false,
+                              ),
+                              hybridBridge: HybridAiBridge(),
+                              companionBridge: CompanionBridge(),
+                              coordinator: ReviewCoordinator(),
+                              urlRetriever: PolicyUrlRetriever(),
+                              savedReceipts: [originalReceipt],
+                              receiptRepository: repo,
+                              onSaveReceipt: repo.saveReceipt,
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('Launch Companion'),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await _pumpAndFlush(tester);
+          await tester.tap(find.text('Launch Companion'));
+          await _pumpAndFlush(tester);
+          await tester.tap(find.byKey(const Key('companion_confirm_app_btn')));
+          await _pumpAndFlush(tester);
+          final cameraTile = find.byKey(
+            const Key('companion_perm_android.permission.CAMERA'),
+          );
+          await tester.ensureVisible(cameraTile);
+          await tester.pump();
+          await tester.tap(cameraTile);
+          await _pumpAndFlush(tester);
+        }
+
+        // Part A: Update saved receipt -> verify unsaved draft & refreshed quote -> exit without Save -> original preserved untouched
+        await launchCompanion('qs-update-discard');
+        expect(
+          find.byKey(const Key('companion_receipt_saved_badge')),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('offline printed worksheet scanning'),
+          findsOneWidget,
+        );
+
+        final updateBtn = find.byKey(const Key('companion_update_policy_btn'));
+        await tester.ensureVisible(updateBtn);
+        await tester.pump();
+        await tester.tap(updateBtn);
+        await _pumpAndFlush(tester);
+
+        expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
+        await tester.tap(find.text('Paste text'));
+        await _pumpAndFlush(tester);
+        await tester.enterText(
+          find.byKey(const Key('intake_paste_field')),
+          updatedV2Policy,
+        );
+        final submitBtn = find.byKey(const Key('intake_primary_submit_btn'));
+        await tester.ensureVisible(submitBtn);
+        await tester.pump();
+        await tester.tap(submitBtn);
+        await _pumpAndFlush(tester, steps: 8);
+
+        expect(
+          find.textContaining('classroom geometry exercises locally'),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('companion_receipt_unsaved_label')),
+          findsOneWidget,
+        );
+        expect(await repo.loadReceipts(), hasLength(1));
+
+        // Leave Companion without saving -> returns to previous app & discards unsaved draft
+        final returnBtn = find.byKey(const Key('companion_return_btn'));
+        await tester.ensureVisible(returnBtn);
+        await tester.pump();
+        await tester.tap(returnBtn);
+        await _pumpAndFlush(tester);
+
+        expect(find.byType(CompanionScreen), findsNothing);
+        expect(returnedCalls, ['returned']);
+        final afterDiscard = await repo.loadReceipts();
+        expect(afterDiscard, hasLength(1));
+        expect(afterDiscard.single.id, 'rcpt_math_v1');
+        expect(afterDiscard.single.snapshotText, originalV1Policy);
+
+        // Part B: Re-open, attach updated policy, explicitly Save -> distinct ID with supersedesReceiptId & historical receipt intact
+        await launchCompanion('qs-update-save');
+        final updateBtn2 = find.byKey(const Key('companion_update_policy_btn'));
+        await tester.ensureVisible(updateBtn2);
+        await tester.pump();
+        await tester.tap(updateBtn2);
+        await _pumpAndFlush(tester);
+
+        await tester.tap(find.text('Paste text'));
+        await _pumpAndFlush(tester);
+        await tester.enterText(
+          find.byKey(const Key('intake_paste_field')),
+          updatedV2Policy,
+        );
+        final submitBtn2 = find.byKey(const Key('intake_primary_submit_btn'));
+        await tester.ensureVisible(submitBtn2);
+        await tester.pump();
+        await tester.tap(submitBtn2);
+        await _pumpAndFlush(tester, steps: 8);
+
+        final saveBtn = find.byKey(const Key('companion_save_receipt_btn'));
+        await tester.ensureVisible(saveBtn);
+        await tester.pump();
+        await tester.tap(saveBtn);
+        await _pumpAndFlush(tester);
+
+        final afterSave = await repo.loadReceipts();
+        expect(afterSave, hasLength(2));
+        final keptOriginal = afterSave.firstWhere(
+          (r) => r.id == 'rcpt_math_v1',
+        );
+        final savedUpdate = afterSave.firstWhere((r) => r.id != 'rcpt_math_v1');
+        expect(keptOriginal.snapshotText, originalV1Policy);
+        expect(savedUpdate.supersedesReceiptId, 'rcpt_math_v1');
+        expect(savedUpdate.snapshotText, updatedV2Policy);
+        expect(
+          find.byKey(const Key('companion_receipt_saved_badge')),
+          findsOneWidget,
+        );
       },
     );
   });

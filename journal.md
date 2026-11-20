@@ -1401,6 +1401,28 @@
 
 ---
 
+## Iteration 42: D5.3-D Phase 3a — Quick Settings Companion Migration (2026-11-20)
+
+- **Branch / Commit State**: `feature/m3-expressive-rebrand` atop pushed Phase 2 commit `98c93f566fad00cd147e257eee9eab1dd2950d40`; audited and committed locally as `feat(companion): migrate policy intake to unified sheet` (not pushed; zero Phase 3b/3c changes). Model: **Gemini 4 Neon**.
+- **What Was Built & Modified**:
+  1. **Companion Unified Intake Migration (`lib/screens/companion_screen.dart`)**:
+     - Deleted the duplicated `_CompanionAttachPolicySheet` (`_CompanionAttachPolicySheetState`) and replaced inline URL fetching / `PolicySufficiencyValidator` logic inside `_attachAndAnalyzePolicy` with `UnifiedPolicyIntakeSheet.show(...)` backed by one authoritative `PolicyIntakeCoordinator` (injectable via optional `CompanionScreen.intakeCoordinator`, defaulting to `PolicyIntakeCoordinator(urlRetriever: widget.urlRetriever, hybridBridge: widget.hybridBridge)` so `main.dart` remains untouched).
+     - Constructed a locked `SelectedAppReference(isLocked: true)` from the confirmed Companion app (`_confirmedPackageName`, `_confirmedAppLabel`, on-device `_resolution?.candidates` peer candidates, and valid `_existingConfirmedAppSnapshot` when available — returning `null` instead of fabricating an empty snapshot when permission metadata is unavailable).
+     - Enabled **Paste text**, **Public URL** (with `CompanionBridge.openPlayStoreListing` helper), and **Local Document (`PDF`, `TXT`, `DOCX`)** intake directly inside Companion while keeping errors, retries, cancellation, and D5.3-B association mismatch / ambiguity warnings inside `UnifiedPolicyIntakeSheet`.
+  2. **Review Execution, Cloud Consent Parity & Final Audit Hardening**:
+     - Added `_runPolicyReviewForIntake(PolicyIntakeSuccess, expectedAppSeq: ...)` refreshing permissions through `_intakeCoordinator.hydrateAppPermissions(...)` (reusing only genuine on-device observations, never passing package lists or permissions to cloud prompts).
+     - Fixed Companion's `CloudConsentSheet` parity defect in both policy reviews and `_askDeni`: passes raw `policyText` plus `canonicalRedactedPreview: canonicalPayload` (`outcome.redactedPreview ?? ReviewCoordinator.canonicalCloudPayload(policyText)`) to `CloudConsentSheet.show(...)` (avoiding double redaction and preserving exact `Masked (N)` counts) and forwards the identical `canonicalPayload` as `canonicalRedactedPayload` to `widget.coordinator.runPolicyReview(...)`.
+     - Exposed `companion_update_policy_btn` (`Check updated privacy policy`) alongside `ReviewProgressCard` when a verified receipt already exists, linked `supersedesReceiptId` against `_persistedReceiptsForPicker()` with strictly distinct unsaved draft IDs and monotonic `createdAt`, added `_isOpeningIntakeSheet` modal double-tap protection, checked `_appContextSequence` after every async boundary, and cancelled active policy/Ask Deni jobs immediately on app switch, `_finishCompanion()`, and `dispose()`.
+  3. **Expanded Test Coverage (`test/quick_settings_companion_test.dart`, `test/receipt_save_state_machine_test.dart`)**:
+     - Updated Companion intake interactions in Tests 11–13 of `receipt_save_state_machine_test.dart` to exercise `UnifiedPolicyIntakeSheet`, and added Test 14 verifying updated-policy reviews against an existing saved receipt (distinct draft ID, `supersedesReceiptId`, discard preserving historical receipt, explicit Save keeping both).
+     - Added 4 Phase 3a E2E widget tests in `quick_settings_companion_test.dart` covering URL 404 retry + locked identity + Play Store link + unmatched/ambiguous warnings, PDF/TXT/DOCX document intake + picker cancel + password-protected failure recovery, `CloudConsentSheet` byte-for-byte canonical payload parity + zero permission leakage + local/denied/unavailable/cancel flows, and AppBar Close return-to-previous-app + no fabricated permission snapshot + app-switch stale async guard + disposal-with-pending-review cleanup. Physical-device Quick Settings / TalkBack verification remains outstanding on Android hardware.
+- **Verification Status**: `git diff --check` clean; `flutter analyze` **0 issues**; `flutter test test/quick_settings_companion_test.dart test/receipt_save_state_machine_test.dart` **24 / 24 passed**; full `flutter test` **209 / 209 passed**; `flutter build apk --debug --target-platform android-arm64` succeeded.
+- **Next Immediate Action & Recommended Model**:
+  - Await explicit authorization before pushing or starting **Phase 3b (`ReviewResultScreen` migration)**; keep physical-device TalkBack and Quick Settings Companion return verification scheduled on Android hardware.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **D5.3 Core Flow Streamlining (D5.3-B+) & D5.4 Offline Learn MVP**

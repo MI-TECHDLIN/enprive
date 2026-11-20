@@ -6,9 +6,11 @@ import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../core/theme/enprive_theme.dart';
 import '../domain/companion/companion_policy_resolver.dart';
-import '../domain/review/policy_sufficiency.dart';
+import '../domain/intake/policy_intake_models.dart';
+import '../domain/review/app_policy_association.dart' show AppIdentityCandidate;
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
+import '../services/intake/policy_intake_coordinator.dart';
 import '../services/intake/policy_intake_helper.dart';
 import '../services/network/policy_url_retriever.dart';
 import '../services/platform/companion_bridge.dart';
@@ -20,6 +22,7 @@ import '../widgets/enprive_provenance_chip.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/installed_app_icon.dart';
 import '../widgets/installed_app_picker_sheet.dart';
+import '../widgets/intake/unified_policy_intake_sheet.dart';
 import '../widgets/m3e/enprive_m3e_components.dart';
 import '../widgets/review_progress_sheet.dart';
 
@@ -27,13 +30,15 @@ import '../widgets/review_progress_sheet.dart';
 /// Quick Settings tile (`OPEN_COMPANION`) or directly inside Enprive.
 ///
 /// Reuses existing Deni assets, M3 Expressive tokens, `InstalledAppPickerSheet`,
-/// `CloudConsentSheet`, `PolicyUrlRetriever`, and `ReviewCoordinator`.
+/// `UnifiedPolicyIntakeSheet`, `PolicyIntakeCoordinator`, `CloudConsentSheet`,
+/// and `ReviewCoordinator`.
 class CompanionScreen extends StatefulWidget {
   final CompanionInvocation? invocation;
   final HybridAiBridge hybridBridge;
   final CompanionBridge companionBridge;
   final ReviewCoordinator coordinator;
   final PolicyUrlRetriever urlRetriever;
+  final PolicyIntakeCoordinator? intakeCoordinator;
   final List<PolicyReviewReceipt> savedReceipts;
   final Future<void> Function(PolicyReviewReceipt receipt)? onSaveReceipt;
   final ReceiptRepository? receiptRepository;
@@ -46,6 +51,7 @@ class CompanionScreen extends StatefulWidget {
     required this.companionBridge,
     required this.coordinator,
     required this.urlRetriever,
+    this.intakeCoordinator,
     required this.savedReceipts,
     this.onSaveReceipt,
     this.receiptRepository,
@@ -58,6 +64,8 @@ class CompanionScreen extends StatefulWidget {
 
 class _CompanionScreenState extends State<CompanionScreen>
     with WidgetsBindingObserver {
+  late final PolicyIntakeCoordinator _intakeCoordinator;
+
   bool _isResolvingForeground = false;
   bool _isDeviceLocked = false;
   UsageAccessState _usageAccessState = UsageAccessState.denied;
@@ -72,7 +80,9 @@ class _CompanionScreenState extends State<CompanionScreen>
   String? _confirmedVersionLabel;
   bool _isLoadingPermissions = false;
   AppSensitivePermissionsResult? _permissionsResult;
+  AppPermissionSnapshot? _confirmedSampleSnapshot;
   final List<DeclaredSensitivePermission> _syntheticPermissions = [];
+  int _appContextSequence = 0;
 
   DeclaredSensitivePermission? _selectedPermission;
   GuidedPermissionOption? _selectedGuidedOption;
@@ -80,8 +90,10 @@ class _CompanionScreenState extends State<CompanionScreen>
 
   final List<PolicyReviewReceipt> _sessionReceipts = [];
   final Set<String> _persistedReceiptIds = <String>{};
+  int _draftCounter = 0;
   bool _isSavingSessionReceipt = false;
   String? _companionSaveError;
+  bool _isOpeningIntakeSheet = false;
   bool _isAttachingPolicy = false;
   bool _isCloudPolicyInFlight = false;
   bool _isCancellingPolicy = false;
@@ -103,6 +115,12 @@ class _CompanionScreenState extends State<CompanionScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _intakeCoordinator =
+        widget.intakeCoordinator ??
+        PolicyIntakeCoordinator(
+          urlRetriever: widget.urlRetriever,
+          hybridBridge: widget.hybridBridge,
+        );
     _sessionReceipts.addAll(widget.savedReceipts);
     _persistedReceiptIds.addAll(widget.savedReceipts.map((r) => r.id));
     _isDeviceLocked = widget.invocation?.deviceLocked ?? false;
@@ -111,6 +129,17 @@ class _CompanionScreenState extends State<CompanionScreen>
 
   @override
   void dispose() {
+    _appContextSequence++;
+    _policyOpSequence++;
+    _askOpSequence++;
+    if (_activePolicyReqId != null) {
+      unawaited(
+        widget.hybridBridge.cancelAnalysis(requestId: _activePolicyReqId),
+      );
+    }
+    if (_activeAskReqId != null) {
+      unawaited(widget.hybridBridge.cancelAnalysis(requestId: _activeAskReqId));
+    }
     WidgetsBinding.instance.removeObserver(this);
     _questionController.dispose();
     _featureContextController.dispose();
@@ -126,7 +155,8 @@ class _CompanionScreenState extends State<CompanionScreen>
 
   Future<void> _handleResumeLifecycle() async {
     final accessInfo = await widget.companionBridge.checkUsageAccess();
-    final tileStatus = await widget.companionBridge.getQuickSettingsTileStatus();
+    final tileStatus = await widget.companionBridge
+        .getQuickSettingsTileStatus();
     if (!mounted) return;
 
     final wasLocked = _isDeviceLocked;
@@ -141,18 +171,21 @@ class _CompanionScreenState extends State<CompanionScreen>
     });
 
     if (unlockedNow ||
-        (returningFromSettings && accessInfo.status == UsageAccessState.granted)) {
+        (returningFromSettings &&
+            accessInfo.status == UsageAccessState.granted)) {
       await _runOneTimeForegroundLookup();
     }
   }
 
   Future<void> _bootstrapCompanionContext() async {
     final accessInfo = await widget.companionBridge.checkUsageAccess();
-    final tileStatus = await widget.companionBridge.getQuickSettingsTileStatus();
+    final tileStatus = await widget.companionBridge
+        .getQuickSettingsTileStatus();
     if (!mounted) return;
     setState(() {
       _usageAccessState = accessInfo.status;
-      _isDeviceLocked = accessInfo.deviceLocked || (widget.invocation?.deviceLocked ?? false);
+      _isDeviceLocked =
+          accessInfo.deviceLocked || (widget.invocation?.deviceLocked ?? false);
       _tileStatus = tileStatus;
     });
 
@@ -167,8 +200,7 @@ class _CompanionScreenState extends State<CompanionScreen>
       setState(() {
         _resolution = const ForegroundAppResolution(
           status: ForegroundResolutionStatus.usageAccessDenied,
-          fallbackReason:
-              'Usage Access is optional. You can choose an app manually or allow Usage Access for one-tap identification.',
+          fallbackReason: 'Usage Access is optional. You can choose an app manually or allow Usage Access for one-tap identification.',
         );
       });
     }
@@ -192,6 +224,8 @@ class _CompanionScreenState extends State<CompanionScreen>
     required String packageName,
     required String applicationLabel,
   }) async {
+    final appSeq = ++_appContextSequence;
+    _cancelActivePolicyAndAskForContextChange();
     setState(() {
       _isAppConfirmed = true;
       _continuedWithoutAppContext = false;
@@ -200,16 +234,18 @@ class _CompanionScreenState extends State<CompanionScreen>
       _confirmedVersionLabel = null;
       _isLoadingPermissions = true;
       _permissionsResult = null;
+      _confirmedSampleSnapshot = null;
       _syntheticPermissions.clear();
       _selectedPermission = null;
       _selectedGuidedOption = null;
       _showUnsureGuide = false;
       _deniAnswer = null;
+      _companionSaveError = null;
     });
 
-    final inspected =
-        await widget.companionBridge.getDeclaredSensitivePermissions(packageName);
-    if (!mounted) return;
+    final inspected = await widget.companionBridge
+        .getDeclaredSensitivePermissions(packageName);
+    if (!mounted || appSeq != _appContextSequence) return;
     if (inspected.status == AppPermissionsLookupStatus.deviceLocked) {
       setState(() {
         _isDeviceLocked = true;
@@ -228,6 +264,27 @@ class _CompanionScreenState extends State<CompanionScreen>
         _confirmedVersionLabel = 'v${inspected.versionName!.trim()}';
       }
     });
+  }
+
+  void _cancelActivePolicyAndAskForContextChange() {
+    final policyReqId = _activePolicyReqId;
+    final askReqId = _activeAskReqId;
+    _policyOpSequence++;
+    _askOpSequence++;
+    _isAttachingPolicy = false;
+    _isCloudPolicyInFlight = false;
+    _isCancellingPolicy = false;
+    _activePolicyReqId = null;
+    _isAskingDeni = false;
+    _isAskingCloud = false;
+    _isCancellingAsk = false;
+    _activeAskReqId = null;
+    if (policyReqId != null) {
+      unawaited(widget.hybridBridge.cancelAnalysis(requestId: policyReqId));
+    }
+    if (askReqId != null) {
+      unawaited(widget.hybridBridge.cancelAnalysis(requestId: askReqId));
+    }
   }
 
   Future<void> _openManualAppPicker() async {
@@ -262,6 +319,8 @@ class _CompanionScreenState extends State<CompanionScreen>
 
     final pkg = choice.permissionSnapshot.packageName;
     if (choice.isSyntheticSample) {
+      _appContextSequence++;
+      _cancelActivePolicyAndAskForContextChange();
       setState(() {
         _isAppConfirmed = true;
         _continuedWithoutAppContext = false;
@@ -270,10 +329,12 @@ class _CompanionScreenState extends State<CompanionScreen>
         _confirmedVersionLabel = null;
         _isLoadingPermissions = false;
         _permissionsResult = null;
+        _confirmedSampleSnapshot = choice.permissionSnapshot;
         _selectedPermission = null;
         _selectedGuidedOption = null;
         _showUnsureGuide = false;
         _deniAnswer = null;
+        _companionSaveError = null;
         _syntheticPermissions
           ..clear()
           ..addAll(_mapSnapshotToDeclaredItems(choice.permissionSnapshot));
@@ -301,13 +362,13 @@ class _CompanionScreenState extends State<CompanionScreen>
               'Background location',
             'android.permission.CAMERA' => 'Camera',
             'android.permission.RECORD_AUDIO' => 'Microphone',
-            'com.google.android.gms.permission.AD_ID' => 'Google Advertising ID',
+            'com.google.android.gms.permission.AD_ID' =>
+              'Google Advertising ID',
             _ => perm.split('.').last,
           };
           final categoryId = switch (perm) {
             'android.permission.ACCESS_FINE_LOCATION' ||
-            'android.permission.ACCESS_BACKGROUND_LOCATION' =>
-              'location',
+            'android.permission.ACCESS_BACKGROUND_LOCATION' => 'location',
             'android.permission.CAMERA' => 'camera',
             'android.permission.RECORD_AUDIO' => 'microphone',
             'com.google.android.gms.permission.AD_ID' => 'advertising_id',
@@ -336,6 +397,8 @@ class _CompanionScreenState extends State<CompanionScreen>
   }
 
   void _continueWithoutAppContext() {
+    _appContextSequence++;
+    _cancelActivePolicyAndAskForContextChange();
     setState(() {
       _isAppConfirmed = false;
       _continuedWithoutAppContext = true;
@@ -343,11 +406,13 @@ class _CompanionScreenState extends State<CompanionScreen>
       _confirmedAppLabel = null;
       _confirmedVersionLabel = null;
       _permissionsResult = null;
+      _confirmedSampleSnapshot = null;
       _syntheticPermissions.clear();
       _selectedPermission = null;
       _selectedGuidedOption = CompanionPolicyResolver.guidedOptions.first;
       _showUnsureGuide = true;
       _deniAnswer = null;
+      _companionSaveError = null;
     });
   }
 
@@ -377,12 +442,9 @@ class _CompanionScreenState extends State<CompanionScreen>
         'Enprive Check added to Android Quick Settings.',
       TileAddOutcome.alreadyAdded =>
         'Enprive Check is already in your Quick Settings.',
-      TileAddOutcome.declined =>
-        'Tile request dismissed. You can add it anytime from Settings or Quick Settings Edit.',
-      TileAddOutcome.manualRequired =>
-        'Swipe down Quick Settings twice, tap Edit, and drag Enprive Check into your tiles.',
-      TileAddOutcome.failed || TileAddOutcome.unavailable =>
-        'Android could not show the Quick Settings prompt on this device. You can drag Enprive Check manually from Quick Settings Edit.',
+      TileAddOutcome.declined => 'Tile request dismissed. You can add it anytime from Settings or Quick Settings Edit.',
+      TileAddOutcome.manualRequired => 'Swipe down Quick Settings twice, tap Edit, and drag Enprive Check into your tiles.',
+      TileAddOutcome.failed || TileAddOutcome.unavailable => 'Android could not show the Quick Settings prompt on this device. You can drag Enprive Check manually from Quick Settings Edit.',
     };
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
@@ -411,9 +473,7 @@ class _CompanionScreenState extends State<CompanionScreen>
   bool get _canPersistSessionReceipts =>
       widget.onSaveReceipt != null || widget.receiptRepository != null;
 
-  Future<void> _saveCompanionSessionReceipt(
-    PolicyReviewReceipt receipt,
-  ) async {
+  Future<void> _saveCompanionSessionReceipt(PolicyReviewReceipt receipt) async {
     if (_isSavingSessionReceipt ||
         _isSessionReceiptPersisted(receipt.id) ||
         !_canPersistSessionReceipts) {
@@ -484,30 +544,110 @@ class _CompanionScreenState extends State<CompanionScreen>
     );
   }
 
-  Future<void> _openAttachPolicyModal() async {
-    if (_isAttachingPolicy || _confirmedPackageName == null) return;
-    final appDisplay = _confirmedAppLabel ?? _confirmedPackageName!;
+  /// Returns a genuine on-device [AppPermissionSnapshot] for [packageName] when
+  /// Companion already holds a valid observation (`_permissionsResult.isOk` or
+  /// a selected synthetic sample). Returns `null` when metadata is unavailable
+  /// so Enprive never fabricates a false empty permission snapshot.
+  AppPermissionSnapshot? _existingConfirmedAppSnapshot(
+    String packageName,
+    String appLabel,
+  ) {
+    final sampleSnap = _confirmedSampleSnapshot;
+    if (sampleSnap != null && sampleSnap.packageName == packageName) {
+      return sampleSnap;
+    }
 
-    final input = await showModalBottomSheet<({bool isUrl, String value})>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _CompanionAttachPolicySheet(appDisplayName: appDisplay),
-    );
+    final result = _permissionsResult;
+    if (result != null && result.isOk && result.packageName == packageName) {
+      final declared = result.permissions;
+      return AppPermissionSnapshot(
+        packageName: packageName,
+        appName: appLabel,
+        requestedPermissions: declared
+            .map((p) => p.permission)
+            .toList(growable: false),
+        grantedPermissions: declared
+            .where(
+              (p) => p.grantStatus == DeclaredPermissionGrantStatus.granted,
+            )
+            .map((p) => p.permission)
+            .toList(growable: false),
+      );
+    }
 
-    if (!mounted || input == null) return;
-
-    await _attachAndAnalyzePolicy(isUrl: input.isUrl, rawInput: input.value);
+    return null;
   }
 
-  Future<void> _attachAndAnalyzePolicy({
-    required bool isUrl,
-    required String rawInput,
+  Future<void> _openAttachPolicyModal() async {
+    if (_isAttachingPolicy ||
+        _isOpeningIntakeSheet ||
+        _confirmedPackageName == null) {
+      return;
+    }
+    final pkg = _confirmedPackageName!;
+    final appSeq = _appContextSequence;
+    final appDisplay = _confirmedAppLabel ?? pkg;
+    final existingSnapshot = _existingConfirmedAppSnapshot(pkg, appDisplay);
+    final peerCandidates = (_resolution?.candidates ?? const [])
+        .where((c) => c.packageName.trim().isNotEmpty)
+        .map(
+          (c) => AppIdentityCandidate(
+            packageName: c.packageName,
+            appName: c.applicationLabel,
+          ),
+        )
+        .toList(growable: false);
+    final lockedApp = SelectedAppReference(
+      packageName: pkg,
+      appName: appDisplay,
+      permissionSnapshot: existingSnapshot,
+      peerCandidates: peerCandidates,
+      isLocked: true,
+    );
+
+    _isOpeningIntakeSheet = true;
+    PolicyIntakeSuccess? intake;
+    try {
+      intake = await UnifiedPolicyIntakeSheet.show(
+        context,
+        config: PolicyIntakeSheetConfig(
+          coordinator: _intakeCoordinator,
+          titleOverride: 'Verify policy for $appDisplay',
+          initialMode: PolicyIntakeMode.url,
+          initialSelectedApp: lockedApp,
+          companionBridge: widget.companionBridge,
+        ),
+      );
+    } finally {
+      _isOpeningIntakeSheet = false;
+    }
+
+    if (!mounted ||
+        intake == null ||
+        appSeq != _appContextSequence ||
+        _confirmedPackageName != pkg) {
+      return;
+    }
+
+    await _runPolicyReviewForIntake(intake, expectedAppSeq: appSeq);
+  }
+
+  Future<void> _runPolicyReviewForIntake(
+    PolicyIntakeSuccess intake, {
+    required int expectedAppSeq,
   }) async {
-    final pkg = _confirmedPackageName;
-    final label = _confirmedAppLabel ?? pkg ?? 'Selected App';
-    if (pkg == null) return;
+    final pkg = intake.selectedApp?.packageName ?? _confirmedPackageName;
+    if (pkg == null ||
+        expectedAppSeq != _appContextSequence ||
+        _confirmedPackageName != pkg) {
+      return;
+    }
+    final label = _confirmedAppLabel ?? intake.selectedApp?.appName ?? pkg;
+
+    final captured = intake.capturedSnapshot;
+    final policyText = captured.normalizedPolicyText;
+    final sourceLabel = captured.sourceLabel;
+    final snapshot = captured.sourceSnapshot;
 
     final opSeq = ++_policyOpSequence;
     setState(() {
@@ -518,72 +658,25 @@ class _CompanionScreenState extends State<CompanionScreen>
     });
 
     try {
-      String policyText;
-      String sourceLabel;
-      PolicySourceSnapshot? snapshot;
-
-      if (isUrl) {
-        final retrieval = await widget.urlRetriever.fetchPolicy(rawInput);
-        if (!mounted || opSeq != _policyOpSequence) return;
-        if (!retrieval.isUsablePolicy) {
-          final failureReceipt = PolicyIntakeHelper.buildUrlFailureReceipt(
-            subjectTitle: label,
-            retrieval: retrieval,
-            languageCode: widget.languageCode,
-          );
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(failureReceipt.summary),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-          return;
-        }
-        policyText = retrieval.extractedText!;
-        sourceLabel = retrieval.canonicalUrl ?? retrieval.requestedUrl;
-        snapshot = retrieval.sourceSnapshot;
-      } else {
-        policyText = rawInput.trim();
-        sourceLabel = 'Pasted policy text';
-        snapshot = PolicyIntakeHelper.snapshotForManualOrSharedText(
-          sourceType: PolicySourceType.pastedText,
-          text: policyText,
-          hasAppPermissions: true,
-        );
-      }
-
-      if (!PolicySufficiencyValidator.assess(policyText).isSufficient) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Provided text does not appear to contain enough clear privacy policy disclosures.',
-              ),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+      // Refresh on-device PackageManager permissions through the intake
+      // coordinator's local hydration boundary; fall back only to a previously
+      // confirmed valid device observation, never fabricating a false snapshot.
+      final hydrated = await _intakeCoordinator.hydrateAppPermissions(
+        SelectedAppReference(packageName: pkg, appName: label, isLocked: true),
+      );
+      if (!mounted ||
+          opSeq != _policyOpSequence ||
+          expectedAppSeq != _appContextSequence ||
+          _confirmedPackageName != pkg) {
         return;
       }
 
-      final appSnap =
-          await widget.hybridBridge.inspectAppSnapshot(pkg) ??
-          AppPermissionSnapshot(
-            packageName: pkg,
-            appName: label,
-            requestedPermissions: _effectiveDeclaredPermissions()
-                .map((p) => p.permission)
-                .toList(growable: false),
-            grantedPermissions: _effectiveDeclaredPermissions()
-                .where(
-                  (p) => p.grantStatus == DeclaredPermissionGrantStatus.granted,
-                )
-                .map((p) => p.permission)
-                .toList(growable: false),
-          );
-      if (!mounted || opSeq != _policyOpSequence) return;
+      final hydratedSnapshot = hydrated.permissionSnapshot;
+      final AppPermissionSnapshot? appSnap =
+          (hydratedSnapshot != null && hydratedSnapshot.packageName == pkg)
+          ? hydratedSnapshot
+          : (intake.selectedApp?.permissionSnapshot ??
+                _existingConfirmedAppSnapshot(pkg, label));
 
       final reqId = 'comp_rev_${DateTime.now().millisecondsSinceEpoch}';
       setState(() => _activePolicyReqId = reqId);
@@ -597,19 +690,31 @@ class _CompanionScreenState extends State<CompanionScreen>
         sourceSnapshot: snapshot,
         languageCode: widget.languageCode,
       );
-      if (!mounted || opSeq != _policyOpSequence) return;
+      if (!mounted ||
+          opSeq != _policyOpSequence ||
+          expectedAppSeq != _appContextSequence ||
+          _confirmedPackageName != pkg) {
+        return;
+      }
 
       if (outcome.needsCloudConsentOrManual) {
         setState(() => _isAttachingPolicy = false);
+        final canonicalPayload =
+            outcome.redactedPreview ??
+            ReviewCoordinator.canonicalCloudPayload(policyText);
         final decision = await CloudConsentSheet.show(
           context,
           subjectTitle: label,
-          policyText:
-              outcome.redactedPreview ??
-              ReviewCoordinator.canonicalCloudPayload(policyText),
+          policyText: policyText,
+          canonicalRedactedPreview: canonicalPayload,
           deviceReason: outcome.errorReason,
         );
-        if (!mounted || opSeq != _policyOpSequence) return;
+        if (!mounted ||
+            opSeq != _policyOpSequence ||
+            expectedAppSeq != _appContextSequence ||
+            _confirmedPackageName != pkg) {
+          return;
+        }
         if (decision == CloudConsentDecision.cancelled) return;
 
         final retryId = 'comp_rev_c_${DateTime.now().millisecondsSinceEpoch}';
@@ -629,28 +734,51 @@ class _CompanionScreenState extends State<CompanionScreen>
           sourceSnapshot: snapshot,
           canonicalRedactedPayload:
               decision == CloudConsentDecision.useCloudOnce
-                  ? outcome.redactedPreview
-                  : null,
+              ? canonicalPayload
+              : null,
           cloudConsent: decision == CloudConsentDecision.useCloudOnce,
-          forceLocalManualScan:
-              decision == CloudConsentDecision.reviewLocally,
+          forceLocalManualScan: decision == CloudConsentDecision.reviewLocally,
           languageCode: widget.languageCode,
         );
-        if (!mounted || opSeq != _policyOpSequence) return;
+        if (!mounted ||
+            opSeq != _policyOpSequence ||
+            expectedAppSeq != _appContextSequence ||
+            _confirmedPackageName != pkg) {
+          return;
+        }
       }
 
       if (outcome.receipt != null) {
         final rawDraft = outcome.receipt!;
         final baseline = CompanionPolicyResolver.findVerifiedReceiptForPackage(
           pkg,
-          widget.savedReceipts,
+          _persistedReceiptsForPicker(),
         );
-        final distinctId = (rawDraft.id == baseline?.id ||
+        final activeBefore = _activeMatchedReceipt();
+        final existingIds = <String>{
+          ..._persistedReceiptIds,
+          ..._sessionReceipts.map((r) => r.id),
+          if (baseline != null) baseline.id,
+        };
+        final distinctId =
+            (rawDraft.id.isEmpty ||
+                existingIds.contains(rawDraft.id) ||
                 _isSessionReceiptPersisted(rawDraft.id))
-            ? 'comp_draft_${DateTime.now().microsecondsSinceEpoch}'
+            ? 'comp_draft_${DateTime.now().microsecondsSinceEpoch}_${++_draftCounter}'
             : rawDraft.id;
+        var createdAt = rawDraft.createdAt;
+        if (baseline != null && !createdAt.isAfter(baseline.createdAt)) {
+          createdAt = baseline.createdAt.add(const Duration(milliseconds: 1));
+        }
+        if (activeBefore != null &&
+            !createdAt.isAfter(activeBefore.createdAt)) {
+          createdAt = activeBefore.createdAt.add(
+            const Duration(milliseconds: 1),
+          );
+        }
         final draft = rawDraft.copyWith(
           id: distinctId,
+          createdAt: createdAt,
           supersedesReceiptId: baseline?.id,
         );
         // Privacy Guardrail: Never auto-save Companion policy reviews to SQLite.
@@ -761,6 +889,7 @@ class _CompanionScreenState extends State<CompanionScreen>
               (explanation.verbatimExcerpts.isNotEmpty
                   ? explanation.verbatimExcerpts.join('\n')
                   : ''),
+          canonicalRedactedPreview: answer.redactedPreview,
           deviceReason: answer.consentReason,
         );
         if (!mounted || seq != _askOpSequence) return;
@@ -816,6 +945,8 @@ class _CompanionScreenState extends State<CompanionScreen>
   Future<void> _finishCompanion({bool returnToCallerApp = true}) async {
     if (_isFinishingCompanion) return;
     _isFinishingCompanion = true;
+    _appContextSequence++;
+    _cancelActivePolicyAndAskForContextChange();
     try {
       if (returnToCallerApp && widget.invocation != null) {
         await widget.companionBridge.returnToPreviousApp();
@@ -891,115 +1022,124 @@ class _CompanionScreenState extends State<CompanionScreen>
                   ),
                 ),
               ),
-            body: SafeArea(
-              child: _isDeviceLocked
-                  ? _buildLockedGuard(context, m3e, scheme, surfaces, semantics)
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _buildHeaderCompanionBanner(
-                            context,
-                            m3e,
-                            scheme,
-                            surfaces,
-                            semantics,
-                          ),
-                          const SizedBox(height: 16),
-                          if (!_isAppConfirmed && !_continuedWithoutAppContext)
-                            _buildAppConfirmationSection(
-                              context,
-                              m3e,
-                              scheme,
-                              surfaces,
-                              semantics,
-                            )
-                          else ...[
-                            _buildConfirmedContextSummary(
+              body: SafeArea(
+                child: _isDeviceLocked
+                    ? _buildLockedGuard(
+                        context,
+                        m3e,
+                        scheme,
+                        surfaces,
+                        semantics,
+                      )
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildHeaderCompanionBanner(
                               context,
                               m3e,
                               scheme,
                               surfaces,
                               semantics,
                             ),
-                            if (_buildActiveExplanation() == null &&
-                                _activeMatchedReceipt() != null) ...[
-                              const SizedBox(height: 12),
-                              _buildCompanionReceiptPersistenceCard(
-                                context,
-                                _activeMatchedReceipt()!,
-                                m3e,
-                                scheme,
-                                surfaces,
-                                semantics,
-                              ),
-                            ],
                             const SizedBox(height: 16),
-                            _buildPermissionSelectorSection(
-                              context,
-                              m3e,
-                              scheme,
-                              surfaces,
-                              semantics,
+                            if (!_isAppConfirmed &&
+                                !_continuedWithoutAppContext)
+                              _buildAppConfirmationSection(
+                                context,
+                                m3e,
+                                scheme,
+                                surfaces,
+                                semantics,
+                              )
+                            else ...[
+                              _buildConfirmedContextSummary(
+                                context,
+                                m3e,
+                                scheme,
+                                surfaces,
+                                semantics,
+                              ),
+                              if (_buildActiveExplanation() == null &&
+                                  _activeMatchedReceipt() != null) ...[
+                                const SizedBox(height: 12),
+                                _buildCompanionReceiptPersistenceCard(
+                                  context,
+                                  _activeMatchedReceipt()!,
+                                  m3e,
+                                  scheme,
+                                  surfaces,
+                                  semantics,
+                                ),
+                              ],
+                              const SizedBox(height: 16),
+                              _buildPermissionSelectorSection(
+                                context,
+                                m3e,
+                                scheme,
+                                surfaces,
+                                semantics,
+                              ),
+                              if (_showUnsureGuide) ...[
+                                const SizedBox(height: 14),
+                                _buildGuidedUnsureSection(
+                                  context,
+                                  m3e,
+                                  scheme,
+                                  surfaces,
+                                  semantics,
+                                ),
+                              ],
+                              if (_buildActiveExplanation() != null) ...[
+                                const SizedBox(height: 18),
+                                _buildPermissionExplanationSection(
+                                  context,
+                                  _buildActiveExplanation()!,
+                                  m3e,
+                                  scheme,
+                                  surfaces,
+                                  semantics,
+                                ),
+                              ],
+                            ],
+                            const SizedBox(height: 22),
+                            EnpriveTactileButton(
+                              key: const Key('companion_return_btn'),
+                              label:
+                                  widget.invocation != null &&
+                                      _confirmedAppLabel != null
+                                  ? 'Done · Return to $_confirmedAppLabel'
+                                  : (widget.invocation != null
+                                        ? 'Done · Return to previous app'
+                                        : 'Done'),
+                              isSecondary: true,
+                              onPressed: () =>
+                                  _finishCompanion(returnToCallerApp: true),
                             ),
-                            if (_showUnsureGuide) ...[
-                              const SizedBox(height: 14),
-                              _buildGuidedUnsureSection(
-                                context,
-                                m3e,
-                                scheme,
-                                surfaces,
-                                semantics,
-                              ),
-                            ],
-                            if (_buildActiveExplanation() != null) ...[
-                              const SizedBox(height: 18),
-                              _buildPermissionExplanationSection(
-                                context,
-                                _buildActiveExplanation()!,
-                                m3e,
-                                scheme,
-                                surfaces,
-                                semantics,
-                              ),
-                            ],
-                          ],
-                          const SizedBox(height: 22),
-                          EnpriveTactileButton(
-                            key: const Key('companion_return_btn'),
-                            label: widget.invocation != null &&
-                                    _confirmedAppLabel != null
-                                ? 'Done · Return to $_confirmedAppLabel'
-                                : (widget.invocation != null
-                                      ? 'Done · Return to previous app'
-                                      : 'Done'),
-                            isSecondary: true,
-                            onPressed: () =>
-                                _finishCompanion(returnToCallerApp: true),
-                          ),
-                          if (launchedFromQuickSettings) ...[
-                            const SizedBox(height: 8),
-                            Center(
-                              child: TextButton(
-                                key: const Key('companion_open_enprive_btn'),
-                                onPressed: () =>
-                                    _finishCompanion(returnToCallerApp: false),
-                                child: Text(
-                                  'Open full Enprive app',
-                                  style: m3e.typeScale.labelLarge.copyWith(
-                                    color: scheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w700,
+                            if (launchedFromQuickSettings) ...[
+                              const SizedBox(height: 8),
+                              Center(
+                                child: TextButton(
+                                  key: const Key('companion_open_enprive_btn'),
+                                  onPressed: () => _finishCompanion(
+                                    returnToCallerApp: false,
+                                  ),
+                                  child: Text(
+                                    'Open full Enprive app',
+                                    style: m3e.typeScale.labelLarge.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
+              ),
             ),
-          ),
           );
         },
       ),
@@ -1024,8 +1164,7 @@ class _CompanionScreenState extends State<CompanionScreen>
             badgeText: 'LOCK SCREEN PROTECTED',
             badgeIcon: LucideIcons.lock,
             title: 'Unlock your phone to continue',
-            message:
-                'Enprive hides app names, declared permissions, and review evidence while the device is locked.',
+            message: 'Enprive hides app names, declared permissions, and review evidence while the device is locked.',
             accentColor: semantics.onDevice.foreground,
             accentBackground: semantics.onDevice.background,
             backgroundColor: surfaces.card,
@@ -1051,20 +1190,16 @@ class _CompanionScreenState extends State<CompanionScreen>
 
     if (_isResolvingForeground) {
       headline = 'Checking which app you were using…';
-      subtitle =
-          'Running a single one-time local UsageStats lookup without monitoring your screen.';
+      subtitle = 'Running a single one-time local UsageStats lookup without monitoring your screen.';
     } else if (_continuedWithoutAppContext) {
       headline = 'General Android permission guide';
-      subtitle =
-          'No app selected. Enprive explains Android permissions using local guidance only.';
+      subtitle = 'No app selected. Enprive explains Android permissions using local guidance only.';
     } else if (_isAppConfirmed) {
       headline = 'You\'re looking at ${_confirmedAppLabel ?? 'this app'}.';
-      subtitle =
-          'Permissions listed below come from the APK manifest — Android still controls whichever prompt is on screen.';
+      subtitle = 'Permissions listed below come from the APK manifest — Android still controls whichever prompt is on screen.';
     } else {
       headline = 'Deni — Enprive Companion';
-      subtitle =
-          'Ask Deni about an app\'s declared permissions and verified policy disclosures.';
+      subtitle = 'Ask Deni about an app\'s declared permissions and verified policy disclosures.';
     }
 
     return EnpriveMaterialCardSurface(
@@ -1162,9 +1297,8 @@ class _CompanionScreenState extends State<CompanionScreen>
                             status == ForegroundResolutionStatus.stale
                                 ? 'We saw ${res.displayLabel} ${((res.eventAgeMillis ?? 0) / 1000).round()}s ago. Is this correct?'
                                 : 'We think you\'re using ${res.displayLabel}. Is this correct?',
-                            style: m3e.typography.emphasized.titleMedium.copyWith(
-                              color: scheme.onSurface,
-                            ),
+                            style: m3e.typography.emphasized.titleMedium
+                                .copyWith(color: scheme.onSurface),
                           ),
                           const SizedBox(height: 3),
                           Text(
@@ -1577,7 +1711,8 @@ class _CompanionScreenState extends State<CompanionScreen>
             ),
             const SizedBox(height: 10),
             OutlinedButton(
-              onPressed: () => setState(() => _showUnsureGuide = !_showUnsureGuide),
+              onPressed: () =>
+                  setState(() => _showUnsureGuide = !_showUnsureGuide),
               child: const Text("I'm not sure which permission"),
             ),
           ],
@@ -1646,9 +1781,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? statusPair.background
-                          : surfaces.card,
+                      color: isSelected ? statusPair.background : surfaces.card,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isSelected
@@ -1850,7 +1983,10 @@ class _CompanionScreenState extends State<CompanionScreen>
                     quote: quote,
                     sha256Digest: explanation.matchedReceipt?.snapshotDigest,
                     footerCaption: _formatSha256Footer(
-                      explanation.matchedReceipt?.sourceSnapshot?.sourceSha256Hash,
+                      explanation
+                          .matchedReceipt
+                          ?.sourceSnapshot
+                          ?.sourceSha256Hash,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -1868,24 +2004,29 @@ class _CompanionScreenState extends State<CompanionScreen>
                   semantics,
                 ),
               ],
-              if (!explanation.hasVerifiedPolicy &&
-                  _confirmedPackageName != null) ...[
+              if (_confirmedPackageName != null) ...[
                 const SizedBox(height: 10),
                 if (_isAttachingPolicy)
                   ReviewProgressCard(
-                    subjectTitle:
-                        _confirmedAppLabel ?? _confirmedPackageName!,
+                    subjectTitle: _confirmedAppLabel ?? _confirmedPackageName!,
                     isCloudCheck: _isCloudPolicyInFlight,
                     processStream: widget.coordinator.analysisEvents,
                     onCancel: _cancelPolicyAttach,
                     isCancelling: _isCancellingPolicy,
                   )
-                else
+                else if (!explanation.hasVerifiedPolicy)
                   OutlinedButton.icon(
                     key: const Key('companion_attach_policy_btn'),
                     onPressed: _openAttachPolicyModal,
-                    icon: const Icon(LucideIcons.link, size: 16),
-                    label: const Text('Add privacy policy link or text'),
+                    icon: const Icon(LucideIcons.fileText, size: 16),
+                    label: const Text('Add privacy policy'),
+                  )
+                else
+                  OutlinedButton.icon(
+                    key: const Key('companion_update_policy_btn'),
+                    onPressed: _openAttachPolicyModal,
+                    icon: const Icon(LucideIcons.refreshCw, size: 16),
+                    label: const Text('Check updated privacy policy'),
                   ),
               ],
               const SizedBox(height: 10),
@@ -1893,9 +2034,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                 m3e,
                 scheme,
                 label: '4. Why this might relate to a feature',
-                body:
-                    explanation.documentedFeatureReason ??
-                    'No verified developer feature explanation found. Describe below what feature you were trying to use if you want Deni to check relevance.',
+                body: explanation.documentedFeatureReason ?? 'No verified developer feature explanation found. Describe below what feature you were trying to use if you want Deni to check relevance.',
               ),
               const SizedBox(height: 10),
               Text(
@@ -1952,7 +2091,8 @@ class _CompanionScreenState extends State<CompanionScreen>
                 controller: _featureContextController,
                 decoration: const InputDecoration(
                   labelText: 'Feature you were using (optional)',
-                  hintText: 'e.g., scanning a QR code, recording voice practice',
+                  hintText:
+                      'e.g., scanning a QR code, recording voice practice',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -2055,9 +2195,7 @@ class _CompanionScreenState extends State<CompanionScreen>
             : surfaces.cardMuted,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSaved
-              ? semantics.noConcern.border
-              : surfaces.hairlineBorder,
+          color: isSaved ? semantics.noConcern.border : surfaces.hairlineBorder,
         ),
       ),
       child: Column(
@@ -2096,7 +2234,9 @@ class _CompanionScreenState extends State<CompanionScreen>
                     Text(
                       isSaved
                           ? 'Stored locally in your Enprive Receipts archive.'
-                          : 'Kept in this session only. Leaving Companion will discard it unless you save it.',
+                          : (receipt.supersedesReceiptId != null
+                                ? 'Updated policy review kept in this session only. Leaving Companion discards this draft and keeps your saved receipt unchanged.'
+                                : 'Kept in this session only. Leaving Companion will discard it unless you save it.'),
                       style: m3e.typeScale.bodySmall.copyWith(
                         color: scheme.onSurfaceVariant,
                         height: 1.35,
@@ -2182,140 +2322,6 @@ class _CompanionScreenState extends State<CompanionScreen>
           ),
         ),
       ],
-    );
-  }
-}
-
-class _CompanionAttachPolicySheet extends StatefulWidget {
-  final String appDisplayName;
-
-  const _CompanionAttachPolicySheet({required this.appDisplayName});
-
-  @override
-  State<_CompanionAttachPolicySheet> createState() =>
-      _CompanionAttachPolicySheetState();
-}
-
-class _CompanionAttachPolicySheetState
-    extends State<_CompanionAttachPolicySheet> {
-  final TextEditingController _urlController = TextEditingController();
-  final TextEditingController _textController = TextEditingController();
-  bool _isUrlMode = true;
-
-  @override
-  void dispose() {
-    _urlController.dispose();
-    _textController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return EnpriveM3EBridgeScope.ensure(
-      context,
-      child: Builder(
-        builder: (sheetContext) {
-          final m3e = EnpriveM3ETheme.of(sheetContext);
-          final scheme = m3e.colorScheme;
-          final surfaces = sheetContext.enpriveSurfaces;
-
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: surfaces.card,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(28),
-                ),
-                border: Border.all(color: surfaces.hairlineBorder),
-              ),
-              child: SafeArea(
-                top: false,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Verify policy for ${widget.appDisplayName}',
-                        style: m3e.typography.emphasized.titleLarge.copyWith(
-                          color: scheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Paste the developer privacy policy URL or excerpt. Enprive verifies quotes deterministically against this snapshot.',
-                        style: m3e.typeScale.bodyMedium.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ChoiceChip(
-                              label: const Text('Policy URL'),
-                              selected: _isUrlMode,
-                              onSelected: (_) =>
-                                  setState(() => _isUrlMode = true),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ChoiceChip(
-                              label: const Text('Paste text'),
-                              selected: !_isUrlMode,
-                              onSelected: (_) =>
-                                  setState(() => _isUrlMode = false),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _isUrlMode
-                            ? _urlController
-                            : _textController,
-                        minLines: _isUrlMode ? 1 : 4,
-                        maxLines: _isUrlMode ? 2 : 7,
-                        keyboardType: _isUrlMode
-                            ? TextInputType.url
-                            : TextInputType.multiline,
-                        decoration: InputDecoration(
-                          hintText: _isUrlMode
-                              ? 'https://developer.example/privacy'
-                              : 'Paste privacy policy paragraphs here...',
-                          border: const OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      EnpriveTactileButton(
-                        label: _isUrlMode
-                            ? 'Fetch & inspect policy'
-                            : 'Inspect pasted policy',
-                        onPressed: () {
-                          final val = (_isUrlMode
-                                  ? _urlController.text
-                                  : _textController.text)
-                              .trim();
-                          if (val.isEmpty) return;
-                          Navigator.of(sheetContext).pop((
-                            isUrl: _isUrlMode,
-                            value: val,
-                          ));
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 }
