@@ -19,7 +19,7 @@
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
 - **Current `main` HEAD**: `a5c69d1`
 - **Active Feature Branch**: `feature/m3-expressive-rebrand` (baseline HEAD `6aff3b363adeee0f9f8a37e45c0426a8becf7e3e`, D5.2 adaptive navigation shell + authorized accessibility/layout fix pass uncommitted in working tree awaiting commit approval)
-- **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 24 November 2026)
+- **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 26 November 2026)
 - **Next Queued Action**: Review D5.2 defect-closure report & commit D5.2 on `feature/m3-expressive-rebrand` before starting D5.3.
 
 ---
@@ -1543,6 +1543,65 @@
 - **Next Immediate Action & Recommended Model**:
   - Physical **Realme RMX5303** (Android 15) live verification and production **Play Integrity** signed-release verification (plus Firebase Console enforcement / Replay Protection review) remain pending.
   - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+## Iteration 48: D5.3-D Phase 3c — Complete Policy Intake Migration (F1–F6) & Warm-Intent Draft-Loss Guard (N1) (2026-11-21)
+
+- **Branch / Commit State**: `fm/enprive-phase3c` atop `origin/feature/m3-expressive-rebrand` HEAD `63a64df` (includes merged PRs #10, #12, #13, #14); committed and pushed for direct PR into `feature/m3-expressive-rebrand`. Model: **Gemini 4 Neon**.
+- **Reproduce First (TDD)**:
+  - Wrote 3 failing tests in `test/phase3c_unified_intake_and_intents_test.dart` before editing `lib/`:
+    1. **N1 draft-loss reproduction**: warm `ACTION_SEND` and warm Quick Settings (`OPEN_COMPANION`) over an unsaved `ReviewResultScreen` draft failed (`Found 0 widgets with type "UnsavedReviewExitSheet"`) because imperative `Navigator.popUntil` bypassed `ReviewResultScreen`'s `PopScope` exit guard.
+    2. **Legacy bypass reproduction (EP-6)**: incoming `ACTION_SEND` 404 URL failed (`Found 1 widget with type "ReviewResultScreen"`) because `_executeUrlReview` called `PolicyUrlRetriever.fetchPolicy` directly and pushed a dead-end failure receipt instead of opening `UnifiedPolicyIntakeSheet` recovery.
+    3. **Legacy bypass reproduction (EP-8)**: `ACTION_PROCESS_TEXT` failed (`Found 0 widgets with type "UnifiedPolicyIntakeSheet"`) because `_handleIncomingPayload` opened legacy `_showPasteModal`.
+- **What Was Built & Modified**:
+  1. **Single Authoritative Intake Pipeline (`lib/services/intake/policy_intake_coordinator.dart`, `lib/services/intake/policy_intake_helper.dart`)**:
+     - Added pure `classifyIncomingPayloadLocator(IncomingIntentPayload)` to `PolicyIntakeCoordinator` so `lib/main.dart` holds zero duplicated URL/text/document classification or retriever helper logic.
+     - Deleted dead legacy `buildUrlFailureReceipt` and `buildDocumentFailureReceipt` failure-receipt glue from `lib/services/intake/policy_intake_helper.dart`.
+  2. **Home Check Manual Intake (F1 / EP-1), Sample Fixtures (F2 / EP-2), and Incoming Intents (F3–F5 / EP-6..EP-8) (`lib/main.dart`, `lib/widgets/installed_app_picker_sheet.dart`)**:
+     - Deleted legacy `_PasteModalMode`, `_showPasteModal`, `_executeUrlReview`, `_handleDocumentOutcome`, and `_resolveCustomTitle` from `lib/main.dart` (-366 legacy lines; zero direct `PolicyUrlRetriever` or `policy_intake_helper.dart` calls remain).
+     - Added optional `intakeCoordinator` injection on `EnpriveApp`/`HomeScreen`; instantiated one authoritative `_intakeCoordinator` and `_reviewExitGuard` and forwarded them to `CompanionScreen`, `ReceiptsScreen`, and all `ReviewResultScreen` call sites.
+     - Wired EP-1 (`_openPolicyIntakeSheet` + `_selectOptionalInstalledAppForIntake`) onto `UnifiedPolicyIntakeSheet` (policy-first with optional app selection via `InstalledAppPickerSheet`, change/remove app, D5.3-B association warnings + Play Store helper, all three modes, inline recovery). Extended `SelectedAppInspectionChoice` with backwards-compatible `peerCandidates` populated via `InstalledAppPickerModel.toIdentityCandidates` for D5.3-B peer-name ambiguity checks without extra IPC.
+     - Wired EP-2 (`_runQuickSampleReview` and `_showCheckAppModal` empty-state sample branch) onto `PolicyIntakeCoordinator.captureSampleFixture`, preserving dedicated Home sample cards, trusted fixture identity, anti-spoofing, and honest synthetic sample wording.
+     - Wired EP-6/EP-7/EP-8 (`_handleIncomingPayload`) through `classifyIncomingPayloadLocator`: plain text (`ACTION_SEND` -> `sharedText` / `"Shared text"`, `ACTION_PROCESS_TEXT` -> `selectedText` / `"Selected text"`) opens prefilled `UnifiedPolicyIntakeSheet`; URLs and pre-extracted `ACTION_SEND` documents run headlessly via `PolicyIntakeCoordinator.captureIncomingPayload` (preserving `isPreExtractedIncomingShare`, SSRF/size/timeout limits, and non-retry of stale incoming `content://` URIs) and open prefilled `UnifiedPolicyIntakeSheet` with `initialFailure` recovery on any failure (never presenting an HTTP or document failure as a capture).
+     - Restored byte-for-byte `CloudConsentSheet` preview/payload parity in `_executePolicyReview` (passing raw `policyText` alongside `canonicalRedactedPreview`).
+  3. **Honest Sample Permission Labeling (`lib/domain/permissions/permission_comparator.dart`, `lib/domain/review/review_coordinator.dart`, `lib/screens/review_result_screen.dart`)**:
+     - Added backwards-compatible `bool isSampleFixture = false` to `PermissionComparator.compare(...)` and `enrichFindingsWithDeviceReport(...)`; `ReviewCoordinator._attachPermissionComparison` passes `isSampleFixture` for sample receipts so synthetic fixture permissions use `EvidenceStatus.interpretation` and honest sample copy (never `EvidenceStatus.deviceObserved` or `"OS Granted"`).
+     - Updated `ReviewResultScreen` sample rendering to show `"Sample permissions (Synthetic example)"`, `Synthetic example` badge, and hide `"Attach updated privacy policy"` on synthetic `.demo` samples.
+  4. **N1 Warm-Intent Draft-Loss Protection & Stale-State Safety (`lib/screens/review_result_screen.dart`, `lib/screens/receipts_screen.dart`, `lib/main.dart`)**:
+     - Added `ReviewExitGuardController` and optional `exitGuardController` + `initialAssociationReport` to `ReviewResultScreen` (forwarded from `ReceiptsScreen` and `HomeScreen`). Refactored `_handleExitRequest` to return `Future<bool>` with shared `_pendingExitCompleter` deduplication and added `_requestExternalExit()`, which pops stacked sheets above `ReviewResultScreen`, respects `saving`, and presents `UnsavedReviewExitSheet` (Save / Discard / Continue) for `draft`, `modifiedSavedDraft`, and `saveFailure`.
+     - Replaced imperative `Navigator.popUntil` in warm incoming intent and Quick Settings handlers with `_prepareForWarmNavigation()` + `_cancelActiveHomeOperationSilently()`, sequencing overlapping intents (`_warmNavigationSequence`), cancelling active URL fetches (`_activeUrlCancelToken`) and in-flight native analysis (including exact `${reqId}_appcheck` cloud IDs), and invalidating dismissed intake sheets (`_intakeSheetGeneration`) so no stale results can appear.
+  5. **Zero Kotlin/Gradle Changes**: `MainActivity.kt`, `IncomingShareRouter.kt`, and `build.gradle.kts` were left untouched (preserving PR #14 App Check alignment and existing cold/warm intent routing without merge risk).
+- **Skills Followed & Conflicts Flagged**:
+  - Followed `.agents/skills/flutter-apply-architecture-best-practices`, `flutter-add-widget-test`, `flutter-add-integration-test`, `dart-add-unit-test`, `dart-generate-test-mocks`, `dart-run-static-analysis`, `dart-fix-runtime-errors`, `flutter-setup-localization`, `flutter-build-responsive-layout`, `android-design`, and `material-3` (including all six `references/*.md`: `component-catalog.md`, `typography-and-shape.md`, `color-system.md`, `layout-and-responsive.md`, `navigation-patterns.md`, `theming-and-dynamic-color.md` — keeping UI edits strictly within Phase 3c scope without redesigning Home/sheet surfaces).
+  - **Skill Conflicts Flagged**:
+    1. `android-design` and `material-3` are Jetpack Compose / `@material/web`-first; Enprive is Flutter + pinned `material_3_expressive: 1.2.1` (applied M3 color pairing, tonal surfaces, 48dp targets, modal sheet conventions, and dynamic color within Flutter without out-of-scope redesign).
+    2. `dart-generate-test-mocks` prescribes `mockito` + `build_runner`; Enprive's test suite uses zero-codegen pure-Dart fakes, `http/testing` `MockClient`, and `MethodChannel` mocks.
+    3. `flutter-add-integration-test` injects `enableFlutterDriverExtension()` into `main.dart`; Enprive keeps production `main.dart` clean and pairs end-to-end widget tests with live `adb-axi` / `uiautomator` emulator verification.
+    4. `flutter-setup-localization` updates all locale ARBs immediately; Enprive's D5.3-D scope defers secondary-locale translation to D5.3-F.
+- **Challenges & Root-Cause Fixes**:
+  - Calling `Navigator.maybePop()` in a loop on a `PopScope(canPop: false)` route returns `true` immediately before the async `UnsavedReviewExitSheet` resolves, dismissing the sheet on the next iteration; `ReviewExitGuardController` solves this deterministically by awaiting the sheet's `Completer<bool>`.
+  - Calling `maybePop()` on a Quick Settings `CompanionScreen` triggers `returnToPreviousApp()` (`moveTaskToBack`); awaiting `_reviewExitGuard.requestExit()` first and then `popUntil((r) => r.isFirst)` keeps Enprive foregrounded when transitioning to an incoming intent.
+  - In `test/p0_blocker_closure_widget_test.dart`, expanding the inline 404 banner inside `UnifiedPolicyIntakeSheet` pushed `intake_primary_submit_btn` below the `800x600` test viewport; resolved with `tester.ensureVisible(submitBtn)`.
+  - On Android 16 emulator `adb shell am start` for `ACTION_SEND` documents, `-f 0x20000000` cleared `--grant-read-uri-permission` (bit `0x1`); passing `-d <content_uri> --eu android.intent.extra.STREAM <content_uri> -f 0x00000001` (cold) / `-f 0x20000001` (warm) granted URI read permission cleanly, while omitting `0x1` / using a nonexistent MediaStore ID also verified live expired/denied URI recovery (`Choose replacement document`).
+- **Verification Status** (rebased atop `63a64df`; live device checks are **Android 16 emulator `emulator-5554` / `Pixel_9` AVD ONLY — NOT physical device**):
+  - `flutter analyze`: **0 issues**
+  - Full `flutter test`: **243 / 243 passed** (8 new comprehensive Phase 3c widget tests in `test/phase3c_unified_intake_and_intents_test.dart`, 1 new unit test in `test/policy_intake_coordinator_test.dart`, 3 updated legacy-modal assertions in `test/p0_blocker_closure_widget_test.dart`)
+  - `( cd android && ./gradlew :app:testDebugUnitTest --console=plain )`: **64 / 64 passed** (`AppCheckProviderInstallerDebugTest`: 5, `CompanionTileAndResolverTest`: 19, `DocumentTextExtractorTest`: 15, `HybridAiPolicyTest`: 17, `IncomingShareRouterTest`: 8)
+  - `flutter build apk --debug --target-platform android-arm64`: built `build/app/outputs/flutter-apk/app-debug.apk` (`SHA-256: ac78aa647f6515b0a8b286c7119d9402ac2e39516975a6c392a73223fff672fa`)
+  - **Emulator-5554 live acceptance (in-place install, app data preserved at `134.2 MB`, `Receipts (2)` unchanged, 0 crashes/ANRs on clean run)**:
+    - **EP-1**: Home `Paste terms or URL` -> `UnifiedPolicyIntakeSheet` (optional app picker `flowo` select/Change/Remove, Paste insufficient inline recovery, URL SSRF `http://127.0.0.1/privacy` with NO `Retry fetch` + `Edit URL`).
+    - **EP-2**: `CalmMath Kids` (`CalmMath Abacus`, `Source provenance · Synthetic sample`, `SHA-256: 00737e4a...`) and `EduTrack Classroom` (`Sample permissions (Synthetic example)`, `Sample Undisclosed Permission: Camera & Photo Capture`, `Synthetic example` badge, ZERO `Observed on this phone`, ZERO `OS Granted`, hides `Attach updated privacy policy`).
+    - **EP-3**: `Check an app` -> `flowo` -> permission-only `ReviewResultScreen` -> `"Add this app's privacy policy"` -> locked `UnifiedPolicyIntakeSheet` (`Selected app | flowo | com.example.flowo`).
+    - **EP-4**: `Receipts (2)` -> `Open receipt` (`Curre`) -> `"Attach updated privacy policy"` -> locked `UnifiedPolicyIntakeSheet` (`Update privacy policy for Curre`).
+    - **EP-5**: `Quick Settings Companion` card -> `CompanionScreen` -> clean return to Home.
+    - **EP-6**: Cold `ACTION_SEND` Chrome title + 404 URL (`https://example.com/nonexistent-phase3c-404`) -> prefilled `UnifiedPolicyIntakeSheet` recovery (never a capture `ReviewResultScreen`); warm `ACTION_SEND` SSRF URL -> prefilled sheet with no `Retry fetch`; warm `ACTION_SEND` live HTTPS (`https://policies.google.com/privacy`) -> headless fetch -> `CloudConsentSheet` -> `Review on this phone` -> `ReviewResultScreen` (`17 Findings | 17 Verified`); warm `ACTION_SEND` plain text -> prefilled sheet -> `"Shared text"` provenance.
+    - **EP-7**: Cold `ACTION_SEND` PDF (`enprive_qa_policy.pdf`, `Local PDF document`, `[EMAIL]` redacted in `CloudConsentSheet`, `SHA-256: 717d60f7...`), warm `ACTION_SEND` DOCX (`enprive_libreoffice_policy.docx`, `Local DOCX document`, `SHA-256: 50fbad36...`), warm `ACTION_SEND` TXT (`enprive_qa_policy.txt`, `Local text document`), and warm `ACTION_SEND` expired/denied URI -> prefilled `UnifiedPolicyIntakeSheet` with `"Choose replacement document"` (no dead-end review, no stale-URI retry).
+    - **EP-8**: Cold `ACTION_PROCESS_TEXT` plain text -> prefilled `UnifiedPolicyIntakeSheet` -> `ReviewResultScreen` with `"Selected text"` provenance; warm `ACTION_PROCESS_TEXT` 404 URL -> prefilled `UnifiedPolicyIntakeSheet` recovery.
+    - **N1**: Warm `ACTION_SEND` and warm Quick Settings (`OPEN_COMPANION`) over unsaved `CalmMath Abacus` draft both showed `UnsavedReviewExitSheet` (`Save to Receipts` / `Discard without saving` / `Continue reviewing`); `Continue reviewing` preserved the draft, and `Discard without saving` cleanly transitioned to the incoming prefilled sheet.
+  - **Pending Physical Device Verification**: Physical **Realme RMX5303** (Android 15) verification across EP-1..EP-8 and N1 remains pending.
+- **Next Immediate Action & Recommended Model**:
+  - Merge PR after review, run physical **Realme RMX5303** verification, then proceed to remaining pre-freeze work (D5.3-E/F or UI polish as prioritized). Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
 
 ---
 
