@@ -7,6 +7,7 @@ import '../../core/theme/enprive_theme.dart';
 import '../../domain/review/review_models.dart';
 import '../deni_animated_mascot.dart';
 import '../enprive_duotone_icon.dart';
+import '../enprive_tactile_pressable.dart';
 import 'enprive_material_card_surface.dart';
 
 /// Material 3 Expressive Review Result hero posture summary card.
@@ -561,7 +562,7 @@ class _HeroMetricColumn extends StatelessWidget {
   }
 }
 
-class _HeroArrowPillButton extends StatefulWidget {
+class _HeroArrowPillButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
   final bool isDark;
@@ -575,14 +576,15 @@ class _HeroArrowPillButton extends StatefulWidget {
   });
 
   @override
-  State<_HeroArrowPillButton> createState() => _HeroArrowPillButtonState();
-}
-
-class _HeroArrowPillButtonState extends State<_HeroArrowPillButton> {
-  bool _isPressed = false;
-
-  @override
   Widget build(BuildContext context) {
+    return EnpriveTactilePressable(
+      label: label,
+      onPressed: onPressed,
+      builder: _buildFace,
+    );
+  }
+
+  Widget _buildFace(BuildContext context, bool isPressed) {
     final m3e = EnpriveM3ETheme.of(context);
     final surfaces = context.enpriveSurfaces;
     final semantics = context.enpriveSemantics;
@@ -590,93 +592,79 @@ class _HeroArrowPillButtonState extends State<_HeroArrowPillButton> {
         MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
     final Color bgBase = surfaces.tactilePrimaryBg;
-    final Color bgHighlight = widget.isDark
+    final Color bgHighlight = isDark
         ? Color.lerp(bgBase, semantics.onDevice.background, 0.14)!
         : Color.lerp(bgBase, surfaces.cardMuted, 0.16)!;
     final Color fgColor = surfaces.tactilePrimaryFg;
-    final Color badgeCircleBg = widget.isDark
+    final Color badgeCircleBg = isDark
         ? surfaces.tactilePrimaryFg
         : surfaces.card;
     final Color badgeArrowColor = surfaces.tactilePrimaryBg;
 
     const double lipHeight = 3.0;
-    final double topMargin = _isPressed && !reduceMotion ? lipHeight : 0.0;
-    final double currentLip = _isPressed && !reduceMotion ? 0.0 : lipHeight;
-    final double radius = _isPressed && !reduceMotion ? 16.0 : 999.0;
+    final double topMargin = isPressed && !reduceMotion ? lipHeight : 0.0;
+    final double currentLip = isPressed && !reduceMotion ? 0.0 : lipHeight;
+    final double radius = isPressed && !reduceMotion ? 16.0 : 999.0;
 
-    return Semantics(
-      button: true,
-      label: widget.label,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) {
-          setState(() => _isPressed = false);
-          widget.onPressed();
-        },
-        onTapCancel: () => setState(() => _isPressed = false),
-        child: AnimatedContainer(
-          duration: reduceMotion
-              ? Duration.zero
-              : const Duration(milliseconds: 90),
-          curve: Curves.easeOutCubic,
-          margin: EdgeInsets.only(top: topMargin),
-          constraints: const BoxConstraints(minHeight: 54),
-          padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 16, 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(radius),
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [bgBase, bgHighlight, bgBase],
-              stops: const [0.0, 0.56, 1.0],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: surfaces.tactilePrimaryLip,
-                offset: Offset(0, currentLip),
-                blurRadius: 0,
-              ),
-              if (!widget.isDark)
-                BoxShadow(
-                  color: surfaces.ambientShadowColor,
-                  offset: const Offset(0, 6),
-                  blurRadius: 14,
-                ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: badgeCircleBg,
-                ),
-                child: Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 19,
-                  color: badgeArrowColor,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  widget.label,
-                  textAlign: TextAlign.center,
-                  maxLines: widget.isLargeScale ? 2 : 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: m3e.typography.emphasized.titleSmall.copyWith(
-                    color: fgColor,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15.5,
-                  ),
-                ),
-              ),
-              if (!widget.isLargeScale) const SizedBox(width: 40),
-            ],
-          ),
+    return AnimatedContainer(
+      duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 90),
+      curve: Curves.easeOutCubic,
+      margin: EdgeInsets.only(top: topMargin),
+      constraints: const BoxConstraints(minHeight: 54),
+      padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 16, 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [bgBase, bgHighlight, bgBase],
+          stops: const [0.0, 0.56, 1.0],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: surfaces.tactilePrimaryLip,
+            offset: Offset(0, currentLip),
+            blurRadius: 0,
+          ),
+          if (!isDark)
+            BoxShadow(
+              color: surfaces.ambientShadowColor,
+              offset: const Offset(0, 6),
+              blurRadius: 14,
+            ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: badgeCircleBg,
+            ),
+            child: Icon(
+              Icons.arrow_forward_rounded,
+              size: 19,
+              color: badgeArrowColor,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: isLargeScale ? 2 : 1,
+              overflow: TextOverflow.ellipsis,
+              style: m3e.typography.emphasized.titleSmall.copyWith(
+                color: fgColor,
+                fontWeight: FontWeight.w800,
+                fontSize: 15.5,
+              ),
+            ),
+          ),
+          if (!isLargeScale) const SizedBox(width: 40),
+        ],
       ),
     );
   }

@@ -28,6 +28,8 @@ import 'package:enprive/widgets/enprive_provenance_chip.dart';
 import 'package:enprive/widgets/intake/unified_policy_intake_sheet.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 
+import 'support/keyboard_focus.dart';
+
 class _FakeCompanionDocBridge implements PolicyDocumentPlatformBridge {
   int pickCalls = 0;
   Future<DocumentExtractionOutcome> Function()? onPick;
@@ -2314,6 +2316,74 @@ void main() {
         });
         await _pumpFrames(tester);
         expect(find.text('Disposed'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      '5. Step B: Companion tactile CTAs are keyboard reachable and Enter activates them',
+      (WidgetTester tester) async {
+        final returnedCalls = <String>[];
+        installMathMakersCompanionChannel(returnedCalls: returnedCalls);
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(hybridChannel, (call) async => null);
+
+        await tester.pumpWidget(
+          _wrapCompanionApp(
+            child: Builder(
+              builder: (ctx) => Scaffold(
+                body: Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(ctx).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => CompanionScreen(
+                            invocation: const CompanionInvocation(
+                              invocationId: 'qs-keyboard-check',
+                              source: 'quick_settings',
+                              timestampMs: 1760000005000,
+                              deviceLocked: false,
+                            ),
+                            hybridBridge: HybridAiBridge(),
+                            companionBridge: CompanionBridge(),
+                            coordinator: ReviewCoordinator(),
+                            urlRetriever: PolicyUrlRetriever(),
+                            savedReceipts: const [],
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('Open Companion'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await _pumpFrames(tester);
+        await tester.tap(find.text('Open Companion'));
+        await _pumpFrames(tester);
+
+        Finder labelOf(String key) => find.descendant(
+          of: find.byKey(Key(key)),
+          matching: find.byType(Text),
+        );
+
+        await tabTo(tester, labelOf('companion_confirm_app_btn'));
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await _pumpFrames(tester);
+        expect(find.text("You're looking at Math Makers."), findsOneWidget);
+
+        final returnLabel = labelOf('companion_return_btn');
+        expect(
+          tester.widget<Text>(returnLabel).data,
+          'Done · Return to Math Makers',
+        );
+        await tabTo(tester, returnLabel);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await _pumpFrames(tester);
+        expect(returnedCalls, ['returned']);
+        expect(find.byType(CompanionScreen), findsNothing);
         expect(tester.takeException(), isNull);
       },
     );

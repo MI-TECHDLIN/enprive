@@ -23,10 +23,13 @@ import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/services/storage/receipt_repository.dart';
 import 'package:enprive/widgets/cloud_consent_sheet.dart';
 import 'package:enprive/widgets/enprive_provenance_chip.dart';
+import 'package:enprive/widgets/enprive_tactile_button.dart';
 import 'package:enprive/widgets/intake/unified_policy_intake_sheet.dart';
 import 'package:enprive/widgets/m3e/enprive_m3e_components.dart';
 import 'package:enprive/widgets/review/unsaved_review_exit_sheet.dart';
 import 'package:enprive/widgets/review_progress_sheet.dart';
+
+import 'support/keyboard_focus.dart';
 
 Future<void> _pumpAndFlush(WidgetTester tester, {int steps = 6}) async {
   await tester.pump();
@@ -1414,6 +1417,63 @@ void main() {
           find.textContaining('Focus Reader v1 reviewed cleanly.'),
           findsOneWidget,
         );
+      },
+    );
+
+    testWidgets(
+      '7. Step B: hero CTA and permission-only CTA are keyboard reachable, announced once, and Enter opens the intake sheet',
+      (WidgetTester tester) async {
+        final handle = tester.ensureSemantics();
+        final coordinator = ReviewCoordinator();
+        final repo = ReceiptRepository(useInMemoryOnly: true);
+        await tester.pumpWidget(
+          _wrapM3E(
+            home: ReviewResultScreen(
+              receipt: _buildPermissionOnlyReceipt(coordinator),
+              coordinator: coordinator,
+              intakeCoordinator: PolicyIntakeCoordinator(
+                urlRetriever: PolicyUrlRetriever(dnsLookup: _fakePublicDns),
+              ),
+              companionBridge: CompanionBridge(),
+              receiptRepository: repo,
+              onSaveReceipt: repo.saveReceipt,
+            ),
+          ),
+        );
+        await _pumpAndFlush(tester);
+
+        const ctaLabel = "Add this app's privacy policy";
+        final heroCta = find.descendant(
+          of: find.byType(EnpriveReviewHeroCard),
+          matching: find.text(ctaLabel),
+        );
+        final cardCta = find.descendant(
+          of: find.byType(EnpriveTactileButton),
+          matching: find.text(ctaLabel),
+        );
+
+        for (final cta in [heroCta, cardCta]) {
+          expect(cta, findsOneWidget);
+          final data = tester.getSemantics(cta).getSemanticsData();
+          expect(data.label, ctaLabel);
+          expect(data.flagsCollection.isButton, isTrue);
+          expect(data.hasAction(SemanticsAction.tap), isTrue);
+
+          await tabTo(tester, cta, maxTabs: 60);
+          await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+          await _pumpAndFlush(tester);
+          expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
+          expect(
+            find.byKey(const Key('intake_locked_app_header')),
+            findsOneWidget,
+          );
+
+          await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+          await _pumpAndFlush(tester);
+          expect(find.byType(UnifiedPolicyIntakeSheet), findsNothing);
+        }
+        expect(tester.takeException(), isNull);
+        handle.dispose();
       },
     );
   });

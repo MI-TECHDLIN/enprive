@@ -1492,6 +1492,22 @@
 
 ---
 
+## Iteration 46: Step B / B2-B3 - Shared Accessible Tactile Pressable (2026-11-21)
+
+- **Branch / Commit State**: `fm/enprive-a11y-button` rebased atop `feature/m3-expressive-rebrand` HEAD `f8c8dc6`; committed as `fix(a11y): shared focusable tactile pressable for tactile buttons and hero CTA` and pushed to open PR into `feature/m3-expressive-rebrand`. Models: **Claude Opus 5.5 / Gemini 4 Argon**.
+- **Root Cause**: `EnpriveTactileButton` and `_HeroArrowPillButton` were a `Semantics` over a bare `GestureDetector` that fired on `onTapUp`: no focus node, no `Shortcuts`/`Actions`, no focus visual, so Tab skipped them and Enter/Space did nothing (26 call sites in 13 files, including the CloudConsentSheet decision). The hero's `Semantics` was not a container and its `Text` was not excluded, so the label merged twice (`"Add this app's privacy policy\nAdd this app's privacy policy"`).
+- **What Was Built**:
+  1. `lib/widgets/enprive_tactile_pressable.dart`: one container `Semantics` (button, enabled, focusable/focused, explicit `onTap`/`onFocus`, `excludeSemantics: true`) over a `FocusableActionDetector` (`ActivateIntent` + `ButtonActivateIntent`) over a `GestureDetector(excludeFromSemantics: true)` whose `onTapDown/Up/Cancel` only drive the pressed state and whose `onTap` activates. A null `onPressed` removes actions and focusability. A 3dp stadium focus ring, 2dp outside the face, in `colorScheme.onSurface` (>= 3:1 on every canvas/card/sheet surface in light and dark) is painted only when keyboard focus highlight is active.
+  2. `EnpriveTactileButton` and `_HeroArrowPillButton` became stateless faces built by the primitive; visuals, pressed lip and reduced-motion behaviour unchanged. No call-site API change.
+  3. Tests: `test/tactile_button_accessibility_test.dart` (14), Companion keyboard test in `test/quick_settings_companion_test.dart`, ReviewResultScreen hero + permission-only CTA test in `test/review_result_unified_intake_test.dart`, shared helpers in `test/support/keyboard_focus.dart`.
+- **Challenges & Fixes**:
+  - `adb shell input keyevent` injects with device id -1, which Flutter treats as a virtual IME keyboard and never switches to keyboard highlight mode, so no ring shows. Emulator keyboard checks used a real external keyboard registered through `adb shell uinput -` (shell is in the `uhid` group).
+  - Semantic actions in widget tests must go through the view's `SemanticsOwner` (`tester.renderObject(f).owner!.semanticsOwner`), not `rootPipelineOwner`.
+- **Verification**: 7 new widget tests and 2 screen tests failed on `8f22b69` and pass with the fix. `flutter analyze` **0 issues**; full `flutter test` **234 / 234 passed**; `flutter build apk --debug --target-platform android-arm64` succeeded. Android 16 emulator (Pixel_9 AVD, not physical), uinput hardware keyboard, `uiautomator` dumps (`01..23`): Home tactile buttons (`Check an app`, `Paste terms or URL`), `ReviewResultScreen` hero CTA (`Add this app's privacy policy` and `Ask Deni`, each a single label with no duplicate newline), unified intake submit (`Inspect policy text`), `CloudConsentSheet` both decision buttons (`Use cloud for this check`, `Review on this phone`), `CompanionScreen` tactile buttons (`Choose app manually`, `Done`), and `UnsavedReviewExitSheet` both buttons (`Save to Receipts`, `Discard without saving`) are all exposed as single-label `class=Button clickable=true focusable=true`, Tab-reachable with a visible 3dp focus ring (`focused=true`), and Enter activated each. Physical Realme `RMX5303` TalkBack/Switch Access verification remains pending (Step D).
+- **Next Immediate Action & Recommended Model**: Proceed to Step D (physical Realme & emulator re-acceptance after Steps A–C) following PR review on `feature/m3-expressive-rebrand`. Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **D5.3 Core Flow Streamlining (D5.3-B+) & D5.4 Offline Learn MVP**
