@@ -1423,6 +1423,32 @@
 
 ---
 
+## Iteration 43: D5.3-D Phase 3b — ReviewResultScreen Migration (2026-11-21)
+
+- **Branch / Commit State**: `feature/m3-expressive-rebrand` atop pushed Phase 3a commit `066248c253661a63a7e64ef1cf6f5755cfa26f5f`; final-audited, committed (`feat(review): migrate policy intake to unified sheet`), and pushed to `origin/feature/m3-expressive-rebrand`. Model: **Gemini 4 Argon / Claude Opus 5.5**.
+- **What Was Built & Modified**:
+  1. **Unified Policy Intake Integration (`lib/screens/review_result_screen.dart`)**:
+     - Deleted the duplicated `_AttachPolicyMode`, `_AttachedPolicyInput`, and `_AttachPolicySheet` / `_AttachPolicySheetState` (~387 lines) along with newly unused imports (`material_3_expressive`, `policy_sufficiency.dart`, `policy_intake_helper.dart`).
+     - Added optional backwards-compatible `intakeCoordinator` and `companionBridge` constructor dependencies (leaving `lib/main.dart`, `lib/screens/companion_screen.dart`, Phase 1/2 contracts, D5.3-B evaluator, `ReviewCoordinator`, SQLite schema, `pubspec.yaml`, and `android/` completely untouched).
+     - Initialized one authoritative `PolicyIntakeCoordinator` (`_resolveIntakeCoordinator()`) refreshed in `didUpdateWidget`, and routed all 4 existing attachment entry points (hero source/policy attachment chip, hero primary CTA, permission-only card CTA, and `review_result_attach_new_policy_btn`) through `UnifiedPolicyIntakeSheet.show(...)`.
+     - Built locked `SelectedAppReference(isLocked: true)` strictly from a validated `AppPermissionSnapshot` (`_validPermissionSnapshot` requires non-empty `packageName`, never fabricating an observation when missing or malformed), differentiated initial (`addAppPrivacyPolicyBtn`) vs updated-policy (`Update privacy policy for <title>`) presentation with prefilled URL locator when updating a URL-sourced receipt, enabled all 3 modes (Paste, Public URL with Google Play Store helper, and PDF/TXT/DOCX local documents), and preserved redirect provenance (`Redirected from:`), SHA-256 hash, and non-persisted in-memory D5.3-B association notices (`review_result_association_notice`).
+  2. **Review Execution, Consent Parity, Lifecycle & Accessibility Hardening**:
+     - Audited and preserved `CloudConsentSheet` byte-for-byte `canonicalRedactedPreview` / `canonicalRedactedPayload` parity, per-operation consent, zero permission/inventory leakage into cloud prompts, `EvidenceValidator` matching, and deterministic local fallback.
+     - Preserved D5.3-A receipt lifecycle guarantees: first-review attachment stays an unsaved `draft` (0 writes); updated-policy attachment against a saved receipt keeps the historical snapshot untouched, generates a guaranteed-distinct draft ID with monotonic `createdAt`, anchors `supersedesReceiptId` to `_persistedBaselineReceipt.id`, enters `modifiedSavedDraft`, requires explicit Save, and leaves historical records intact on Discard.
+     - Added `_isOpeningAttachSheet` double-launch guard, `_isExiting` double-pop guard, `_cancelInFlightAttachSilently()` on `dispose()` and `didUpdateWidget` receipt changes (cancelling exact `${reqId}_appcheck` for cloud jobs), and fixed a `360dp / 200%` text-scale overflow in `ReviewResultScreen`'s snapshot button and SHA-256 copy row.
+  3. **Tests (`test/review_result_unified_intake_test.dart`, `test/receipt_save_state_machine_test.dart`, `test/p0_blocker_closure_widget_test.dart`, `test/widget_test.dart`)**:
+     - Updated existing `ReviewResultScreen` attachment tests in `receipt_save_state_machine_test.dart` (Tests 6 & 8), `p0_blocker_closure_widget_test.dart`, and `widget_test.dart` to drive `UnifiedPolicyIntakeSheet`.
+     - Added 6 comprehensive Phase 3b E2E widget tests in `test/review_result_unified_intake_test.dart` covering Paste/URL/PDF/TXT/DOCX for both initial and updated attachment, 404 URL retry & Play Store helper, document cancel & password-protected recovery, locked app identity & invalid-snapshot non-fabrication, D5.3-B unmatched & ambiguous warnings (non-persisted), redirect provenance & SHA-256, `CloudConsentSheet` parity / denial / local scan / HTTP 429 fallback / zero permission leakage, D5.3-A Save/Discard/multi-update `supersedesReceiptId` & historical immutability, on-device & cloud (`_appcheck`) cancellation / late-response suppression / `didUpdateWidget` receipt replacement / disposal / double-tap safety, and `360dp / 200%` TalkBack semantics.
+- **Challenges & Fixes**:
+  - The new `360dp / 200%` accessibility test uncovered a 62px horizontal `RenderFlex` overflow in `ReviewResultScreen`'s `"View reviewed policy snapshot"` `TextButton.icon`; resolved by replacing with a flexible wrapping `TextButton` row and changing `_SourceProvenanceBlock`'s SHA-256 copy row to `Wrap`.
+  - During the final source audit, added Test 6 to explicitly lock in cloud-inference cancellation (`${reqId}_appcheck` parity and late-result suppression) and `didUpdateWidget` receipt swap protection while `UnifiedPolicyIntakeSheet` is active.
+- **Verification Status**: `git diff --check` clean; scope guard `SCOPE_CLEAN`; dead-code check `ZERO_LEFTOVER_CODE`; `flutter analyze` **0 issues**; focused `test/review_result_unified_intake_test.dart` **6 / 6 passed**; focused `test/receipt_save_state_machine_test.dart` **14 / 14 passed**; full `flutter test` **215 / 215 passed**; `flutter build apk --debug --target-platform android-arm64` succeeded (`build/app/outputs/flutter-apk/app-debug.apk`). Physical-device TalkBack, real SAF document picking, and live Play Store intent checks remain manual hardware checks.
+- **Next Immediate Action & Recommended Model**:
+  - Await explicit authorization before starting **Phase 3c (`HomeScreen` / OS intent migration)**.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **D5.3 Core Flow Streamlining (D5.3-B+) & D5.4 Offline Learn MVP**

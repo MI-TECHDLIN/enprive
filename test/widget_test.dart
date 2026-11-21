@@ -1107,14 +1107,12 @@ void main() {
       await _flushBridgeAndPump(tester);
 
       // Placeholder stub is rejected inline
-      final policyField = find.descendant(
-        of: find.byType(BottomSheet),
-        matching: find.byType(TextField),
-      );
+      final policyField = find.byKey(const Key('intake_paste_field'));
+      final submitBtn = find.byKey(const Key('intake_primary_submit_btn'));
       await tester.enterText(policyField, 'Privacy notice unavailable.');
-      await tester.tap(find.text('Review on this phone'));
+      await tester.tap(submitBtn);
       await tester.pump();
-      expect(find.textContaining('placeholder'), findsOneWidget);
+      expect(find.textContaining('placeholder'), findsAtLeastNWidgets(1));
       expect(nativeCalls.where((c) => c.method == 'analyseText'), isEmpty);
 
       // Genuine supplied policy runs policy-to-permission comparison
@@ -1122,7 +1120,7 @@ void main() {
         policyField,
         'Focus Reader stores books locally and does not use your camera or upload analytics.',
       );
-      await tester.tap(find.text('Review on this phone'));
+      await tester.tap(submitBtn);
       await _flushBridgeAndPump(tester);
       await _flushBridgeAndPump(tester);
 

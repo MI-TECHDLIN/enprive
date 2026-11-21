@@ -486,14 +486,12 @@ void main() {
       await tester.tap(find.text("Add this app's privacy policy").first);
       await _pumpAndFlush(tester);
 
+      expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
       await tester.enterText(
-        find.descendant(
-          of: find.byType(BottomSheet),
-          matching: find.byType(TextField),
-        ),
+        find.byKey(const Key('intake_paste_field')),
         'Focus Reader processes barcodes locally and never uploads photos or shares data with third parties.',
       );
-      await tester.tap(find.text('Review on this phone'));
+      await tester.tap(find.byKey(const Key('intake_primary_submit_btn')));
       await _pumpAndFlush(tester, steps: 8);
 
       // Policy is attached & reviewed on screen, yet zero writes hit SQLite/repo
@@ -602,16 +600,18 @@ void main() {
         await tester.tap(attachNewBtn);
         await _pumpAndFlush(tester);
 
+        expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
+        expect(
+          find.text('Update privacy policy for Focus Reader'),
+          findsOneWidget,
+        );
         const updatedPolicy =
             'Updated 2026 Policy: Focus Reader syncs bookmarks to encrypted school storage and never sells data.';
         await tester.enterText(
-          find.descendant(
-            of: find.byType(BottomSheet),
-            matching: find.byType(TextField),
-          ),
+          find.byKey(const Key('intake_paste_field')),
           updatedPolicy,
         );
-        await tester.tap(find.text('Review on this phone'));
+        await tester.tap(find.byKey(const Key('intake_primary_submit_btn')));
         await _pumpAndFlush(tester, steps: 8);
 
         // Shows modified-saved-draft banner and preserves original receipt untouched
