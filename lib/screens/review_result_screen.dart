@@ -3,16 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../core/theme/enprive_theme.dart';
+import '../domain/intake/policy_intake_models.dart';
 import '../domain/permissions/permission_comparator.dart';
-import '../domain/review/policy_sufficiency.dart';
+import '../domain/review/app_policy_association.dart'
+    show AppPolicyAssociationReport, AppPolicyAssociationState;
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
-import '../services/intake/policy_intake_helper.dart';
+import '../services/intake/policy_intake_coordinator.dart';
 import '../services/network/policy_url_retriever.dart';
+import '../services/platform/companion_bridge.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import '../services/storage/receipt_repository.dart';
 import '../widgets/analysis_process_trace.dart';
@@ -20,6 +22,7 @@ import '../widgets/cloud_consent_sheet.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_provenance_chip.dart';
 import '../widgets/enprive_tactile_button.dart';
+import '../widgets/intake/unified_policy_intake_sheet.dart';
 import '../widgets/m3e/enprive_m3e_components.dart';
 import '../widgets/review/unsaved_review_exit_sheet.dart';
 import '../widgets/review_progress_sheet.dart';
@@ -42,6 +45,8 @@ class ReviewResultScreen extends StatefulWidget {
   final bool isInitiallySaved;
   final bool cloudConsentGrantedForSession;
   final PolicyUrlRetriever? urlRetriever;
+  final PolicyIntakeCoordinator? intakeCoordinator;
+  final CompanionBridge? companionBridge;
 
   const ReviewResultScreen({
     super.key,
@@ -54,6 +59,8 @@ class ReviewResultScreen extends StatefulWidget {
     this.isInitiallySaved = false,
     this.cloudConsentGrantedForSession = false,
     this.urlRetriever,
+    this.intakeCoordinator,
+    this.companionBridge,
   });
 
   @override
@@ -61,14 +68,19 @@ class ReviewResultScreen extends StatefulWidget {
 }
 
 class _ReviewResultScreenState extends State<ReviewResultScreen> {
+  late PolicyIntakeCoordinator _intakeCoordinator;
+  late CompanionBridge _companionBridge;
   late PolicyReviewReceipt _activeReceipt = widget.receipt;
   PolicyReviewReceipt? _persistedBaselineReceipt;
+  AppPolicyAssociationReport? _activeAssociationReport;
   late ReceiptLifecycleState _lifecycleState;
   String? _saveErrorMessage;
   bool _isExitSheetOpen = false;
+  bool _isExiting = false;
   bool _allowImmediatePop = false;
   bool _isDeleting = false;
   bool _isSpeaking = false;
+  bool _isOpeningAttachSheet = false;
   bool _isAttachingPolicy = false;
   bool _isAttachingCloud = false;
   bool _isCancellingAttach = false;
@@ -76,9 +88,18 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
   int _draftCounter = 0;
   String? _attachRequestId;
 
+  PolicyIntakeCoordinator _resolveIntakeCoordinator() =>
+      widget.intakeCoordinator ??
+      PolicyIntakeCoordinator(
+        urlRetriever: widget.urlRetriever,
+        hybridBridge: widget.coordinator.bridge,
+      );
+
   @override
   void initState() {
     super.initState();
+    _intakeCoordinator = _resolveIntakeCoordinator();
+    _companionBridge = widget.companionBridge ?? CompanionBridge();
     _initLifecycleFromTruthSource();
   }
 
@@ -143,10 +164,21 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
   @override
   void didUpdateWidget(covariant ReviewResultScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.intakeCoordinator != widget.intakeCoordinator ||
+        oldWidget.urlRetriever != widget.urlRetriever ||
+        oldWidget.coordinator != widget.coordinator) {
+      _intakeCoordinator = _resolveIntakeCoordinator();
+    }
+    if (oldWidget.companionBridge != widget.companionBridge) {
+      _companionBridge = widget.companionBridge ?? CompanionBridge();
+    }
     if (oldWidget.receipt.id != widget.receipt.id ||
         oldWidget.receipt != widget.receipt) {
+      _cancelInFlightAttachSilently();
       _activeReceipt = widget.receipt;
+      _activeAssociationReport = null;
       _allowImmediatePop = false;
+      _isExiting = false;
       _initLifecycleFromTruthSource();
     } else if (oldWidget.isInitiallySaved != widget.isInitiallySaved ||
         oldWidget.receiptRepository != widget.receiptRepository ||
@@ -158,8 +190,23 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     }
   }
 
+  void _cancelInFlightAttachSilently() {
+    final reqId = _attachRequestId;
+    final wasCloud = _isAttachingCloud;
+    _attachSequence++;
+    _isAttachingPolicy = false;
+    _isAttachingCloud = false;
+    _isCancellingAttach = false;
+    _attachRequestId = null;
+    if (reqId != null) {
+      final cancelId = wasCloud ? '${reqId}_appcheck' : reqId;
+      unawaited(widget.coordinator.bridge.cancelAnalysis(requestId: cancelId));
+    }
+  }
+
   @override
   void dispose() {
+    _cancelInFlightAttachSilently();
     if (_isSpeaking) {
       widget.coordinator.bridge.stopSpeaking();
     }
@@ -241,9 +288,18 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     );
   }
 
+  AppPermissionSnapshot? _validPermissionSnapshot(PolicyReviewReceipt receipt) {
+    final snapshot = receipt.permissionReport?.snapshot;
+    if (snapshot == null || snapshot.packageName.trim().isEmpty) {
+      return null;
+    }
+    return snapshot;
+  }
+
   void _cancelAttachPolicy(AppLocalizations l10n) {
     if (!_isAttachingPolicy) return;
     final reqId = _attachRequestId;
+    final wasCloud = _isAttachingCloud;
     _attachSequence++;
     setState(() {
       _isAttachingPolicy = false;
@@ -252,7 +308,8 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       _attachRequestId = null;
     });
     if (reqId != null) {
-      unawaited(widget.coordinator.bridge.cancelAnalysis(requestId: reqId));
+      final cancelId = wasCloud ? '${reqId}_appcheck' : reqId;
+      unawaited(widget.coordinator.bridge.cancelAnalysis(requestId: cancelId));
     } else {
       unawaited(widget.coordinator.bridge.cancelAnalysis());
     }
@@ -271,26 +328,79 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     AppLocalizations l10n,
     PolicyReviewReceipt receipt,
   ) async {
-    final snapshot = receipt.permissionReport?.snapshot;
-    if (snapshot == null || _isAttachingPolicy) return;
+    final snapshot = _validPermissionSnapshot(receipt);
+    if (snapshot == null || _isAttachingPolicy || _isOpeningAttachSheet) return;
 
     final lang = Localizations.localeOf(context).languageCode;
     final messenger = ScaffoldMessenger.of(context);
-    final attached = await showModalBottomSheet<_AttachedPolicyInput>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _AttachPolicySheet(
-        appName: snapshot.appName,
-        packageName: snapshot.packageName,
-        coordinator: widget.coordinator,
-        urlRetriever: widget.urlRetriever ?? PolicyUrlRetriever(),
-        l10n: l10n,
-      ),
+    final openSeq = _attachSequence;
+    final expectedReceiptId = receipt.id;
+
+    final cleanPackageName = snapshot.packageName.trim();
+    final cleanAppName = snapshot.appName.trim().isNotEmpty
+        ? snapshot.appName.trim()
+        : (receipt.subjectTitle.trim().isNotEmpty
+              ? receipt.subjectTitle.trim()
+              : cleanPackageName);
+    final displayTitle = receipt.subjectTitle.trim().isNotEmpty
+        ? receipt.subjectTitle.trim()
+        : cleanAppName;
+    final lockedApp = SelectedAppReference(
+      packageName: cleanPackageName,
+      appName: cleanAppName,
+      permissionSnapshot: snapshot,
+      isLocked: true,
     );
 
-    if (attached == null || !mounted) return;
+    final isInitialAttachment = receipt.isPermissionOnlyInspection;
+    final existingUrl = !isInitialAttachment
+        ? (receipt.sourceSnapshot?.canonicalUrl?.trim().isNotEmpty == true
+              ? receipt.sourceSnapshot!.canonicalUrl!.trim()
+              : (receipt.sourceSnapshot?.requestedUrl?.trim().isNotEmpty == true
+                    ? receipt.sourceSnapshot!.requestedUrl!.trim()
+                    : null))
+        : null;
+    final initialLocator = existingUrl != null
+        ? UrlPolicyLocator(
+            rawUrl: existingUrl,
+            userSubjectTitle: displayTitle,
+          )
+        : null;
+    final sheetTitle = isInitialAttachment
+        ? l10n.addAppPrivacyPolicyBtn
+        : 'Update privacy policy for $displayTitle';
+
+    _isOpeningAttachSheet = true;
+    PolicyIntakeSuccess? intake;
+    try {
+      intake = await UnifiedPolicyIntakeSheet.show(
+        context,
+        config: PolicyIntakeSheetConfig(
+          coordinator: _intakeCoordinator,
+          titleOverride: sheetTitle,
+          initialMode: PolicyIntakeMode.paste,
+          initialSelectedApp: lockedApp,
+          initialLocator: initialLocator,
+          companionBridge: _companionBridge,
+        ),
+      );
+    } finally {
+      _isOpeningAttachSheet = false;
+    }
+
+    if (intake == null ||
+        !mounted ||
+        openSeq != _attachSequence ||
+        _activeReceipt.id != expectedReceiptId) {
+      return;
+    }
+
+    final captured = intake.capturedSnapshot;
+    final policyText = captured.normalizedPolicyText;
+    final sourceSnapshot = captured.sourceSnapshot;
+    final sourceLabel = isInitialAttachment
+        ? '${receipt.sourceLabel} · ${captured.sourceLabel}'
+        : '$cleanAppName · ${captured.sourceLabel}';
 
     final seq = ++_attachSequence;
     var reqId = 'att_${DateTime.now().microsecondsSinceEpoch}';
@@ -301,17 +411,14 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       _attachRequestId = reqId;
     });
     try {
-      final sourceLabel = receipt.isPermissionOnlyInspection
-          ? '${receipt.sourceLabel} · ${attached.sourceLabel}'
-          : '${snapshot.appName} · ${attached.sourceLabel}';
       var outcome = await widget.coordinator.runPolicyReview(
         requestId: reqId,
-        subjectTitle: receipt.subjectTitle,
+        subjectTitle: displayTitle,
         sourceLabel: sourceLabel,
-        policyText: attached.policyText,
+        policyText: policyText,
         appPermissions: snapshot,
         languageCode: lang,
-        sourceSnapshot: attached.sourceSnapshot,
+        sourceSnapshot: sourceSnapshot,
       );
       if (!mounted || seq != _attachSequence) return;
 
@@ -319,11 +426,11 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         if (!context.mounted) return;
         final canonicalPayload =
             outcome.redactedPreview ??
-            ReviewCoordinator.canonicalCloudPayload(attached.policyText);
+            ReviewCoordinator.canonicalCloudPayload(policyText);
         final decision = await CloudConsentSheet.show(
           context,
-          subjectTitle: receipt.subjectTitle,
-          policyText: attached.policyText,
+          subjectTitle: displayTitle,
+          policyText: policyText,
           canonicalRedactedPreview: canonicalPayload,
           deviceReason: outcome.errorReason,
         );
@@ -339,18 +446,18 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         });
         outcome = await widget.coordinator.runPolicyReview(
           requestId: reqId,
-          subjectTitle: receipt.subjectTitle,
+          subjectTitle: displayTitle,
           sourceLabel: sourceLabel,
-          policyText: attached.policyText,
+          policyText: policyText,
           appPermissions: snapshot,
           cloudConsent: decision == CloudConsentDecision.useCloudOnce,
           forceLocalManualScan: decision == CloudConsentDecision.reviewLocally,
           languageCode: lang,
-          sourceSnapshot: attached.sourceSnapshot,
+          sourceSnapshot: sourceSnapshot,
           canonicalRedactedPayload:
               decision == CloudConsentDecision.useCloudOnce
-                  ? canonicalPayload
-                  : null,
+              ? canonicalPayload
+              : null,
         );
       }
 
@@ -358,20 +465,33 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       final rawUpdated = outcome.receipt!;
       final baseId = _persistedBaselineReceipt?.id;
       final needsDistinctDraftId =
+          rawUpdated.id.trim().isEmpty ||
           rawUpdated.id == baseId ||
           rawUpdated.id == _activeReceipt.id ||
           _isPersistedInTruthSource(rawUpdated.id);
       final safeDraftId = needsDistinctDraftId
           ? 'draft_${DateTime.now().microsecondsSinceEpoch}_${++_draftCounter}'
           : rawUpdated.id;
+      var createdAt = rawUpdated.createdAt;
+      final baseline = _persistedBaselineReceipt;
+      if (baseline != null && !createdAt.isAfter(baseline.createdAt)) {
+        createdAt = baseline.createdAt.add(const Duration(milliseconds: 1));
+      }
+      if (!createdAt.isAfter(_activeReceipt.createdAt)) {
+        createdAt = _activeReceipt.createdAt.add(
+          const Duration(milliseconds: 1),
+        );
+      }
       final updated = rawUpdated.copyWith(
         id: safeDraftId,
+        createdAt: createdAt,
         supersedesReceiptId: baseId ?? _activeReceipt.supersedesReceiptId,
       );
       // Do NOT auto-save when attaching or updating a policy: keep historical
       // receipts untouched and require an explicit Save action.
       setState(() {
         _activeReceipt = updated;
+        _activeAssociationReport = intake!.associationReport;
         _lifecycleState = _persistedBaselineReceipt != null
             ? ReceiptLifecycleState.modifiedSavedDraft
             : ReceiptLifecycleState.draft;
@@ -507,8 +627,11 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     BuildContext context,
     AppLocalizations l10n,
   ) async {
+    if (_isExiting) return;
     if (!_requiresExitConfirmation) {
+      _isExiting = true;
       await Navigator.of(context).maybePop();
+      if (mounted) _isExiting = false;
       return;
     }
     if (_isExitSheetOpen || _lifecycleState == ReceiptLifecycleState.saving) {
@@ -521,13 +644,14 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
           _lifecycleState == ReceiptLifecycleState.modifiedSavedDraft,
     );
     _isExitSheetOpen = false;
-    if (!mounted || !context.mounted) return;
+    if (!mounted || !context.mounted || _isExiting) return;
 
     switch (decision) {
       case UnsavedReviewExitDecision.continueReviewing:
       case null:
         return;
       case UnsavedReviewExitDecision.discard:
+        _isExiting = true;
         setState(() {
           _lifecycleState = ReceiptLifecycleState.discarded;
           _allowImmediatePop = true;
@@ -536,7 +660,8 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         return;
       case UnsavedReviewExitDecision.save:
         final savedOk = await _handleSave(context, l10n, _activeReceipt);
-        if (savedOk && mounted && context.mounted) {
+        if (savedOk && mounted && context.mounted && !_isExiting) {
+          _isExiting = true;
           setState(() => _allowImmediatePop = true);
           Navigator.of(context).pop();
         }
@@ -749,6 +874,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         builder: (context) {
           final l10n = AppLocalizations.of(context)!;
           final receipt = _activeReceipt;
+          final validSnapshot = _validPermissionSnapshot(receipt);
           final m3e = EnpriveM3ETheme.of(context);
           final scheme = m3e.colorScheme;
           final surfaces = context.enpriveSurfaces;
@@ -1276,7 +1402,10 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                   EnpriveTactileButton(
                                     label: l10n.addAppPrivacyPolicyBtn,
                                     isSecondary: true,
-                                    onPressed: _isAttachingPolicy
+                                    onPressed:
+                                        (_isAttachingPolicy ||
+                                            _isOpeningAttachSheet ||
+                                            validSnapshot == null)
                                         ? null
                                         : () => _openAttachPolicySheet(
                                             context,
@@ -1352,7 +1481,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               l10n: l10n,
                             ),
                           ],
-                          if (receipt.permissionReport != null &&
+                          if (validSnapshot != null &&
                               !receipt.isPermissionOnlyInspection) ...[
                             const SizedBox(height: 16),
                             EnpriveTactileButton(
@@ -1361,13 +1490,74 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               ),
                               label: 'Attach updated privacy policy',
                               isSecondary: true,
-                              onPressed: _isAttachingPolicy
+                              onPressed:
+                                  (_isAttachingPolicy || _isOpeningAttachSheet)
                                   ? null
                                   : () => _openAttachPolicySheet(
                                       context,
                                       l10n,
                                       receipt,
                                     ),
+                            ),
+                          ],
+                          if (_activeAssociationReport != null &&
+                              (_activeAssociationReport!.state ==
+                                      AppPolicyAssociationState.unmatched ||
+                                  _activeAssociationReport!.state ==
+                                      AppPolicyAssociationState
+                                          .ambiguousIdentity)) ...[
+                            const SizedBox(height: 16),
+                            EnpriveMaterialCardSurface(
+                              key: const Key('review_result_association_notice'),
+                              variant: EnpriveCardVariant.outlined,
+                              backgroundColor: semantics
+                                  .reviewRecommended
+                                  .background
+                                  .withValues(alpha: 0.55),
+                              borderColor: semantics.reviewRecommended.border,
+                              borderRadius: BorderRadius.circular(
+                                EnpriveRadii.lg,
+                              ),
+                              padding: const EdgeInsets.all(14),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    LucideIcons.triangleAlert,
+                                    size: 18,
+                                    color:
+                                        semantics.reviewRecommended.foreground,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _activeAssociationReport!.explanation,
+                                          style: m3e.typeScale.bodySmall
+                                              .copyWith(
+                                                color: scheme.onSurface,
+                                                fontWeight: FontWeight.w600,
+                                                height: 1.38,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          _activeAssociationReport!
+                                              .ownershipLimitationNotice,
+                                          style: m3e.typeScale.bodySmall
+                                              .copyWith(
+                                                color: scheme.onSurfaceVariant,
+                                                height: 1.38,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                           if (receipt.sourceSnapshot != null &&
@@ -1417,23 +1607,33 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               receipt.snapshotText.trim().isNotEmpty) ...[
                             const SizedBox(height: 18),
                             Center(
-                              child: TextButton.icon(
+                              child: TextButton(
                                 onPressed: () => _showSnapshotReceiptSheet(
                                   context,
                                   l10n,
                                   receipt,
                                 ),
-                                icon: Icon(
-                                  LucideIcons.fileText,
-                                  size: 17,
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                                label: Text(
-                                  l10n.viewReviewedSnapshot,
-                                  style: m3e.typeScale.labelLarge.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: scheme.onSurfaceVariant,
-                                  ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      LucideIcons.fileText,
+                                      size: 17,
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        l10n.viewReviewedSnapshot,
+                                        textAlign: TextAlign.center,
+                                        style: m3e.typeScale.labelLarge
+                                            .copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              color: scheme.onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -1630,20 +1830,6 @@ class _M3EPermissionListCard extends StatelessWidget {
   }
 }
 
-enum _AttachPolicyMode { paste, link, document }
-
-class _AttachedPolicyInput {
-  final String policyText;
-  final String sourceLabel;
-  final PolicySourceSnapshot sourceSnapshot;
-
-  const _AttachedPolicyInput({
-    required this.policyText,
-    required this.sourceLabel,
-    required this.sourceSnapshot,
-  });
-}
-
 class _SourceProvenanceBlock extends StatelessWidget {
   final PolicySourceSnapshot snapshot;
   final AppLocalizations l10n;
@@ -1705,6 +1891,17 @@ class _SourceProvenanceBlock extends StatelessWidget {
               ),
             ),
           ],
+          if (snapshot.hasRedirect &&
+              snapshot.requestedUrl != null &&
+              snapshot.requestedUrl!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Redirected from: ${snapshot.requestedUrl}',
+              style: m3e.typeScale.bodySmall.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
           if (snapshot.originalFilename != null &&
               snapshot.originalFilename!.isNotEmpty) ...[
             const SizedBox(height: 4),
@@ -1719,16 +1916,17 @@ class _SourceProvenanceBlock extends StatelessWidget {
           ],
           if (snapshot.sourceSha256Hash.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Expanded(
-                  child: Text(
-                    'SHA-256 source hash: ${snapshot.sourceSha256Hash}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: typeExt.sha256Hash.copyWith(
-                      color: scheme.onSurface,
-                    ),
+                Text(
+                  'SHA-256 source hash: ${snapshot.sourceSha256Hash}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: typeExt.sha256Hash.copyWith(
+                    color: scheme.onSurface,
                   ),
                 ),
                 TextButton.icon(
@@ -1767,393 +1965,6 @@ class _SourceProvenanceBlock extends StatelessWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _AttachPolicySheet extends StatefulWidget {
-  final String appName;
-  final String packageName;
-  final ReviewCoordinator coordinator;
-  final PolicyUrlRetriever urlRetriever;
-  final AppLocalizations l10n;
-
-  const _AttachPolicySheet({
-    required this.appName,
-    required this.packageName,
-    required this.coordinator,
-    required this.urlRetriever,
-    required this.l10n,
-  });
-
-  @override
-  State<_AttachPolicySheet> createState() => _AttachPolicySheetState();
-}
-
-class _AttachPolicySheetState extends State<_AttachPolicySheet> {
-  final TextEditingController _policyController = TextEditingController();
-  final TextEditingController _urlController = TextEditingController();
-  _AttachPolicyMode _mode = _AttachPolicyMode.paste;
-  String? _inlineError;
-  bool _isBusy = false;
-
-  @override
-  void dispose() {
-    _policyController.dispose();
-    _urlController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submitLink(BuildContext innerCtx) async {
-    final rawUrl = _urlController.text.trim();
-    if (rawUrl.isEmpty) {
-      setState(
-        () => _inlineError = 'Enter a public https:// privacy policy URL.',
-      );
-      return;
-    }
-    setState(() {
-      _isBusy = true;
-      _inlineError = null;
-    });
-    try {
-      final result = await widget.urlRetriever.fetchPolicy(rawUrl);
-      if (!mounted || !innerCtx.mounted) return;
-      if (result.isUsablePolicy) {
-        Navigator.pop(
-          innerCtx,
-          _AttachedPolicyInput(
-            policyText: result.extractedText!,
-            sourceLabel: result.canonicalUrl ?? rawUrl,
-            sourceSnapshot: result.sourceSnapshot!,
-          ),
-        );
-        return;
-      }
-      setState(() {
-        _isBusy = false;
-        _inlineError =
-            '${result.userMessage} Paste the policy text or import a local document instead.';
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _isBusy = false;
-        _inlineError =
-            'Could not retrieve that link. Paste the policy text or import a PDF, TXT, or DOCX document instead.';
-      });
-    }
-  }
-
-  Future<void> _pickDocument(BuildContext innerCtx) async {
-    setState(() {
-      _isBusy = true;
-      _inlineError = null;
-    });
-    final doc = await widget.coordinator.bridge.pickAndExtractDocument();
-    if (!mounted || !innerCtx.mounted) return;
-    if (doc.isCancelled) {
-      setState(() => _isBusy = false);
-      return;
-    }
-    if (!doc.isSuccess) {
-      setState(() {
-        _isBusy = false;
-        _inlineError =
-            '${doc.userMessage} Choose another PDF, TXT, or DOCX file or paste the policy text manually.';
-      });
-      return;
-    }
-    final validation = PolicySufficiencyValidator.assess(doc.extractedText);
-    if (!validation.isSufficient) {
-      setState(() {
-        _isBusy = false;
-        _inlineError = validation.explanation;
-      });
-      return;
-    }
-    Navigator.pop(
-      innerCtx,
-      _AttachedPolicyInput(
-        policyText: doc.extractedText,
-        sourceLabel: doc.fileName ?? 'Document',
-        sourceSnapshot: PolicyIntakeHelper.snapshotFromDocumentSuccess(
-          doc,
-          hasAppPermissions: true,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return EnpriveM3EBridgeScope.ensure(
-      context,
-      child: Builder(
-        builder: (innerCtx) {
-          final m3e = EnpriveM3ETheme.of(innerCtx);
-          final scheme = m3e.colorScheme;
-          final surfaces = innerCtx.enpriveSurfaces;
-          final viewInsets = MediaQuery.viewInsetsOf(innerCtx);
-
-          return Material(
-            color: scheme.surface,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(32),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: SafeArea(
-              top: false,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  24,
-                  16,
-                  24,
-                  24 + viewInsets.bottom,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: scheme.outlineVariant,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            widget.l10n.addAppPrivacyPolicyBtn,
-                            style: m3e.typography.emphasized.titleLarge
-                                .copyWith(color: scheme.onSurface),
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: widget.l10n.tooltipClose,
-                          onPressed: () => Navigator.pop(innerCtx),
-                          icon: Icon(
-                            LucideIcons.x,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '${widget.appName} (${widget.packageName})',
-                      style: m3e.typeScale.labelMedium.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: M3ESegmentedButton<_AttachPolicyMode>(
-                        showSelectedIcon: false,
-                        segments: [
-                          M3ESegment<_AttachPolicyMode>(
-                            value: _AttachPolicyMode.paste,
-                            icon: const Icon(LucideIcons.fileText, size: 15),
-                            label: widget.l10n.modePasteText,
-                          ),
-                          M3ESegment<_AttachPolicyMode>(
-                            value: _AttachPolicyMode.link,
-                            icon: const Icon(LucideIcons.link2, size: 15),
-                            label: widget.l10n.modePolicyLink,
-                          ),
-                          const M3ESegment<_AttachPolicyMode>(
-                            value: _AttachPolicyMode.document,
-                            icon: Icon(LucideIcons.fileUp, size: 15),
-                            label: 'Document',
-                          ),
-                        ],
-                        selected: {_mode},
-                        onSelectionChanged: (sel) {
-                          setState(() {
-                            _mode = sel.first;
-                            _inlineError = null;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (_mode == _AttachPolicyMode.paste)
-                      TextField(
-                        controller: _policyController,
-                        maxLines: 6,
-                        minLines: 4,
-                        onChanged: (_) {
-                          if (_inlineError != null) {
-                            setState(() => _inlineError = null);
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: widget.l10n.hintPastePolicy,
-                          errorText: _inlineError,
-                          filled: true,
-                          fillColor: surfaces.card,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(18),
-                            borderSide: BorderSide(
-                              color: surfaces.hairlineBorder,
-                            ),
-                          ),
-                        ),
-                      )
-                    else if (_mode == _AttachPolicyMode.link) ...[
-                      TextField(
-                        controller: _urlController,
-                        keyboardType: TextInputType.url,
-                        onChanged: (_) {
-                          if (_inlineError != null) {
-                            setState(() => _inlineError = null);
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'https://example.com/privacy-policy',
-                          prefixIcon: Icon(
-                            LucideIcons.link2,
-                            size: 18,
-                            color: scheme.primary,
-                          ),
-                          errorText: _inlineError,
-                          errorMaxLines: 4,
-                          filled: true,
-                          fillColor: surfaces.card,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(18),
-                            borderSide: BorderSide(
-                              color: surfaces.hairlineBorder,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Fetches the public URL directly. User-supplied links do not prove app ownership.',
-                        style: m3e.typeScale.bodySmall.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ] else ...[
-                      EnpriveMaterialCardSurface(
-                        variant: EnpriveCardVariant.outlined,
-                        backgroundColor: surfaces.card,
-                        borderRadius: BorderRadius.circular(18),
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Import PDF, TXT, or DOCX policy file',
-                              style: m3e.typeScale.titleSmall.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: scheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Text is extracted strictly on this phone with a local SHA-256 snapshot hash. Files never upload directly.',
-                              style: m3e.typeScale.bodySmall.copyWith(
-                                color: scheme.onSurfaceVariant,
-                              ),
-                            ),
-                            if (_inlineError != null) ...[
-                              const SizedBox(height: 10),
-                              Text(
-                                _inlineError!,
-                                style: m3e.typeScale.bodySmall.copyWith(
-                                  color: scheme.error,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                    if (_inlineError != null) ...[
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        children: [
-                          if (_mode != _AttachPolicyMode.paste)
-                            TextButton(
-                              onPressed: () => setState(() {
-                                _mode = _AttachPolicyMode.paste;
-                                _inlineError = null;
-                              }),
-                              child: Text(widget.l10n.modePasteText),
-                            ),
-                          if (_mode != _AttachPolicyMode.document)
-                            TextButton(
-                              onPressed: () => setState(() {
-                                _mode = _AttachPolicyMode.document;
-                                _inlineError = null;
-                              }),
-                              child: const Text('Import document'),
-                            ),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 14),
-                    EnpriveTactileButton(
-                      label: _isBusy
-                          ? 'Working…'
-                          : (_mode == _AttachPolicyMode.document
-                                ? 'Choose document (PDF, TXT, DOCX)'
-                                : widget.l10n.btnReviewOnPhone),
-                      onPressed: _isBusy
-                          ? null
-                          : () {
-                              if (_mode == _AttachPolicyMode.link) {
-                                _submitLink(innerCtx);
-                                return;
-                              }
-                              if (_mode == _AttachPolicyMode.document) {
-                                _pickDocument(innerCtx);
-                                return;
-                              }
-                              final text = _policyController.text.trim();
-                              final validation =
-                                  PolicySufficiencyValidator.assess(text);
-                              if (!validation.isSufficient) {
-                                setState(
-                                  () => _inlineError = validation.explanation,
-                                );
-                                return;
-                              }
-                              Navigator.pop(
-                                innerCtx,
-                                _AttachedPolicyInput(
-                                  policyText: text,
-                                  sourceLabel: 'Policy compared',
-                                  sourceSnapshot:
-                                      PolicyIntakeHelper
-                                          .snapshotForManualOrSharedText(
-                                            sourceType:
-                                                PolicySourceType.pastedText,
-                                            text: text,
-                                            hasAppPermissions: true,
-                                          ),
-                                ),
-                              );
-                            },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
       ),
     );
   }

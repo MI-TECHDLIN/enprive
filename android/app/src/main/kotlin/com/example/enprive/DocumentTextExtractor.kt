@@ -1,18 +1,19 @@
 package com.example.enprive
 
+import android.util.Log
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
 import com.tom_roush.pdfbox.text.PDFTextStripper
-import org.w3c.dom.Element
-import org.w3c.dom.Node
+import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserException
+import org.xmlpull.v1.XmlPullParserFactory
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.nio.charset.Charset
 import java.util.zip.ZipException
 import java.util.zip.ZipInputStream
-import javax.xml.XMLConstants
-import javax.xml.parsers.DocumentBuilderFactory
 
 /**
  * Pure-Kotlin local document extractor for supported privacy-policy documents
@@ -23,6 +24,21 @@ object DocumentTextExtractor {
     const val MAX_DOCUMENT_BYTES: Int = 10 * 1024 * 1024 // 10 MiB
     private const val MAX_ZIP_ENTRIES: Int = 250
     private const val MAX_ZIP_UNCOMPRESSED_BYTES: Long = 20L * 1024L * 1024L
+    internal const val MAX_DOCX_ELEMENT_DEPTH: Int = 512
+    internal const val MAX_DOCX_TEXT_CHARS: Int = MAX_DOCUMENT_BYTES
+    private const val TAG = "EnpriveDocExtractor"
+
+    // Entity references that need no DTD; anything else in word/document.xml is rejected.
+    private val PREDEFINED_XML_ENTITIES = setOf("amp", "lt", "gt", "quot", "apos")
+
+    /**
+     * Creates the platform pull parser (KXmlParser on Android). [extractDocx]
+     * configures every parser it receives, so injected parsers get the same
+     * namespace and DOCTYPE settings as production.
+     */
+    private val platformXmlPullParserFactory: () -> XmlPullParser = {
+        XmlPullParserFactory.newInstance().newPullParser()
+    }
 
     const val MIME_PDF = "application/pdf"
     const val MIME_TXT = "text/plain"
@@ -111,6 +127,7 @@ object DocumentTextExtractor {
         bytes: ByteArray,
         mimeType: String?,
         fileName: String?,
+        xmlPullParserFactory: () -> XmlPullParser = platformXmlPullParserFactory,
     ): ExtractionResult {
         if (bytes.size > MAX_DOCUMENT_BYTES) {
             return ExtractionResult(
@@ -134,7 +151,7 @@ object DocumentTextExtractor {
         return when (resolveFormat(mimeType, fileName)) {
             DetectedFormat.PDF -> extractPdf(bytes)
             DetectedFormat.TXT -> extractPlainText(bytes)
-            DetectedFormat.DOCX -> extractDocx(bytes)
+            DetectedFormat.DOCX -> extractDocx(bytes, xmlPullParserFactory)
             DetectedFormat.UNSUPPORTED -> ExtractionResult(
                 status = "unsupported_mime",
                 documentType = null,
@@ -281,7 +298,10 @@ object DocumentTextExtractor {
         )
     }
 
-    fun extractDocx(bytes: ByteArray): ExtractionResult {
+    fun extractDocx(
+        bytes: ByteArray,
+        xmlPullParserFactory: () -> XmlPullParser = platformXmlPullParserFactory,
+    ): ExtractionResult {
         // Encrypted Office docs are stored in an OLE2 Compound File container
         if (startsWithBytes(
                 bytes,
@@ -406,80 +426,148 @@ object DocumentTextExtractor {
                 userMessage = "DOCX archive is missing readable document content (word/document.xml).",
             )
 
-        return try {
-            val factory = DocumentBuilderFactory.newInstance().apply {
-                isNamespaceAware = true
-                isExpandEntityReferences = false
-                setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
-                setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-                setFeature("http://xml.org/sax/features/external-general-entities", false)
-                setFeature("http://xml.org/sax/features/external-parameter-entities", false)
-                setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+        val parser = try {
+            xmlPullParserFactory().apply {
+                setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
+                // Explicitly off: android.util.Xml.newPullParser() turns it on, which
+                // stores internal entity declarations and expands them without limits.
+                setFeature(XmlPullParser.FEATURE_PROCESS_DOCDECL, false)
             }
-            val doc = factory.newDocumentBuilder().parse(ByteArrayInputStream(xmlBytes))
-            val builder = StringBuilder()
-            appendDocxNodeText(doc.documentElement, builder)
-            val normalized = normalizeExtractedText(builder.toString())
-            if (normalized.isEmpty()) {
-                ExtractionResult(
-                    status = "empty",
-                    documentType = "docx",
-                    extractedText = "",
-                    byteLength = bytes.size,
-                    userMessage = "DOCX document contained no readable text.",
-                )
-            } else {
-                ExtractionResult(
-                    status = "ok",
-                    documentType = "docx",
-                    extractedText = normalized,
-                    byteLength = bytes.size,
-                    userMessage = "Extracted DOCX privacy policy text locally.",
-                )
-            }
-        } catch (_: Exception) {
-            ExtractionResult(
-                status = "corrupt",
+        } catch (e: Exception) {
+            return docxInternalFailure(bytes.size, e)
+        }
+
+        val text = try {
+            parser.setInput(ByteArrayInputStream(xmlBytes), null)
+            readDocxText(parser)
+        } catch (_: DocxTextLimitException) {
+            return ExtractionResult(
+                status = "too_large",
                 documentType = "docx",
                 extractedText = "",
                 byteLength = bytes.size,
-                userMessage = "Could not parse DOCX XML content cleanly.",
+                userMessage = "DOCX text stream exceeds local safety limits.",
+            )
+        } catch (_: RejectedDocxXmlException) {
+            return docxXmlCorrupt(bytes.size)
+        } catch (_: XmlPullParserException) {
+            return docxXmlCorrupt(bytes.size)
+        } catch (_: IOException) {
+            return docxXmlCorrupt(bytes.size)
+        } catch (e: Exception) {
+            return docxInternalFailure(bytes.size, e)
+        }
+
+        val normalized = normalizeExtractedText(text)
+        return if (normalized.isEmpty()) {
+            ExtractionResult(
+                status = "empty",
+                documentType = "docx",
+                extractedText = "",
+                byteLength = bytes.size,
+                userMessage = "DOCX document contained no readable text.",
+            )
+        } else {
+            ExtractionResult(
+                status = "ok",
+                documentType = "docx",
+                extractedText = normalized,
+                byteLength = bytes.size,
+                userMessage = "Extracted DOCX privacy policy text locally.",
             )
         }
     }
 
-    private fun appendDocxNodeText(node: Node, out: StringBuilder) {
-        if (node.nodeType == Node.TEXT_NODE) {
-            out.append(node.nodeValue ?: "")
-            return
-        }
-        val local = node.localName ?: node.nodeName.substringAfter(':')
-        when (local) {
-            "p", "tr" -> {
-                if (out.isNotEmpty() && !out.endsWith("\n")) {
-                    out.append('\n')
-                }
-            }
-            "br", "cr" -> out.append('\n')
-            "tab" -> out.append(' ')
-            "tc" -> {
-                if (out.isNotEmpty() && !out.endsWith(" ") && !out.endsWith("\n")) {
-                    out.append(' ')
-                }
-            }
-            // Skip deleted text or field instructions if present
-            "delText", "instrText" -> return
+    private fun docxXmlCorrupt(byteLength: Int) = ExtractionResult(
+        status = "corrupt",
+        documentType = "docx",
+        extractedText = "",
+        byteLength = byteLength,
+        userMessage = "Could not parse DOCX XML content cleanly.",
+    )
+
+    /**
+     * Parser setup or extractor bugs are not document corruption, so they are
+     * reported as a read error and logged by exception class only.
+     */
+    private fun docxInternalFailure(byteLength: Int, e: Exception): ExtractionResult {
+        Log.w(TAG, "DOCX XML extraction failed (${e.javaClass.simpleName})")
+        return ExtractionResult(
+            status = "read_error",
+            documentType = "docx",
+            extractedText = "",
+            byteLength = byteLength,
+            userMessage = "Could not extract DOCX document locally.",
+        )
+    }
+
+    internal class RejectedDocxXmlException(reason: String) : Exception(reason)
+
+    internal class DocxTextLimitException : Exception()
+
+    /**
+     * Streams `word/document.xml` without building a tree, so stack and memory
+     * stay bounded by [maxDepth] and [maxChars]. Fails closed on any DOCTYPE, on
+     * entity references that would need one, and on unclosed or missing
+     * elements. Paragraph, row, cell, tab and break handling, and the skipping
+     * of deleted text and field instructions, match the previous DOM walk.
+     */
+    internal fun readDocxText(
+        parser: XmlPullParser,
+        maxDepth: Int = MAX_DOCX_ELEMENT_DEPTH,
+        maxChars: Int = MAX_DOCX_TEXT_CHARS,
+    ): String {
+        val out = StringBuilder()
+        fun append(value: CharSequence) {
+            if (out.length + value.length > maxChars) throw DocxTextLimitException()
+            out.append(value)
         }
 
-        if (node is Element || node.hasChildNodes()) {
-            val children = node.childNodes
-            for (i in 0 until children.length) {
-                appendDocxNodeText(children.item(i), out)
-            }
-        }
-        if (local == "p" || local == "tr") {
-            if (!out.endsWith("\n")) {
-                out.append('\n')
+        var depth = 0
+        var sawRoot = false
+        // Depth of the delText/instrText element being skipped, or 0 when not skipping.
+        var skipDepth = 0
+        while (true) {
+            when (parser.nextToken()) {
+                XmlPullParser.DOCDECL -> throw RejectedDocxXmlException("DOCTYPE")
+                XmlPullParser.ENTITY_REF -> {
+                    val name = parser.name.orEmpty()
+                    val value = parser.text
+                    if (value == null || (name !in PREDEFINED_XML_ENTITIES && !name.startsWith("#"))) {
+                        throw RejectedDocxXmlException("entity reference")
+                    }
+                    if (skipDepth == 0) append(value)
+                }
+                XmlPullParser.START_TAG -> {
+                    depth++
+                    sawRoot = true
+                    if (depth > maxDepth) throw RejectedDocxXmlException("element depth")
+                    if (skipDepth == 0) {
+                        when (parser.name) {
+                            "p", "tr" -> if (out.isNotEmpty() && !out.endsWith("\n")) append("\n")
+                            "br", "cr" -> append("\n")
+                            "tab" -> append(" ")
+                            "tc" -> if (out.isNotEmpty() && !out.endsWith(" ") && !out.endsWith("\n")) append(" ")
+                            "delText", "instrText" -> skipDepth = depth
+                        }
+                    }
+                }
+                XmlPullParser.END_TAG -> {
+                    if (skipDepth == depth) {
+                        skipDepth = 0
+                    } else if (skipDepth == 0) {
+                        when (parser.name) {
+                            "p", "tr" -> if (!out.endsWith("\n")) append("\n")
+                        }
+                    }
+                    depth--
+                }
+                XmlPullParser.TEXT, XmlPullParser.CDSECT -> if (skipDepth == 0) append(parser.text.orEmpty())
+                XmlPullParser.END_DOCUMENT -> {
+                    // KXmlParser's nextToken() reports END_DOCUMENT on truncated input.
+                    if (!sawRoot || depth != 0) throw RejectedDocxXmlException("incomplete document")
+                    return out.toString()
+                }
             }
         }
     }

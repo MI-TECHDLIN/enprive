@@ -534,10 +534,10 @@ void main() {
         await _pumpAndFlush(tester);
 
         await tester.enterText(
-          find.byType(TextField).first,
+          find.byKey(const Key('intake_paste_field')),
           comprehensivePolicy,
         );
-        await tester.tap(find.text('Review on this phone'));
+        await tester.tap(find.byKey(const Key('intake_primary_submit_btn')));
         await _pumpAndFlush(tester, steps: 8);
 
         // CloudConsentSheet must now be open with redacted text
@@ -562,10 +562,10 @@ void main() {
         await tester.tap(find.text("Add this app's privacy policy").first);
         await _pumpAndFlush(tester);
         await tester.enterText(
-          find.byType(TextField).first,
+          find.byKey(const Key('intake_paste_field')),
           comprehensivePolicy,
         );
-        await tester.tap(find.text('Review on this phone'));
+        await tester.tap(find.byKey(const Key('intake_primary_submit_btn')));
         await _pumpAndFlush(tester, steps: 8);
 
         expect(find.byType(CloudConsentSheet), findsOneWidget);
@@ -630,10 +630,10 @@ void main() {
         await tester.tap(find.text("Add this app's privacy policy").first);
         await _pumpAndFlush(tester);
         await tester.enterText(
-          find.byType(TextField).first,
+          find.byKey(const Key('intake_paste_field')),
           comprehensivePolicy,
         );
-        await tester.tap(find.text('Review on this phone'));
+        await tester.tap(find.byKey(const Key('intake_primary_submit_btn')));
         await _pumpAndFlush(tester, steps: 8);
         expect(find.byType(CloudConsentSheet), findsOneWidget);
         expect(

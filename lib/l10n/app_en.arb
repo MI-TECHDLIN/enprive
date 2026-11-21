@@ -270,5 +270,121 @@
   "appPickerEmptyInstalledBody": "No launchable apps were reported on this device.",
   "@appPickerEmptyInstalledBody": {
     "description": "Body shown when no launchable apps are available on the device"
+  },
+  "intakeModeDocument": "Document",
+  "@intakeModeDocument": {
+    "description": "Segmented mode label for local document import (PDF, TXT, DOCX)"
+  },
+  "intakeActionInspectText": "Inspect policy text",
+  "@intakeActionInspectText": {
+    "description": "Primary action button label in Paste text mode of the unified intake sheet"
+  },
+  "intakeActionFetchUrl": "Fetch & inspect policy",
+  "@intakeActionFetchUrl": {
+    "description": "Primary action button label in Public URL mode of the unified intake sheet"
+  },
+  "intakeActionChooseDocument": "Choose PDF, TXT, or DOCX",
+  "@intakeActionChooseDocument": {
+    "description": "Primary action button label in Document mode of the unified intake sheet"
+  },
+  "intakeActionReplaceDocument": "Choose replacement document",
+  "@intakeActionReplaceDocument": {
+    "description": "Primary action button label when replacing an expired incoming document share"
+  },
+  "intakeWorkingLabel": "Working…",
+  "@intakeWorkingLabel": {
+    "description": "Primary action button label while a URL fetch or document extraction is active"
+  },
+  "intakeCancelFetch": "Cancel fetch",
+  "@intakeCancelFetch": {
+    "description": "Secondary button label cancelling an active public URL fetch"
+  },
+  "intakeUrlHint": "https://example.com/privacy-policy",
+  "@intakeUrlHint": {
+    "description": "Placeholder hint for the public privacy policy URL input field"
+  },
+  "intakeUrlDisclosure": "Fetches the public web page directly. A user-supplied link does not prove app ownership.",
+  "@intakeUrlDisclosure": {
+    "description": "Disclosure clarifying direct public URL retrieval and non-ownership"
+  },
+  "intakePasteLocalNote": "Checked locally on this phone first. Nothing is uploaded without your permission.",
+  "@intakePasteLocalNote": {
+    "description": "Privacy note beneath the policy text input box"
+  },
+  "intakeDocumentCardTitle": "Import PDF, TXT, or DOCX policy file",
+  "@intakeDocumentCardTitle": {
+    "description": "Title of the local document import information card"
+  },
+  "intakeDocumentCardBody": "Text is extracted strictly on this phone (up to 10 MB) with a local SHA-256 snapshot hash. Files are never uploaded.",
+  "@intakeDocumentCardBody": {
+    "description": "Description of strictly local document extraction and size limit"
+  },
+  "intakeCompareWithAppPrompt": "Compare with an installed app (optional)",
+  "@intakeCompareWithAppPrompt": {
+    "description": "Optional action prompt allowing the user to pair an installed app during policy-first intake"
+  },
+  "intakeCompareWithAppHint": "Runs locally on this phone. App lists never leave your device.",
+  "@intakeCompareWithAppHint": {
+    "description": "Privacy note explaining that optional installed app comparison remains on-device"
+  },
+  "intakeCompareWithAppChange": "Change",
+  "@intakeCompareWithAppChange": {
+    "description": "Action label to change the optionally selected installed app"
+  },
+  "intakeCompareWithAppRemove": "Remove",
+  "@intakeCompareWithAppRemove": {
+    "description": "Action label to remove the optionally selected installed app"
+  },
+  "intakeLockedAppContextLabel": "Selected app",
+  "@intakeLockedAppContextLabel": {
+    "description": "Label identifying the locked Android application in app-first or Companion intake"
+  },
+  "intakeFindPolicyOnPlayStore": "Find policy link on Play Store",
+  "@intakeFindPolicyOnPlayStore": {
+    "description": "Optional action opening the selected app listing on Google Play Store to look up its policy link"
+  },
+  "intakePlayStoreHelperNote": "Opens the app's Play Store listing so you can copy its privacy policy link. Enprive never scrapes Play Store or assumes link ownership.",
+  "@intakePlayStoreHelperNote": {
+    "description": "Clarification beneath the Play Store convenience link button"
+  },
+  "intakePlayStoreUnavailable": "Could not open Google Play Store on this device. Paste the policy URL or text manually instead.",
+  "@intakePlayStoreUnavailable": {
+    "description": "Inline message shown if launching Play Store fails or is unavailable"
+  },
+  "intakeRecoverySwitchPaste": "Paste text instead",
+  "@intakeRecoverySwitchPaste": {
+    "description": "Inline recovery action switching the intake sheet to Paste text mode"
+  },
+  "intakeRecoverySwitchDocument": "Import document",
+  "@intakeRecoverySwitchDocument": {
+    "description": "Inline recovery action switching the intake sheet to Document import mode"
+  },
+  "intakeRecoveryRetryUrl": "Retry fetch",
+  "@intakeRecoveryRetryUrl": {
+    "description": "Inline recovery action retrying the failed URL retrieval"
+  },
+  "intakeExpiredDocumentShareNotice": "The originally shared file link can no longer be reopened. Choose a replacement PDF, TXT, or DOCX file or paste the policy text manually.",
+  "@intakeExpiredDocumentShareNotice": {
+    "description": "Explanation shown when an incoming Android document share failed and its content URI cannot be reused"
+  },
+  "intakeAssociationWarningTitle": "App-policy identity check",
+  "@intakeAssociationWarningTitle": {
+    "description": "Heading for the non-blocking app-policy association warning banner"
+  },
+  "intakeAssociationContinueAnyway": "Continue anyway",
+  "@intakeAssociationContinueAnyway": {
+    "description": "Action accepting an unmatched or ambiguous app-policy association warning"
+  },
+  "intakeAssociationChangeApp": "Change selected app",
+  "@intakeAssociationChangeApp": {
+    "description": "Action to pick a different installed app after an association mismatch or ambiguity"
+  },
+  "intakeAssociationInspectWithoutApp": "Inspect policy without app",
+  "@intakeAssociationInspectWithoutApp": {
+    "description": "Action to drop the optional app association and inspect only the supplied policy"
+  },
+  "intakeModeSelectorSemanticLabel": "Policy input method",
+  "@intakeModeSelectorSemanticLabel": {
+    "description": "Accessibility label for the Paste text / Policy link / Document mode selector"
   }
 }
