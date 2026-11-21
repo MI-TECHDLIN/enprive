@@ -9,7 +9,9 @@ import '../core/theme/enprive_theme.dart';
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
+import '../services/intake/policy_intake_coordinator.dart';
 import '../services/network/policy_url_retriever.dart';
+import '../services/platform/companion_bridge.dart';
 import '../services/storage/receipt_repository.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_tactile_button.dart';
@@ -48,6 +50,9 @@ class ReceiptsScreen extends StatefulWidget {
   final VoidCallback? onOpenSettings;
   final bool isActiveTab;
   final PolicyUrlRetriever? urlRetriever;
+  final PolicyIntakeCoordinator? intakeCoordinator;
+  final CompanionBridge? companionBridge;
+  final ReviewExitGuardController? reviewExitGuard;
 
   const ReceiptsScreen({
     super.key,
@@ -62,6 +67,9 @@ class ReceiptsScreen extends StatefulWidget {
     this.onOpenSettings,
     this.isActiveTab = false,
     this.urlRetriever,
+    this.intakeCoordinator,
+    this.companionBridge,
+    this.reviewExitGuard,
   });
 
   @override
@@ -240,6 +248,12 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                             receipt: receipt,
                                             coordinator: widget.coordinator,
                                             urlRetriever: widget.urlRetriever,
+                                            intakeCoordinator:
+                                                widget.intakeCoordinator,
+                                            companionBridge:
+                                                widget.companionBridge,
+                                            exitGuardController:
+                                                widget.reviewExitGuard,
                                             onSaveReceipt: widget.onSaveReceipt,
                                             onDeleteReceipt:
                                                 widget.onDeleteReceipt,

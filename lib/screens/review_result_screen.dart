@@ -28,6 +28,37 @@ import '../widgets/review/unsaved_review_exit_sheet.dart';
 import '../widgets/review_progress_sheet.dart';
 import '../widgets/why_this_finding_sheet.dart';
 
+/// Coordinates external navigation requests (such as warm Android shares,
+/// `ACTION_PROCESS_TEXT`, or Quick Settings invocations) with an active
+/// [ReviewResultScreen] so unsaved review drafts always present
+/// [UnsavedReviewExitSheet] instead of being dropped silently by `popUntil`.
+class ReviewExitGuardController {
+  Future<bool> Function()? _requestExitHandler;
+
+  bool get hasActiveScreen => _requestExitHandler != null;
+
+  void attach(Future<bool> Function() handler) {
+    _requestExitHandler = handler;
+  }
+
+  void detach(Future<bool> Function() handler) {
+    if (identical(_requestExitHandler, handler)) {
+      _requestExitHandler = null;
+    }
+  }
+
+  /// Requests the active [ReviewResultScreen] to exit cleanly.
+  ///
+  /// Returns `true` if no guarded screen is active or after the user saves or
+  /// discards the draft and the route pops; returns `false` if the user chose
+  /// "Continue reviewing", dismissed the sheet, or saving failed.
+  Future<bool> requestExit() async {
+    final handler = _requestExitHandler;
+    if (handler == null) return true;
+    return handler();
+  }
+}
+
 /// Material 3 Expressive Evidence Result Screen:
 /// - Archival canvas with [EnpriveReviewHeroCard] (inset teal mesh banner,
 ///   overlapping Deni Standard LOD medallion, borderless 3-column metrics, and
@@ -47,6 +78,8 @@ class ReviewResultScreen extends StatefulWidget {
   final PolicyUrlRetriever? urlRetriever;
   final PolicyIntakeCoordinator? intakeCoordinator;
   final CompanionBridge? companionBridge;
+  final AppPolicyAssociationReport? initialAssociationReport;
+  final ReviewExitGuardController? exitGuardController;
 
   const ReviewResultScreen({
     super.key,
@@ -61,6 +94,8 @@ class ReviewResultScreen extends StatefulWidget {
     this.urlRetriever,
     this.intakeCoordinator,
     this.companionBridge,
+    this.initialAssociationReport,
+    this.exitGuardController,
   });
 
   @override
@@ -78,6 +113,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
   bool _isExitSheetOpen = false;
   bool _isExiting = false;
   bool _allowImmediatePop = false;
+  Completer<bool>? _pendingExitCompleter;
   bool _isDeleting = false;
   bool _isSpeaking = false;
   bool _isOpeningAttachSheet = false;
@@ -100,7 +136,9 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     super.initState();
     _intakeCoordinator = _resolveIntakeCoordinator();
     _companionBridge = widget.companionBridge ?? CompanionBridge();
+    _activeAssociationReport = widget.initialAssociationReport;
     _initLifecycleFromTruthSource();
+    widget.exitGuardController?.attach(_requestExternalExit);
   }
 
   bool _isPersistedInTruthSource(String receiptId) {
@@ -172,11 +210,15 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     if (oldWidget.companionBridge != widget.companionBridge) {
       _companionBridge = widget.companionBridge ?? CompanionBridge();
     }
+    if (oldWidget.exitGuardController != widget.exitGuardController) {
+      oldWidget.exitGuardController?.detach(_requestExternalExit);
+      widget.exitGuardController?.attach(_requestExternalExit);
+    }
     if (oldWidget.receipt.id != widget.receipt.id ||
         oldWidget.receipt != widget.receipt) {
       _cancelInFlightAttachSilently();
       _activeReceipt = widget.receipt;
-      _activeAssociationReport = null;
+      _activeAssociationReport = widget.initialAssociationReport;
       _allowImmediatePop = false;
       _isExiting = false;
       _initLifecycleFromTruthSource();
@@ -206,6 +248,12 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
 
   @override
   void dispose() {
+    widget.exitGuardController?.detach(_requestExternalExit);
+    final pending = _pendingExitCompleter;
+    if (pending != null && !pending.isCompleted) {
+      pending.complete(true);
+    }
+    _pendingExitCompleter = null;
     _cancelInFlightAttachSilently();
     if (_isSpeaking) {
       widget.coordinator.bridge.stopSpeaking();
@@ -623,49 +671,98 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     }
   }
 
-  Future<void> _handleExitRequest(
+  Future<bool> _requestExternalExit() async {
+    if (_pendingExitCompleter != null) {
+      return _pendingExitCompleter!.future;
+    }
+    if (!mounted || _isExiting) return true;
+    if (_lifecycleState == ReceiptLifecycleState.saving) {
+      return false;
+    }
+
+    // Dismiss any transient sheet/dialog stacked above this ReviewResultScreen
+    // (for example WhyThisFindingSheet, UnifiedPolicyIntakeSheet, or
+    // CloudConsentSheet) before consulting this screen's unsaved-draft guard.
+    final myRoute = ModalRoute.of(context);
+    if (myRoute != null && !myRoute.isCurrent) {
+      Navigator.of(context).popUntil((route) => route == myRoute);
+    }
+    if (!mounted) return true;
+
+    final l10n =
+        AppLocalizations.of(context) ??
+        lookupAppLocalizations(const Locale('en'));
+    return _handleExitRequest(context, l10n);
+  }
+
+  Future<bool> _handleExitRequest(
     BuildContext context,
     AppLocalizations l10n,
   ) async {
-    if (_isExiting) return;
+    if (_pendingExitCompleter != null) {
+      return _pendingExitCompleter!.future;
+    }
+    if (_isExiting) return true;
     if (!_requiresExitConfirmation) {
       _isExiting = true;
       await Navigator.of(context).maybePop();
       if (mounted) _isExiting = false;
-      return;
+      return true;
     }
     if (_isExitSheetOpen || _lifecycleState == ReceiptLifecycleState.saving) {
-      return;
+      return false;
     }
-    _isExitSheetOpen = true;
-    final decision = await UnsavedReviewExitSheet.show(
-      context,
-      isModifiedSavedDraft:
-          _lifecycleState == ReceiptLifecycleState.modifiedSavedDraft,
-    );
-    _isExitSheetOpen = false;
-    if (!mounted || !context.mounted || _isExiting) return;
 
-    switch (decision) {
-      case UnsavedReviewExitDecision.continueReviewing:
-      case null:
-        return;
-      case UnsavedReviewExitDecision.discard:
-        _isExiting = true;
-        setState(() {
-          _lifecycleState = ReceiptLifecycleState.discarded;
-          _allowImmediatePop = true;
-        });
-        Navigator.of(context).pop();
-        return;
-      case UnsavedReviewExitDecision.save:
-        final savedOk = await _handleSave(context, l10n, _activeReceipt);
-        if (savedOk && mounted && context.mounted && !_isExiting) {
+    final completer = Completer<bool>();
+    _pendingExitCompleter = completer;
+    _isExitSheetOpen = true;
+    var exited = false;
+    try {
+      final decision = await UnsavedReviewExitSheet.show(
+        context,
+        isModifiedSavedDraft:
+            _lifecycleState == ReceiptLifecycleState.modifiedSavedDraft,
+      );
+      _isExitSheetOpen = false;
+      if (!mounted || !context.mounted || _isExiting) {
+        exited = !mounted || _isExiting;
+        return exited;
+      }
+
+      switch (decision) {
+        case UnsavedReviewExitDecision.continueReviewing:
+        case null:
+          exited = false;
+          return false;
+        case UnsavedReviewExitDecision.discard:
           _isExiting = true;
-          setState(() => _allowImmediatePop = true);
+          setState(() {
+            _lifecycleState = ReceiptLifecycleState.discarded;
+            _allowImmediatePop = true;
+          });
           Navigator.of(context).pop();
-        }
-        return;
+          exited = true;
+          return true;
+        case UnsavedReviewExitDecision.save:
+          final savedOk = await _handleSave(context, l10n, _activeReceipt);
+          if (savedOk && mounted && context.mounted && !_isExiting) {
+            _isExiting = true;
+            setState(() => _allowImmediatePop = true);
+            Navigator.of(context).pop();
+            exited = true;
+            return true;
+          }
+          exited = false;
+          return false;
+      }
+    } finally {
+      _isExitSheetOpen = false;
+      if (!completer.isCompleted) {
+        completer.complete(exited);
+      }
+      if (identical(_pendingExitCompleter, completer)) {
+        _pendingExitCompleter = null;
+      }
     }
   }
 
@@ -875,6 +972,10 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
           final l10n = AppLocalizations.of(context)!;
           final receipt = _activeReceipt;
           final validSnapshot = _validPermissionSnapshot(receipt);
+          final isSampleReceipt =
+              receipt.sourceSnapshot?.sourceType == PolicySourceType.sample ||
+              receipt.sourceSnapshot?.appIdentityMatchStatus ==
+                  AppIdentityMatchStatus.sampleFixture;
           final m3e = EnpriveM3ETheme.of(context);
           final scheme = m3e.colorScheme;
           final surfaces = context.enpriveSurfaces;
@@ -1053,7 +1154,9 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                   : '${receipt.unverifiedCount}',
                               secondaryMetricLabel:
                                   receipt.permissionReport != null
-                                  ? l10n.statOsGranted
+                                  ? (isSampleReceipt
+                                        ? l10n.sampleSyntheticBadge
+                                        : l10n.statOsGranted)
                                   : l10n.statUnverified,
                               hasPermissionReport:
                                   receipt.permissionReport != null,
@@ -1458,6 +1561,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                   index: entry.key,
                                   totalCount: receipt.findings.length,
                                   l10n: l10n,
+                                  isSampleReceipt: isSampleReceipt,
                                   onTap: () => _openFindingDetails(entry.value),
                                 ),
                               ),
@@ -1468,7 +1572,9 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               receipt.permissionReport!.items.isNotEmpty) ...[
                             const SizedBox(height: 24),
                             Text(
-                              l10n.permissionsOnPhoneTitle,
+                              isSampleReceipt
+                                  ? 'Sample permissions (${l10n.sampleSyntheticBadge})'
+                                  : l10n.permissionsOnPhoneTitle,
                               style: m3e.typography.emphasized.titleMedium
                                   .copyWith(
                                     fontWeight: FontWeight.w800,
@@ -1482,7 +1588,8 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                             ),
                           ],
                           if (validSnapshot != null &&
-                              !receipt.isPermissionOnlyInspection) ...[
+                              !receipt.isPermissionOnlyInspection &&
+                              !isSampleReceipt) ...[
                             const SizedBox(height: 16),
                             EnpriveTactileButton(
                               key: const Key(
@@ -1658,6 +1765,7 @@ class _M3EFindingCard extends StatelessWidget {
   final int index;
   final int totalCount;
   final AppLocalizations l10n;
+  final bool isSampleReceipt;
   final VoidCallback onTap;
 
   const _M3EFindingCard({
@@ -1665,6 +1773,7 @@ class _M3EFindingCard extends StatelessWidget {
     required this.index,
     required this.totalCount,
     required this.l10n,
+    this.isSampleReceipt = false,
     required this.onTap,
   });
 
@@ -1681,10 +1790,15 @@ class _M3EFindingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String verifyLabel = finding.isDeviceObserved
-        ? l10n.observedOnPhoneLabel
+        ? (isSampleReceipt
+              ? l10n.sampleSyntheticBadge
+              : l10n.observedOnPhoneLabel)
         : (finding.isSourceMatched
               ? l10n.quoteVerifiedLabel
-              : l10n.unverifiedClaimLabel);
+              : (isSampleReceipt &&
+                        finding.status == EvidenceStatus.interpretation
+                    ? l10n.sampleSyntheticBadge
+                    : l10n.unverifiedClaimLabel));
 
     return EnpriveFindingM3ECard(
       finding: finding,

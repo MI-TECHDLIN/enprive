@@ -796,6 +796,91 @@ void main() {
         'android.permission.CAMERA',
       ]);
     });
+
+    test('classifyIncomingPayloadLocator classifies URL, shared text, selected text, document, and blank payloads without I/O', () {
+      final coordinator = PolicyIntakeCoordinator(clock: () => fixedClock);
+
+      final chromeUrl = coordinator.classifyIncomingPayloadLocator(
+        const IncomingIntentPayload(
+          kind: 'text_or_url',
+          sourceAction: 'ACTION_SEND',
+          text: 'App Privacy Policy - https://example.org/privacy',
+          subject: 'App Privacy',
+        ),
+      );
+      expect(chromeUrl, isA<UrlPolicyLocator>());
+      expect((chromeUrl as UrlPolicyLocator).rawUrl, 'https://example.org/privacy');
+      expect(chromeUrl.userSubjectTitle, 'App Privacy');
+
+      final sharedText = coordinator.classifyIncomingPayloadLocator(
+        const IncomingIntentPayload(
+          kind: 'text_or_url',
+          sourceAction: 'ACTION_SEND',
+          text: sampleValidPolicy,
+          subject: 'Shared App',
+        ),
+      );
+      expect(sharedText, isA<TextPolicyLocator>());
+      expect(sharedText!.sourceType, PolicySourceType.sharedText);
+      expect((sharedText as TextPolicyLocator).sourceAction, 'ACTION_SEND');
+
+      final selectedText = coordinator.classifyIncomingPayloadLocator(
+        const IncomingIntentPayload(
+          kind: 'text',
+          sourceAction: 'ACTION_PROCESS_TEXT',
+          text: sampleValidPolicy,
+        ),
+      );
+      expect(selectedText, isA<TextPolicyLocator>());
+      expect(selectedText!.sourceType, PolicySourceType.selectedText);
+      expect(
+        (selectedText as TextPolicyLocator).sourceAction,
+        'ACTION_PROCESS_TEXT',
+      );
+
+      final selectedUrl = coordinator.classifyIncomingPayloadLocator(
+        const IncomingIntentPayload(
+          kind: 'text',
+          sourceAction: 'ACTION_PROCESS_TEXT',
+          text: 'https://selected.example.org/terms',
+        ),
+      );
+      expect(selectedUrl, isA<UrlPolicyLocator>());
+      expect(
+        (selectedUrl as UrlPolicyLocator).rawUrl,
+        'https://selected.example.org/terms',
+      );
+
+      final docLocator = coordinator.classifyIncomingPayloadLocator(
+        const IncomingIntentPayload(
+          kind: 'document',
+          sourceAction: 'ACTION_SEND',
+          document: DocumentExtractionOutcome(
+            status: 'ok',
+            documentType: 'pdf',
+            fileName: 'notice.pdf',
+            mimeType: 'application/pdf',
+            byteLength: 1024,
+            extractedText: sampleValidPolicy,
+            userMessage: 'OK',
+          ),
+        ),
+      );
+      expect(docLocator, isA<DocumentPolicyLocator>());
+      expect(
+        (docLocator as DocumentPolicyLocator).isPreExtractedIncomingShare,
+        isTrue,
+      );
+
+      final blank = coordinator.classifyIncomingPayloadLocator(
+        const IncomingIntentPayload(
+          kind: 'text',
+          sourceAction: 'ACTION_PROCESS_TEXT',
+          text: '   \n  ',
+        ),
+      );
+      expect(blank, isNull);
+    });
   });
 
   group('D5.3-D Phase 1: D5.3-B association integration & object invariants', () {

@@ -7,7 +7,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 
 import 'core/theme/enprive_theme.dart';
+import 'domain/intake/policy_intake_models.dart';
 import 'domain/permissions/permission_comparator.dart';
+import 'domain/review/app_policy_association.dart';
 import 'domain/review/review_coordinator.dart';
 import 'domain/review/review_models.dart';
 import 'l10n/app_localizations.dart';
@@ -19,7 +21,7 @@ import 'screens/receipts_screen.dart';
 import 'screens/review_result_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
-import 'services/intake/policy_intake_helper.dart';
+import 'services/intake/policy_intake_coordinator.dart';
 import 'services/network/policy_url_retriever.dart';
 import 'services/platform/companion_bridge.dart';
 import 'services/platform/hybrid_ai_bridge.dart';
@@ -28,6 +30,7 @@ import 'widgets/cloud_consent_sheet.dart';
 import 'widgets/deni_animated_mascot.dart';
 import 'widgets/enprive_tactile_button.dart';
 import 'widgets/installed_app_picker_sheet.dart';
+import 'widgets/intake/unified_policy_intake_sheet.dart';
 import 'widgets/m3e/enprive_m3e_components.dart';
 import 'widgets/navigation/enprive_navigation_shell.dart';
 import 'widgets/review_progress_sheet.dart';
@@ -43,6 +46,7 @@ class EnpriveApp extends StatefulWidget {
   final bool showSplashOnLaunch;
   final Duration splashDuration;
   final PolicyUrlRetriever? urlRetriever;
+  final PolicyIntakeCoordinator? intakeCoordinator;
   final ReceiptRepository? receiptRepository;
 
   const EnpriveApp({
@@ -50,6 +54,7 @@ class EnpriveApp extends StatefulWidget {
     this.showSplashOnLaunch = true,
     this.splashDuration = const Duration(milliseconds: 1400),
     this.urlRetriever,
+    this.intakeCoordinator,
     this.receiptRepository,
   });
 
@@ -126,13 +131,12 @@ class _EnpriveAppState extends State<EnpriveApp> with WidgetsBindingObserver {
         showSplashOnLaunch: widget.showSplashOnLaunch,
         splashDuration: widget.splashDuration,
         urlRetriever: widget.urlRetriever,
+        intakeCoordinator: widget.intakeCoordinator,
         receiptRepository: widget.receiptRepository,
       ),
     );
   }
 }
-
-enum _PasteModalMode { paste, link, document }
 
 class HomeScreen extends StatefulWidget {
   final Locale currentLocale;
@@ -142,6 +146,7 @@ class HomeScreen extends StatefulWidget {
   final bool showSplashOnLaunch;
   final Duration splashDuration;
   final PolicyUrlRetriever? urlRetriever;
+  final PolicyIntakeCoordinator? intakeCoordinator;
   final ReceiptRepository? receiptRepository;
 
   const HomeScreen({
@@ -153,6 +158,7 @@ class HomeScreen extends StatefulWidget {
     this.showSplashOnLaunch = true,
     this.splashDuration = const Duration(milliseconds: 1400),
     this.urlRetriever,
+    this.intakeCoordinator,
     this.receiptRepository,
   });
 
@@ -178,18 +184,30 @@ We do not collect personal identifiers, precise location data, microphone audio,
   final CompanionBridge _companionBridge = CompanionBridge();
   late final PolicyUrlRetriever _urlRetriever =
       widget.urlRetriever ?? PolicyUrlRetriever();
+  late final PolicyIntakeCoordinator _intakeCoordinator =
+      widget.intakeCoordinator ??
+      PolicyIntakeCoordinator(
+        urlRetriever: _urlRetriever,
+        hybridBridge: _bridge,
+      );
   late final ReviewCoordinator _coordinator = ReviewCoordinator(
     bridge: _bridge,
   );
   late final ReceiptRepository _receiptRepo =
       widget.receiptRepository ?? ReceiptRepository();
   final UserPreferencesRepository _prefsRepo = UserPreferencesRepository();
+  final ReviewExitGuardController _reviewExitGuard =
+      ReviewExitGuardController();
   DeviceCapability? _deviceCapability;
   bool _isRunningReview = false;
   bool _isConsentSheetOpen = false;
+  bool _isOpeningIntakeSheet = false;
   bool _isCancellingReview = false;
   int _activeOperationSequence = 0;
+  int _intakeSheetGeneration = 0;
+  int _warmNavigationSequence = 0;
   String? _activeAnalysisRequestId;
+  PolicyUrlCancellationToken? _activeUrlCancelToken;
   String _activeReviewTitle = 'Privacy Policy';
   bool _isCloudReviewInFlight = false;
   DeniPose _activePose = DeniPose.idle;
@@ -239,6 +257,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
   @override
   void dispose() {
+    _cancelActiveHomeOperationSilently(notifyState: false);
     final sub = _incomingPayloadSub;
     if (sub != null) {
       unawaited(sub.cancel());
@@ -508,12 +527,68 @@ We do not collect personal identifiers, precise location data, microphone audio,
     await _openCompanionScreen(invocation);
   }
 
+  void _cancelActiveHomeOperationSilently({bool notifyState = true}) {
+    final reqId = _activeAnalysisRequestId;
+    final wasCloud = _isCloudReviewInFlight;
+    final urlToken = _activeUrlCancelToken;
+    _activeUrlCancelToken = null;
+    _activeOperationSequence++;
+    if (urlToken != null) {
+      urlToken.cancel();
+    }
+    if (notifyState && mounted) {
+      setState(() {
+        _isCancellingReview = false;
+        _isRunningReview = false;
+        _isCloudReviewInFlight = false;
+        _isConsentSheetOpen = false;
+        _activeAnalysisRequestId = null;
+        _activePose = DeniPose.idle;
+      });
+    } else {
+      _isCancellingReview = false;
+      _isRunningReview = false;
+      _isCloudReviewInFlight = false;
+      _isConsentSheetOpen = false;
+      _activeAnalysisRequestId = null;
+    }
+    if (reqId != null) {
+      final cancelId = wasCloud ? '${reqId}_appcheck' : reqId;
+      unawaited(_bridge.cancelAnalysis(requestId: cancelId));
+    }
+  }
+
+  /// Coordinates warm OS intents and Quick Settings invocations with any open
+  /// [ReviewResultScreen] unsaved draft, active inference, or open sheet.
+  ///
+  /// Returns `true` when navigation may proceed cleanly on the root route, or
+  /// `false` when the user chose to stay on an unsaved review draft or a newer
+  /// warm navigation superseded this call.
+  Future<bool> _prepareForWarmNavigation() async {
+    if (!mounted) return false;
+    final navSeq = ++_warmNavigationSequence;
+
+    if (_reviewExitGuard.hasActiveScreen) {
+      final exited = await _reviewExitGuard.requestExit();
+      if (!mounted || !exited || navSeq != _warmNavigationSequence) {
+        return false;
+      }
+    }
+
+    _cancelActiveHomeOperationSilently();
+    _intakeSheetGeneration++;
+    _isOpeningIntakeSheet = false;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    return mounted && navSeq == _warmNavigationSequence;
+  }
+
   Future<void> _openCompanionScreen(CompanionInvocation? invocation) async {
     if (!mounted) return;
-    // Clear any open secondary/modal routes before opening Quick Settings Companion
-    // so warm invocations never stack on top of stale ReviewResult/Settings routes.
+    // Clear any open secondary/modal routes before opening Quick Settings
+    // Companion while honoring ReviewResultScreen's unsaved-draft exit guard.
     if (_isCompanionRouteOpen || invocation != null) {
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      final canProceed = await _prepareForWarmNavigation();
+      if (!canProceed || !mounted) return;
     }
     _isCompanionRouteOpen = true;
     try {
@@ -526,6 +601,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
             companionBridge: _companionBridge,
             coordinator: _coordinator,
             urlRetriever: _urlRetriever,
+            intakeCoordinator: _intakeCoordinator,
             savedReceipts: List<PolicyReviewReceipt>.unmodifiable(_savedReceipts),
             onSaveReceipt: _saveReceipt,
             receiptRepository: _receiptRepo,
@@ -544,23 +620,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
     await _handleIncomingPayload(payload);
   }
 
-  String? _resolveCustomTitle(
-    String rawTitle,
-    AppLocalizations? l10n, {
-    bool ignoreSelectedPlaceholder = true,
-  }) {
-    final trimmed = rawTitle.trim();
-    if (trimmed.isEmpty ||
-        trimmed == 'Privacy Policy' ||
-        (l10n != null && trimmed == l10n.defaultSubjectTitle) ||
-        (ignoreSelectedPlaceholder &&
-            l10n != null &&
-            trimmed == l10n.selectedExcerptTitle)) {
-      return null;
-    }
-    return trimmed;
-  }
-
   Future<void> _handleIncomingPayload(IncomingIntentPayload payload) async {
     if (!mounted) return;
     if (_isSplashVisible) {
@@ -569,54 +628,207 @@ We do not collect personal identifiers, precise location data, microphone audio,
       return;
     }
 
-    // Bring incoming shares / text selections cleanly to the foreground Check tab
-    // without leaving them buried behind an already pushed secondary route.
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    final locator = _intakeCoordinator.classifyIncomingPayloadLocator(payload);
+    if (locator == null) return;
+
+    // Honor ReviewResultScreen's unsaved-draft guard and cancel stale sheets /
+    // in-flight operations before foregrounding the incoming share or selection.
+    final canProceed = await _prepareForWarmNavigation();
+    if (!canProceed || !mounted) return;
+
     if (_selectedTabIndex != 0) {
       setState(() => _selectedTabIndex = 0);
     }
 
-    if (payload.kind == 'document') {
-      final doc = payload.document;
-      if (doc == null || doc.isCancelled) return;
-      await _handleDocumentOutcome(
-        doc,
-        userSubjectTitle: payload.subject ?? '',
-      );
-      return;
-    }
-
-    final rawText = (payload.text ?? '').trim();
-    if (rawText.isEmpty) return;
-
-    final sharedUrl = PolicyUrlRetriever.extractSharedUrl(rawText);
-    if (sharedUrl != null) {
-      await _executeUrlReview(
-        rawUrl: sharedUrl,
-        userSubjectTitle: payload.subject ?? '',
-      );
-      return;
-    }
-
-    setState(() {
-      _activePose = DeniPose.thinking;
-    });
-
-    final l10n = AppLocalizations.of(context);
-    if (l10n != null) {
-      _showPasteModal(
-        context,
-        l10n,
-        initialText: rawText,
-        initialSourceType: payload.sourceAction == 'ACTION_SEND'
-            ? PolicySourceType.sharedText
-            : PolicySourceType.selectedText,
-        initialSubject: payload.subject,
-      );
+    switch (locator) {
+      case TextPolicyLocator():
+        setState(() {
+          _activePose = DeniPose.thinking;
+        });
+        await _openPolicyIntakeSheet(initialLocator: locator);
+      case UrlPolicyLocator():
+        final provisionalTitle =
+            locator.userSubjectTitle != null &&
+                locator.userSubjectTitle!.trim().isNotEmpty
+            ? locator.userSubjectTitle!.trim()
+            : locator.rawUrl;
+        await _executeHeadlessIncomingIntake(
+          payload: payload,
+          provisionalTitle: provisionalTitle,
+        );
+      case DocumentPolicyLocator():
+        final doc = payload.document;
+        if (doc != null && doc.isCancelled) return;
+        final provisionalTitle =
+            locator.userSubjectTitle != null &&
+                locator.userSubjectTitle!.trim().isNotEmpty
+            ? locator.userSubjectTitle!.trim()
+            : (locator.fileName?.trim().isNotEmpty == true
+                  ? locator.fileName!.trim()
+                  : 'Document Intake');
+        await _executeHeadlessIncomingIntake(
+          payload: payload,
+          provisionalTitle: provisionalTitle,
+        );
+      case SampleFixturePolicyLocator():
+        break;
     }
   }
 
-  Future<void> _openReviewResult(PolicyReviewReceipt receipt) async {
+  Future<void> _executeHeadlessIncomingIntake({
+    required IncomingIntentPayload payload,
+    required String provisionalTitle,
+  }) async {
+    if (!mounted || _isRunningReview || _isConsentSheetOpen) return;
+    final opSeq = ++_activeOperationSequence;
+    final cancelToken = PolicyUrlCancellationToken();
+    _activeUrlCancelToken = cancelToken;
+
+    setState(() {
+      _isRunningReview = true;
+      _isCancellingReview = false;
+      _activeAnalysisRequestId = null;
+      _activeReviewTitle = provisionalTitle;
+      _isCloudReviewInFlight = false;
+      _activePose = DeniPose.thinking;
+    });
+
+    final PolicyIntakeOutcome outcome;
+    try {
+      outcome = await _intakeCoordinator.captureIncomingPayload(
+        payload: payload,
+        cancelToken: cancelToken,
+      );
+    } finally {
+      if (identical(_activeUrlCancelToken, cancelToken)) {
+        _activeUrlCancelToken = null;
+      }
+      if (mounted && opSeq == _activeOperationSequence) {
+        setState(() {
+          _isRunningReview = false;
+        });
+      }
+    }
+
+    if (!mounted ||
+        opSeq != _activeOperationSequence ||
+        cancelToken.isCancelled) {
+      return;
+    }
+
+    switch (outcome) {
+      case final PolicyIntakeSuccess success:
+        await _runReviewForIntakeSuccess(success);
+      case final PolicyIntakeFailure failure:
+        if (failure.isCancelled) {
+          setState(() {
+            _activePose = DeniPose.idle;
+          });
+          return;
+        }
+        // Fail-closed recovery: keep locator & error details and open the
+        // unified sheet prefilled instead of presenting a failed fetch or
+        // failed document extraction as a captured review receipt.
+        await _openPolicyIntakeSheet(initialFailure: failure);
+    }
+  }
+
+  Future<SelectedAppReference?> _selectOptionalInstalledAppForIntake(
+    BuildContext sheetContext,
+  ) async {
+    final choice = await InstalledAppPickerSheet.show(
+      sheetContext,
+      bridge: _bridge,
+      eduTrackPolicyText: '',
+      calmMathPolicyText: '',
+      savedReceipts: List<PolicyReviewReceipt>.unmodifiable(_savedReceipts),
+      receiptRepository: _receiptRepo,
+    );
+    if (choice == null || choice.isSyntheticSample) return null;
+    final snap = choice.permissionSnapshot;
+    if (snap.packageName.trim().isEmpty) return null;
+    return SelectedAppReference(
+      packageName: snap.packageName,
+      appName: choice.subjectTitle,
+      permissionSnapshot: snap,
+      peerCandidates: choice.peerCandidates,
+      isLocked: false,
+    );
+  }
+
+  Future<void> _openPolicyIntakeSheet({
+    PolicyLocator? initialLocator,
+    PolicyIntakeFailure? initialFailure,
+    PolicyIntakeMode? initialMode,
+  }) async {
+    if (!mounted ||
+        _isRunningReview ||
+        _isConsentSheetOpen ||
+        _isOpeningIntakeSheet) {
+      return;
+    }
+    final sheetGen = ++_intakeSheetGeneration;
+    _isOpeningIntakeSheet = true;
+    PolicyIntakeSuccess? intake;
+    try {
+      intake = await UnifiedPolicyIntakeSheet.show(
+        context,
+        config: PolicyIntakeSheetConfig(
+          coordinator: _intakeCoordinator,
+          initialMode: initialMode,
+          initialLocator: initialLocator,
+          initialFailure: initialFailure,
+          onSelectInstalledApp: _selectOptionalInstalledAppForIntake,
+          companionBridge: _companionBridge,
+        ),
+      );
+    } finally {
+      if (sheetGen == _intakeSheetGeneration) {
+        _isOpeningIntakeSheet = false;
+      }
+    }
+
+    if (!mounted || sheetGen != _intakeSheetGeneration) return;
+    if (intake == null) {
+      setState(() {
+        _activePose = DeniPose.idle;
+      });
+      return;
+    }
+
+    await _runReviewForIntakeSuccess(intake);
+  }
+
+  Future<void> _runReviewForIntakeSuccess(PolicyIntakeSuccess intake) async {
+    if (!mounted || _isRunningReview || _isConsentSheetOpen) return;
+    final captured = intake.capturedSnapshot;
+    var appPermissions = intake.selectedApp?.permissionSnapshot;
+
+    if (intake.selectedApp != null &&
+        appPermissions == null &&
+        intake.selectedApp!.trustedSampleFixture == null) {
+      final hydrateSeq = _activeOperationSequence;
+      final hydrated = await _intakeCoordinator.hydrateAppPermissions(
+        intake.selectedApp!,
+      );
+      if (!mounted || hydrateSeq != _activeOperationSequence) return;
+      appPermissions = hydrated.permissionSnapshot;
+    }
+
+    await _executePolicyReview(
+      subjectTitle: captured.subjectTitle,
+      sourceLabel: captured.sourceLabel,
+      policyText: captured.normalizedPolicyText,
+      appPermissions: appPermissions,
+      sourceSnapshot: captured.sourceSnapshot,
+      associationReport: intake.associationReport,
+    );
+  }
+
+  Future<void> _openReviewResult(
+    PolicyReviewReceipt receipt, {
+    AppPolicyAssociationReport? associationReport,
+  }) async {
     if (!mounted) return;
     setState(() {
       _activePose = switch (receipt.overallState) {
@@ -633,6 +845,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
           coordinator: _coordinator,
           cloudConsentGrantedForSession: false,
           urlRetriever: _urlRetriever,
+          intakeCoordinator: _intakeCoordinator,
+          companionBridge: _companionBridge,
+          initialAssociationReport: associationReport,
+          exitGuardController: _reviewExitGuard,
           onSaveReceipt: _saveReceipt,
           onDeleteReceipt: _deleteReceipt,
           receiptRepository: _receiptRepo,
@@ -645,20 +861,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
 
   void _cancelActiveReview() {
     if (!_isRunningReview) return;
-    final reqId = _activeAnalysisRequestId;
     final l10n = AppLocalizations.of(context);
-    _activeOperationSequence++;
-    setState(() {
-      _isCancellingReview = true;
-      _isRunningReview = false;
-      _isCloudReviewInFlight = false;
-      _activeAnalysisRequestId = null;
-      _activePose = DeniPose.idle;
-      _isCancellingReview = false;
-    });
-    if (reqId != null) {
-      unawaited(_bridge.cancelAnalysis(requestId: reqId));
-    } else {
+    final hadAnalysis = _activeAnalysisRequestId != null;
+    _cancelActiveHomeOperationSilently();
+    if (!hadAnalysis) {
       unawaited(_bridge.cancelAnalysis());
     }
     if (l10n != null && mounted) {
@@ -671,97 +877,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
           ),
         );
     }
-  }
-
-  Future<void> _executeUrlReview({
-    required String rawUrl,
-    String userSubjectTitle = '',
-  }) async {
-    if (_isRunningReview || _isConsentSheetOpen) return;
-    final l10n = AppLocalizations.of(context);
-    final customTitle = _resolveCustomTitle(userSubjectTitle, l10n);
-    final provisionalTitle =
-        customTitle ?? PolicyUrlRetriever.deriveSubjectTitle(rawUrl);
-    final opSeq = ++_activeOperationSequence;
-
-    setState(() {
-      _isRunningReview = true;
-      _isCancellingReview = false;
-      _activeAnalysisRequestId = null;
-      _activeReviewTitle = provisionalTitle;
-      _isCloudReviewInFlight = false;
-      _activePose = DeniPose.thinking;
-    });
-
-    final PolicyUrlRetrievalResult retrieval;
-    try {
-      retrieval = await _urlRetriever.fetchPolicy(rawUrl);
-    } finally {
-      if (mounted && opSeq == _activeOperationSequence) {
-        setState(() {
-          _isRunningReview = false;
-        });
-      }
-    }
-    if (!mounted || opSeq != _activeOperationSequence) return;
-
-    final resolvedSubject =
-        customTitle ??
-        PolicyUrlRetriever.deriveSubjectTitle(
-          retrieval.canonicalUrl ?? retrieval.requestedUrl,
-        );
-
-    if (!retrieval.isUsablePolicy) {
-      final failureReceipt = PolicyIntakeHelper.buildUrlFailureReceipt(
-        subjectTitle: resolvedSubject,
-        retrieval: retrieval,
-        languageCode: widget.currentLocale.languageCode,
-      );
-      await _openReviewResult(failureReceipt);
-      return;
-    }
-
-    await _executePolicyReview(
-      subjectTitle: resolvedSubject,
-      sourceLabel: retrieval.canonicalUrl ?? retrieval.requestedUrl,
-      policyText: retrieval.extractedText!,
-      sourceSnapshot: retrieval.sourceSnapshot,
-    );
-  }
-
-  Future<void> _handleDocumentOutcome(
-    DocumentExtractionOutcome doc, {
-    String userSubjectTitle = '',
-  }) async {
-    final l10n = AppLocalizations.of(context);
-    final customTitle = _resolveCustomTitle(userSubjectTitle, l10n);
-    final subject =
-        customTitle ??
-        (doc.fileName != null && doc.fileName!.trim().isNotEmpty
-            ? doc.fileName!.trim()
-            : 'Document Intake');
-
-    if (!doc.isSuccess) {
-      final failureReceipt = PolicyIntakeHelper.buildDocumentFailureReceipt(
-        subjectTitle: subject,
-        doc: doc,
-        languageCode: widget.currentLocale.languageCode,
-      );
-      await _openReviewResult(failureReceipt);
-      return;
-    }
-
-    final snapshot = PolicyIntakeHelper.snapshotFromDocumentSuccess(doc);
-    final sourceLabel =
-        doc.fileName != null && doc.fileName!.trim().isNotEmpty
-        ? 'Document · ${doc.fileName!.trim()}'
-        : 'Document Intake';
-    await _executePolicyReview(
-      subjectTitle: subject,
-      sourceLabel: sourceLabel,
-      policyText: doc.extractedText,
-      sourceSnapshot: snapshot,
-    );
   }
 
   Future<String> _loadFixtureText(String assetPath, String fallback) async {
@@ -780,6 +895,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
     required String policyText,
     AppPermissionSnapshot? appPermissions,
     PolicySourceSnapshot? sourceSnapshot,
+    AppPolicyAssociationReport? associationReport,
     String? canonicalRedactedPayload,
     bool cloudConsent = false,
     bool forceLocalManualScan = false,
@@ -857,7 +973,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
           decision = await CloudConsentSheet.show(
             context,
             subjectTitle: subjectTitle,
-            policyText: canonicalPayload,
+            policyText: policyText,
             canonicalRedactedPreview: canonicalPayload,
             deviceReason: outcome.errorReason,
           );
@@ -870,7 +986,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
             _isConsentSheetOpen = false;
           }
         }
-        if (!mounted) return;
+        if (!mounted || opSeq != _activeOperationSequence) return;
         switch (decision) {
           case CloudConsentDecision.useCloudOnce:
             await _executePolicyReview(
@@ -879,6 +995,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
               policyText: policyText,
               appPermissions: appPermissions,
               sourceSnapshot: sourceSnapshot,
+              associationReport: associationReport,
               canonicalRedactedPayload: canonicalPayload,
               cloudConsent: true,
             );
@@ -890,6 +1007,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
               policyText: policyText,
               appPermissions: appPermissions,
               sourceSnapshot: sourceSnapshot,
+              associationReport: associationReport,
               forceLocalManualScan: true,
             );
             return;
@@ -906,10 +1024,13 @@ We do not collect personal identifiers, precise location data, microphone audio,
       return;
     }
 
-    await _openReviewResult(receipt);
+    await _openReviewResult(receipt, associationReport: associationReport);
   }
 
   Future<void> _runQuickSampleReview({required bool isEduTrack}) async {
+    if (_isRunningReview || _isConsentSheetOpen || _isOpeningIntakeSheet) {
+      return;
+    }
     final policyText = isEduTrack
         ? await _loadFixtureText(
             'assets/fixtures/synthetic_policy_edutrack.txt',
@@ -920,20 +1041,25 @@ We do not collect personal identifiers, precise location data, microphone audio,
             _fallbackCalmMathFixture,
           );
     if (!mounted) return;
-    await _executePolicyReview(
-      subjectTitle: isEduTrack ? 'EduTrack Classroom' : 'CalmMath Kids',
-      sourceLabel: AppLocalizations.of(context)?.sampleSyntheticBadge ??
-          'Synthetic example',
-      policyText: policyText,
-      appPermissions: isEduTrack
-          ? PermissionComparator.demoEduTrackSnapshot
-          : PermissionComparator.demoCalmMathSnapshot,
-      sourceSnapshot: PolicyIntakeHelper.snapshotForManualOrSharedText(
-        sourceType: PolicySourceType.sample,
-        text: policyText,
-        hasAppPermissions: true,
+    final fixture = isEduTrack
+        ? TrustedSampleFixture.eduTrackDemo
+        : TrustedSampleFixture.calmMathDemo;
+    final permSnapshot = isEduTrack
+        ? PermissionComparator.demoEduTrackSnapshot
+        : PermissionComparator.demoCalmMathSnapshot;
+    final outcome = _intakeCoordinator.captureSampleFixture(
+      locator: SampleFixturePolicyLocator(
+        fixture: fixture,
+        policyText: policyText,
       ),
+      permissionSnapshot: permSnapshot,
+      sourceLabel:
+          AppLocalizations.of(context)?.sampleSyntheticBadge ??
+          'Synthetic example',
     );
+    if (outcome is PolicyIntakeSuccess) {
+      await _runReviewForIntakeSuccess(outcome);
+    }
   }
 
   @override
@@ -957,6 +1083,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
               receipts: _savedReceipts,
               coordinator: _coordinator,
               urlRetriever: _urlRetriever,
+              intakeCoordinator: _intakeCoordinator,
+              companionBridge: _companionBridge,
+              reviewExitGuard: _reviewExitGuard,
               scrollController: _receiptsScrollController,
               onDeleteReceipt: _deleteReceipt,
               onSaveReceipt: _saveReceipt,
@@ -1136,7 +1265,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
                 isSecondary: true,
                 onPressed: () {
                   setState(() => _activePose = DeniPose.thinking);
-                  _showPasteModal(context, l10n);
+                  unawaited(_openPolicyIntakeSheet());
                 },
               ),
               const SizedBox(height: 14),
@@ -1376,6 +1505,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
                                   receipt: receipt,
                                   coordinator: _coordinator,
                                   urlRetriever: _urlRetriever,
+                                  intakeCoordinator: _intakeCoordinator,
+                                  companionBridge: _companionBridge,
+                                  exitGuardController: _reviewExitGuard,
                                   onSaveReceipt: _saveReceipt,
                                   onDeleteReceipt: _deleteReceipt,
                                   receiptRepository: _receiptRepo,
@@ -1498,6 +1630,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
             coordinator: _coordinator,
             cloudConsentGrantedForSession: false,
             urlRetriever: _urlRetriever,
+            intakeCoordinator: _intakeCoordinator,
+            companionBridge: _companionBridge,
+            exitGuardController: _reviewExitGuard,
             onSaveReceipt: _saveReceipt,
             onDeleteReceipt: _deleteReceipt,
             receiptRepository: _receiptRepo,
@@ -1509,372 +1644,26 @@ We do not collect personal identifiers, precise location data, microphone audio,
       return;
     }
 
-    await _executePolicyReview(
-      subjectTitle: selected.subjectTitle,
-      sourceLabel: selected.sourceLabel,
-      policyText: selected.policyText,
-      appPermissions: selected.permissionSnapshot,
-      sourceSnapshot: PolicyIntakeHelper.snapshotForManualOrSharedText(
-        sourceType: PolicySourceType.sample,
-        text: selected.policyText,
-        hasAppPermissions: true,
-      ),
-    );
-  }
-
-  void _showPasteModal(
-    BuildContext context,
-    AppLocalizations l10n, {
-    String? initialText,
-    PolicySourceType? initialSourceType,
-    String? initialSubject,
-  }) {
-    final controller = TextEditingController(text: initialText ?? '');
-    final urlController = TextEditingController();
-    final trimmedInitialSubject = initialSubject?.trim() ?? '';
-    final titleController = TextEditingController(
-      text: trimmedInitialSubject.isNotEmpty
-          ? trimmedInitialSubject
-          : (initialText != null && initialText.isNotEmpty
-                ? l10n.selectedExcerptTitle
-                : l10n.defaultSubjectTitle),
-    );
-    var mode = _PasteModalMode.paste;
-    String? modalError;
-    bool isPickingDocument = false;
-    String? loadedSampleText;
-
-    showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return EnpriveM3EBridgeScope.ensure(
-          sheetContext,
-          child: StatefulBuilder(
-            builder: (sheetContext, setSheetState) {
-              final m3e = EnpriveM3ETheme.of(sheetContext);
-              final scheme = m3e.colorScheme;
-              final surfaces = sheetContext.enpriveSurfaces;
-              final typeExt = sheetContext.enpriveType;
-
-              return Material(
-                color: scheme.surface,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(32),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: SafeArea(
-                  top: false,
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.only(
-                      bottom:
-                          MediaQuery.of(sheetContext).viewInsets.bottom + 24,
-                      left: 24,
-                      right: 24,
-                      top: 20,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: scheme.outlineVariant,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                l10n.btnPasteTerms,
-                                style: m3e.typography.emphasized.headlineMedium
-                                    .copyWith(color: scheme.onSurface),
-                              ),
-                            ),
-                            if (mode == _PasteModalMode.paste)
-                              TextButton(
-                                onPressed: () async {
-                                  final sample = await _loadFixtureText(
-                                    'assets/fixtures/synthetic_policy_edutrack.txt',
-                                    _fallbackEduTrackFixture,
-                                  );
-                                  loadedSampleText = sample.trim();
-                                  titleController.text =
-                                      'EduTrack Classroom Companion';
-                                  controller.text = sample;
-                                },
-                                child: Text(
-                                  l10n.trySampleText,
-                                  style: m3e.typography.emphasized.labelLarge
-                                      .copyWith(color: scheme.primary),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Segmented Source Mode Pills: Paste text vs Policy link vs Document
-                        SizedBox(
-                          width: double.infinity,
-                          child: M3ESegmentedButton<_PasteModalMode>(
-                            showSelectedIcon: false,
-                            segments: [
-                              M3ESegment<_PasteModalMode>(
-                                value: _PasteModalMode.paste,
-                                icon: const Icon(LucideIcons.fileText, size: 16),
-                                label: l10n.modePasteText,
-                              ),
-                              M3ESegment<_PasteModalMode>(
-                                value: _PasteModalMode.link,
-                                icon: const Icon(LucideIcons.link2, size: 16),
-                                label: l10n.modePolicyLink,
-                              ),
-                              const M3ESegment<_PasteModalMode>(
-                                value: _PasteModalMode.document,
-                                icon: Icon(LucideIcons.fileUp, size: 16),
-                                label: 'Document',
-                              ),
-                            ],
-                            selected: {mode},
-                            onSelectionChanged: (selection) {
-                              if (isPickingDocument) return;
-                              setSheetState(() {
-                                mode = selection.first;
-                                modalError = null;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        TextField(
-                          controller: titleController,
-                          style: m3e.typeScale.bodyLarge.copyWith(
-                            color: scheme.onSurface,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: l10n.hintAppName,
-                            filled: true,
-                            fillColor: surfaces.card,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                color: surfaces.hairlineBorder,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                color: surfaces.hairlineBorder,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        if (mode == _PasteModalMode.link) ...[
-                          TextField(
-                            controller: urlController,
-                            keyboardType: TextInputType.url,
-                            onChanged: (_) {
-                              if (modalError != null) {
-                                setSheetState(() => modalError = null);
-                              }
-                            },
-                            style: m3e.typeScale.bodyMedium.copyWith(
-                              color: scheme.onSurface,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'https://example.com/privacy-policy',
-                              prefixIcon: Icon(
-                                LucideIcons.link2,
-                                size: 18,
-                                color: scheme.primary,
-                              ),
-                              errorText: modalError,
-                              errorMaxLines: 4,
-                              filled: true,
-                              fillColor: surfaces.card,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(
-                                  color: surfaces.hairlineBorder,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(
-                                  color: surfaces.hairlineBorder,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Fetches the public URL directly. User-supplied links do not prove app ownership.',
-                            style: m3e.typeScale.bodySmall.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ] else if (mode == _PasteModalMode.document)
-                          EnpriveMaterialCardSurface(
-                            variant: EnpriveCardVariant.outlined,
-                            backgroundColor: surfaces.card,
-                            borderRadius: BorderRadius.circular(18),
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Import PDF, TXT, or DOCX policy file',
-                                  style: m3e.typeScale.titleSmall.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: scheme.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'Text is extracted strictly on this phone with a local SHA-256 snapshot hash. Files never upload directly.',
-                                  style: m3e.typeScale.bodySmall.copyWith(
-                                    color: scheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                if (modalError != null) ...[
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    modalError!,
-                                    style: m3e.typeScale.bodySmall.copyWith(
-                                      color: scheme.error,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          )
-                        else
-                          TextField(
-                            controller: controller,
-                            maxLines: 5,
-                            style: typeExt.policyQuotation.copyWith(
-                              color: scheme.onSurface,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: l10n.hintPastePolicy,
-                              filled: true,
-                              fillColor: surfaces.quoteSurface,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(18),
-                                borderSide: BorderSide(
-                                  color: surfaces.hairlineBorder,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(18),
-                                borderSide: BorderSide(
-                                  color: surfaces.hairlineBorder,
-                                ),
-                              ),
-                            ),
-                          ),
-                        const SizedBox(height: 18),
-                        EnpriveTactileButton(
-                          label: isPickingDocument
-                              ? 'Working…'
-                              : (mode == _PasteModalMode.document
-                                    ? 'Choose document (PDF, TXT, DOCX)'
-                                    : l10n.btnReviewOnPhone),
-                          onPressed: isPickingDocument
-                              ? null
-                              : () async {
-                                  if (mode == _PasteModalMode.link) {
-                                    final rawUrl = urlController.text.trim();
-                                    if (rawUrl.isEmpty) {
-                                      setSheetState(() {
-                                        modalError =
-                                            'Enter a public https:// privacy policy URL.';
-                                      });
-                                      return;
-                                    }
-                                    final userTitle = titleController.text.trim();
-                                    if (sheetContext.mounted) {
-                                      Navigator.pop(sheetContext);
-                                    }
-                                    await _executeUrlReview(
-                                      rawUrl: rawUrl,
-                                      userSubjectTitle: userTitle,
-                                    );
-                                    return;
-                                  }
-
-                                  if (mode == _PasteModalMode.document) {
-                                    setSheetState(() {
-                                      isPickingDocument = true;
-                                      modalError = null;
-                                    });
-                                    final doc = await _bridge
-                                        .pickAndExtractDocument();
-                                    if (!sheetContext.mounted) return;
-                                    if (doc.isCancelled) {
-                                      setSheetState(
-                                        () => isPickingDocument = false,
-                                      );
-                                      return;
-                                    }
-                                    final userTitle = titleController.text.trim();
-                                    Navigator.pop(sheetContext);
-                                    await _handleDocumentOutcome(
-                                      doc,
-                                      userSubjectTitle: userTitle,
-                                    );
-                                    return;
-                                  }
-
-                                  final rawText = controller.text.trim();
-                                  final subject =
-                                      titleController.text.trim().isEmpty
-                                      ? l10n.defaultSubjectTitle
-                                      : titleController.text.trim();
-                                  final isLoadedSample =
-                                      loadedSampleText != null &&
-                                      rawText == loadedSampleText;
-                                  final sourceType = isLoadedSample
-                                      ? PolicySourceType.sample
-                                      : (initialSourceType ??
-                                            PolicySourceType.pastedText);
-                                  Navigator.pop(sheetContext);
-                                  await _executePolicyReview(
-                                    subjectTitle: subject,
-                                    sourceLabel: isLoadedSample
-                                        ? (l10n.sampleSyntheticBadge)
-                                        : 'Pasted Snapshot',
-                                    policyText: rawText,
-                                    sourceSnapshot: PolicyIntakeHelper
-                                        .snapshotForManualOrSharedText(
-                                          sourceType: sourceType,
-                                          text: rawText,
-                                        ),
-                                  );
-                                },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
+    if (selected.isSyntheticSample) {
+      final isEduTrack =
+          selected.permissionSnapshot.packageName.toLowerCase() ==
+          TrustedSampleFixture.eduTrackDemo.packageName.toLowerCase();
+      final fixture = isEduTrack
+          ? TrustedSampleFixture.eduTrackDemo
+          : TrustedSampleFixture.calmMathDemo;
+      final outcome = _intakeCoordinator.captureSampleFixture(
+        locator: SampleFixturePolicyLocator(
+          fixture: fixture,
+          policyText: selected.policyText,
+        ),
+        permissionSnapshot: selected.permissionSnapshot,
+        sourceLabel: l10n.sampleSyntheticBadge,
+      );
+      if (outcome is PolicyIntakeSuccess) {
+        await _runReviewForIntakeSuccess(outcome);
+      }
+      return;
+    }
   }
 }
 
