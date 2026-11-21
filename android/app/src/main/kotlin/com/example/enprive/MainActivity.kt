@@ -7,7 +7,6 @@ import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Icon
 import android.net.Uri
@@ -33,9 +32,6 @@ import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.ThinkingLevel
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.ai.type.thinkingConfig
-import com.google.firebase.appcheck.appCheck
-import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
-import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -87,21 +83,6 @@ class MainActivity : FlutterActivity() {
             }
         } catch (e: Exception) {
             Log.w(TAG, "TextToSpeech init note (${e.javaClass.simpleName})")
-        }
-
-        // Install App Check Provider (Debug for emulator/dev, Play Integrity for release)
-        try {
-            val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-            Firebase.appCheck.installAppCheckProviderFactory(
-                if (isDebuggable) {
-                    DebugAppCheckProviderFactory.getInstance()
-                } else {
-                    PlayIntegrityAppCheckProviderFactory.getInstance()
-                }
-            )
-            Log.d(TAG, "Firebase App Check initialized (debug=$isDebuggable)")
-        } catch (e: Exception) {
-            Log.w(TAG, "Firebase App Check initialization note (${e.javaClass.simpleName})")
         }
     }
 
