@@ -1449,6 +1449,28 @@
 
 ---
 
+## Iteration 44: Step A / B1 - Android DOCX Parser Remediation (2026-11-21)
+
+- **Branch / Commit State**: `fm/enprive-docx-fix` atop `feature/m3-expressive-rebrand` HEAD `67e6046`; committed locally as `fix(docx): extract DOCX with a hardened streaming pull parser on Android` (not pushed; push and PR into `feature/m3-expressive-rebrand` await approval). Model: **Claude Opus 5.5**.
+- **Root Cause (P1)**: `DocumentTextExtractor.extractDocx` built a DOM `DocumentBuilderFactory` and called five Xerces `setFeature`s. Android's Harmony `DocumentBuilderFactoryImpl` throws `ParserConfigurationException` on the first one, and the blanket `catch (_: Exception)` reported every DOCX (valid or not) as `corrupt` / "Could not parse DOCX XML content cleanly." Host tests passed because the JVM resolves to Xerces. Reproduced end to end on the Android 16 emulator through the unified intake sheet (ReviewResultScreen -> Attach updated privacy policy -> Document -> SAF).
+- **What Was Built & Modified**:
+  1. **Streaming extractor (`DocumentTextExtractor.kt`)**: Replaced the DOM block and recursive walk with `readDocxText`, an `XmlPullParser.nextToken()` loop. `FEATURE_PROCESS_NAMESPACES` on and `FEATURE_PROCESS_DOCDECL` explicitly off (never `android.util.Xml.newPullParser()`, which turns it on). Fails closed on any `DOCDECL`, on non-predefined `ENTITY_REF`, past element depth 512 (`MAX_DOCX_ELEMENT_DEPTH`), and on unclosed or missing root elements; output capped at `MAX_DOCX_TEXT_CHARS`. Paragraph/row/cell/tab/break semantics and `delText`/`instrText` skipping match the DOM walk; CDATA text is now kept (the DOM walk dropped it). ZIP entry/uncompressed/`document.xml` caps, OLE2 and `EncryptedPackage` detection, and all statuses and messages are unchanged.
+  2. **Failure separation**: `XmlPullParserException`, `IOException` and fail-closed rejections map to `corrupt`; the text cap maps to `too_large` ("DOCX text stream exceeds local safety limits."); parser creation/configuration or any other failure maps to the existing `read_error` status with "Could not extract DOCX document locally." and logs only the exception class name (`EnpriveDocExtractor`). No Dart mapping change was needed.
+  3. **Injectable parser**: `extractFromBytes` / `extractDocx` take an optional `xmlPullParserFactory` (defaults to the platform `XmlPullParserFactory`); the extractor configures every parser it receives.
+  4. **`DocumentUriExtractor.kt`**: Moved `MainActivity.extractDocumentFromUri` verbatim into `DocumentUriExtractor.extract(contentResolver, uri, declaredMime)` so the content:// path (metadata, size cap, permission handling) runs in instrumented tests. Behaviour and log tag unchanged; MainActivity's two call sites now delegate.
+  5. **Tests**: Host JVM (`DocumentTextExtractorTest.kt` + `HostXmlPullParsers.kt`): a SAX-backed `XmlPullParser` (android.jar exposes no StAX) that reports DTDs instead of refusing them, plus a scripted token parser, cover layout (paragraphs, tables, tabs, breaks, entities), namespaces, deleted text/field instructions, DOCTYPE, external entity, billion laughs, depth cap (512 ok / 513 / 60,000), output cap, truncated/no-root input, parser configuration and setup failures, entry/size limits, `EncryptedPackage`, and missing `document.xml`. Instrumented (`src/androidTest`, `AndroidJUnitRunner`, 16 tests) runs the production parser on device with a real LibreOffice 7.6.7.2 DOCX (`enprive_libreoffice_policy.docx`, generated from the bundled `.fodt` with tracked deletion and a `PAGE` field), the synthetic QA DOCX, all B1 cases 1-13, a MediaStore content:// DOCX (filename, MIME, byte length, channel keys) and a permission-denied content:// URI (case 14).
+  6. **Config**: Only `testInstrumentationRunner` plus `androidTestImplementation` `androidx.test:runner:1.7.0` and `androidx.test.ext:junit:1.3.0` in `android/app/build.gradle.kts`.
+- **Challenges & Fixes**:
+  - The first instrumented run caught a device-only gap: KXmlParser's `nextToken()` returns `END_DOCUMENT` on truncated XML instead of throwing, so a cut-off `document.xml` came back `empty`. `readDocxText` now rejects input that ends with open elements or without a root.
+  - The unit-test classpath is android.jar, which has no `javax.xml.stream`, so the host adapter uses the JDK SAX parser and replays parse errors in token order.
+  - `connectedDebugAndroidTest` uninstalls the app after a run by default; runs used `-Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true` to keep the installed app and its data.
+- **Verification Status** (device results are Android 16 emulator, Pixel_9 AVD, not physical): `flutter analyze` **0 issues**; full `flutter test` **215 / 215 passed**; `./gradlew :app:testDebugUnitTest` **59 / 59 passed**; `./gradlew :app:connectedDebugAndroidTest` **16 / 16 passed**; `flutter build apk --debug --target-platform android-arm64` succeeded. Emulator before/after via SAF: pre-fix build showed "Could not parse DOCX XML content cleanly."; fixed build extracted the QA DOCX and the LibreOffice DOCX and kept DOCX provenance (filename, MIME, status, SHA-256). Physical Realme `RMX5303` verification is still pending.
+- **Next Immediate Action & Recommended Model**:
+  - Await push approval, then open the PR into `feature/m3-expressive-rebrand`; run the DOCX SAF and instrumented checks on the Realme when it is available.
+  - Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **D5.3 Core Flow Streamlining (D5.3-B+) & D5.4 Offline Learn MVP**

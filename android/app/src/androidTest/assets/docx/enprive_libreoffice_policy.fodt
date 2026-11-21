@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+  xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+  xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+  office:version="1.3" office:mimetype="application/vnd.oasis.opendocument.text">
+  <office:body>
+    <office:text>
+      <text:tracked-changes>
+        <text:changed-region text:id="ct1">
+          <text:deletion>
+            <office:change-info><dc:creator>Enprive QA</dc:creator><dc:date>2026-11-21T00:00:00</dc:date></office:change-info>
+            <text:p>We share precise location with advertising partners.</text:p>
+          </text:deletion>
+        </text:changed-region>
+      </text:tracked-changes>
+      <text:h text:outline-level="1">Enprive Sample Privacy Policy</text:h>
+      <text:p>Effective date:<text:tab/>1 November 2026</text:p>
+      <text:p>We collect your email address to create your account.<text:line-break/>We never sell your personal information.</text:p>
+      <text:p>Deleted clause:<text:change text:change-id="ct1"/> none remaining.</text:p>
+      <table:table table:name="Retention">
+        <table:table-column table:number-columns-repeated="2"/>
+        <table:table-row>
+          <table:table-cell office:value-type="string"><text:p>Data type</text:p></table:table-cell>
+          <table:table-cell office:value-type="string"><text:p>Retention period</text:p></table:table-cell>
+        </table:table-row>
+        <table:table-row>
+          <table:table-cell office:value-type="string"><text:p>Email address</text:p></table:table-cell>
+          <table:table-cell office:value-type="string"><text:p>Until account deletion</text:p></table:table-cell>
+        </table:table-row>
+      </table:table>
+      <text:p>Contact privacy@enprive.example with questions. Page <text:page-number text:select-page="current">1</text:page-number></text:p>
+    </office:text>
+  </office:body>
+</office:document>
