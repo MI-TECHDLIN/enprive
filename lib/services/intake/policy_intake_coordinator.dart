@@ -223,7 +223,7 @@ class PolicyIntakeCoordinator {
         selectedApp: selectedApp,
         userMessage: retrieval.userMessage,
         recoveryHint: _urlRecoveryHint(failureKind),
-        canRetrySameLocator: true,
+        canRetrySameLocator: _canRetryUrlFailure(failureKind),
         failedSourceSnapshot: retrieval.sourceSnapshot,
         urlRetrievalResult: retrieval,
         sufficiencyResult: retrieval.sufficiencyResult,
@@ -690,12 +690,37 @@ class PolicyIntakeCoordinator {
     };
   }
 
+  static bool _canRetryUrlFailure(PolicyIntakeFailureKind kind) {
+    return switch (kind) {
+      PolicyIntakeFailureKind.unsafeDestination ||
+      PolicyIntakeFailureKind.invalidUrl ||
+      PolicyIntakeFailureKind.sizeExceeded ||
+      PolicyIntakeFailureKind.unsupportedContentType => false,
+      PolicyIntakeFailureKind.networkError ||
+      PolicyIntakeFailureKind.timeout ||
+      PolicyIntakeFailureKind.httpError ||
+      PolicyIntakeFailureKind.emptyOrErrorPage ||
+      PolicyIntakeFailureKind.insufficientPolicy ||
+      PolicyIntakeFailureKind.cancelled => true,
+      _ => false,
+    };
+  }
+
   static String _urlRecoveryHint(PolicyIntakeFailureKind kind) {
     return switch (kind) {
-      PolicyIntakeFailureKind.unsupportedContentType => 'Save supported PDF, TXT, or DOCX documents locally and import them with Document mode, or paste the policy text directly.',
+      PolicyIntakeFailureKind.unsafeDestination =>
+        'Edit the URL to a public https:// privacy policy link, paste the policy text directly, or import a local PDF, TXT, or DOCX document.',
+      PolicyIntakeFailureKind.invalidUrl =>
+        'Edit the URL to a valid public https:// privacy policy link, paste the policy text directly, or import a local PDF, TXT, or DOCX document.',
+      PolicyIntakeFailureKind.sizeExceeded =>
+        'Edit the URL to a smaller privacy policy page, paste the policy text directly, or import a saved PDF, TXT, or DOCX document.',
+      PolicyIntakeFailureKind.unsupportedContentType =>
+        'Save supported PDF, TXT, or DOCX documents locally and import them with Document mode, or paste the policy text directly.',
       PolicyIntakeFailureKind.emptyOrErrorPage ||
-      PolicyIntakeFailureKind.insufficientPolicy => 'Open the policy page in your browser and copy/paste the policy paragraphs or share the text to Enprive.',
-      _ => 'Check the web address, paste the privacy policy text directly, or import a local PDF, TXT, or DOCX document.',
+      PolicyIntakeFailureKind.insufficientPolicy =>
+        'Open the policy page in your browser and copy/paste the policy paragraphs or share the text to Enprive.',
+      _ =>
+        'Check the web address, paste the privacy policy text directly, or import a local PDF, TXT, or DOCX document.',
     };
   }
 }

@@ -386,5 +386,13 @@
   "intakeModeSelectorSemanticLabel": "Policy input method",
   "@intakeModeSelectorSemanticLabel": {
     "description": "Accessibility label for the Paste text / Policy link / Document mode selector"
+  },
+  "tooltipClearSearch": "Clear search",
+  "@tooltipClearSearch": {
+    "description": "Tooltip and accessibility label for clearing the installed app picker search query"
+  },
+  "intakeRecoveryEditUrl": "Edit URL",
+  "@intakeRecoveryEditUrl": {
+    "description": "Inline recovery action focusing the URL input field after a blocked or invalid URL failure"
   }
 }

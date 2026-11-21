@@ -766,4 +766,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get intakeModeSelectorSemanticLabel => 'Policy input method';
+
+  @override
+  String get tooltipClearSearch => 'Clear search';
+
+  @override
+  String get intakeRecoveryEditUrl => 'Edit URL';
 }

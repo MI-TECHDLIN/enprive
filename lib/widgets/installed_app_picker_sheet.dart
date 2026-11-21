@@ -295,6 +295,13 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
     super.dispose();
   }
 
+  void _clearSearch() {
+    _searchController.clear();
+    if (_searchQuery.isNotEmpty) {
+      setState(() => _searchQuery = '');
+    }
+  }
+
   void _recomputeReceiptDerivedState() {
     _latestByPackage = InstalledAppPickerModel.latestSavedReceiptByPackage(
       _effectiveReceipts,
@@ -486,7 +493,29 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
                                     size: 19,
                                     color: scheme.onSurfaceVariant,
                                   ),
-                                  showClearButton: true,
+                                  showClearButton: false,
+                                  trailing: _searchQuery.isNotEmpty
+                                      ? <Widget>[
+                                          IconButton(
+                                            key: const Key(
+                                              'app_picker_clear_search_btn',
+                                            ),
+                                            tooltip: l10n.tooltipClearSearch,
+                                            onPressed: _clearSearch,
+                                            constraints: const BoxConstraints(
+                                              minWidth:
+                                                  EnpriveSpacing.minTouchTarget,
+                                              minHeight:
+                                                  EnpriveSpacing.minTouchTarget,
+                                            ),
+                                            icon: Icon(
+                                              LucideIcons.x,
+                                              size: 19,
+                                              color: scheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                        ]
+                                      : null,
                                   onChanged: (val) =>
                                       setState(() => _searchQuery = val),
                                 ),
