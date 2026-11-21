@@ -30,6 +30,7 @@ class SelectedAppInspectionChoice {
   final String sourceLabel;
   final String policyText;
   final AppPermissionSnapshot permissionSnapshot;
+  final List<AppIdentityCandidate> peerCandidates;
   final bool hasSuppliedPolicy;
   final bool isSyntheticSample;
 
@@ -38,6 +39,7 @@ class SelectedAppInspectionChoice {
     required this.sourceLabel,
     required this.policyText,
     required this.permissionSnapshot,
+    this.peerCandidates = const <AppIdentityCandidate>[],
     this.hasSuppliedPolicy = false,
     this.isSyntheticSample = false,
   });
@@ -352,6 +354,9 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
         sourceLabel: 'Installed on this phone',
         policyText: '',
         permissionSnapshot: snapshot,
+        peerCandidates: InstalledAppPickerModel.toIdentityCandidates(
+          _installedApps,
+        ),
         hasSuppliedPolicy: false,
         isSyntheticSample: false,
       ),

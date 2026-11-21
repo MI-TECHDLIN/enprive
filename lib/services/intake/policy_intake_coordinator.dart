@@ -385,6 +385,48 @@ class PolicyIntakeCoordinator {
     );
   }
 
+  /// Classifies an incoming Android share (`ACTION_SEND`) or text-selection
+  /// (`ACTION_PROCESS_TEXT`) payload into a typed [PolicyLocator] without
+  /// performing network I/O or text sufficiency checks.
+  ///
+  /// Returns `null` when a non-document payload carries only blank text.
+  PolicyLocator? classifyIncomingPayloadLocator(IncomingIntentPayload payload) {
+    if (payload.kind == 'document') {
+      final doc = payload.document;
+      return DocumentPolicyLocator(
+        userSubjectTitle: payload.subject,
+        fileName: doc?.fileName,
+        mimeType: doc?.mimeType,
+        byteLength: doc?.byteLength,
+        documentType: doc?.documentType,
+        sourceAction: payload.sourceAction,
+        isPreExtractedIncomingShare: true,
+      );
+    }
+
+    final rawText = (payload.text ?? '').trim();
+    if (rawText.isEmpty) return null;
+
+    final sharedUrl = PolicyUrlRetriever.extractSharedUrl(rawText);
+    if (sharedUrl != null) {
+      return UrlPolicyLocator(
+        rawUrl: sharedUrl,
+        userSubjectTitle: payload.subject,
+        sourceAction: payload.sourceAction,
+      );
+    }
+
+    final sourceType = payload.sourceAction == 'ACTION_SEND'
+        ? PolicySourceType.sharedText
+        : PolicySourceType.selectedText;
+    return TextPolicyLocator(
+      rawText: rawText,
+      sourceType: sourceType,
+      userSubjectTitle: payload.subject,
+      sourceAction: payload.sourceAction,
+    );
+  }
+
   /// Routes a structured Android share (`ACTION_SEND`) or text selection
   /// (`ACTION_PROCESS_TEXT`) payload through the shared intake pipeline.
   Future<PolicyIntakeOutcome> captureIncomingPayload({

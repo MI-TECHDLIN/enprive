@@ -503,14 +503,21 @@ class ReviewCoordinator {
   ) {
     if (appPermissions == null) return baseReceipt;
 
+    final isSampleFixture =
+        baseReceipt.sourceSnapshot?.sourceType == PolicySourceType.sample ||
+        baseReceipt.sourceSnapshot?.appIdentityMatchStatus ==
+            AppIdentityMatchStatus.sampleFixture;
+
     final report = PermissionComparator.compare(
       snapshot: appPermissions,
       policyText: baseReceipt.snapshotText,
+      isSampleFixture: isSampleFixture,
     );
     final enrichedFindings =
         PermissionComparator.enrichFindingsWithDeviceReport(
           policyFindings: baseReceipt.findings,
           report: report,
+          isSampleFixture: isSampleFixture,
         );
 
     // Explicit verdict-state precedence:
@@ -535,7 +542,9 @@ class ReviewCoordinator {
     }
 
     final permissionNote = report.mismatchCount > 0
-        ? ' Local Android inspection also spotted ${report.mismatchCount} undisclosed permission ${report.mismatchCount == 1 ? 'request' : 'requests'}.'
+        ? (isSampleFixture
+              ? ' Synthetic sample comparison also includes ${report.mismatchCount} illustrative undisclosed permission ${report.mismatchCount == 1 ? 'request' : 'requests'}.'
+              : ' Local Android inspection also spotted ${report.mismatchCount} undisclosed permission ${report.mismatchCount == 1 ? 'request' : 'requests'}.')
         : '';
 
     return PolicyReviewReceipt(
