@@ -1479,6 +1479,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Policy input method'**
   String get intakeModeSelectorSemanticLabel;
+
+  /// Tooltip and accessibility label for clearing the installed app picker search query
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get tooltipClearSearch;
+
+  /// Inline recovery action focusing the URL input field after a blocked or invalid URL failure
+  ///
+  /// In en, this message translates to:
+  /// **'Edit URL'**
+  String get intakeRecoveryEditUrl;
 }
 
 class _AppLocalizationsDelegate

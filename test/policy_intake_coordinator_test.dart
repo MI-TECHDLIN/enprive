@@ -235,16 +235,29 @@ void main() {
           if (host == 'private-dns.example.org') {
             return [InternetAddress('10.0.0.5')];
           }
+          if (host == 'offline.example.org') {
+            throw const SocketException('Simulated DNS failure');
+          }
           return [fakePublicIp];
         },
         maxResponseBytes: 128,
         clock: () => fixedClock,
         clientFactory: () => MockClient((request) async {
           switch (request.url.path) {
+            case '/redirect-loopback':
+              return http.Response(
+                '',
+                302,
+                headers: {'location': 'http://127.0.0.1/internal'},
+              );
             case '/notfound':
               return http.Response('Not Found', 404);
+            case '/unavailable':
+              return http.Response('Service Unavailable', 503);
             case '/timeout':
               throw TimeoutException('Simulated timeout');
+            case '/network':
+              throw const SocketException('Simulated connection reset');
             case '/huge':
               return http.Response(
                 'A' * 512,
@@ -273,32 +286,60 @@ void main() {
         clock: () => fixedClock,
       );
 
-      final cases = <(String, PolicyIntakeFailureKind)>[
-        ('http://127.0.0.1/privacy', PolicyIntakeFailureKind.unsafeDestination),
+      final cases = <(String, PolicyIntakeFailureKind, bool)>[
+        (
+          'http://127.0.0.1/privacy',
+          PolicyIntakeFailureKind.unsafeDestination,
+          false,
+        ),
         (
           'http://169.254.169.254/meta',
           PolicyIntakeFailureKind.unsafeDestination,
+          false,
         ),
         (
           'https://private-dns.example.org/p',
           PolicyIntakeFailureKind.unsafeDestination,
+          false,
         ),
-        ('ftp://example.org/privacy', PolicyIntakeFailureKind.invalidUrl),
-        ('not a url', PolicyIntakeFailureKind.invalidUrl),
-        ('https://example.org/notfound', PolicyIntakeFailureKind.httpError),
-        ('https://example.org/timeout', PolicyIntakeFailureKind.timeout),
-        ('https://example.org/huge', PolicyIntakeFailureKind.sizeExceeded),
+        (
+          'https://example.org/redirect-loopback',
+          PolicyIntakeFailureKind.unsafeDestination,
+          false,
+        ),
+        ('ftp://example.org/privacy', PolicyIntakeFailureKind.invalidUrl, false),
+        ('not a url', PolicyIntakeFailureKind.invalidUrl, false),
+        ('https://example.org/notfound', PolicyIntakeFailureKind.httpError, true),
+        (
+          'https://example.org/unavailable',
+          PolicyIntakeFailureKind.httpError,
+          true,
+        ),
+        ('https://example.org/timeout', PolicyIntakeFailureKind.timeout, true),
+        (
+          'https://example.org/network',
+          PolicyIntakeFailureKind.networkError,
+          true,
+        ),
+        (
+          'https://offline.example.org/privacy',
+          PolicyIntakeFailureKind.networkError,
+          true,
+        ),
+        ('https://example.org/huge', PolicyIntakeFailureKind.sizeExceeded, false),
         (
           'https://example.org/binary.pdf',
           PolicyIntakeFailureKind.unsupportedContentType,
+          false,
         ),
         (
           'https://example.org/challenge',
           PolicyIntakeFailureKind.emptyOrErrorPage,
+          true,
         ),
       ];
 
-      for (final (url, expectedKind) in cases) {
+      for (final (url, expectedKind, expectedCanRetry) in cases) {
         final locator = UrlPolicyLocator(
           rawUrl: url,
           userSubjectTitle: 'Kept Title',
@@ -310,7 +351,30 @@ void main() {
         expect((failure.locator as UrlPolicyLocator).rawUrl, url);
         expect(failure.locator.userSubjectTitle, 'Kept Title');
         expect(failure.failedSourceSnapshot, isNotNull, reason: url);
-        expect(failure.canRetrySameLocator, isTrue);
+        expect(
+          failure.canRetrySameLocator,
+          expectedCanRetry,
+          reason: '$url ($expectedKind)',
+        );
+        if (!expectedCanRetry &&
+            (expectedKind == PolicyIntakeFailureKind.unsafeDestination ||
+                expectedKind == PolicyIntakeFailureKind.invalidUrl)) {
+          expect(
+            failure.recoveryHint.toLowerCase(),
+            contains('edit'),
+            reason: '$url should guide the user to edit the URL',
+          );
+          expect(
+            failure.recoveryHint.toLowerCase(),
+            contains('paste'),
+            reason: '$url should guide the user to paste text',
+          );
+          expect(
+            failure.recoveryHint.toLowerCase(),
+            contains('import'),
+            reason: '$url should guide the user to import a document',
+          );
+        }
       }
     });
 
@@ -345,6 +409,7 @@ void main() {
       final outcome = await pending;
       expect(outcome, isA<PolicyIntakeFailure>());
       expect(outcome.isCancelled, isTrue);
+      expect((outcome as PolicyIntakeFailure).canRetrySameLocator, isTrue);
       expect((outcome.locator as UrlPolicyLocator).rawUrl, urlLocator.rawUrl);
       expect(outcome.locator.userSubjectTitle, 'Slow Site');
 

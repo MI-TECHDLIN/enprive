@@ -96,6 +96,7 @@ class _UnifiedPolicyIntakeSheetState extends State<UnifiedPolicyIntakeSheet> {
   late final TextEditingController _titleController;
   late final TextEditingController _textController;
   late final TextEditingController _urlController;
+  late final FocusNode _urlFocusNode;
 
   late PolicyIntakeMode _mode;
   late PolicySourceType _textSourceType;
@@ -153,6 +154,7 @@ class _UnifiedPolicyIntakeSheetState extends State<UnifiedPolicyIntakeSheet> {
     _titleController = TextEditingController(text: initialTitle);
     _textController = TextEditingController(text: initialText);
     _urlController = TextEditingController(text: initialUrl);
+    _urlFocusNode = FocusNode();
   }
 
   @override
@@ -162,7 +164,20 @@ class _UnifiedPolicyIntakeSheetState extends State<UnifiedPolicyIntakeSheet> {
     _titleController.dispose();
     _textController.dispose();
     _urlController.dispose();
+    _urlFocusNode.dispose();
     super.dispose();
+  }
+
+  void _focusUrlForEdit() {
+    if (_isBusy || _isSelectingApp || _hasPopped) return;
+    _urlFocusNode.requestFocus();
+    final text = _urlController.text;
+    if (text.isNotEmpty) {
+      _urlController.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: text.length,
+      );
+    }
   }
 
   void _cancelInFlightOperation() {
@@ -1123,6 +1138,7 @@ class _UnifiedPolicyIntakeSheetState extends State<UnifiedPolicyIntakeSheet> {
             TextField(
               key: const Key('intake_url_field'),
               controller: _urlController,
+              focusNode: _urlFocusNode,
               enabled: !_isBusy && !_isSelectingApp,
               keyboardType: TextInputType.url,
               textDirection: TextDirection.ltr,
@@ -1305,6 +1321,20 @@ class _UnifiedPolicyIntakeSheetState extends State<UnifiedPolicyIntakeSheet> {
                     ),
                   ),
                   child: Text(l10n.intakeRecoveryRetryUrl),
+                ),
+              if (_mode == PolicyIntakeMode.url && !failure.canRetrySameLocator)
+                TextButton(
+                  key: const Key('intake_recovery_edit_url_btn'),
+                  onPressed: (_isBusy || _isSelectingApp)
+                      ? null
+                      : _focusUrlForEdit,
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(
+                      EnpriveSpacing.minTouchTarget,
+                      EnpriveSpacing.minTouchTarget,
+                    ),
+                  ),
+                  child: Text(l10n.intakeRecoveryEditUrl),
                 ),
               if (_mode != PolicyIntakeMode.paste)
                 TextButton(
