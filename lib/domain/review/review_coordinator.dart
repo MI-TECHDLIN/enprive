@@ -6,6 +6,8 @@ import '../companion/companion_policy_resolver.dart';
 import '../evidence/evidence_validator.dart';
 import '../permissions/permission_comparator.dart';
 import '../privacy/pii_redactor.dart';
+import '../voice/deni_voice_summary.dart';
+import 'app_policy_association.dart';
 import 'deterministic_clause_scanner.dart';
 import 'policy_sufficiency.dart';
 import 'review_models.dart';
@@ -567,6 +569,145 @@ class ReviewCoordinator {
       sourceSnapshot: baseReceipt.sourceSnapshot,
       languageCode: baseReceipt.languageCode,
     );
+  }
+
+  /// Generates a plain-language, evidence-grounded summary of the current review
+  /// for Deni to display alongside spoken playback.
+  ///
+  /// Privacy & Fallback Contract:
+  /// 1. Only `sourceMatched` policy findings enter AI prompts — installed app
+  ///    lists, package names, and Android OS permissions stay strictly on-device.
+  /// 2. Without explicit [cloudConsent], attempts `ONLY_ON_DEVICE` inference first;
+  ///    when unavailable or too long, returns an immediately usable deterministic
+  ///    plain-language template paired with `requiresCloudConsent = true` and the
+  ///    exact canonical redacted cloud payload for optional CloudConsentSheet opt-in.
+  /// 3. With explicit [cloudConsent], sends the exact [canonicalRedactedPayload]
+  ///    once (`ONLY_IN_CLOUD`, App Check protected, 0 retries) and falls back
+  ///    deterministically on failure or timeout without inventing claims.
+  Future<DeniVoiceSummary> generateDeniVoiceSummary({
+    required PolicyReviewReceipt receipt,
+    AppPolicyAssociationReport? associationReport,
+    bool cloudConsent = false,
+    bool forceDeterministicTemplate = false,
+    String languageCode = 'en',
+    String? canonicalRedactedPayload,
+    String? requestId,
+  }) async {
+    final promptPayload = DeniVoiceSummaryBuilder.buildPromptPayload(receipt);
+
+    // No verified policy clauses to simplify (e.g., permission-only, no-concern,
+    // or insufficient evidence) -> return honest deterministic summary locally.
+    if (forceDeterministicTemplate || promptPayload.isEmpty) {
+      return DeniVoiceSummaryBuilder.buildDeterministic(
+        receipt: receipt,
+        associationReport: associationReport,
+        languageCode: languageCode,
+      );
+    }
+
+    final reqId = (requestId != null && requestId.trim().isNotEmpty)
+        ? requestId.trim()
+        : 'vsum_${DateTime.now().millisecondsSinceEpoch}';
+
+    if (!cloudConsent) {
+      if (PiiRedactor.isComprehensivePolicy(promptPayload)) {
+        return DeniVoiceSummaryBuilder.buildDeterministic(
+          receipt: receipt,
+          associationReport: associationReport,
+          languageCode: languageCode,
+          requiresCloudConsent: true,
+          consentReason:
+              'These verified findings exceed on-device summary limits. You can use the offline summary now or send the redacted findings to Cloud AI once.',
+          redactedCloudPayload: canonicalCloudPayload(promptPayload),
+        );
+      }
+
+      try {
+        final localResult = await _bridge.analyseText(
+          requestId: reqId,
+          task: 'summarize_voice',
+          text: promptPayload,
+          cloudConsent: false,
+          requestedMode: 'ONLY_ON_DEVICE',
+          languageCode: languageCode,
+        );
+        if (localResult.status == HybridStatus.success &&
+            localResult.structuredOutput != null) {
+          return DeniVoiceSummaryBuilder.validateAndMergeModelOutput(
+            structuredOutput: localResult.structuredOutput!,
+            receipt: receipt,
+            associationReport: associationReport,
+            inferenceSource: parseInferenceSource(localResult.inferenceSource),
+            languageCode: languageCode,
+          );
+        }
+        return DeniVoiceSummaryBuilder.buildDeterministic(
+          receipt: receipt,
+          associationReport: associationReport,
+          languageCode: languageCode,
+          requiresCloudConsent: true,
+          consentReason:
+              localResult.message ??
+              'On-device AI is unavailable on this phone right now. Showing Enprive’s offline plain-language summary.',
+          redactedCloudPayload: canonicalCloudPayload(promptPayload),
+        );
+      } on HybridOperationCancelledException catch (e) {
+        if (!e.isTimeout) rethrow;
+        return DeniVoiceSummaryBuilder.buildDeterministic(
+          receipt: receipt,
+          associationReport: associationReport,
+          languageCode: languageCode,
+          requiresCloudConsent: true,
+          consentReason:
+              'On-device summary timed out. Showing Enprive’s offline plain-language summary.',
+          redactedCloudPayload: canonicalCloudPayload(promptPayload),
+        );
+      }
+    }
+
+    // Explicit per-operation cloud consent granted: send exact redacted payload once.
+    final textForCloud =
+        canonicalRedactedPayload ?? canonicalCloudPayload(promptPayload);
+    try {
+      final cloudResult = await _bridge.analyseText(
+        requestId: '${reqId}_appcheck',
+        task: 'summarize_voice',
+        text: textForCloud,
+        cloudConsent: true,
+        requestedMode: 'ONLY_IN_CLOUD',
+        languageCode: languageCode,
+      );
+      if (cloudResult.status == HybridStatus.success &&
+          cloudResult.structuredOutput != null) {
+        return DeniVoiceSummaryBuilder.validateAndMergeModelOutput(
+          structuredOutput: cloudResult.structuredOutput!,
+          receipt: receipt,
+          associationReport: associationReport,
+          inferenceSource: parseInferenceSource(cloudResult.inferenceSource),
+          languageCode: languageCode,
+        );
+      }
+      return DeniVoiceSummaryBuilder.buildDeterministic(
+        receipt: receipt,
+        associationReport: associationReport,
+        languageCode: languageCode,
+        requiresCloudConsent: true,
+        redactedCloudPayload: textForCloud,
+        fallbackNote:
+            'Cloud AI summary was unavailable. Showing Enprive’s offline plain-language summary.',
+      );
+    } on HybridOperationCancelledException catch (e) {
+      if (!e.isTimeout) rethrow;
+      return DeniVoiceSummaryBuilder.buildDeterministic(
+        receipt: receipt,
+        associationReport: associationReport,
+        languageCode: languageCode,
+        requiresCloudConsent: true,
+        redactedCloudPayload: textForCloud,
+        fallbackNote:
+            'Cloud AI timed out before responding. Showing Enprive’s offline plain-language summary.',
+      );
+    }
   }
 
   /// 1-turn grounded explanation from Deni for the "Why this finding?" sheet.

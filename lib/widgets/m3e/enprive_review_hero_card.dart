@@ -181,10 +181,10 @@ class EnpriveReviewHeroCard extends StatelessWidget {
         tooltip: voiceTooltip,
         onPressed: onVoiceAction,
         padding: EdgeInsets.zero,
-        constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
         icon: Icon(
           isSpeaking ? LucideIcons.square : LucideIcons.volume2,
-          size: 17,
+          size: 18,
           color: isSpeaking ? scheme.onPrimary : scheme.onSurface,
         ),
       ),
@@ -330,8 +330,8 @@ class EnpriveReviewHeroCard extends StatelessWidget {
                     constraints.maxWidth < 250 ||
                     sourceActionLabel.length > 14;
                 final double maxButtonWidth = stackVertically
-                    ? (constraints.maxWidth - 58).clamp(110.0, 260.0)
-                    : (constraints.maxWidth * 0.48).clamp(96.0, 172.0);
+                    ? (constraints.maxWidth - 66).clamp(110.0, 260.0)
+                    : (constraints.maxWidth * 0.45).clamp(96.0, 168.0);
                 final Widget sourcePill = buildSourcePill(maxButtonWidth);
 
                 final Widget identityColumn = Column(
