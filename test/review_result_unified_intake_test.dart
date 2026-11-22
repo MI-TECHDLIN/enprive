@@ -328,7 +328,7 @@ void main() {
         expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
         expect(find.byKey(const Key('intake_locked_app_header')), findsOneWidget);
         expect(find.text('Focus Reader'), findsWidgets);
-        expect(find.text('com.focus.reader'), findsWidgets);
+        expect(find.text('App ID: com.focus.reader'), findsWidgets);
         expect(find.byKey(const Key('intake_select_app_btn')), findsNothing);
         expect(find.byKey(const Key('intake_change_app_btn')), findsNothing);
         expect(find.byKey(const Key('intake_remove_app_btn')), findsNothing);
@@ -404,11 +404,16 @@ void main() {
         await _pumpAndFlush(tester, steps: 8);
         expect(analyseCalls, hasLength(2));
         await tester.scrollUntilVisible(
-          find.textContaining('File: initial-focus.pdf'),
+          find.byKey(const Key('source_advanced_details_toggle')),
           240,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.textContaining('Local PDF document'), findsOneWidget);
+        expect(find.textContaining('Local PDF file'), findsOneWidget);
+        await tester.tap(
+          find.byKey(const Key('source_advanced_details_toggle')),
+        );
+        await tester.pump();
+        expect(find.textContaining('File: initial-focus.pdf'), findsOneWidget);
         expect(await repo.loadReceipts(), isEmpty);
 
         // Re-mount permission-only screen for URL 404 retry + Play Store helper + redirect provenance + Document updates
@@ -468,20 +473,24 @@ void main() {
         expect(await repo.loadReceipts(), isEmpty); // First review stays unsaved draft!
 
         await tester.scrollUntilVisible(
-          find.textContaining('Redirected from:'),
+          find.byKey(const Key('source_advanced_details_toggle')),
           240,
           scrollable: find.byType(Scrollable).first,
         );
+        expect(
+          find.textContaining('Where this policy came from · Public web link'),
+          findsOneWidget,
+        );
+        await tester.tap(
+          find.byKey(const Key('source_advanced_details_toggle')),
+        );
+        await tester.pump();
         expect(
           find.textContaining('Canonical URL: https://legal.focus.example.com/privacy'),
           findsOneWidget,
         );
         expect(
           find.textContaining('Redirected from: https://focus.example.com/404'),
-          findsOneWidget,
-        );
-        expect(
-          find.textContaining('Source provenance · Public URL'),
           findsOneWidget,
         );
         expect(
@@ -532,7 +541,7 @@ void main() {
           240,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.textContaining('Local PDF document'), findsOneWidget);
+        expect(find.textContaining('Local PDF file'), findsOneWidget);
         expect(
           find.textContaining(
             EvidenceValidator.computeSha256SourceHash(pdfPolicy).substring(0, 12),
@@ -549,7 +558,7 @@ void main() {
           240,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.textContaining('Local text document'), findsOneWidget);
+        expect(find.textContaining('Local text file'), findsOneWidget);
         expect(
           find.textContaining(
             EvidenceValidator.computeSha256SourceHash(txtPolicy).substring(0, 12),
@@ -566,7 +575,7 @@ void main() {
           240,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.textContaining('Local DOCX document'), findsOneWidget);
+        expect(find.textContaining('Local Word (DOCX) file'), findsOneWidget);
         expect(
           find.textContaining(
             EvidenceValidator.computeSha256SourceHash(docxPolicy).substring(0, 12),
@@ -1182,7 +1191,7 @@ void main() {
         });
         await _pumpAndFlush(tester);
         expect(find.textContaining('STALE RESULT MUST NEVER APPEAR'), findsNothing);
-        expect(find.text('Device Permission Inspection'), findsWidgets);
+        expect(find.text('Phone permissions checked'), findsWidgets);
 
         // Start a second pending review, then dispose via Close button (rapid double-tap) -> cancels cleanly, pops ONCE
         final secondOpenCta = find.text("Add this app's privacy policy").first;
@@ -1374,7 +1383,7 @@ void main() {
           find.textContaining('LATE CLOUD RESULT MUST NEVER APPLY'),
           findsNothing,
         );
-        expect(find.text('Device Permission Inspection'), findsWidgets);
+        expect(find.text('Phone permissions checked'), findsWidgets);
 
         // B. Receipt replacement via didUpdateWidget while UnifiedPolicyIntakeSheet is open drops stale intake
         final activeReceiptNotifier = ValueNotifier<PolicyReviewReceipt>(

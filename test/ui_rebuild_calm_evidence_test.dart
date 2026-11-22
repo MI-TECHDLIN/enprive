@@ -97,7 +97,7 @@ void main() {
           );
           expect(find.text('What would be sent'), findsOneWidget);
           expect(
-            find.text('1 personal detail is masked first.'),
+            find.text('1 personal detail is hidden first.'),
             findsOneWidget,
           );
           // The summary comes before the payload preview.

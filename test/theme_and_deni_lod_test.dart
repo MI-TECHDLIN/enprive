@@ -659,7 +659,7 @@ void main() {
         expect(find.text('Advertising ID Shared with Third Parties'), findsOneWidget);
         expect(find.text('QUOTE MATCHED'), findsOneWidget);
         expect(
-          find.text('Snapshot digest · FNV-1a 64-bit · 8f4b2e9c10a74d3b'),
+          find.text('Document fingerprint · 8f4b2e9c10a74d3b'),
           findsOneWidget,
         );
 
@@ -678,7 +678,7 @@ void main() {
 
         // When collapsed, the digest line inside EnpriveCollapsibleQuoteBox is hidden
         expect(
-          find.text('Snapshot digest · FNV-1a 64-bit · 8f4b2e9c10a74d3b'),
+          find.text('Document fingerprint · 8f4b2e9c10a74d3b'),
           findsNothing,
         );
 
@@ -749,7 +749,7 @@ void main() {
         expect(find.text('EduTrack'), findsNothing);
         expect(find.text('CalmMath'), findsNothing);
         expect(find.text('StudyBuddy Reader'), findsOneWidget);
-        expect(find.text('org.example.studybuddy'), findsOneWidget);
+        expect(find.text('App ID: org.example.studybuddy'), findsOneWidget);
 
         // Filter to non-existent app to trigger DeniAnimatedMascot empty state
         await tester.enterText(find.byType(EditableText), 'NonExistentAppXYZ');

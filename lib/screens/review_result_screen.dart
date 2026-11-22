@@ -1539,7 +1539,6 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
               final m3e = EnpriveM3ETheme.of(innerContext);
               final scheme = m3e.colorScheme;
               final innerSurfaces = innerContext.enpriveSurfaces;
-              final typeExt = innerContext.enpriveType;
 
               return Material(
                 color: innerSurfaces.canvas,
@@ -1597,76 +1596,27 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                   color: scheme.onSurfaceVariant,
                                 ),
                               ),
-                              if (receipt.snapshotDigest.trim().isNotEmpty) ...[
-                                const SizedBox(height: 10),
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: innerSurfaces.cardMuted,
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: innerSurfaces.hairlineBorder,
-                                    ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              '${l10n.snapshotDigestLabel} · #${receipt.snapshotDigest}',
-                                              style: typeExt.sha256Hash
-                                                  .copyWith(
-                                                    color: scheme.onSurface,
-                                                  ),
-                                            ),
-                                          ),
-                                          TextButton.icon(
-                                            onPressed: () {
-                                              Clipboard.setData(
-                                                ClipboardData(
-                                                  text: receipt.snapshotDigest,
-                                                ),
-                                              );
-                                              ScaffoldMessenger.of(innerContext)
-                                                ..hideCurrentSnackBar()
-                                                ..showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      l10n.digestCopiedMsg,
-                                                    ),
-                                                    behavior: SnackBarBehavior
-                                                        .floating,
-                                                  ),
-                                                );
-                                            },
-                                            icon: Icon(
-                                              LucideIcons.copy,
-                                              size: 14,
-                                              color: scheme.primary,
-                                            ),
-                                            label: Text(l10n.copyDigestBtn),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        l10n.snapshotDigestExplanation,
-                                        style: m3e.typeScale.bodySmall.copyWith(
-                                          color: scheme.onSurfaceVariant,
-                                          height: 1.38,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                              if (receipt.sourceSnapshot != null) ...[
+                              if (receipt.sourceSnapshot != null ||
+                                  receipt.snapshotDigest.trim().isNotEmpty) ...[
                                 const SizedBox(height: 10),
                                 _SourceProvenanceBlock(
-                                  snapshot: receipt.sourceSnapshot!,
+                                  toggleKey: const Key(
+                                    'snapshot_advanced_details_toggle',
+                                  ),
+                                  snapshot:
+                                      receipt.sourceSnapshot ??
+                                      PolicySourceSnapshot(
+                                        snapshotId: receipt.id,
+                                        sourceType: PolicySourceType.pastedText,
+                                        retrievedAt: receipt.createdAt.toUtc(),
+                                        retrievalStatus:
+                                            PolicyRetrievalStatus.localProvided,
+                                        appIdentityMatchStatus:
+                                            AppIdentityMatchStatus
+                                                .notApplicable,
+                                        sourceSha256Hash: '',
+                                      ),
+                                  snapshotDigest: receipt.snapshotDigest,
                                   l10n: l10n,
                                 ),
                               ],
@@ -1677,8 +1627,6 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                         if (receipt.snapshotText.trim().isNotEmpty)
                           EnpriveQuoteCard(
                             quote: receipt.snapshotText,
-                            sha256Digest: receipt.snapshotDigest,
-                            footerCaption: l10n.snapshotDigestExplanation,
                             borderRadius: BorderRadius.circular(
                               EnpriveRadii.xl,
                             ),
@@ -2239,10 +2187,17 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                 children: [
                                   if (receipt.permissionReport != null) ...[
                                     Text(
-                                      '${receipt.permissionReport!.snapshot.appName} · ${receipt.permissionReport!.snapshot.packageName}',
+                                      receipt.permissionReport!.snapshot.appName,
                                       style: m3e.typeScale.titleSmall.copyWith(
                                         fontWeight: FontWeight.w800,
                                         color: scheme.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${l10n.appIdPrefix}: ${receipt.permissionReport!.snapshot.packageName}',
+                                      style: m3e.typeScale.bodySmall.copyWith(
+                                        color: scheme.onSurfaceVariant,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -2276,8 +2231,6 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                             if (receipt.snapshotText.trim().isNotEmpty)
                               EnpriveQuoteCard(
                                 quote: receipt.snapshotText,
-                                sha256Digest: receipt.snapshotDigest,
-                                footerCaption: l10n.snapshotDigestExplanation,
                                 borderRadius: BorderRadius.circular(
                                   EnpriveRadii.lg,
                                 ),
@@ -2500,6 +2453,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                             const SizedBox(height: 20),
                             _SourceProvenanceBlock(
                               snapshot: receipt.sourceSnapshot!,
+                              snapshotDigest: receipt.snapshotDigest,
                               l10n: l10n,
                             ),
                           ],
@@ -2584,14 +2538,25 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
   }
 }
 
-class _SourceProvenanceBlock extends StatelessWidget {
+class _SourceProvenanceBlock extends StatefulWidget {
   final PolicySourceSnapshot snapshot;
+  final String? snapshotDigest;
   final AppLocalizations l10n;
+  final Key? toggleKey;
 
   const _SourceProvenanceBlock({
     required this.snapshot,
     required this.l10n,
+    this.snapshotDigest,
+    this.toggleKey,
   });
+
+  @override
+  State<_SourceProvenanceBlock> createState() => _SourceProvenanceBlockState();
+}
+
+class _SourceProvenanceBlockState extends State<_SourceProvenanceBlock> {
+  bool _expanded = false;
 
   String _formatUtcTimestamp(DateTime dt) {
     final u = dt.toUtc();
@@ -2605,17 +2570,33 @@ class _SourceProvenanceBlock extends StatelessWidget {
     final scheme = m3e.colorScheme;
     final surfaces = context.enpriveSurfaces;
     final typeExt = context.enpriveType;
+    final snapshot = widget.snapshot;
+    final l10n = widget.l10n;
+    final digest = widget.snapshotDigest?.trim() ?? '';
 
     final sourceKindLabel = switch (snapshot.sourceType) {
-      PolicySourceType.url => 'Public URL',
-      PolicySourceType.pdf => 'Local PDF document',
-      PolicySourceType.docx => 'Local DOCX document',
-      PolicySourceType.textDocument => 'Local text document',
+      PolicySourceType.url => 'Public web link',
+      PolicySourceType.pdf => 'Local PDF file',
+      PolicySourceType.docx => 'Local Word (DOCX) file',
+      PolicySourceType.textDocument => 'Local text file',
       PolicySourceType.sharedText => 'Shared text',
       PolicySourceType.selectedText => 'Selected text',
-      PolicySourceType.sample => 'Synthetic sample',
-      PolicySourceType.devicePermissions => 'Android permissions',
+      PolicySourceType.sample => 'Sample app',
+      PolicySourceType.devicePermissions => 'Phone permissions',
       PolicySourceType.pastedText => 'Pasted text',
+    };
+
+    final statusLabel = switch (snapshot.extractionStatus) {
+      DocumentExtractionStatus.extracted => 'Read on this phone',
+      DocumentExtractionStatus.none => 'Provided on this phone',
+      DocumentExtractionStatus.unsupportedMime => 'Unsupported file type',
+      DocumentExtractionStatus.tooLarge => 'File too large',
+      DocumentExtractionStatus.empty => 'No readable text',
+      DocumentExtractionStatus.corrupt => 'Could not read file',
+      DocumentExtractionStatus.passwordProtected => 'Password-protected',
+      DocumentExtractionStatus.permissionDenied => 'Permission denied',
+      DocumentExtractionStatus.readError => 'Could not read file',
+      DocumentExtractionStatus.cancelled => 'Cancelled',
     };
 
     return Container(
@@ -2628,84 +2609,20 @@ class _SourceProvenanceBlock extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Source provenance · $sourceKindLabel (${_formatUtcTimestamp(snapshot.retrievedAt)})',
+            '${l10n.sourceSectionTitle} · $sourceKindLabel',
             style: m3e.typeScale.labelMedium.copyWith(
               fontWeight: FontWeight.w800,
               color: scheme.onSurface,
             ),
           ),
-          if (snapshot.canonicalUrl != null &&
-              snapshot.canonicalUrl!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Canonical URL: ${snapshot.canonicalUrl}',
-              style: m3e.typeScale.bodySmall.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+          const SizedBox(height: 4),
+          Text(
+            l10n.advancedDetailsSubtitle,
+            style: m3e.typeScale.bodySmall.copyWith(
+              color: scheme.onSurfaceVariant,
+              height: 1.35,
             ),
-          ],
-          if (snapshot.hasRedirect &&
-              snapshot.requestedUrl != null &&
-              snapshot.requestedUrl!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Redirected from: ${snapshot.requestedUrl}',
-              style: m3e.typeScale.bodySmall.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-          if (snapshot.originalFilename != null &&
-              snapshot.originalFilename!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              'File: ${snapshot.originalFilename}'
-              '${snapshot.mimeType != null ? ' (${snapshot.mimeType})' : ''}'
-              ' · Status: ${snapshot.extractionStatus.name}',
-              style: m3e.typeScale.bodySmall.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-          if (snapshot.sourceSha256Hash.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(
-                  'SHA-256 source hash: ${snapshot.sourceSha256Hash}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: typeExt.sha256Hash.copyWith(
-                    color: scheme.onSurface,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    Clipboard.setData(
-                      ClipboardData(text: snapshot.sourceSha256Hash),
-                    );
-                    ScaffoldMessenger.of(context)
-                      ..hideCurrentSnackBar()
-                      ..showSnackBar(
-                        SnackBar(
-                          content: Text(l10n.digestCopiedMsg),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                  },
-                  icon: Icon(
-                    LucideIcons.copy,
-                    size: 14,
-                    color: scheme.primary,
-                  ),
-                  label: Text(l10n.copyDigestBtn),
-                ),
-              ],
-            ),
-          ],
+          ),
           if (snapshot.limitationNote != null &&
               snapshot.limitationNote!.trim().isNotEmpty) ...[
             const SizedBox(height: 4),
@@ -2716,6 +2633,162 @@ class _SourceProvenanceBlock extends StatelessWidget {
                 height: 1.35,
               ),
             ),
+          ],
+          const SizedBox(height: 6),
+          InkWell(
+            key:
+                widget.toggleKey ??
+                const Key('source_advanced_details_toggle'),
+            borderRadius: BorderRadius.circular(10),
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _expanded
+                        ? LucideIcons.chevronUp
+                        : LucideIcons.chevronDown,
+                    size: 16,
+                    color: scheme.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      l10n.advancedDetailsTitle,
+                      style: m3e.typography.emphasized.labelMedium.copyWith(
+                        color: scheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_expanded) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Checked at: ${_formatUtcTimestamp(snapshot.retrievedAt)}',
+              style: m3e.typeScale.bodySmall.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            if (snapshot.canonicalUrl != null &&
+                snapshot.canonicalUrl!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Canonical URL: ${snapshot.canonicalUrl}',
+                style: m3e.typeScale.bodySmall.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            if (snapshot.hasRedirect &&
+                snapshot.requestedUrl != null &&
+                snapshot.requestedUrl!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Redirected from: ${snapshot.requestedUrl}',
+                style: m3e.typeScale.bodySmall.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            if (snapshot.originalFilename != null &&
+                snapshot.originalFilename!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                'File: ${snapshot.originalFilename}'
+                '${snapshot.mimeType != null ? ' (${snapshot.mimeType})' : ''}'
+                ' · Status: $statusLabel',
+                style: m3e.typeScale.bodySmall.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            if (digest.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    '${l10n.snapshotDigestLabel} · #$digest',
+                    style: typeExt.sha256Hash.copyWith(
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: digest));
+                      ScaffoldMessenger.of(context)
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.digestCopiedMsg),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                    },
+                    icon: Icon(
+                      LucideIcons.copy,
+                      size: 14,
+                      color: scheme.primary,
+                    ),
+                    label: Text(l10n.copyDigestBtn),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                l10n.snapshotDigestExplanation,
+                style: m3e.typeScale.bodySmall.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.38,
+                ),
+              ),
+            ],
+            if (snapshot.sourceSha256Hash.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    'SHA-256 source hash: ${snapshot.sourceSha256Hash}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: typeExt.sha256Hash.copyWith(
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      Clipboard.setData(
+                        ClipboardData(text: snapshot.sourceSha256Hash),
+                      );
+                      ScaffoldMessenger.of(context)
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.digestCopiedMsg),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                    },
+                    icon: Icon(
+                      LucideIcons.copy,
+                      size: 14,
+                      color: scheme.primary,
+                    ),
+                    label: Text(l10n.copyDigestBtn),
+                  ),
+                ],
+              ),
+            ],
           ],
         ],
       ),

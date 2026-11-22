@@ -855,8 +855,8 @@ class _InstalledAppRowTile extends StatelessWidget {
     };
 
     final curatedSemantics = isCurrentlyLinked
-        ? '${app.appName}, ${app.packageName}, $statusLabel, ${l10n.linkedAppCurrentlySelectedBadge}'
-        : '${app.appName}, ${app.packageName}, $statusLabel';
+        ? '${app.appName}, ${l10n.appIdPrefix}: ${app.packageName}, $statusLabel, ${l10n.linkedAppCurrentlySelectedBadge}'
+        : '${app.appName}, ${l10n.appIdPrefix}: ${app.packageName}, $statusLabel';
 
     return EnpriveSegmentedCardTile(
       index: index,
@@ -897,7 +897,7 @@ class _InstalledAppRowTile extends StatelessWidget {
                     Directionality(
                       textDirection: TextDirection.ltr,
                       child: Text(
-                        app.packageName,
+                        '${l10n.appIdPrefix}: ${app.packageName}',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: isRtl ? TextAlign.right : TextAlign.left,

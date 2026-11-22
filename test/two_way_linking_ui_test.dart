@@ -778,7 +778,7 @@ void main() {
         final pkgDirectionality = tester.widget<Directionality>(
           find
               .ancestor(
-                of: find.text('com.focus.reader'),
+                of: find.text('App ID: com.focus.reader'),
                 matching: find.byType(Directionality),
               )
               .first,

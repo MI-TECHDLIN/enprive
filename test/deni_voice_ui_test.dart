@@ -268,7 +268,7 @@ void main() {
 
       // Device permission note clearly separated from policy disclosures
       expect(
-        find.textContaining('Not a policy disclosure'),
+        find.textContaining('From your phone settings, not the policy'),
         findsOneWidget,
       );
 
@@ -462,7 +462,7 @@ void main() {
       await _pumpFrames(tester);
 
       expect(find.text('Cloud plain summary for EduTrack.'), findsOneWidget);
-      expect(find.text('Cloud AI summary'), findsOneWidget);
+      expect(find.text('Summarized in the cloud'), findsOneWidget);
       expect(
         bridge.analyseCalls.where((c) => c['cloudConsent'] == true),
         hasLength(1),

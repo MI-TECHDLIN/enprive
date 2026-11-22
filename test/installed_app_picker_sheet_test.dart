@@ -168,7 +168,7 @@ void main() {
       await _flushPickerAsync(tester);
 
       expect(find.text('Field Notebook'), findsOneWidget);
-      expect(find.text('com.example.notebook'), findsOneWidget);
+      expect(find.text('App ID: com.example.notebook'), findsOneWidget);
       expect(find.text('EduTrack'), findsNothing);
       expect(find.text('CalmMath'), findsNothing);
       expect(find.text('Try a sample kids app'), findsNothing);
@@ -295,7 +295,7 @@ void main() {
         await _flushPickerAsync(tester);
 
         expect(find.text('App 120'), findsOneWidget);
-        expect(find.text('com.example.app120'), findsOneWidget);
+        expect(find.text('App ID: com.example.app120'), findsOneWidget);
 
         // Search bar remains pinned at the same vertical position while scrolling.
         final searchBarAfterScroll = tester.getTopLeft(
@@ -617,7 +617,7 @@ void main() {
         expect(
           find.descendant(
             of: permRow,
-            matching: find.text('Permissions inspected'),
+            matching: find.text('Permissions checked'),
           ),
           findsOneWidget,
         );
@@ -709,8 +709,8 @@ void main() {
         await _flushPickerAsync(tester);
 
         expect(find.text('Focus Reader'), findsNWidgets(2));
-        expect(find.text('com.alpha.focusreader'), findsOneWidget);
-        expect(find.text('com.beta.focusreader'), findsOneWidget);
+        expect(find.text('App ID: com.alpha.focusreader'), findsOneWidget);
+        expect(find.text('App ID: com.beta.focusreader'), findsOneWidget);
 
         await tester.tap(
           find.byKey(const ValueKey('app_picker_row_com.beta.focusreader')),
@@ -845,7 +845,7 @@ void main() {
         await _flushPickerAsync(tester);
 
         expect(find.text('تطبيق القراءة للأطفال'), findsOneWidget);
-        expect(find.text('com.example.arabickids'), findsOneWidget);
+        expect(find.textContaining('com.example.arabickids'), findsOneWidget);
         expect(find.byIcon(LucideIcons.chevronLeft), findsOneWidget);
         expect(find.byIcon(LucideIcons.chevronRight), findsNothing);
         expect(tester.takeException(), isNull);
@@ -908,7 +908,7 @@ void main() {
           final pkgText = tester.widget<Text>(
             find.descendant(
               of: rowFinder,
-              matching: find.text('com.example.contrast'),
+              matching: find.text('App ID: com.example.contrast'),
             ),
           );
           expect(
@@ -1079,10 +1079,10 @@ void main() {
         await _flushPickerAsync(tester);
 
         const expected = <String, String>{
-          'com.example.insufficient': 'Permissions inspected',
+          'com.example.insufficient': 'Permissions checked',
           'com.example.validated': 'Policy review saved',
           'com.example.fallback': 'Policy review saved',
-          'com.example.permonly': 'Permissions inspected',
+          'com.example.permonly': 'Permissions checked',
           'com.example.none': 'Not reviewed',
         };
         final scrollable = find
@@ -1288,7 +1288,7 @@ void main() {
         final data = rowNode.getSemanticsData();
         expect(
           data.label,
-          'Talkback Notes, com.example.talkback, ${l10n.appPickerStatusNotReviewed}',
+          'Talkback Notes, App ID: com.example.talkback, ${l10n.appPickerStatusNotReviewed}',
         );
         expect(data.label.contains('\n'), isFalse);
         expect(data.flagsCollection.isButton, isTrue);

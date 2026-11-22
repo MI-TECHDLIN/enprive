@@ -227,7 +227,7 @@ void main() {
         await tester.tap(find.byKey(const Key('open_unified_intake_btn')));
         await _flush(tester);
 
-        expect(find.text('Inspect policy text'), findsOneWidget);
+        expect(find.text('Check policy text'), findsOneWidget);
         expect(find.text('Review on this phone'), findsNothing);
         expect(find.text('Try sample text'), findsNothing);
 
@@ -263,7 +263,7 @@ void main() {
 
         await tester.tap(find.text('Policy link'));
         await _flush(tester);
-        expect(find.text('Fetch & inspect policy'), findsOneWidget);
+        expect(find.text('Open & check policy'), findsOneWidget);
         expect(find.text('Review on this phone'), findsNothing);
 
         await tester.enterText(
@@ -377,7 +377,7 @@ void main() {
           find.byKey(const Key('intake_selected_app_card')),
           findsOneWidget,
         );
-        expect(find.text('com.example.focus'), findsOneWidget);
+        expect(find.text('App ID: com.example.focus'), findsOneWidget);
       },
     );
 
@@ -1142,12 +1142,12 @@ void main() {
         await tester.tap(find.byKey(const Key('intake_select_app_btn')));
         await _flush(tester);
         expect(find.text('Alpha Notes'), findsOneWidget);
-        expect(find.text('com.alpha.notes'), findsOneWidget);
+        expect(find.text('App ID: com.alpha.notes'), findsOneWidget);
 
         await tester.tap(find.byKey(const Key('intake_change_app_btn')));
         await _flush(tester);
         expect(find.text('Focus Reader'), findsOneWidget);
-        expect(find.text('com.alpha.notes'), findsNothing);
+        expect(find.text('App ID: com.alpha.notes'), findsNothing);
 
         await tester.tap(find.byKey(const Key('intake_remove_app_btn')));
         await _flush(tester);
@@ -1378,7 +1378,7 @@ void main() {
           find.byKey(const Key('intake_association_change_app_btn')),
         );
         await _flush(tester);
-        expect(find.text('org.example.focusreader'), findsOneWidget);
+        expect(find.text('App ID: org.example.focusreader'), findsOneWidget);
         expect(
           find.byKey(const Key('intake_association_warning_card')),
           findsNothing,
@@ -1508,7 +1508,7 @@ void main() {
           findsOneWidget,
         );
         expect(find.text('Classroom Companion'), findsOneWidget);
-        expect(find.text('com.school.classroom'), findsOneWidget);
+        expect(find.text('App ID: com.school.classroom'), findsOneWidget);
         expect(find.byKey(const Key('intake_title_field')), findsNothing);
         expect(find.byKey(const Key('intake_select_app_btn')), findsNothing);
         expect(find.byKey(const Key('intake_play_store_btn')), findsNothing);
@@ -1608,7 +1608,7 @@ void main() {
           'https://failed.example.org/privacy',
         );
         expect(find.text('Classroom Companion'), findsOneWidget);
-        expect(find.text('com.school.classroom'), findsOneWidget);
+        expect(find.text('App ID: com.school.classroom'), findsOneWidget);
         expect(find.byKey(const Key('intake_error_banner')), findsOneWidget);
         expect(find.text('Temporary network failure.'), findsOneWidget);
 
@@ -1690,7 +1690,7 @@ void main() {
           find.byKey(const Key('intake_selected_app_card')),
           findsOneWidget,
         );
-        expect(find.text('com.unlocked.reader'), findsOneWidget);
+        expect(find.text('App ID: com.unlocked.reader'), findsOneWidget);
         expect(find.byKey(const Key('intake_error_banner')), findsOneWidget);
         expect(find.text('The link returned HTTP 404.'), findsOneWidget);
       },
@@ -1839,7 +1839,9 @@ void main() {
           TextDirection.rtl,
         );
         expect(
-          Directionality.of(tester.element(find.text('com.rtl.sampleapp'))),
+          Directionality.of(
+            tester.element(find.textContaining('com.rtl.sampleapp')),
+          ),
           TextDirection.ltr,
         );
         expect(

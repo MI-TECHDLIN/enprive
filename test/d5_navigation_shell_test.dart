@@ -414,7 +414,7 @@ void main() {
           );
           expect(
             folderSemantics.label,
-            'Permissions & Consent. 3 guides. Camera, mic, location & AD_ID',
+            'Permissions & Consent. 3 guides. Camera, mic, location & ad IDs',
           );
           expect(folderSemantics.label.contains('\n'), isFalse);
           expect(folderSemantics.flagsCollection.isButton, isTrue);

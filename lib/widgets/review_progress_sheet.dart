@@ -182,7 +182,7 @@ class _ReviewProgressCardState extends State<ReviewProgressCard> {
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      _isInCloudActive ? 'App Check' : 'LIVE',
+                      _isInCloudActive ? l10n.chipInCloud : l10n.chipOnDevice,
                       style: m3e.typography.emphasized.labelSmall.copyWith(
                         fontSize: 10.5,
                         letterSpacing: 0.4,

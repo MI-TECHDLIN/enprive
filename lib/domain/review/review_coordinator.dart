@@ -263,7 +263,7 @@ class ReviewCoordinator {
         requestId: '${reqId}_appcheck',
         steps: processSteps,
         stage: 'sending_appcheck',
-        label: 'Streaming reasoning with App Check protection',
+        label: 'Checking policy in the cloud',
         inferenceSource: 'IN_CLOUD',
       );
 
@@ -349,19 +349,19 @@ class ReviewCoordinator {
       overallState: ReviewOverallState.insufficientEvidence,
       inferenceSource: InferenceSource.offlineDeterministic,
       summary:
-          'Device Permission Inspection for ${appPermissions.appName} '
-          '(${appPermissions.packageName}): $requestedCount Android '
-          '${requestedCount == 1 ? 'permission' : 'permissions'} declared '
-          '($grantedCount granted). No privacy policy was provided or '
+          'Phone permissions checked for ${appPermissions.appName} '
+          '(App ID: ${appPermissions.packageName}): $requestedCount Android '
+          '${requestedCount == 1 ? 'permission' : 'permissions'} listed by this app '
+          '($grantedCount allowed). No privacy policy was provided or '
           'compared yet.',
       calibratedDisclaimer:
-          'Permission inspection only — no privacy policy has been reviewed. '
+          'Phone permissions only — no privacy policy has been reviewed. '
           '${_localizedDisclaimerFor(languageCode)}',
       findings: const [],
       permissionReport: report,
       processSteps: const [
-        'Queried Android PackageManager locally on this phone',
-        'Skipped AI/cloud calls because no privacy policy was supplied',
+        'Checked app permissions on this phone',
+        'Skipped AI and cloud checks because no privacy policy was provided',
       ],
       diagnosticKind: ReviewDiagnosticKind.devicePermissionInspection,
       sourceSnapshot: PolicySourceSnapshot(
@@ -372,7 +372,7 @@ class ReviewCoordinator {
         appIdentityMatchStatus: AppIdentityMatchStatus.notApplicable,
         sourceSha256Hash: '',
         limitationNote:
-            'Android PackageManager inspection on this device only; no privacy policy was supplied.',
+            'Checked app permissions on this phone only; no privacy policy was provided.',
       ),
       languageCode: languageCode,
     );
@@ -1014,7 +1014,7 @@ class ReviewCoordinator {
           requestId: '${reqId}_appcheck',
           steps: processSteps,
           stage: 'sending_appcheck',
-          label: 'Streaming explanation with App Check protection',
+          label: 'Getting explanation from the cloud',
           inferenceSource: 'IN_CLOUD',
         );
         res = await _bridge.analyseText(

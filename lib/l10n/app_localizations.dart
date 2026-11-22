@@ -157,7 +157,7 @@ abstract class AppLocalizations {
   /// No description provided for @stateReviewRecommendedSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'One or more passages or permission mismatches deserve a human look.'**
+  /// **'One or more policy parts or phone permissions need a closer look.'**
   String get stateReviewRecommendedSubtitle;
 
   /// No description provided for @stateInsufficientEvidence.
@@ -169,7 +169,7 @@ abstract class AppLocalizations {
   /// No description provided for @stateInsufficientEvidenceSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Evidence is missing, unavailable, or could not be verified on this device.'**
+  /// **'We need more privacy policy text before we can check what this app does.'**
   String get stateInsufficientEvidenceSubtitle;
 
   /// No description provided for @chipOnDevice.
@@ -187,49 +187,49 @@ abstract class AppLocalizations {
   /// No description provided for @chipLocationUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Processing location unavailable'**
+  /// **'Source not available'**
   String get chipLocationUnavailable;
 
   /// No description provided for @chipOfflineDeterministic.
   ///
   /// In en, this message translates to:
-  /// **'Offline local scan'**
+  /// **'Checked offline on this phone'**
   String get chipOfflineDeterministic;
 
   /// No description provided for @chipUnknown.
   ///
   /// In en, this message translates to:
-  /// **'Processing source unknown'**
+  /// **'Source unknown'**
   String get chipUnknown;
 
   /// No description provided for @statusSourceMatched.
   ///
   /// In en, this message translates to:
-  /// **'Source matched'**
+  /// **'Matched in policy'**
   String get statusSourceMatched;
 
   /// No description provided for @statusDeviceObserved.
   ///
   /// In en, this message translates to:
-  /// **'Device observed'**
+  /// **'Seen on this phone'**
   String get statusDeviceObserved;
 
   /// No description provided for @statusInterpretation.
   ///
   /// In en, this message translates to:
-  /// **'Interpretation'**
+  /// **'Deni\'s explanation'**
   String get statusInterpretation;
 
   /// No description provided for @statusUnverified.
   ///
   /// In en, this message translates to:
-  /// **'Unverified'**
+  /// **'Not found in policy'**
   String get statusUnverified;
 
   /// No description provided for @statusStale.
   ///
   /// In en, this message translates to:
-  /// **'Outdated / Stale'**
+  /// **'Older check'**
   String get statusStale;
 
   /// No description provided for @btnCheckApp.
@@ -301,13 +301,13 @@ abstract class AppLocalizations {
   /// No description provided for @cloudConsentDisclosure.
   ///
   /// In en, this message translates to:
-  /// **'To analyse this text in the cloud, Enprive will send only the redacted text shown above to Firebase AI Logic. Your installed-app list and Android permission observations will never be sent.'**
+  /// **'To check this in the cloud, Enprive will send only the text shown above (with personal details hidden) for this one request. Your apps and phone permissions will never be sent.'**
   String get cloudConsentDisclosure;
 
   /// No description provided for @permissionLimitationNotice.
   ///
   /// In en, this message translates to:
-  /// **'Android reports this permission state on this phone. It does not prove whether the app actually accessed or transmitted data.'**
+  /// **'Your phone shows whether this permission is allowed. It does not prove whether the app actually accessed or sent data.'**
   String get permissionLimitationNotice;
 
   /// No description provided for @navHome.
@@ -421,7 +421,7 @@ abstract class AppLocalizations {
   /// No description provided for @checkQuoteDesc.
   ///
   /// In en, this message translates to:
-  /// **'Flags sharing, voice recording, and retention with verbatim quotes.'**
+  /// **'Highlights data sharing, voice recording, and how long data is kept using exact quotes.'**
   String get checkQuoteDesc;
 
   /// No description provided for @checkPermissionTitle.
@@ -457,7 +457,7 @@ abstract class AppLocalizations {
   /// Count of verified policy clauses shown in recently reviewed cards
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 verified clause} other{{count} verified clauses}}'**
+  /// **'{count, plural, =1{1 matched quote} other{{count} matched quotes}}'**
   String verifiedClausesCount(int count);
 
   /// No description provided for @trySampleText.
@@ -601,13 +601,13 @@ abstract class AppLocalizations {
   /// No description provided for @readinessRow3Title.
   ///
   /// In en, this message translates to:
-  /// **'Personal details scrubbed'**
+  /// **'Personal details hidden'**
   String get readinessRow3Title;
 
   /// No description provided for @readinessRow3Desc.
   ///
   /// In en, this message translates to:
-  /// **'If on-device AI isn’t available or a policy is long, names, emails, and phone numbers become placeholders before App Check verification.'**
+  /// **'If you choose cloud help, names, emails, and phone numbers are hidden before anything is sent.'**
   String get readinessRow3Desc;
 
   /// No description provided for @settingsTitle.
@@ -631,7 +631,7 @@ abstract class AppLocalizations {
   /// No description provided for @localScannerProtectedMsg.
   ///
   /// In en, this message translates to:
-  /// **'Protected by built-in local clause scanning.'**
+  /// **'Ready to check policies offline on this phone.'**
   String get localScannerProtectedMsg;
 
   /// No description provided for @statusChecking.
@@ -799,7 +799,7 @@ abstract class AppLocalizations {
   /// No description provided for @geminiNanoReadyMsg.
   ///
   /// In en, this message translates to:
-  /// **'Gemini Nano is ready on this phone. Reviews stay completely on your device.'**
+  /// **'On-device AI is ready on this phone. Reviews stay completely on your device.'**
   String get geminiNanoReadyMsg;
 
   /// No description provided for @modelDownloadingMsg.
@@ -817,7 +817,7 @@ abstract class AppLocalizations {
   /// No description provided for @localScannerDefaultMsg.
   ///
   /// In en, this message translates to:
-  /// **'This phone uses Enprive’s built-in local clause scanner by default.'**
+  /// **'This phone checks policies offline on your device by default.'**
   String get localScannerDefaultMsg;
 
   /// No description provided for @preparingPrivateAnalysis.
@@ -835,7 +835,7 @@ abstract class AppLocalizations {
   /// No description provided for @localScannerActiveTitle.
   ///
   /// In en, this message translates to:
-  /// **'Local scanner active'**
+  /// **'Offline check ready'**
   String get localScannerActiveTitle;
 
   /// No description provided for @privateAnalysisSheetSubtitle.
@@ -865,7 +865,7 @@ abstract class AppLocalizations {
   /// No description provided for @readingClausesInitial.
   ///
   /// In en, this message translates to:
-  /// **'Reading policy clauses on this phone…'**
+  /// **'Reading policy text on this phone…'**
   String get readingClausesInitial;
 
   /// Step counter inside the live review progress card
@@ -883,19 +883,19 @@ abstract class AppLocalizations {
   /// No description provided for @thoughtSignaturePrefix.
   ///
   /// In en, this message translates to:
-  /// **'Thought signature'**
+  /// **'Check ID'**
   String get thoughtSignaturePrefix;
 
   /// No description provided for @viewStreamedThoughts.
   ///
   /// In en, this message translates to:
-  /// **'View streamed thoughts'**
+  /// **'How Enprive checked this'**
   String get viewStreamedThoughts;
 
   /// No description provided for @hideStreamedThoughts.
   ///
   /// In en, this message translates to:
-  /// **'Hide streamed thoughts'**
+  /// **'Hide how Enprive checked this'**
   String get hideStreamedThoughts;
 
   /// No description provided for @analysisTraceDefaultTitle.
@@ -913,7 +913,7 @@ abstract class AppLocalizations {
   /// No description provided for @snapshotSheetTitle.
   ///
   /// In en, this message translates to:
-  /// **'Reviewed policy snapshot'**
+  /// **'Reviewed policy text'**
   String get snapshotSheetTitle;
 
   /// No description provided for @snapshotSourcePrefix.
@@ -931,7 +931,7 @@ abstract class AppLocalizations {
   /// No description provided for @snapshotDigestPrefix.
   ///
   /// In en, this message translates to:
-  /// **'Digest'**
+  /// **'Document fingerprint'**
   String get snapshotDigestPrefix;
 
   /// No description provided for @statFindings.
@@ -949,13 +949,13 @@ abstract class AppLocalizations {
   /// No description provided for @statOsGranted.
   ///
   /// In en, this message translates to:
-  /// **'OS Granted'**
+  /// **'Allowed on phone'**
   String get statOsGranted;
 
   /// No description provided for @statUnverified.
   ///
   /// In en, this message translates to:
-  /// **'Unverified'**
+  /// **'Not found'**
   String get statUnverified;
 
   /// No description provided for @keyFindingsTitle.
@@ -979,7 +979,7 @@ abstract class AppLocalizations {
   /// No description provided for @viewReviewedSnapshot.
   ///
   /// In en, this message translates to:
-  /// **'View reviewed policy snapshot'**
+  /// **'View reviewed policy text'**
   String get viewReviewedSnapshot;
 
   /// No description provided for @btnSavedToReceipts.
@@ -991,19 +991,19 @@ abstract class AppLocalizations {
   /// No description provided for @observedOnPhoneLabel.
   ///
   /// In en, this message translates to:
-  /// **'Observed on this phone'**
+  /// **'Seen on this phone'**
   String get observedOnPhoneLabel;
 
   /// No description provided for @quoteVerifiedLabel.
   ///
   /// In en, this message translates to:
-  /// **'Quote verified in policy'**
+  /// **'Exact quote from policy'**
   String get quoteVerifiedLabel;
 
   /// No description provided for @unverifiedClaimLabel.
   ///
   /// In en, this message translates to:
-  /// **'Unverified claim'**
+  /// **'Not found in policy'**
   String get unverifiedClaimLabel;
 
   /// No description provided for @categoryDataCollection.
@@ -1051,7 +1051,7 @@ abstract class AppLocalizations {
   /// No description provided for @labelWhatRemainsUnknown.
   ///
   /// In en, this message translates to:
-  /// **'What remains unknown'**
+  /// **'What we still don\'t know'**
   String get labelWhatRemainsUnknown;
 
   /// No description provided for @presetQuestionMeaning.
@@ -1075,7 +1075,7 @@ abstract class AppLocalizations {
   /// No description provided for @readingCitedClause.
   ///
   /// In en, this message translates to:
-  /// **'Reading cited policy clause…'**
+  /// **'Reading the policy quote…'**
   String get readingCitedClause;
 
   /// No description provided for @deniAnswerTitle.
@@ -1087,7 +1087,7 @@ abstract class AppLocalizations {
   /// No description provided for @stepsAndReasoning.
   ///
   /// In en, this message translates to:
-  /// **'Steps & model reasoning'**
+  /// **'How Deni checked this'**
   String get stepsAndReasoning;
 
   /// No description provided for @chooseReviewModeTitle.
@@ -1153,13 +1153,13 @@ abstract class AppLocalizations {
   /// No description provided for @sampleSyntheticBadge.
   ///
   /// In en, this message translates to:
-  /// **'Synthetic example'**
+  /// **'Sample app'**
   String get sampleSyntheticBadge;
 
   /// No description provided for @permissionInspectionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Device Permission Inspection'**
+  /// **'Phone permissions checked'**
   String get permissionInspectionTitle;
 
   /// No description provided for @addAppPrivacyPolicyBtn.
@@ -1171,37 +1171,37 @@ abstract class AppLocalizations {
   /// No description provided for @snapshotDigestLabel.
   ///
   /// In en, this message translates to:
-  /// **'Snapshot digest · FNV-1a 64-bit'**
+  /// **'Document fingerprint'**
   String get snapshotDigestLabel;
 
   /// No description provided for @snapshotDigestExplanation.
   ///
   /// In en, this message translates to:
-  /// **'A fast 64-bit local fingerprint of this text (not cryptographic SHA-256). Changing any character produces a different digest.'**
+  /// **'A unique code that helps verify this is the exact text Enprive checked. If even one letter changes, this code changes too.'**
   String get snapshotDigestExplanation;
 
   /// No description provided for @copyDigestBtn.
   ///
   /// In en, this message translates to:
-  /// **'Copy digest'**
+  /// **'Copy fingerprint'**
   String get copyDigestBtn;
 
   /// No description provided for @digestCopiedMsg.
   ///
   /// In en, this message translates to:
-  /// **'Snapshot digest copied'**
+  /// **'Document fingerprint copied'**
   String get digestCopiedMsg;
 
   /// No description provided for @permissionGrantedBadge.
   ///
   /// In en, this message translates to:
-  /// **'Granted'**
+  /// **'Allowed on this phone'**
   String get permissionGrantedBadge;
 
   /// No description provided for @permissionNotGrantedBadge.
   ///
   /// In en, this message translates to:
-  /// **'Not granted'**
+  /// **'Not allowed'**
   String get permissionNotGrantedBadge;
 
   /// No description provided for @checkingPolicyWithCloudAi.
@@ -1213,7 +1213,7 @@ abstract class AppLocalizations {
   /// No description provided for @preparingCloudAiStream.
   ///
   /// In en, this message translates to:
-  /// **'Preparing redacted cloud verification…'**
+  /// **'Hiding personal details before cloud check…'**
   String get preparingCloudAiStream;
 
   /// No description provided for @cancellingAnalysis.
@@ -1237,13 +1237,13 @@ abstract class AppLocalizations {
   /// No description provided for @cloudFallbackBannerTitle.
   ///
   /// In en, this message translates to:
-  /// **'Cloud AI unavailable — local scan shown'**
+  /// **'Cloud unavailable — checked on this phone'**
   String get cloudFallbackBannerTitle;
 
   /// No description provided for @cloudFallbackBannerBody.
   ///
   /// In en, this message translates to:
-  /// **'Cloud analysis was unavailable, so this result came from Enprive’s local deterministic scanner.'**
+  /// **'Cloud analysis was unavailable, so Enprive checked this policy directly on your phone.'**
   String get cloudFallbackBannerBody;
 
   /// Filter chip showing all launchable installed apps
@@ -1279,7 +1279,7 @@ abstract class AppLocalizations {
   /// Neutral status indicator when only device permissions were inspected and saved
   ///
   /// In en, this message translates to:
-  /// **'Permissions inspected'**
+  /// **'Permissions checked'**
   String get appPickerStatusPermissionsInspected;
 
   /// Neutral status indicator when no saved receipt exists for this app
@@ -1291,7 +1291,7 @@ abstract class AppLocalizations {
   /// Search input placeholder in the installed app picker
   ///
   /// In en, this message translates to:
-  /// **'Search by app or package name…'**
+  /// **'Search by app name or App ID…'**
   String get appPickerSearchHint;
 
   /// Title shown when Android reports no launchable installed applications
@@ -1303,7 +1303,7 @@ abstract class AppLocalizations {
   /// Body shown when no launchable apps are available on the device
   ///
   /// In en, this message translates to:
-  /// **'No launchable apps were reported on this device.'**
+  /// **'We couldn\'t find any apps to check on this phone.'**
   String get appPickerEmptyInstalledBody;
 
   /// Segmented mode label for local document import (PDF, TXT, DOCX)
@@ -1315,13 +1315,13 @@ abstract class AppLocalizations {
   /// Primary action button label in Paste text mode of the unified intake sheet
   ///
   /// In en, this message translates to:
-  /// **'Inspect policy text'**
+  /// **'Check policy text'**
   String get intakeActionInspectText;
 
   /// Primary action button label in Public URL mode of the unified intake sheet
   ///
   /// In en, this message translates to:
-  /// **'Fetch & inspect policy'**
+  /// **'Open & check policy'**
   String get intakeActionFetchUrl;
 
   /// Primary action button label in Document mode of the unified intake sheet
@@ -1357,7 +1357,7 @@ abstract class AppLocalizations {
   /// Disclosure clarifying direct public URL retrieval and non-ownership
   ///
   /// In en, this message translates to:
-  /// **'Fetches the public web page directly. A user-supplied link does not prove app ownership.'**
+  /// **'Loads this public web page directly. Adding a link here does not prove app ownership.'**
   String get intakeUrlDisclosure;
 
   /// Privacy note beneath the policy text input box
@@ -1375,7 +1375,7 @@ abstract class AppLocalizations {
   /// Description of strictly local document extraction and size limit
   ///
   /// In en, this message translates to:
-  /// **'Text is extracted strictly on this phone (up to 10 MB) with a local SHA-256 snapshot hash. Files are never uploaded.'**
+  /// **'We read the text right on your phone (up to 10 MB). Your file is never uploaded.'**
   String get intakeDocumentCardBody;
 
   /// Optional action prompt allowing the user to pair an installed app during policy-first intake
@@ -1417,7 +1417,7 @@ abstract class AppLocalizations {
   /// Clarification beneath the Play Store convenience link button
   ///
   /// In en, this message translates to:
-  /// **'Opens the app\'s Play Store listing so you can copy its privacy policy link. Enprive never scrapes Play Store or assumes link ownership.'**
+  /// **'Opens the Play Store so you can copy the app\'s privacy policy link. Enprive never copies it automatically or assumes the link is official.'**
   String get intakePlayStoreHelperNote;
 
   /// Inline message shown if launching Play Store fails or is unavailable
@@ -1471,7 +1471,7 @@ abstract class AppLocalizations {
   /// Action to drop the optional app association and inspect only the supplied policy
   ///
   /// In en, this message translates to:
-  /// **'Inspect policy without app'**
+  /// **'Check policy without app'**
   String get intakeAssociationInspectWithoutApp;
 
   /// Accessibility label for the Paste text / Policy link / Document mode selector
@@ -1534,16 +1534,16 @@ abstract class AppLocalizations {
   /// **'Summarize with Cloud AI'**
   String get voiceBtnSummarizeCloud;
 
-  /// Badge identifying playback via Firebase AI Logic Gemini TTS prebuilt voice Puck
+  /// Badge identifying playback via Firebase AI Logic Gemini TTS prebuilt voice
   ///
   /// In en, this message translates to:
-  /// **'Expressive voice · Puck'**
+  /// **'Expressive cloud voice'**
   String get voiceBadgeExpressive;
 
   /// Badge identifying playback via local Android TextToSpeech
   ///
   /// In en, this message translates to:
-  /// **'Device voice · Offline'**
+  /// **'Phone voice · Offline'**
   String get voiceBadgeDeviceOffline;
 
   /// Button label on a summary point to expand or collapse its linked verbatim policy excerpt
@@ -1573,7 +1573,7 @@ abstract class AppLocalizations {
   /// Disclosure text inside CloudConsentSheet before requesting Gemini TTS speech synthesis
   ///
   /// In en, this message translates to:
-  /// **'To speak this summary with Deni’s expressive Gemini voice (Puck), Enprive will send only the redacted summary text shown above to Firebase AI Logic for this single request. Your installed apps and Android permissions are never sent.'**
+  /// **'To read this summary aloud with Deni’s expressive cloud voice, Enprive will send only the summary text shown above (with personal details hidden) for this one request. Your apps and phone permissions are never sent.'**
   String get voiceConsentDisclosure;
 
   /// Primary consent button approving one Gemini TTS request
@@ -1603,7 +1603,7 @@ abstract class AppLocalizations {
   /// Disclosure text inside CloudConsentSheet before requesting cloud plain-language summarization
   ///
   /// In en, this message translates to:
-  /// **'To rewrite these verified policy findings in plain language in the cloud, Enprive will send only the redacted excerpts shown above to Firebase AI Logic once. Your installed apps and Android permissions are never sent.'**
+  /// **'To summarize these policy quotes in plain language in the cloud, Enprive will send only the text shown above (with personal details hidden) for this one request. Your apps and phone permissions are never sent.'**
   String get voiceSummaryConsentDisclosure;
 
   /// Honest notice shown when consented Gemini TTS fails or times out and falls back to local Android TTS
@@ -1708,10 +1708,10 @@ abstract class AppLocalizations {
   /// **'Only the text in the preview leaves this phone, for this one request.'**
   String get consentSentScope;
 
-  /// Consent summary line counting the personal details masked before anything is sent
+  /// Consent summary line counting the personal details hidden before anything is sent
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =0{No personal details were found to mask.} =1{1 personal detail is masked first.} other{{count} personal details are masked first.}}'**
+  /// **'{count, plural, =0{No personal details were found to hide.} =1{1 personal detail is hidden first.} other{{count} personal details are hidden first.}}'**
   String consentMaskedCount(int count);
 
   /// Consent summary line naming what never leaves the phone
@@ -1732,7 +1732,7 @@ abstract class AppLocalizations {
   /// **'Undo'**
   String get btnUndo;
 
-  /// Last onboarding screen promise tile title about masking personal details
+  /// Last onboarding screen promise tile title about hiding personal details
   ///
   /// In en, this message translates to:
   /// **'Personal details hidden'**
@@ -1741,7 +1741,7 @@ abstract class AppLocalizations {
   /// Last onboarding screen promise tile line; plain words, no technical jargon
   ///
   /// In en, this message translates to:
-  /// **'If you choose cloud, names, emails and numbers are masked first.'**
+  /// **'If you choose cloud, names, emails and numbers are hidden first.'**
   String get readinessPromiseMaskedLine;
 
   /// App bar title of the finding detail page
@@ -1771,7 +1771,7 @@ abstract class AppLocalizations {
   /// Section heading on the finding detail page
   ///
   /// In en, this message translates to:
-  /// **'What Android reports'**
+  /// **'What your phone shows'**
   String get labelWhatAndroidReports;
 
   /// Tooltip for the icon button that opens the reviewed policy snapshot
@@ -1795,7 +1795,7 @@ abstract class AppLocalizations {
   /// Plain-language explanation of linking an installed app after a policy-first review
   ///
   /// In en, this message translates to:
-  /// **'Pick an installed app to compare its Android permissions with this policy in the same review. Your app list stays on this phone.'**
+  /// **'Pick an installed app to compare its phone permissions with this policy in the same review. Your app list stays on this phone.'**
   String get linkInstalledAppCardBody;
 
   /// Bottom sheet title when picking an installed app to link to an open policy review
@@ -1978,7 +1978,7 @@ abstract class AppLocalizations {
   /// Calibrated limitation disclaimer below the permission comparison list
   ///
   /// In en, this message translates to:
-  /// **'Android shows permission settings on this phone only. This comparison is a prompt to look closer, never proof of wrongdoing or that data was sent.'**
+  /// **'Your phone shows permission settings on this phone only. This comparison is a prompt to look closer, never proof of wrongdoing or that data was sent.'**
   String get permissionComparisonLimitationNote;
 
   /// Neutral factual chip when a permission is mentioned in the policy but not requested by the installed app
@@ -2002,12 +2002,96 @@ abstract class AppLocalizations {
   /// Plain-language summary when a linked installed app declares zero sensitive catalog permissions
   ///
   /// In en, this message translates to:
-  /// **'Android lists {requestedCount} permissions ({grantedCount} allowed) for {appName}, with none in the sensitive categories checked here (location, camera, microphone, contacts, photos, or ad ID).'**
+  /// **'Your phone lists {requestedCount} permissions ({grantedCount} allowed) for {appName}, with none in the sensitive categories checked here (location, camera, microphone, contacts, photos, or ad ID).'**
   String permissionsEmptyComparisonBody(
     int requestedCount,
     int grantedCount,
     String appName,
   );
+
+  /// Plain source label when inspecting an installed app on this phone
+  ///
+  /// In en, this message translates to:
+  /// **'Checked on this phone'**
+  String get sourceDeviceInspection;
+
+  /// Plain-language label prefixing an Android package name (e.g. App ID: com.example.app)
+  ///
+  /// In en, this message translates to:
+  /// **'App ID'**
+  String get appIdPrefix;
+
+  /// Title of the collapsible expander hiding technical verification details
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced details'**
+  String get advancedDetailsTitle;
+
+  /// Plain one-line explanation above the Advanced details expander
+  ///
+  /// In en, this message translates to:
+  /// **'Technical details that verify when and where this policy text was checked.'**
+  String get advancedDetailsSubtitle;
+
+  /// Plain heading for the policy source card on the review result screen
+  ///
+  /// In en, this message translates to:
+  /// **'Where this policy came from'**
+  String get sourceSectionTitle;
+
+  /// Plain category label on the cloud consent preview card
+  ///
+  /// In en, this message translates to:
+  /// **'Exact text to be sent'**
+  String get cloudPayloadLabel;
+
+  /// Plain badge on the cloud consent preview card when no personal details were found
+  ///
+  /// In en, this message translates to:
+  /// **'No personal details found'**
+  String get cloudPayloadNoPiiLabel;
+
+  /// Plain badge on the cloud consent preview card showing how many personal details were hidden
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden ({count})'**
+  String cloudPayloadHiddenCount(int count);
+
+  /// Plain provenance pill for an on-device AI plain-language summary
+  ///
+  /// In en, this message translates to:
+  /// **'Summarized on this phone'**
+  String get summarySourceOnDevice;
+
+  /// Plain provenance pill for a consented cloud AI plain-language summary
+  ///
+  /// In en, this message translates to:
+  /// **'Summarized in the cloud'**
+  String get summarySourceInCloud;
+
+  /// Plain provenance pill for a built-in offline plain-language summary
+  ///
+  /// In en, this message translates to:
+  /// **'Summarized offline on this phone'**
+  String get summarySourceOffline;
+
+  /// Plain provenance pill when the summary source is unknown
+  ///
+  /// In en, this message translates to:
+  /// **'Summary source unknown'**
+  String get summarySourceUnknown;
+
+  /// Plain suffix clarifying that an observation comes from phone permission settings rather than the privacy policy
+  ///
+  /// In en, this message translates to:
+  /// **'From your phone settings, not the policy'**
+  String get notFromPolicySuffix;
+
+  /// Plain suffix clarifying that a sample permission comes from a built-in example rather than the privacy policy
+  ///
+  /// In en, this message translates to:
+  /// **'Example only, not from the policy'**
+  String get sampleNotFromPolicySuffix;
 }
 
 class _AppLocalizationsDelegate
