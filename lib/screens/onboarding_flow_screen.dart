@@ -538,7 +538,7 @@ class _PromiseTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerLowest,
+        color: scheme.surfaceBright,
         borderRadius: BorderRadius.circular(EnpriveRadii.card),
       ),
       child: Row(

@@ -2404,11 +2404,10 @@ class _SourceProvenanceBlock extends StatelessWidget {
     };
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: surfaces.cardMuted,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: surfaces.hairlineBorder),
+        borderRadius: BorderRadius.circular(EnpriveRadii.card),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
