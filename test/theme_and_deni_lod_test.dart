@@ -397,7 +397,7 @@ void main() {
         expect(mascots[1].effectiveLodTier, DeniLodTier.standard);
         expect(mascots[2].effectiveLodTier, DeniLodTier.hero);
 
-        // Cycle through all 6 poses via M3EChip filter chips
+        // Cycle through every DeniPose (including intent poses) via M3EChip filter chips
         for (final pose in DeniPose.values) {
           final chipFinder = find.byKey(Key('lod_pose_chip_${pose.name}'));
           await tester.ensureVisible(chipFinder);

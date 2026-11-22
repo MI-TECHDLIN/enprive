@@ -72,7 +72,8 @@ class WhyThisFindingSheet extends StatefulWidget {
 }
 
 class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
-  DeniPose _deniPose = DeniPose.explaining;
+  // Before the first answer Deni raises a hand: "I can explain this".
+  DeniPose _deniPose = DeniPose.raiseHand;
   bool _isAskingDeni = false;
   bool _isConsentSheetOpen = false;
   bool _isQuoteCollapsed = false;
@@ -96,7 +97,9 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
     setState(() {
       _isAskingDeni = false;
       _activeDeniRequestId = null;
-      _deniPose = DeniPose.explaining;
+      _deniPose = _deniExplanation == null
+          ? DeniPose.raiseHand
+          : DeniPose.explaining;
     });
     if (reqId != null) {
       unawaited(widget.coordinator.bridge.cancelAnalysis(requestId: reqId));
@@ -736,6 +739,7 @@ class _WhyThisFindingSheetState extends State<WhyThisFindingSheet> {
                         DeniAnimatedMascot(
                           size: 56,
                           pose: _deniPose,
+                          semanticLabel: l10n.btnAskDeni,
                           onTap: (_isAskingDeni || _isConsentSheetOpen)
                               ? null
                               : () => _askDeni(

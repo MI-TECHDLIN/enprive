@@ -337,7 +337,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
             children: [
               const DeniAnimatedMascot(
                 size: 96,
-                pose: DeniPose.idle,
+                pose: DeniPose.carryReceipt,
               ),
               const SizedBox(height: 20),
               Text(

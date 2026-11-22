@@ -78,7 +78,7 @@ class _EnpriveM3EStage0AppState extends State<EnpriveM3EStage0App> {
 ///    asymmetric bento metrics, `Marshmallow` & `Growth` companion staging,
 ///    `plan check up` insight callout).
 /// 3. Deni 3-Tier LOD System at exact `52dp` (`LOD 1`), `84dp` (`LOD 2`), and
-///    `144dp` (`LOD 3`) across all 6 poses.
+///    `144dp` (`LOD 3`) across every [DeniPose], including the intent poses.
 /// 4. Light ("Warm Archival Paper") and Dark ("Obsidian Ceramic Slate") semantic
 ///    tokens with live calculated sRGB WCAG 2.1 contrast ratios.
 class DesignSystemPreviewScreen extends StatefulWidget {

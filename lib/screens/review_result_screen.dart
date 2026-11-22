@@ -360,6 +360,10 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     super.dispose();
   }
 
+  /// Pose of the compact Deni inside the "Ask Deni" button: listening or
+  /// thinking while voice work runs, otherwise a raised hand ("I can explain
+  /// this"). Hands show intent, never a verdict, so the review state is not
+  /// mirrored in the pose.
   DeniPose get _statePose {
     if (_voicePlaybackState == VoicePlaybackState.playing) {
       return DeniPose.listening;
@@ -368,12 +372,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         _isGeneratingSummary) {
       return DeniPose.thinking;
     }
-    if (_isSaved) return DeniPose.celebrating;
-    return switch (_activeReceipt.overallState) {
-      ReviewOverallState.reviewRecommended => DeniPose.explaining,
-      ReviewOverallState.noConcern => DeniPose.idle,
-      ReviewOverallState.insufficientEvidence => DeniPose.support,
-    };
+    return DeniPose.raiseHand;
   }
 
   DeniVoiceSummary get _effectiveVoiceSummary =>
