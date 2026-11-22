@@ -1179,4 +1179,468 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get sampleNotFromPolicySuffix => 'Example only, not from the policy';
+
+  @override
+  String get learnHeaderSubtitle => 'Offline privacy guides & diagrams';
+
+  @override
+  String get learnFilterAll => 'All topics';
+
+  @override
+  String get learnFilterPolicies => 'Policies';
+
+  @override
+  String get learnFilterPermissions => 'Permissions';
+
+  @override
+  String get learnFilterSharing => 'Sharing';
+
+  @override
+  String get learnFilterEvidence => 'Evidence';
+
+  @override
+  String learnLessonStepCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count steps',
+      one: '1 step',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get learnDeckTitle => 'Practice privacy habits locally';
+
+  @override
+  String get learnDeckBody =>
+      '100% offline lessons with diagrams. Your installed apps and receipts never enter Learn.';
+
+  @override
+  String get learnDeckCheckBtn => 'Apply it · Check an app';
+
+  @override
+  String get learnCheckAppBridgeBtn => 'Check an app on this phone';
+
+  @override
+  String get learnSectionDiagram => 'How it works';
+
+  @override
+  String get learnSectionSteps => 'Key steps';
+
+  @override
+  String get learnSectionQuickCheck => 'Quick check';
+
+  @override
+  String get learnTooltipListenLesson => 'Read this lesson aloud offline';
+
+  @override
+  String get learnTooltipStopLesson => 'Stop reading lesson aloud';
+
+  @override
+  String get learnVoiceUnavailableNotice =>
+      'Offline voice playback is not available for this language on this phone. You can read the lesson below.';
+
+  @override
+  String get learnQuickCheckCorrectBadge => 'Right answer';
+
+  @override
+  String get learnQuickCheckTryAgainBadge => 'Try another choice';
+
+  @override
+  String learnLessonProgress(int current, int total) {
+    return 'Lesson $current of $total';
+  }
+
+  @override
+  String get learnBackTooltip => 'Back to Learn';
+
+  @override
+  String get learnPreviousLesson => 'Previous';
+
+  @override
+  String get learnNextLesson => 'Next';
+
+  @override
+  String learnLessonNavPreviousSemantic(String title) {
+    return 'Previous lesson: $title';
+  }
+
+  @override
+  String learnLessonNavNextSemantic(String title) {
+    return 'Next lesson: $title';
+  }
+
+  @override
+  String get learnPolicyFolderTitle => 'Privacy policies';
+
+  @override
+  String get learnPolicyTitle =>
+      'What a privacy policy is (and what it can\'t prove)';
+
+  @override
+  String get learnPolicySubtitle =>
+      'What developers promise vs. what stays unknown';
+
+  @override
+  String get learnPolicyIntro =>
+      'A privacy policy is a developer\'s public statement explaining what data an app says it collects, why it uses it, who may receive it, and what choices families have.';
+
+  @override
+  String get learnPolicyStep1 =>
+      'Look for four basics: what data is collected, why the app needs it, who else may get it, and how you can ask for deletion.';
+
+  @override
+  String get learnPolicyStep2 =>
+      'Confusing wording is common. A 2026 study of children\'s learning apps found that very few policies were easy to read, and most apps did not fully match what their policies stated.';
+
+  @override
+  String get learnPolicyStep3 =>
+      'A privacy policy only shows what a developer says on paper. Reading it cannot prove what the app actually sends over the internet.';
+
+  @override
+  String get learnPolicyStep4 =>
+      'Comparing a policy with your phone\'s permission settings gives a clearer view — while remembering that Enprive cannot see live internet traffic.';
+
+  @override
+  String get learnPolicyQuickQuestion =>
+      'What does reading an app\'s privacy policy prove?';
+
+  @override
+  String get learnPolicyQuickOption1 =>
+      'That the app never sends data to anyone';
+
+  @override
+  String get learnPolicyQuickOption2 =>
+      'What the developer says — not what the app actually sends';
+
+  @override
+  String get learnPolicyQuickOption3 =>
+      'That the phone\'s camera and mic are switched off';
+
+  @override
+  String get learnPolicyQuickCorrectFeedback =>
+      'That\'s right. A policy is the developer\'s public statement, not proof of what the app actually sends over the internet.';
+
+  @override
+  String get learnPolicyQuickTryAgainFeedback =>
+      'Not quite. Reading a policy only tells you what the developer says — it cannot prove internet activity or turn off phone permissions.';
+
+  @override
+  String get learnDiagramPolicySaysTitle => 'Policy says';
+
+  @override
+  String get learnDiagramPolicySaysBody => 'Developer\'s written promise';
+
+  @override
+  String get learnDiagramPolicyQuoteSample =>
+      '\"We may share data with partners…\"';
+
+  @override
+  String get learnDiagramPhoneShowsTitle => 'Phone shows';
+
+  @override
+  String get learnDiagramPhoneShowsBody => 'Permissions allowed here';
+
+  @override
+  String get learnDiagramUnknownTitle => 'Still unknown';
+
+  @override
+  String get learnDiagramUnknownBody =>
+      'Live internet traffic Enprive can\'t see';
+
+  @override
+  String get learnDiagramPolicyCaption =>
+      'A policy is a promise, not proof of behavior';
+
+  @override
+  String get learnDiagramPolicySemantic =>
+      'Diagram comparing three parts of app privacy. First, Policy says: the developer\'s written promise. Second, Phone shows: the permissions allowed on this phone. Third, inside a dashed boundary, Still unknown: live internet traffic that Enprive cannot see. A privacy policy is a promise, not proof of behavior.';
+
+  @override
+  String get learnPermissionsFolderTitle => 'Phone permissions';
+
+  @override
+  String get learnPermissionsTitle => 'Android permissions explained';
+
+  @override
+  String get learnPermissionsSubtitle =>
+      'The four Android choices & where to review them';
+
+  @override
+  String get learnPermissionsIntro =>
+      'Permissions are gates that control whether an app can reach sensors and data on your phone, such as the camera, microphone, location, photos, contacts, or notifications.';
+
+  @override
+  String get learnPermissionsStep1 =>
+      'Ask whether the permission fits the feature: a math quiz or reading app rarely needs your location, contacts, or camera.';
+
+  @override
+  String get learnPermissionsStep2 =>
+      'Android offers up to four choices: Don\'t allow, Ask every time, Allow only while using the app, and All the time (for background location).';
+
+  @override
+  String get learnPermissionsStep3 =>
+      'Start with the narrowest choice that lets the feature work — such as Ask every time or While using the app.';
+
+  @override
+  String get learnPermissionsStep4 =>
+      'Open Android Settings and check Privacy Dashboard to see which apps recently accessed Camera, Microphone, or Location.';
+
+  @override
+  String get learnPermissionsStep5 =>
+      'Turn permissions off anytime in App Settings, or keep Pause app activity if unused on so Android removes old permissions automatically. An allowed permission shows capability, not proof that data was sent.';
+
+  @override
+  String get learnPermissionsQuickQuestion =>
+      'A math practice app asks for your camera and you aren\'t sure why. What is the best first step?';
+
+  @override
+  String get learnPermissionsQuickOption1 =>
+      'Tap Don\'t allow and see if the math exercises still work';
+
+  @override
+  String get learnPermissionsQuickOption2 =>
+      'Choose All the time so the popup doesn\'t come back';
+
+  @override
+  String get learnPermissionsQuickOption3 =>
+      'Assume the app has already uploaded photos';
+
+  @override
+  String get learnPermissionsQuickCorrectFeedback =>
+      'Right. Tapping Don\'t allow lets you check if the app works without the camera — and you can change permissions anytime in Android Settings.';
+
+  @override
+  String get learnPermissionsQuickTryAgainFeedback =>
+      'Try a narrower choice first. Tap Don\'t allow to test if the feature still works, and remember an allowed permission shows capability, not proof of an upload.';
+
+  @override
+  String get learnDiagramPermLadderTitle => 'From narrowest to broadest access';
+
+  @override
+  String get learnDiagramPermDenyTitle => 'Don\'t allow';
+
+  @override
+  String get learnDiagramPermDenyDetail =>
+      'Blocked — app cannot use this sensor';
+
+  @override
+  String get learnDiagramPermAskTitle => 'Ask every time';
+
+  @override
+  String get learnDiagramPermAskDetail => 'One-time access when you tap allow';
+
+  @override
+  String get learnDiagramPermWhileUsingTitle => 'While using the app';
+
+  @override
+  String get learnDiagramPermWhileUsingDetail =>
+      'Only while the app is open on screen';
+
+  @override
+  String get learnDiagramPermAllTimeTitle => 'All the time';
+
+  @override
+  String get learnDiagramPermAllTimeDetail =>
+      'Background access even when closed';
+
+  @override
+  String get learnDiagramPermFitNote =>
+      'Does it fit? Math quiz + Camera = ask why';
+
+  @override
+  String get learnDiagramPermSemantic =>
+      'Four-step Android permission ladder from narrowest to broadest access. Step 1, Don\'t allow: blocked, the app cannot use this sensor. Step 2, Ask every time: one-time access when you tap allow. Step 3, While using the app: access only while the app is open on screen. Step 4, All the time: background access even when closed, marked with a dashed border for extra caution. Bottom tip: Does it fit? A math quiz asking for the camera is a reason to ask why.';
+
+  @override
+  String get learnSharingFolderTitle => 'Ads & third parties';
+
+  @override
+  String get learnSharingTitle =>
+      'Who else gets data: ads, analytics & third parties';
+
+  @override
+  String get learnSharingSubtitle =>
+      'App maker vs. helpers, analytics & ad networks';
+
+  @override
+  String get learnSharingIntro =>
+      'Many free apps connect to other companies behind the scenes. Knowing who receives information helps families tell the difference between running the app and tracking kids across apps.';
+
+  @override
+  String get learnSharingStep1 =>
+      'First party means the app maker itself — for example, saving homework progress or quiz scores so the app works.';
+
+  @override
+  String get learnSharingStep2 =>
+      'Helper companies are third parties that handle behind-the-scenes jobs like cloud storage or crash reports so bugs get fixed.';
+
+  @override
+  String get learnSharingStep3 =>
+      'Analytics tools measure how screens are used, while ad networks and data brokers may use an advertising ID to show targeted ads or profile activity across apps.';
+
+  @override
+  String get learnSharingStep4 =>
+      'Watch for broad phrases like \'trusted partners\' or \'business purposes,\' and check whether a policy explains how to opt out of personalized ads.';
+
+  @override
+  String get learnSharingQuickQuestion =>
+      'A policy says the app shares information with \'third-party partners.\' What is the best next question to ask?';
+
+  @override
+  String get learnSharingQuickOption1 => 'Assume that means the app has no ads';
+
+  @override
+  String get learnSharingQuickOption2 =>
+      'Assume every partner does the exact same job';
+
+  @override
+  String get learnSharingQuickOption3 =>
+      'Check whether those partners are helpers (like hosting) or ad networks that track across apps';
+
+  @override
+  String get learnSharingQuickCorrectFeedback =>
+      'Spot on. Helper services keep the app running, while ad networks and data brokers may track activity across apps.';
+
+  @override
+  String get learnSharingQuickTryAgainFeedback =>
+      'Look closer at what each partner does. Not all third parties are the same — some host data or fix crashes, while others run ads or tracking.';
+
+  @override
+  String get learnDiagramThirdPartyYou => 'You';
+
+  @override
+  String get learnDiagramThirdPartyApp => 'Learning app';
+
+  @override
+  String get learnDiagramThirdPartyHosting => 'Helpers & crashes';
+
+  @override
+  String get learnDiagramThirdPartyAnalytics => 'Analytics';
+
+  @override
+  String get learnDiagramThirdPartyAds => 'Ad networks';
+
+  @override
+  String get learnDiagramThirdPartyFirstParty => 'First party';
+
+  @override
+  String get learnDiagramThirdPartyThirdParty => 'Third parties';
+
+  @override
+  String get learnDiagramThirdPartySemantic =>
+      'Flow diagram showing where data from a child\'s learning app can go. You connect to the learning app, which connects with a solid line to the app maker (first party) and with dashed lines to third parties: helper and crash tools, analytics tools, and ad networks marked for extra attention.';
+
+  @override
+  String get learnEvidenceFolderTitle => 'Reading Enprive';
+
+  @override
+  String get learnEvidenceTitle => 'How to read Enprive\'s evidence';
+
+  @override
+  String get learnEvidenceSubtitle =>
+      'Evidence layers, categories & honest limits';
+
+  @override
+  String get learnEvidenceIntro =>
+      'Enprive separates what a privacy policy says, what your phone shows, and what stays unknown — and groups findings by topic, never as a safety grade.';
+
+  @override
+  String get learnEvidenceStep1 =>
+      'Five topic categories group every finding with the same icon and color as the Review screen. Color marks the topic, never a safety score.';
+
+  @override
+  String learnEvidenceStep2(String sourceMatched) {
+    return '$sourceMatched means Enprive found an exact quote word for word in the policy text you checked.';
+  }
+
+  @override
+  String learnEvidenceStep3(String deviceObserved) {
+    return '$deviceObserved means your phone reported a permission setting on this device — not proof that data was sent.';
+  }
+
+  @override
+  String learnEvidenceStep4(String interpretation, String unverified) {
+    return '$interpretation is Deni\'s plain-language explanation, while $unverified marks details Enprive could not find. Silence in a policy is never a promise.';
+  }
+
+  @override
+  String learnEvidenceStep5(
+    String reviewRecommended,
+    String noConcern,
+    String insufficientEvidence,
+  ) {
+    return 'Reviews end with one of three calm outcomes: $reviewRecommended, $noConcern (which is never a safety certification), or $insufficientEvidence.';
+  }
+
+  @override
+  String learnEvidenceQuickQuestion(String deviceObserved) {
+    return 'On a Review screen, what does \'$deviceObserved\' mean?';
+  }
+
+  @override
+  String get learnEvidenceQuickOption1 =>
+      'The app is certified safe for children';
+
+  @override
+  String get learnEvidenceQuickOption2 =>
+      'Your phone shows this permission setting on this device — not proof that data was uploaded';
+
+  @override
+  String get learnEvidenceQuickOption3 =>
+      'The app has definitely uploaded your child\'s data';
+
+  @override
+  String get learnEvidenceQuickCorrectFeedback =>
+      'That\'s right. That label reflects Android\'s permission state on this device; it cannot prove uploads or certify safety.';
+
+  @override
+  String get learnEvidenceQuickTryAgainFeedback =>
+      'Not quite. That label only shows what your phone reports about a permission setting — it never proves uploads and is never a safety certification.';
+
+  @override
+  String get learnDiagramEvidencePolicyDetail =>
+      'Exact quote matched in the policy text';
+
+  @override
+  String get learnDiagramEvidencePhoneDetail =>
+      'Phone permissions on this device';
+
+  @override
+  String get learnDiagramEvidenceDeniDetail =>
+      'Plain-language explanation by Deni';
+
+  @override
+  String get learnDiagramEvidenceUnknownDetail =>
+      'Silence in a policy is not a promise';
+
+  @override
+  String learnDiagramEvidenceSemantic(
+    String sourceMatched,
+    String deviceObserved,
+    String interpretation,
+    String unverified,
+  ) {
+    return 'Four evidence layers used on Enprive\'s Review screen: 1, $sourceMatched, an exact quote matched in the privacy policy; 2, $deviceObserved, phone permissions on this device; 3, $interpretation, Deni\'s plain-language explanation; and 4, separated by a dashed line, $unverified, because silence in a policy is not a promise.';
+  }
+
+  @override
+  String get learnDiagramCategoriesTitle =>
+      'Five topic categories on the Review screen';
+
+  @override
+  String get learnDiagramCategoriesNote =>
+      'Color and icon mark the topic, never a safety score.';
+
+  @override
+  String learnDiagramCategoriesSemantic(
+    String dataCollection,
+    String sharing,
+    String tracking,
+    String retention,
+    String parentalControls,
+  ) {
+    return 'Five evidence categories shown on Enprive\'s Review screen, each with its own icon and color: $dataCollection, $sharing, $tracking, $retention, and $parentalControls. Color and icon mark the topic, never a safety score.';
+  }
 }

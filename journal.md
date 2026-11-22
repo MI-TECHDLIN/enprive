@@ -1842,6 +1842,63 @@
 
 ---
 
+## Iteration 56: Four Illustrated Offline Full-Screen Learn Lessons (L1–L4) & Offline TTS (2026-11-22)
+
+- **Branch / Commit State**: `fm/enprive-learn-lessons-2` rebased cleanly onto `origin/main` HEAD `dd22b32` (includes merged PR #25 `ThirdPartyDiagram` & `EvidenceLayersDiagram` and PR #26 Phase 2 diagrams); direct PR into `main`. Model: **Gemini 4 Neon**.
+- **Source**: Learn audit (`/Users/mi-tech/firstmate/data/enprive-learn-audit/report.md`, Option 2 stretch before 28 Nov 2026 feature freeze), owner decisions 1A/2A/3A/4A, `/Users/mi-tech/firstmate/data/enprive-learn-refs.md`, and Firstmate full-screen lesson & rebase steering.
+- **Skills Used**:
+  - `material-3` (`SKILL.md` and all six references: `color-system.md`, `typography-and-shape.md`, `component-catalog.md`, `layout-and-responsive.md`, `navigation-patterns.md`, `theming-and-dynamic-color.md`)
+  - `mobile-app-ui-design` (`SKILL.md` and `references/industry-conventions.md`)
+  - `flutter-apply-architecture-best-practices`
+  - `flutter-build-responsive-layout`
+  - `flutter-add-widget-test`
+  - `flutter-setup-localization` (English `app_en.arb` template only; 11 secondary locales tracked in `untranslated_messages.json`, never machine-translated)
+  - `dart-run-static-analysis`
+  - `svg-mascot-animator` (`SKILL.md` and `references/creative-directions.md`, `rigging.md`, `physics.md` — compact `DeniAnimatedMascot` with `holdStill: true`, never `holdShield`)
+- **What Was Built & Modified**:
+  1. **Data-Driven Learn Lesson Registry (`lib/domain/learn/learn_lesson.dart`)**:
+     - Defined `LearnTopicCategory`, `LearnLessonIds`, `LearnQuickCheck`, `LearnLesson` (`shortStat`, `spokenText`), and single content registry `buildLearnLessons(AppLocalizations l10n)` covering all four lessons:
+       - **L1 (`privacy_policy`)**: What a privacy policy is (and what it can't prove) — Topic 1 (4 steps).
+       - **L2 (`android_permissions`)**: Android permissions explained — the 4 Android choices and where to review them — Topic 3 (5 steps).
+       - **L3 (`third_parties`)**: Who else gets data: ads, analytics & third parties — Topic 4 (4 steps).
+       - **L4 (`evidence`)**: How to read Enprive's evidence — the 4 evidence layers and 5 exact Review categories — Topic 8 (5 steps).
+     - Structured so future topics (2, 5, 6, 7, 9, 10) require only content entries without screen or routing rewrites.
+  2. **Full-Screen M3E Lesson Experience (`lib/screens/learn_lesson_screen.dart`, `lib/screens/learn_home_screen.dart`, `lib/main.dart`)**:
+     - Replaced modal bottom sheets with a full-screen pushed route (`LearnLessonScreen.open(...)` / `.route(...)`, using `Duration.zero` `PageRouteBuilder` when `MediaQuery.maybeDisableAnimationsOf` is set and native `MaterialPageRoute` otherwise).
+     - Pinned collapsing M3E `SliverAppBar` (`surfaceContainer` on scroll, `48dp` RTL-mirrored Back button, crossfading collapsed title excluded from Semantics while invisible so TalkBack reads the title once), Direction A tonal hero header (`Lesson X of N` + segmented progress bar + `Semantics(header: true)`), scrollable body (plain intro, generous diagram surface, segmented tonal steps, interactive 3-option quick check with compact still Deni + live-region feedback, `'Check an app on this phone'` bridge into the real Check flow, and responsive Previous/Next lesson navigation).
+     - Pinned `Scaffold.bottomNavigationBar` (`learn_lesson_audio_bar`) keeps an always-reachable `>= 48dp` offline `Listen` / `Stop` control wired exclusively to Android's local TTS path (`HybridAiBridge.speakText` / `stopSpeaking` + `voicePlaybackEvents`) reading the plain lesson script (`< 2,200` chars, well within `DeniVoicePolicy.MAX_TTS_INPUT_CHARS = 3200`) with zero cloud calls, zero consent sheets, and zero new packages.
+     - Preserved `LearnHomeScreen` structure, topic filter chips, 2x2 folder cards, and Check bridge; updated folder titles/subtitles/stats to localized `app_en.arb` strings and forwarded `hybridBridge: _bridge` from `lib/main.dart`.
+  3. **Custom Flutter Vector Diagrams (`lib/widgets/learn/diagrams/`)**:
+     - **L1 (`policy_limit_diagram.dart`)**: New `PolicyLimitDiagram` showing *Policy says* (`SourceSerif4` policy quotation snippet) -> *Phone shows* -> dashed *Still unknown* boundary + compact still Deni callout.
+     - **L2 (`permissions_ladder_diagram.dart`)**: New `PermissionsLadderDiagram` depicting Android's 4 permission levels (*Don't allow*, *Ask every time*, *While using the app*, *All the time* with hatched amber dashed caution bar) + Deni feature-fit reminder.
+     - **L3 (`third_party_diagram.dart`)**: Reused PR #25's merged `ThirdPartyDiagram` wired to localized strings from `app_en.arb`, with surgical polish (top `Wrap` legend replacing negative-width `Positioned`, RTL x-mirroring, centered nodes, curved horizontal S-connectors preventing arrow-over-text on `"Helpers & crashes"`, vertical side trunk at 200% text scale, non-English-dependent `isFirstParty` icon flag, and bounded-height scroll safety).
+     - **L4 (`evidence_layers_diagram.dart`, `evidence_categories_legend.dart`)**: Reused PR #25's merged `EvidenceLayersDiagram` wired to the exact Review screen labels (`Matched in policy`, `Seen on this phone`, `Deni's explanation`, `Not found in policy`) with surgical fixes removing fixed-height clipping and mid-word wrap at 200% scale, paired with new `EvidenceCategoriesLegend` pulling all 5 categories directly from `EvidenceCategoryStyle.order` & `EvidenceCategoryStyle.of(context, category)`.
+     - All diagrams follow Direction A tonal styling (light & dark), carry meaning via icons/line styles/labels (never color alone), mirror cleanly in RTL, scale to 200% text without overflow, respect reduced motion, and expose a single story-telling `Semantics` description for TalkBack.
+  4. **Plain-Language Original Copy & Localization (`lib/l10n/app_en.arb`, generated `lib/l10n/app_localizations*.dart`, `untranslated_messages.json`)**:
+     - Added all lesson, diagram, navigation, and Learn home strings strictly to `lib/l10n/app_en.arb` (100% original wording, no Common Sense CC BY-NC-ND text, no developer jargon, no legal advice, no binary safety claims, no external links or videos). Regenerated localizations via `flutter gen-l10n`; all 11 secondary `.arb` files remain untouched and tracked in `untranslated_messages.json`.
+  5. **Tests (`test/learn_lessons_test.dart`, `test/learn_diagrams_test.dart`, `test/d5_navigation_shell_test.dart`)**:
+     - Added full-screen lesson widget & accessibility tests across L1–L4 (Light, Dark, `200%` text at `360dp`, Arabic RTL, reduced motion, TalkBack Semantics, offline Listen/Stop TTS toggling, interactive quick check, Previous/Next traversal, Back/system-back, Check bridge, and topic filters).
+     - Preserved PR #25's L3/L4 diagram tests and PR #26's 25 Phase 2 diagram tests (`test/learn_diagrams_batch2_test.dart`), and added full Light/Dark/320dp/420dp/200%/RTL/Semantics tests for `PolicyLimitDiagram`, `PermissionsLadderDiagram`, and `EvidenceCategoriesLegend`.
+- **Challenges & Root-Cause Fixes**:
+  - **Bounded-height test overflow at 200% text scale**: `test/learn_diagrams_test.dart` mounts diagrams directly in bounded `Scaffold(body: Center(...))` containers; wrapping diagram bodies in `SingleChildScrollView(primary: false)` only when `constraints.maxHeight.isFinite` eliminated bounded-height overflows while keeping unconstrained vertical flow inside `LearnLessonScreen`'s `CustomScrollView`.
+  - **Visual polish from live emulator review**: Emulator captures uncovered mid-word wrapping (`"Deni's explanatio/n"`) in `EvidenceLayersDiagram` Layer 3 and straight connector lines crossing `"Helpers & crashes"` plus hidden negative-width badges in `ThirdPartyDiagram`. Resolved by placing badge + icon above full-width titles in `EvidenceLayersDiagram` and switching `ThirdPartyDiagram` to a `Wrap` top legend, curved cubic horizontal branches, and a vertical side trunk in stacked mode.
+  - **Continuous idle Deni animation vs. `pumpAndSettle()`**: On `LearnHomeScreen`, Deni's idle breathing ticker never settles when `disableAnimations: false`; replaced `pumpAndSettle()` in navigation tests with explicit route-transition pumps (`pump` + `2x pump(350ms)`).
+- **Verification Status** (live runtime checks are **Android 16 emulator `emulator-5554` / `Pixel_9` AVD ONLY — NOT physical device**):
+  - `flutter analyze`: **0 issues**
+  - Full `flutter test`: **374 / 374 passed** (rebased atop `origin/main` `dd22b32`; includes all 25 PR #26 Phase 2 diagram tests and +15 new lesson/diagram tests)
+  - `flutter build apk --debug --target-platform android-arm64`: succeeded (`SHA-256: d26b22a30229975261a94bff850506973c14a3d450ce3e0b68f66380f468eafc`), installed in place on `com.mitechdlin.enprive` preserving app data (`135.4 MB`)
+  - **Emulator-5554 live full-screen captures** (`/Users/mi-tech/firstmate/data/enprive-learn-lessons-2/captures/`, **0 crashes / 0 ANRs** across `7,736` log lines since `learn-fullscreen-qa`, **0 cloud calls**):
+    - Light (100% EN): `light_learn_home.png`, `light_l1_policy.png`, `light_l1_policy_bottom.png`, `light_l1_policy_listening.png` (verified live offline Android TTS toggling to `Stop` + `Phone voice · Offline`), `light_l2_permissions.png`, `light_l3_third_parties.png`, `light_l4_evidence.png`, `light_l4_evidence_categories.png`.
+    - Dark (100% EN): `dark_learn_home.png`, `dark_l1_policy.png`, `dark_l2_permissions.png`, `dark_l3_third_parties.png`, `dark_l4_evidence.png`.
+    - 200% text (`font_scale=2.0`, Light EN): `scale200_learn_home.png`, `scale200_l1_policy.png`, `scale200_l2_permissions.png`, `scale200_l3_third_parties.png`, `scale200_l4_evidence.png`.
+    - Arabic RTL (`ar`, Light 100%): `ar_learn_home.png`, `ar_l1_policy.png`, `ar_l2_permissions.png`, `ar_l3_third_parties.png`, `ar_l4_evidence.png`.
+    - Emulator restored to original settings (`language_code=en`, `theme_mode=system`, `font_scale=1.0`, `Night mode: yes`).
+  - **Pending Physical Device Verification**: Live TalkBack and offline TTS walkthrough on physical **Realme RMX5303** remain pending.
+- **Next Immediate Action & Recommended Model**:
+  - Review and merge into `main`, then wire PR #26's Phase 2 diagrams (Topics 2, 5, 7, 9) into `buildLearnLessons` after freeze, translate tracked keys in `untranslated_messages.json` during D5.3-F, and complete physical **Realme RMX5303** verification. Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **D5.3 Core Flow Streamlining (D5.3-B+) & D5.4 Offline Learn MVP**

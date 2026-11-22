@@ -16,6 +16,10 @@ class EvidenceLayersDiagramLabels {
     required this.deniExplains,
     required this.notFound,
     required this.semanticDescription,
+    this.policySaysDetail = 'Exact quote from the privacy policy',
+    this.phoneShowsDetail = 'Android permissions on this device',
+    this.deniExplainsDetail = 'Plain-language interpretation by Deni',
+    this.notFoundDetail = 'Silence in a policy is not a promise',
   });
 
   final String policySays;
@@ -23,6 +27,10 @@ class EvidenceLayersDiagramLabels {
   final String deniExplains;
   final String notFound;
   final String semanticDescription;
+  final String policySaysDetail;
+  final String phoneShowsDetail;
+  final String deniExplainsDetail;
+  final String notFoundDetail;
 }
 
 /// A diagram showing Enprive's four evidence layers:
@@ -64,6 +72,7 @@ class _EvidenceLayersPainter extends CustomPainter {
     required this.layerCenters,
     required this.connectorColor,
     required this.dashedConnectorColor,
+    this.isDashedOverride,
   });
 
   final bool isRtl;
@@ -72,28 +81,30 @@ class _EvidenceLayersPainter extends CustomPainter {
   final List<Offset> layerCenters;
   final Color connectorColor;
   final Color dashedConnectorColor;
+  final bool? isDashedOverride;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (layerCenters.length < 2) return;
 
     final strokeWidth = 2.0;
-    final dashWidth = 8.0;
-    final dashSpace = 6.0;
-    final nodeRadius = 24.0;
+    final dashWidth = 5.0;
+    final dashSpace = 4.0;
 
     // Draw connectors between consecutive layers
     for (int i = 0; i < layerCenters.length - 1; i++) {
       final from = layerCenters[i];
       final to = layerCenters[i + 1];
+      final segmentLen = (to - from).distance;
+      final inset = segmentLen > 56 ? 24.0 : 2.0;
       final direction = (to - from).normalize();
-      final start = from + direction * nodeRadius;
-      final end = to - direction * nodeRadius;
+      final start = from + direction * inset;
+      final end = to - direction * inset;
 
-      final isLastLayer = i == layerCenters.length - 2;
+      final isDashed = isDashedOverride ?? (i == layerCenters.length - 2);
 
       final paint = Paint()
-        ..color = isLastLayer ? dashedConnectorColor : connectorColor
+        ..color = isDashed ? dashedConnectorColor : connectorColor
         ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
@@ -102,7 +113,7 @@ class _EvidenceLayersPainter extends CustomPainter {
       path.moveTo(start.dx, start.dy);
       path.lineTo(end.dx, end.dy);
 
-      if (isLastLayer) {
+      if (isDashed) {
         // Dashed line for "not found" boundary
         final metric = path.computeMetrics().first;
         double distance = 0;
@@ -127,7 +138,8 @@ class _EvidenceLayersPainter extends CustomPainter {
       oldDelegate.reduceMotion != reduceMotion ||
       oldDelegate.layerCenters != layerCenters ||
       oldDelegate.connectorColor != connectorColor ||
-      oldDelegate.dashedConnectorColor != dashedConnectorColor;
+      oldDelegate.dashedConnectorColor != dashedConnectorColor ||
+      oldDelegate.isDashedOverride != isDashedOverride;
 }
 
 class _EvidenceLayersContent extends StatelessWidget {
@@ -159,28 +171,28 @@ class _EvidenceLayersContent extends StatelessWidget {
         icon: LucideIcons.fileText,
         color: dataCollectionColor,
         iconBackground: dataCollectionColor.withValues(alpha: 0.12),
-        description: 'Exact quote from the privacy policy',
+        description: labels.policySaysDetail,
       ),
       _EvidenceLayer(
         title: labels.phoneShows,
         icon: LucideIcons.smartphone,
         color: trackingColor,
         iconBackground: trackingColor.withValues(alpha: 0.12),
-        description: 'Android permissions on this device',
+        description: labels.phoneShowsDetail,
       ),
       _EvidenceLayer(
         title: labels.deniExplains,
         icon: LucideIcons.messageSquare,
         color: parentalConsentColor,
         iconBackground: parentalConsentColor.withValues(alpha: 0.12),
-        description: 'Plain-language interpretation by Deni',
+        description: labels.deniExplainsDetail,
       ),
       _EvidenceLayer(
         title: labels.notFound,
         icon: LucideIcons.helpCircle,
         color: scheme.outline,
         iconBackground: scheme.surfaceContainerHighest,
-        description: 'Silence in a policy is not a promise',
+        description: labels.notFoundDetail,
         isUnknown: true,
       ),
     ];
@@ -189,222 +201,179 @@ class _EvidenceLayersContent extends StatelessWidget {
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-        final clampedTextScale = textScale.clamp(1.0, 1.4);
+        final clampedTextScale = textScale.clamp(1.0, 1.35);
         final useVerticalLayout =
             constraints.maxWidth < 360 || textScale > 1.35;
-        final nodeSize = 48.0 * clampedTextScale;
+        final nodeSize = 42.0 * clampedTextScale;
         final cardWidth = useVerticalLayout
-            ? width - 32
-            : (width - 48) / 2;
-        final spacing = 16.0 * clampedTextScale;
-        final deniSize = 56 * clampedTextScale;
-        final cardHeight = 140.0 * clampedTextScale; // Increased from 120 to accommodate content
+            ? width
+            : (width - 12) / 2;
+        final deniSize = 56.0;
 
-        // Calculate layer centers for the painter and total content height
-        final layerCenters = <Offset>[];
-        double contentHeight = 0;
-
-        if (useVerticalLayout) {
-          double y = nodeSize / 2 + 16;
-          for (int i = 0; i < layers.length; i++) {
-            layerCenters.add(Offset(width / 2, y));
-            y += cardHeight;
-            if (i < layers.length - 1) y += spacing;
-          }
-          // Add extra padding for Deni, note, and card content overflow
-          contentHeight = y + 32 + deniSize + 32 + 80;
-        } else {
-          // 2x2 grid
-          final colWidth = (width - 24) / 2;
-          for (int i = 0; i < layers.length; i++) {
-            final col = i % 2;
-            final row = i ~/ 2;
-            final x = col * (colWidth + 24) + colWidth / 2;
-            final y = row * (cardHeight + spacing) + nodeSize / 2 + 16;
-            layerCenters.add(Offset(x, y));
-          }
-          contentHeight = 2 * (cardHeight + spacing) + nodeSize + 32 + deniSize + 32 + 80;
+        Widget buildConnector({required bool isDashed}) {
+          return SizedBox(
+            height: 18,
+            width: double.infinity,
+            child: CustomPaint(
+              painter: _EvidenceLayersPainter(
+                isRtl: isRtl,
+                useVerticalLayout: true,
+                reduceMotion: reduceMotion,
+                layerCenters: [
+                  Offset(isRtl ? width - 56 : 28, 0),
+                  Offset(isRtl ? width - 56 : 28, 18),
+                ],
+                connectorColor: scheme.onSurfaceVariant.withValues(alpha: 0.45),
+                dashedConnectorColor: scheme.outline.withValues(alpha: 0.7),
+                isDashedOverride: isDashed,
+              ),
+            ),
+          );
         }
 
-        return SizedBox(
+        final diagramBody = Container(
           width: width,
-          height: contentHeight,
-          child: CustomPaint(
-            painter: _EvidenceLayersPainter(
-              isRtl: isRtl,
-              useVerticalLayout: useVerticalLayout,
-              reduceMotion: reduceMotion,
-              layerCenters: layerCenters,
-              connectorColor: scheme.onSurfaceVariant.withValues(alpha: 0.4),
-              dashedConnectorColor: scheme.outline.withValues(alpha: 0.5),
-            ),
-            child: Stack(
-              children: [
-                // Layer cards
-                if (useVerticalLayout)
-                  Positioned(
-                    top: 0,
-                    left: 16,
-                    right: 16,
-                    bottom: 16 + deniSize + 24 + 60,
-                    child: SingleChildScrollView(
-                      physics: const NeverScrollableScrollPhysics(),
-                      child: Column(
-                        children: layers.asMap().entries.map((entry) {
-                          final i = entry.key;
-                          final layer = entry.value;
-                          return Padding(
-                            padding: EdgeInsets.only(
-                              top: i == 0 ? 0 : spacing,
-                            ),
-                            child: _EvidenceLayerCard(
-                              layer: layer,
-                              index: i + 1,
-                              total: layers.length,
-                              width: cardWidth,
-                              nodeSize: nodeSize,
-                              textScale: clampedTextScale,
-                              center: layerCenters[i],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  )
-                else
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 16 + deniSize + 24 + 60,
-                    child: Column(
-                      children: [
-                        // Row 0: layers 0 and 1
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: _EvidenceLayerCard(
-                                layer: layers[0],
-                                index: 1,
-                                total: layers.length,
-                                width: cardWidth,
-                                nodeSize: nodeSize,
-                                textScale: clampedTextScale,
-                                center: layerCenters[0],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _EvidenceLayerCard(
-                                layer: layers[1],
-                                index: 2,
-                                total: layers.length,
-                                width: cardWidth,
-                                nodeSize: nodeSize,
-                                textScale: clampedTextScale,
-                                center: layerCenters[1],
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: spacing),
-                        // Row 1: layers 2 and 3
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: _EvidenceLayerCard(
-                                layer: layers[2],
-                                index: 3,
-                                total: layers.length,
-                                width: cardWidth,
-                                nodeSize: nodeSize,
-                                textScale: clampedTextScale,
-                                center: layerCenters[2],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _EvidenceLayerCard(
-                                layer: layers[3],
-                                index: 4,
-                                total: layers.length,
-                                width: cardWidth,
-                                nodeSize: nodeSize,
-                                textScale: clampedTextScale,
-                                center: layerCenters[3],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(EnpriveRadii.card),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (useVerticalLayout)
+                for (var i = 0; i < layers.length; i++) ...[
+                  if (i > 0) buildConnector(isDashed: i == layers.length - 1),
+                  _EvidenceLayerCard(
+                    layer: layers[i],
+                    index: i + 1,
+                    total: layers.length,
+                    width: cardWidth,
+                    nodeSize: nodeSize,
+                    textScale: clampedTextScale,
+                    center: Offset.zero,
                   ),
-                // Deni mascot
-                Positioned(
-                  bottom: 16,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: DeniAnimatedMascot(
+                ]
+              else ...[
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _EvidenceLayerCard(
+                          layer: layers[0],
+                          index: 1,
+                          total: layers.length,
+                          width: cardWidth,
+                          nodeSize: nodeSize,
+                          textScale: clampedTextScale,
+                          center: Offset.zero,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _EvidenceLayerCard(
+                          layer: layers[1],
+                          index: 2,
+                          total: layers.length,
+                          width: cardWidth,
+                          nodeSize: nodeSize,
+                          textScale: clampedTextScale,
+                          center: Offset.zero,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _EvidenceLayerCard(
+                          layer: layers[2],
+                          index: 3,
+                          total: layers.length,
+                          width: cardWidth,
+                          nodeSize: nodeSize,
+                          textScale: clampedTextScale,
+                          center: Offset.zero,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _EvidenceLayerCard(
+                          layer: layers[3],
+                          index: 4,
+                          total: layers.length,
+                          width: cardWidth,
+                          nodeSize: nodeSize,
+                          textScale: clampedTextScale,
+                          center: Offset.zero,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainer,
+                  borderRadius: BorderRadius.circular(EnpriveRadii.md),
+                ),
+                child: Row(
+                  children: [
+                    DeniAnimatedMascot(
                       size: deniSize,
                       pose: DeniPose.explaining,
                       holdStill: true,
                       showAmbientGlow: false,
                     ),
-                  ),
-                ),
-                // "Silence is not a promise" note at bottom
-                Positioned(
-                  bottom: 80 * clampedTextScale,
-                  left: 16,
-                  right: 16,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: scheme.surfaceContainerHighest.withValues(
-                          alpha: 0.8,
-                        ),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: scheme.outlineVariant,
-                          width: 1,
-                        ),
-                      ),
+                    const SizedBox(width: 10),
+                    Expanded(
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            LucideIcons.info,
-                            size: 16 * clampedTextScale,
-                            color: scheme.onSurfaceVariant,
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Icon(
+                              LucideIcons.info,
+                              size: 15,
+                              color: scheme.onSurfaceVariant,
+                            ),
                           ),
-                          const SizedBox(width: 8),
-                          Flexible(
+                          const SizedBox(width: 6),
+                          Expanded(
                             child: Text(
                               layers.last.description,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 12 * clampedTextScale,
-                                fontWeight: FontWeight.w500,
+                              style: m3e.typeScale.bodySmall.copyWith(
+                                fontWeight: FontWeight.w600,
                                 color: scheme.onSurfaceVariant,
-                                height: 1.3,
+                                height: 1.35,
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+        );
+
+        return ExcludeSemantics(
+          child: constraints.maxHeight.isFinite
+              ? SingleChildScrollView(primary: false, child: diagramBody)
+              : diagramBody,
         );
       },
     );
@@ -453,129 +422,134 @@ class _EvidenceLayerCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final surfaces = context.enpriveSurfaces;
 
-    return ExcludeSemantics(
-      child: Container(
-        width: width,
-        constraints: BoxConstraints(
-          minHeight: 140 * textScale,
-        ),
-        decoration: BoxDecoration(
-          color: surfaces.card,
-          borderRadius: BorderRadius.circular(EnpriveRadii.card),
-          border: Border.all(
-            color: layer.isUnknown
-                ? scheme.outlineVariant.withValues(alpha: 0.5)
-                : layer.color.withValues(alpha: 0.3),
-            width: layer.isUnknown ? 1 : 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header with number, icon, and title
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Number badge
-                  Container(
-                    width: nodeSize * 0.6,
-                    height: nodeSize * 0.6,
-                    decoration: BoxDecoration(
+    final card = Container(
+      width: width,
+      decoration: BoxDecoration(
+        color: surfaces.card,
+        borderRadius: BorderRadius.circular(EnpriveRadii.md),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Compact badge row: step number + category icon
+            Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: layer.isUnknown
+                        ? scheme.surfaceContainerHighest
+                        : layer.color,
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '$index',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
                       color: layer.isUnknown
-                          ? scheme.surfaceContainerHighest
-                          : layer.color,
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '$index',
-                      style: TextStyle(
-                        fontSize: nodeSize * 0.28,
-                        fontWeight: FontWeight.w800,
-                        color: layer.isUnknown
-                            ? scheme.onSurfaceVariant
-                            : Colors.white,
-                        height: 1.0,
-                      ),
+                          ? scheme.onSurfaceVariant
+                          : scheme.surface,
+                      height: 1.0,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  // Icon
-                  Container(
-                    width: nodeSize * 0.7,
-                    height: nodeSize * 0.7,
-                    decoration: BoxDecoration(
-                      color: layer.iconBackground,
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Icon(
-                      layer.icon,
-                      size: nodeSize * 0.35,
-                      color: layer.color,
-                    ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: layer.iconBackground,
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 10),
-                  // Title
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          layer.title,
-                          style: TextStyle(
-                            fontSize: 15 * textScale,
-                            fontWeight: FontWeight.w700,
-                            color: scheme.onSurface,
-                            height: 1.25,
-                          ),
-                        ),
-                        if (layer.isUnknown) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            layer.description,
-                            style: TextStyle(
-                              fontSize: 11 * textScale,
-                              fontWeight: FontWeight.w500,
-                              color: scheme.onSurfaceVariant,
-                              height: 1.2,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              if (!layer.isUnknown) ...[
-                const SizedBox(height: 12),
-                // Description
-                Text(
-                  layer.description,
-                  style: TextStyle(
-                    fontSize: 13 * textScale,
-                    fontWeight: FontWeight.w400,
-                    color: scheme.onSurfaceVariant,
-                    height: 1.4,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    layer.icon,
+                    size: 15,
+                    color: layer.color,
                   ),
                 ),
               ],
-            ],
-          ),
+            ),
+            const SizedBox(height: 8),
+            // Full-width title so words never break awkwardly mid-word
+            Text(
+              layer.title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface,
+                height: 1.25,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              layer.description,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w400,
+                color: scheme.onSurfaceVariant,
+                height: 1.38,
+              ),
+            ),
+          ],
         ),
       ),
     );
+
+    return ExcludeSemantics(
+      child: layer.isUnknown
+          ? CustomPaint(
+              foregroundPainter: _DashedCardBorderPainter(
+                color: scheme.outline.withValues(alpha: 0.75),
+                radius: EnpriveRadii.md,
+              ),
+              child: card,
+            )
+          : card,
+    );
   }
+}
+
+class _DashedCardBorderPainter extends CustomPainter {
+  const _DashedCardBorderPainter({required this.color, required this.radius});
+
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rrect = RRect.fromRectAndRadius(
+      (Offset.zero & size).deflate(0.8),
+      Radius.circular(radius),
+    );
+    final path = Path()..addRRect(rrect);
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final dashPath = Path();
+    for (final metric in path.computeMetrics()) {
+      double dist = 0;
+      while (dist < metric.length) {
+        final next = math.min(dist + 6.0, metric.length);
+        dashPath.addPath(metric.extractPath(dist, next), Offset.zero);
+        dist = next + 4.5;
+      }
+    }
+    canvas.drawPath(dashPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedCardBorderPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.radius != radius;
 }
 
 extension _OffsetNormalize on Offset {

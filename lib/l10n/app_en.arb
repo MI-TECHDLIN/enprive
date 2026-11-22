@@ -921,5 +921,569 @@
   "sampleNotFromPolicySuffix": "Example only, not from the policy",
   "@sampleNotFromPolicySuffix": {
     "description": "Plain suffix clarifying that a sample permission comes from a built-in example rather than the privacy policy"
+  },
+  "learnHeaderSubtitle": "Offline privacy guides & diagrams",
+  "@learnHeaderSubtitle": {
+    "description": "Subtitle under the Learn tab heading"
+  },
+  "learnFilterAll": "All topics",
+  "@learnFilterAll": {
+    "description": "Filter chip showing all Learn lessons"
+  },
+  "learnFilterPolicies": "Policies",
+  "@learnFilterPolicies": {
+    "description": "Filter chip for privacy policy lessons"
+  },
+  "learnFilterPermissions": "Permissions",
+  "@learnFilterPermissions": {
+    "description": "Filter chip for Android permission lessons"
+  },
+  "learnFilterSharing": "Sharing",
+  "@learnFilterSharing": {
+    "description": "Filter chip for ads, analytics, and third-party data sharing lessons"
+  },
+  "learnFilterEvidence": "Evidence",
+  "@learnFilterEvidence": {
+    "description": "Filter chip for lessons explaining Enprive's evidence layers and categories"
+  },
+  "learnLessonStepCount": "{count, plural, =1{1 step} other{{count} steps}}",
+  "@learnLessonStepCount": {
+    "description": "Short step count stat displayed on each Learn folder card",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "learnDeckTitle": "Practice privacy habits locally",
+  "@learnDeckTitle": {
+    "description": "Heading on the Learn bottom deck card"
+  },
+  "learnDeckBody": "100% offline lessons with diagrams. Your installed apps and receipts never enter Learn.",
+  "@learnDeckBody": {
+    "description": "Privacy assurance body on the Learn bottom deck card"
+  },
+  "learnDeckCheckBtn": "Apply it · Check an app",
+  "@learnDeckCheckBtn": {
+    "description": "Button label on the Learn bottom deck bridging to the Check tab"
+  },
+  "learnCheckAppBridgeBtn": "Check an app on this phone",
+  "@learnCheckAppBridgeBtn": {
+    "description": "Primary bridge CTA at the bottom of each Learn lesson sheet"
+  },
+  "learnSectionDiagram": "How it works",
+  "@learnSectionDiagram": {
+    "description": "Section heading above the vector diagram in a Learn lesson"
+  },
+  "learnSectionSteps": "Key steps",
+  "@learnSectionSteps": {
+    "description": "Section heading above the numbered steps in a Learn lesson"
+  },
+  "learnSectionQuickCheck": "Quick check",
+  "@learnSectionQuickCheck": {
+    "description": "Section heading above the one-question quick check in a Learn lesson"
+  },
+  "learnTooltipListenLesson": "Read this lesson aloud offline",
+  "@learnTooltipListenLesson": {
+    "description": "Accessibility label for the offline Listen button inside a Learn lesson"
+  },
+  "learnTooltipStopLesson": "Stop reading lesson aloud",
+  "@learnTooltipStopLesson": {
+    "description": "Accessibility label for the Stop button while a Learn lesson is being read aloud"
+  },
+  "learnVoiceUnavailableNotice": "Offline voice playback is not available for this language on this phone. You can read the lesson below.",
+  "@learnVoiceUnavailableNotice": {
+    "description": "Calm inline notice when local Android TTS cannot speak the lesson in the current locale"
+  },
+  "learnQuickCheckCorrectBadge": "Right answer",
+  "@learnQuickCheckCorrectBadge": {
+    "description": "Status label shown alongside an icon when the user chooses the right quick-check option"
+  },
+  "learnQuickCheckTryAgainBadge": "Try another choice",
+  "@learnQuickCheckTryAgainBadge": {
+    "description": "Gentle non-judgmental status label when the user chooses a distractor quick-check option"
+  },
+  "learnLessonProgress": "Lesson {current} of {total}",
+  "@learnLessonProgress": {
+    "description": "Progress indicator showing which lesson is currently open out of the total lessons",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "learnBackTooltip": "Back to Learn",
+  "@learnBackTooltip": {
+    "description": "Tooltip and accessibility label for the back button on a full-screen Learn lesson"
+  },
+  "learnPreviousLesson": "Previous",
+  "@learnPreviousLesson": {
+    "description": "Direction label on the previous-lesson navigation button at the end of a lesson"
+  },
+  "learnNextLesson": "Next",
+  "@learnNextLesson": {
+    "description": "Direction label on the next-lesson navigation button at the end of a lesson"
+  },
+  "learnLessonNavPreviousSemantic": "Previous lesson: {title}",
+  "@learnLessonNavPreviousSemantic": {
+    "description": "Accessibility label for navigating to the previous Learn lesson",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "learnLessonNavNextSemantic": "Next lesson: {title}",
+  "@learnLessonNavNextSemantic": {
+    "description": "Accessibility label for navigating to the next Learn lesson",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "learnPolicyFolderTitle": "Privacy policies",
+  "@learnPolicyFolderTitle": {
+    "description": "Short folder title for Lesson 1 on the Learn home screen"
+  },
+  "learnPolicyTitle": "What a privacy policy is (and what it can't prove)",
+  "@learnPolicyTitle": {
+    "description": "Full lesson title for Lesson 1"
+  },
+  "learnPolicySubtitle": "What developers promise vs. what stays unknown",
+  "@learnPolicySubtitle": {
+    "description": "Short subtitle for Lesson 1"
+  },
+  "learnPolicyIntro": "A privacy policy is a developer's public statement explaining what data an app says it collects, why it uses it, who may receive it, and what choices families have.",
+  "@learnPolicyIntro": {
+    "description": "Plain-language introduction for Lesson 1"
+  },
+  "learnPolicyStep1": "Look for four basics: what data is collected, why the app needs it, who else may get it, and how you can ask for deletion.",
+  "@learnPolicyStep1": {
+    "description": "Step 1 of Lesson 1"
+  },
+  "learnPolicyStep2": "Confusing wording is common. A 2026 study of children's learning apps found that very few policies were easy to read, and most apps did not fully match what their policies stated.",
+  "@learnPolicyStep2": {
+    "description": "Step 2 of Lesson 1 referencing verified UNSW 2026 findings in plain words"
+  },
+  "learnPolicyStep3": "A privacy policy only shows what a developer says on paper. Reading it cannot prove what the app actually sends over the internet.",
+  "@learnPolicyStep3": {
+    "description": "Step 3 of Lesson 1"
+  },
+  "learnPolicyStep4": "Comparing a policy with your phone's permission settings gives a clearer view — while remembering that Enprive cannot see live internet traffic.",
+  "@learnPolicyStep4": {
+    "description": "Step 4 of Lesson 1"
+  },
+  "learnPolicyQuickQuestion": "What does reading an app's privacy policy prove?",
+  "@learnPolicyQuickQuestion": {
+    "description": "Quick check question for Lesson 1"
+  },
+  "learnPolicyQuickOption1": "That the app never sends data to anyone",
+  "@learnPolicyQuickOption1": {
+    "description": "First quick check option for Lesson 1"
+  },
+  "learnPolicyQuickOption2": "What the developer says — not what the app actually sends",
+  "@learnPolicyQuickOption2": {
+    "description": "Correct second quick check option for Lesson 1"
+  },
+  "learnPolicyQuickOption3": "That the phone's camera and mic are switched off",
+  "@learnPolicyQuickOption3": {
+    "description": "Third quick check option for Lesson 1"
+  },
+  "learnPolicyQuickCorrectFeedback": "That's right. A policy is the developer's public statement, not proof of what the app actually sends over the internet.",
+  "@learnPolicyQuickCorrectFeedback": {
+    "description": "Feedback shown when the user selects the right answer in Lesson 1"
+  },
+  "learnPolicyQuickTryAgainFeedback": "Not quite. Reading a policy only tells you what the developer says — it cannot prove internet activity or turn off phone permissions.",
+  "@learnPolicyQuickTryAgainFeedback": {
+    "description": "Feedback shown when the user selects another option in Lesson 1"
+  },
+  "learnDiagramPolicySaysTitle": "Policy says",
+  "@learnDiagramPolicySaysTitle": {
+    "description": "First node title in the Lesson 1 Policy Limit diagram"
+  },
+  "learnDiagramPolicySaysBody": "Developer's written promise",
+  "@learnDiagramPolicySaysBody": {
+    "description": "First node body in the Lesson 1 Policy Limit diagram"
+  },
+  "learnDiagramPolicyQuoteSample": "\"We may share data with partners…\"",
+  "@learnDiagramPolicyQuoteSample": {
+    "description": "Illustrative sample quote snippet inside the Lesson 1 diagram"
+  },
+  "learnDiagramPhoneShowsTitle": "Phone shows",
+  "@learnDiagramPhoneShowsTitle": {
+    "description": "Second node title in the Lesson 1 Policy Limit diagram"
+  },
+  "learnDiagramPhoneShowsBody": "Permissions allowed here",
+  "@learnDiagramPhoneShowsBody": {
+    "description": "Second node body in the Lesson 1 Policy Limit diagram"
+  },
+  "learnDiagramUnknownTitle": "Still unknown",
+  "@learnDiagramUnknownTitle": {
+    "description": "Third node title in the Lesson 1 Policy Limit diagram"
+  },
+  "learnDiagramUnknownBody": "Live internet traffic Enprive can't see",
+  "@learnDiagramUnknownBody": {
+    "description": "Third node body in the Lesson 1 Policy Limit diagram"
+  },
+  "learnDiagramPolicyCaption": "A policy is a promise, not proof of behavior",
+  "@learnDiagramPolicyCaption": {
+    "description": "Bottom takeaway caption in the Lesson 1 diagram"
+  },
+  "learnDiagramPolicySemantic": "Diagram comparing three parts of app privacy. First, Policy says: the developer's written promise. Second, Phone shows: the permissions allowed on this phone. Third, inside a dashed boundary, Still unknown: live internet traffic that Enprive cannot see. A privacy policy is a promise, not proof of behavior.",
+  "@learnDiagramPolicySemantic": {
+    "description": "Full TalkBack description for the Lesson 1 Policy Limit diagram"
+  },
+  "learnPermissionsFolderTitle": "Phone permissions",
+  "@learnPermissionsFolderTitle": {
+    "description": "Short folder title for Lesson 2 on the Learn home screen"
+  },
+  "learnPermissionsTitle": "Android permissions explained",
+  "@learnPermissionsTitle": {
+    "description": "Full lesson title for Lesson 2"
+  },
+  "learnPermissionsSubtitle": "The four Android choices & where to review them",
+  "@learnPermissionsSubtitle": {
+    "description": "Short subtitle for Lesson 2"
+  },
+  "learnPermissionsIntro": "Permissions are gates that control whether an app can reach sensors and data on your phone, such as the camera, microphone, location, photos, contacts, or notifications.",
+  "@learnPermissionsIntro": {
+    "description": "Plain-language introduction for Lesson 2"
+  },
+  "learnPermissionsStep1": "Ask whether the permission fits the feature: a math quiz or reading app rarely needs your location, contacts, or camera.",
+  "@learnPermissionsStep1": {
+    "description": "Step 1 of Lesson 2"
+  },
+  "learnPermissionsStep2": "Android offers up to four choices: Don't allow, Ask every time, Allow only while using the app, and All the time (for background location).",
+  "@learnPermissionsStep2": {
+    "description": "Step 2 of Lesson 2 explaining Android's four permission choices"
+  },
+  "learnPermissionsStep3": "Start with the narrowest choice that lets the feature work — such as Ask every time or While using the app.",
+  "@learnPermissionsStep3": {
+    "description": "Step 3 of Lesson 2"
+  },
+  "learnPermissionsStep4": "Open Android Settings and check Privacy Dashboard to see which apps recently accessed Camera, Microphone, or Location.",
+  "@learnPermissionsStep4": {
+    "description": "Step 4 of Lesson 2 explaining where to review recent permission use"
+  },
+  "learnPermissionsStep5": "Turn permissions off anytime in App Settings, or keep Pause app activity if unused on so Android removes old permissions automatically. An allowed permission shows capability, not proof that data was sent.",
+  "@learnPermissionsStep5": {
+    "description": "Step 5 of Lesson 2"
+  },
+  "learnPermissionsQuickQuestion": "A math practice app asks for your camera and you aren't sure why. What is the best first step?",
+  "@learnPermissionsQuickQuestion": {
+    "description": "Quick check question for Lesson 2"
+  },
+  "learnPermissionsQuickOption1": "Tap Don't allow and see if the math exercises still work",
+  "@learnPermissionsQuickOption1": {
+    "description": "Correct first quick check option for Lesson 2"
+  },
+  "learnPermissionsQuickOption2": "Choose All the time so the popup doesn't come back",
+  "@learnPermissionsQuickOption2": {
+    "description": "Second quick check option for Lesson 2"
+  },
+  "learnPermissionsQuickOption3": "Assume the app has already uploaded photos",
+  "@learnPermissionsQuickOption3": {
+    "description": "Third quick check option for Lesson 2"
+  },
+  "learnPermissionsQuickCorrectFeedback": "Right. Tapping Don't allow lets you check if the app works without the camera — and you can change permissions anytime in Android Settings.",
+  "@learnPermissionsQuickCorrectFeedback": {
+    "description": "Feedback shown when the user selects the right answer in Lesson 2"
+  },
+  "learnPermissionsQuickTryAgainFeedback": "Try a narrower choice first. Tap Don't allow to test if the feature still works, and remember an allowed permission shows capability, not proof of an upload.",
+  "@learnPermissionsQuickTryAgainFeedback": {
+    "description": "Feedback shown when the user selects another option in Lesson 2"
+  },
+  "learnDiagramPermLadderTitle": "From narrowest to broadest access",
+  "@learnDiagramPermLadderTitle": {
+    "description": "Heading inside the Lesson 2 Android Permissions Ladder diagram"
+  },
+  "learnDiagramPermDenyTitle": "Don't allow",
+  "@learnDiagramPermDenyTitle": {
+    "description": "Step 1 label in the Permissions Ladder diagram"
+  },
+  "learnDiagramPermDenyDetail": "Blocked — app cannot use this sensor",
+  "@learnDiagramPermDenyDetail": {
+    "description": "Step 1 detail in the Permissions Ladder diagram"
+  },
+  "learnDiagramPermAskTitle": "Ask every time",
+  "@learnDiagramPermAskTitle": {
+    "description": "Step 2 label in the Permissions Ladder diagram"
+  },
+  "learnDiagramPermAskDetail": "One-time access when you tap allow",
+  "@learnDiagramPermAskDetail": {
+    "description": "Step 2 detail in the Permissions Ladder diagram"
+  },
+  "learnDiagramPermWhileUsingTitle": "While using the app",
+  "@learnDiagramPermWhileUsingTitle": {
+    "description": "Step 3 label in the Permissions Ladder diagram"
+  },
+  "learnDiagramPermWhileUsingDetail": "Only while the app is open on screen",
+  "@learnDiagramPermWhileUsingDetail": {
+    "description": "Step 3 detail in the Permissions Ladder diagram"
+  },
+  "learnDiagramPermAllTimeTitle": "All the time",
+  "@learnDiagramPermAllTimeTitle": {
+    "description": "Step 4 label in the Permissions Ladder diagram"
+  },
+  "learnDiagramPermAllTimeDetail": "Background access even when closed",
+  "@learnDiagramPermAllTimeDetail": {
+    "description": "Step 4 detail in the Permissions Ladder diagram"
+  },
+  "learnDiagramPermFitNote": "Does it fit? Math quiz + Camera = ask why",
+  "@learnDiagramPermFitNote": {
+    "description": "Feature-fit prompt caption at the bottom of the Permissions Ladder diagram"
+  },
+  "learnDiagramPermSemantic": "Four-step Android permission ladder from narrowest to broadest access. Step 1, Don't allow: blocked, the app cannot use this sensor. Step 2, Ask every time: one-time access when you tap allow. Step 3, While using the app: access only while the app is open on screen. Step 4, All the time: background access even when closed, marked with a dashed border for extra caution. Bottom tip: Does it fit? A math quiz asking for the camera is a reason to ask why.",
+  "@learnDiagramPermSemantic": {
+    "description": "Full TalkBack description for the Lesson 2 Permissions Ladder diagram"
+  },
+  "learnSharingFolderTitle": "Ads & third parties",
+  "@learnSharingFolderTitle": {
+    "description": "Short folder title for Lesson 3 on the Learn home screen"
+  },
+  "learnSharingTitle": "Who else gets data: ads, analytics & third parties",
+  "@learnSharingTitle": {
+    "description": "Full lesson title for Lesson 3"
+  },
+  "learnSharingSubtitle": "App maker vs. helpers, analytics & ad networks",
+  "@learnSharingSubtitle": {
+    "description": "Short subtitle for Lesson 3"
+  },
+  "learnSharingIntro": "Many free apps connect to other companies behind the scenes. Knowing who receives information helps families tell the difference between running the app and tracking kids across apps.",
+  "@learnSharingIntro": {
+    "description": "Plain-language introduction for Lesson 3"
+  },
+  "learnSharingStep1": "First party means the app maker itself — for example, saving homework progress or quiz scores so the app works.",
+  "@learnSharingStep1": {
+    "description": "Step 1 of Lesson 3"
+  },
+  "learnSharingStep2": "Helper companies are third parties that handle behind-the-scenes jobs like cloud storage or crash reports so bugs get fixed.",
+  "@learnSharingStep2": {
+    "description": "Step 2 of Lesson 3"
+  },
+  "learnSharingStep3": "Analytics tools measure how screens are used, while ad networks and data brokers may use an advertising ID to show targeted ads or profile activity across apps.",
+  "@learnSharingStep3": {
+    "description": "Step 3 of Lesson 3"
+  },
+  "learnSharingStep4": "Watch for broad phrases like 'trusted partners' or 'business purposes,' and check whether a policy explains how to opt out of personalized ads.",
+  "@learnSharingStep4": {
+    "description": "Step 4 of Lesson 3"
+  },
+  "learnSharingQuickQuestion": "A policy says the app shares information with 'third-party partners.' What is the best next question to ask?",
+  "@learnSharingQuickQuestion": {
+    "description": "Quick check question for Lesson 3"
+  },
+  "learnSharingQuickOption1": "Assume that means the app has no ads",
+  "@learnSharingQuickOption1": {
+    "description": "First quick check option for Lesson 3"
+  },
+  "learnSharingQuickOption2": "Assume every partner does the exact same job",
+  "@learnSharingQuickOption2": {
+    "description": "Second quick check option for Lesson 3"
+  },
+  "learnSharingQuickOption3": "Check whether those partners are helpers (like hosting) or ad networks that track across apps",
+  "@learnSharingQuickOption3": {
+    "description": "Correct third quick check option for Lesson 3"
+  },
+  "learnSharingQuickCorrectFeedback": "Spot on. Helper services keep the app running, while ad networks and data brokers may track activity across apps.",
+  "@learnSharingQuickCorrectFeedback": {
+    "description": "Feedback shown when the user selects the right answer in Lesson 3"
+  },
+  "learnSharingQuickTryAgainFeedback": "Look closer at what each partner does. Not all third parties are the same — some host data or fix crashes, while others run ads or tracking.",
+  "@learnSharingQuickTryAgainFeedback": {
+    "description": "Feedback shown when the user selects another option in Lesson 3"
+  },
+  "learnDiagramThirdPartyYou": "You",
+  "@learnDiagramThirdPartyYou": {
+    "description": "Node label for the family/child user in the Lesson 3 diagram"
+  },
+  "learnDiagramThirdPartyApp": "Learning app",
+  "@learnDiagramThirdPartyApp": {
+    "description": "Node label for the learning app in the Lesson 3 diagram"
+  },
+  "learnDiagramThirdPartyHosting": "Helpers & crashes",
+  "@learnDiagramThirdPartyHosting": {
+    "description": "Node label for operational hosting and crash-fix services in the Lesson 3 diagram"
+  },
+  "learnDiagramThirdPartyAnalytics": "Analytics",
+  "@learnDiagramThirdPartyAnalytics": {
+    "description": "Node label for analytics services in the Lesson 3 diagram"
+  },
+  "learnDiagramThirdPartyAds": "Ad networks",
+  "@learnDiagramThirdPartyAds": {
+    "description": "Node label for advertising networks in the Lesson 3 diagram"
+  },
+  "learnDiagramThirdPartyFirstParty": "First party",
+  "@learnDiagramThirdPartyFirstParty": {
+    "description": "Badge label distinguishing first-party data flow in the Lesson 3 diagram"
+  },
+  "learnDiagramThirdPartyThirdParty": "Third parties",
+  "@learnDiagramThirdPartyThirdParty": {
+    "description": "Badge label distinguishing third-party data flow in the Lesson 3 diagram"
+  },
+  "learnDiagramThirdPartySemantic": "Flow diagram showing where data from a child's learning app can go. You connect to the learning app, which connects with a solid line to the app maker (first party) and with dashed lines to third parties: helper and crash tools, analytics tools, and ad networks marked for extra attention.",
+  "@learnDiagramThirdPartySemantic": {
+    "description": "Full TalkBack description for the Lesson 3 ThirdPartyDiagram"
+  },
+  "learnEvidenceFolderTitle": "Reading Enprive",
+  "@learnEvidenceFolderTitle": {
+    "description": "Short folder title for Lesson 4 on the Learn home screen"
+  },
+  "learnEvidenceTitle": "How to read Enprive's evidence",
+  "@learnEvidenceTitle": {
+    "description": "Full lesson title for Lesson 4"
+  },
+  "learnEvidenceSubtitle": "Evidence layers, categories & honest limits",
+  "@learnEvidenceSubtitle": {
+    "description": "Short subtitle for Lesson 4"
+  },
+  "learnEvidenceIntro": "Enprive separates what a privacy policy says, what your phone shows, and what stays unknown — and groups findings by topic, never as a safety grade.",
+  "@learnEvidenceIntro": {
+    "description": "Plain-language introduction for Lesson 4"
+  },
+  "learnEvidenceStep1": "Five topic categories group every finding with the same icon and color as the Review screen. Color marks the topic, never a safety score.",
+  "@learnEvidenceStep1": {
+    "description": "Step 1 of Lesson 4"
+  },
+  "learnEvidenceStep2": "{sourceMatched} means Enprive found an exact quote word for word in the policy text you checked.",
+  "@learnEvidenceStep2": {
+    "description": "Step 2 of Lesson 4 referencing the exact Review screen source-matched badge",
+    "placeholders": {
+      "sourceMatched": {
+        "type": "String"
+      }
+    }
+  },
+  "learnEvidenceStep3": "{deviceObserved} means your phone reported a permission setting on this device — not proof that data was sent.",
+  "@learnEvidenceStep3": {
+    "description": "Step 3 of Lesson 4 referencing the exact Review screen device-observed badge",
+    "placeholders": {
+      "deviceObserved": {
+        "type": "String"
+      }
+    }
+  },
+  "learnEvidenceStep4": "{interpretation} is Deni's plain-language explanation, while {unverified} marks details Enprive could not find. Silence in a policy is never a promise.",
+  "@learnEvidenceStep4": {
+    "description": "Step 4 of Lesson 4 referencing exact Review screen interpretation and unverified badges",
+    "placeholders": {
+      "interpretation": {
+        "type": "String"
+      },
+      "unverified": {
+        "type": "String"
+      }
+    }
+  },
+  "learnEvidenceStep5": "Reviews end with one of three calm outcomes: {reviewRecommended}, {noConcern} (which is never a safety certification), or {insufficientEvidence}.",
+  "@learnEvidenceStep5": {
+    "description": "Step 5 of Lesson 4 referencing the three exact calibrated Review outcomes",
+    "placeholders": {
+      "reviewRecommended": {
+        "type": "String"
+      },
+      "noConcern": {
+        "type": "String"
+      },
+      "insufficientEvidence": {
+        "type": "String"
+      }
+    }
+  },
+  "learnEvidenceQuickQuestion": "On a Review screen, what does '{deviceObserved}' mean?",
+  "@learnEvidenceQuickQuestion": {
+    "description": "Quick check question for Lesson 4",
+    "placeholders": {
+      "deviceObserved": {
+        "type": "String"
+      }
+    }
+  },
+  "learnEvidenceQuickOption1": "The app is certified safe for children",
+  "@learnEvidenceQuickOption1": {
+    "description": "First quick check option for Lesson 4"
+  },
+  "learnEvidenceQuickOption2": "Your phone shows this permission setting on this device — not proof that data was uploaded",
+  "@learnEvidenceQuickOption2": {
+    "description": "Correct second quick check option for Lesson 4"
+  },
+  "learnEvidenceQuickOption3": "The app has definitely uploaded your child's data",
+  "@learnEvidenceQuickOption3": {
+    "description": "Third quick check option for Lesson 4"
+  },
+  "learnEvidenceQuickCorrectFeedback": "That's right. That label reflects Android's permission state on this device; it cannot prove uploads or certify safety.",
+  "@learnEvidenceQuickCorrectFeedback": {
+    "description": "Feedback shown when the user selects the right answer in Lesson 4"
+  },
+  "learnEvidenceQuickTryAgainFeedback": "Not quite. That label only shows what your phone reports about a permission setting — it never proves uploads and is never a safety certification.",
+  "@learnEvidenceQuickTryAgainFeedback": {
+    "description": "Feedback shown when the user selects another option in Lesson 4"
+  },
+  "learnDiagramEvidencePolicyDetail": "Exact quote matched in the policy text",
+  "@learnDiagramEvidencePolicyDetail": {
+    "description": "Supporting caption for Layer 1 in the Lesson 4 EvidenceLayersDiagram"
+  },
+  "learnDiagramEvidencePhoneDetail": "Phone permissions on this device",
+  "@learnDiagramEvidencePhoneDetail": {
+    "description": "Supporting caption for Layer 2 in the Lesson 4 EvidenceLayersDiagram"
+  },
+  "learnDiagramEvidenceDeniDetail": "Plain-language explanation by Deni",
+  "@learnDiagramEvidenceDeniDetail": {
+    "description": "Supporting caption for Layer 3 in the Lesson 4 EvidenceLayersDiagram"
+  },
+  "learnDiagramEvidenceUnknownDetail": "Silence in a policy is not a promise",
+  "@learnDiagramEvidenceUnknownDetail": {
+    "description": "Supporting caption for Layer 4 and bottom note in the Lesson 4 EvidenceLayersDiagram"
+  },
+  "learnDiagramEvidenceSemantic": "Four evidence layers used on Enprive's Review screen: 1, {sourceMatched}, an exact quote matched in the privacy policy; 2, {deviceObserved}, phone permissions on this device; 3, {interpretation}, Deni's plain-language explanation; and 4, separated by a dashed line, {unverified}, because silence in a policy is not a promise.",
+  "@learnDiagramEvidenceSemantic": {
+    "description": "Full TalkBack description for the Lesson 4 EvidenceLayersDiagram",
+    "placeholders": {
+      "sourceMatched": {
+        "type": "String"
+      },
+      "deviceObserved": {
+        "type": "String"
+      },
+      "interpretation": {
+        "type": "String"
+      },
+      "unverified": {
+        "type": "String"
+      }
+    }
+  },
+  "learnDiagramCategoriesTitle": "Five topic categories on the Review screen",
+  "@learnDiagramCategoriesTitle": {
+    "description": "Heading for the five evidence categories legend in Lesson 4"
+  },
+  "learnDiagramCategoriesNote": "Color and icon mark the topic, never a safety score.",
+  "@learnDiagramCategoriesNote": {
+    "description": "Clarification under the five evidence categories legend in Lesson 4"
+  },
+  "learnDiagramCategoriesSemantic": "Five evidence categories shown on Enprive's Review screen, each with its own icon and color: {dataCollection}, {sharing}, {tracking}, {retention}, and {parentalControls}. Color and icon mark the topic, never a safety score.",
+  "@learnDiagramCategoriesSemantic": {
+    "description": "Full TalkBack description for the five evidence categories legend in Lesson 4",
+    "placeholders": {
+      "dataCollection": {
+        "type": "String"
+      },
+      "sharing": {
+        "type": "String"
+      },
+      "tracking": {
+        "type": "String"
+      },
+      "retention": {
+        "type": "String"
+      },
+      "parentalControls": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -1111,6 +1111,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
             ),
             LearnHomeScreen(
               scrollController: _learnScrollController,
+              hybridBridge: _bridge,
               onOpenSettings: isCompactLayout ? _openSettingsScreen : null,
               isActiveTab: _selectedTabIndex == 2,
               onCheckAppRequested: () {

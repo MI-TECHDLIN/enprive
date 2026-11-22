@@ -119,25 +119,42 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         expect(
-          find.byKey(const Key('learn_folder_permissions_consent')),
+          find.byKey(const Key('learn_folder_privacy_policy')),
           findsOneWidget,
         );
         expect(
-          find.byKey(const Key('learn_folder_scams_safety')),
+          find.byKey(const Key('learn_folder_android_permissions')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('learn_folder_third_parties')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('learn_folder_evidence')),
           findsOneWidget,
         );
 
         await tester.tap(
-          find.byKey(const Key('learn_folder_permissions_consent')),
+          find.byKey(const Key('learn_folder_android_permissions')),
         );
         await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
-        expect(find.text('Check an app on this phone'), findsOneWidget);
+        await tester.pump(const Duration(milliseconds: 350));
+        expect(
+          find.byKey(const Key('learn_lesson_screen_android_permissions')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('learn_lesson_listen_btn')), findsOneWidget);
 
-        // Close sheet and verify PopScope returns from Learn (Tab 2) -> Check (Tab 0)
-        await tester.tap(find.byTooltip('Close'));
+        // Return from full-screen lesson via Back button, then verify PopScope returns Learn -> Check
+        await tester.tap(find.byKey(const Key('learn_lesson_back_btn')));
         await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pump(const Duration(milliseconds: 350));
+        expect(
+          find.byKey(const Key('learn_lesson_screen_android_permissions')),
+          findsNothing,
+        );
 
         await tester.binding.handlePopRoute();
         await tester.pump();
@@ -319,7 +336,7 @@ void main() {
         }
 
         expect(
-          find.byKey(const Key('learn_folder_permissions_consent')),
+          find.byKey(const Key('learn_folder_android_permissions')),
           findsOneWidget,
         );
         expect(tester.takeException(), isNull);
@@ -395,11 +412,11 @@ void main() {
           await tester.pump(const Duration(milliseconds: 250));
 
           expect(
-            find.byKey(const Key('learn_folder_permissions_consent')),
+            find.byKey(const Key('learn_folder_android_permissions')),
             findsOneWidget,
           );
           expect(
-            find.byKey(const Key('learn_folder_reading_policies')),
+            find.byKey(const Key('learn_folder_privacy_policy')),
             findsNothing,
           );
           final filteredTopY = tester.getTopLeft(learnHeadingFinder).dy;
@@ -410,11 +427,11 @@ void main() {
 
           // Verify EnpriveFolderTabCard exposes single clean label without inner text duplication
           final folderSemantics = tester.getSemantics(
-            find.byKey(const Key('learn_folder_permissions_consent')),
+            find.byKey(const Key('learn_folder_android_permissions')),
           );
           expect(
             folderSemantics.label,
-            'Permissions & Consent. 3 tips. Camera, mic, location & ad IDs',
+            'Phone permissions. 5 steps. The four Android choices & where to review them',
           );
           expect(folderSemantics.label.contains('\n'), isFalse);
           expect(folderSemantics.flagsCollection.isButton, isTrue);

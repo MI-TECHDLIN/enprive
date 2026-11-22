@@ -104,10 +104,10 @@ class _ThirdPartyFlowContent extends StatelessWidget {
       builder: (context, constraints) {
         final width = maxWidth;
         final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-        final clampedTextScale = textScale.clamp(1.0, 1.5);
-        final nodeSize = 56.0 * clampedTextScale;
-        final spacing = 24.0 * clampedTextScale;
-        final deniSize = 56 * clampedTextScale;
+        final clampedTextScale = textScale.clamp(1.0, 1.35);
+        final nodeSize = 52.0;
+        final nodeBoxWidth = math.min(width - 24, 118.0 * clampedTextScale);
+        final deniSize = 52.0;
 
         // Calculate positions and total height/width
         late Offset youCenter;
@@ -116,54 +116,46 @@ class _ThirdPartyFlowContent extends StatelessWidget {
         late Offset analyticsCenter;
         late Offset adsCenter;
         late double contentHeight;
-        late double contentWidth;
+        final double contentWidth = width;
+        final double badgeTopOffset = 46.0;
 
         if (useVerticalLayout) {
-          // Vertical stack: You -> App -> (App Maker, Hosting, Analytics, Ads)
+          // Vertical stack: You -> App -> (Hosting, Analytics, Ads)
           final centerX = width / 2;
-          final startY = nodeSize / 2 + 16;
+          final verticalStep = 108.0 + (textScale - 1.0).clamp(0.0, 1.0) * 58.0;
+          final thirdPartyStep =
+              124.0 + (textScale - 1.0).clamp(0.0, 1.0) * 68.0;
 
-          youCenter = Offset(centerX, startY);
-          appCenter = Offset(centerX, youCenter.dy + nodeSize + spacing);
+          youCenter = Offset(centerX, badgeTopOffset + nodeSize / 2 + 8);
+          appCenter = Offset(centerX, youCenter.dy + verticalStep);
 
-          final thirdPartyStartY = appCenter.dy + nodeSize + spacing;
-          final thirdPartySpacing = nodeSize + 16;
-
+          final thirdPartyStartY = appCenter.dy + verticalStep + 20;
           hostingCenter = Offset(centerX, thirdPartyStartY);
-          analyticsCenter = Offset(
-            centerX,
-            hostingCenter.dy + thirdPartySpacing,
-          );
-          adsCenter = Offset(centerX, analyticsCenter.dy + thirdPartySpacing);
+          analyticsCenter = Offset(centerX, hostingCenter.dy + thirdPartyStep);
+          adsCenter = Offset(centerX, analyticsCenter.dy + thirdPartyStep);
 
-          // Add space for Deni at bottom
-          contentHeight = adsCenter.dy + nodeSize / 2 + 16 + deniSize + 16;
-          contentWidth = width;
+          contentHeight = adsCenter.dy + thirdPartyStep * 0.72 + deniSize + 24;
         } else {
-          // Horizontal: You (left) -> App (center) -> three branches right
-          final centerY = 200 * clampedTextScale;
-          final appX = width * 0.4;
-          final youX = appX - nodeSize - spacing * 2;
+          // Horizontal: You -> App -> three branches (mirrored in RTL)
+          final leftX = math.max(nodeBoxWidth / 2 + 4, width * 0.16);
+          final midX = width * 0.45;
+          final rightX = math.min(width - nodeBoxWidth / 2 - 4, width * 0.80);
 
+          final youX = isRtl ? rightX : leftX;
+          final appX = isRtl ? width - midX : midX;
+          final thirdPartyX = isRtl ? leftX : rightX;
+
+          const branchStep = 108.0;
+          final startY = badgeTopOffset + nodeSize / 2 + 12;
+          hostingCenter = Offset(thirdPartyX, startY);
+          analyticsCenter = Offset(thirdPartyX, startY + branchStep);
+          adsCenter = Offset(thirdPartyX, startY + branchStep * 2);
+
+          final centerY = analyticsCenter.dy;
           youCenter = Offset(youX, centerY);
           appCenter = Offset(appX, centerY);
 
-          // Three third-party nodes to the right, vertically stacked
-          final thirdPartyX = appX + nodeSize + spacing * 2;
-          final startY = centerY - (nodeSize * 1.5 + spacing);
-          hostingCenter = Offset(thirdPartyX, startY);
-          analyticsCenter = Offset(
-            thirdPartyX,
-            startY + nodeSize + spacing,
-          );
-          adsCenter = Offset(thirdPartyX, startY + (nodeSize + spacing) * 2);
-
-          // Height accommodates the three third-party nodes plus Deni
-          contentHeight = math.max(
-            adsCenter.dy + nodeSize / 2 + 16 + deniSize + 16,
-            centerY + nodeSize / 2 + 16 + deniSize + 16,
-          );
-          contentWidth = width;
+          contentHeight = adsCenter.dy + 94 + deniSize * 0.4;
         }
 
         final painter = _FlowPainter(
@@ -185,177 +177,164 @@ class _ThirdPartyFlowContent extends StatelessWidget {
           onSurfaceColor: scheme.onSurface,
         );
 
-        return SizedBox(
+        final diagramBody = Container(
           width: contentWidth,
-          height: contentHeight,
-          child: CustomPaint(
-            painter: painter,
-            child: Stack(
-              children: [
-                // You (Child) node
-                Positioned(
-                  left: youCenter.dx - nodeSize / 2,
-                  top: youCenter.dy - nodeSize / 2,
-                  child: _DiagramNode(
-                    icon: LucideIcons.user,
-                    label: labels.you,
-                    backgroundColor: scheme.primaryContainer,
-                    foregroundColor: scheme.onPrimaryContainer,
-                    size: nodeSize,
-                    textScale: clampedTextScale,
-                  ),
-                ),
-                // App node
-                Positioned(
-                  left: appCenter.dx - nodeSize / 2,
-                  top: appCenter.dy - nodeSize / 2,
-                  child: _DiagramNode(
-                    icon: LucideIcons.smartphone,
-                    label: labels.app,
-                    backgroundColor: scheme.secondaryContainer,
-                    foregroundColor: scheme.onSecondaryContainer,
-                    size: nodeSize,
-                    textScale: clampedTextScale,
-                    isPrimary: true,
-                  ),
-                ),
-                // Hosting/Crash node
-                Positioned(
-                  left: hostingCenter.dx - nodeSize / 2,
-                  top: hostingCenter.dy - nodeSize / 2,
-                  child: _ThirdPartyNode(
-                    icon: LucideIcons.server,
-                    label: labels.hosting,
-                    categoryLabel: labels.thirdParty,
-                    pathColor: hostingColor,
-                    backgroundColor: surfaces.card,
-                    foregroundColor: scheme.onSurface,
-                    size: nodeSize,
-                    textScale: clampedTextScale,
-                    lineStyle: _LineStyle.dashed,
-                  ),
-                ),
-                // Analytics node
-                Positioned(
-                  left: analyticsCenter.dx - nodeSize / 2,
-                  top: analyticsCenter.dy - nodeSize / 2,
-                  child: _ThirdPartyNode(
-                    icon: LucideIcons.barChart2,
-                    label: labels.analytics,
-                    categoryLabel: labels.thirdParty,
-                    pathColor: analyticsPathColor,
-                    backgroundColor: surfaces.card,
-                    foregroundColor: scheme.onSurface,
-                    size: nodeSize,
-                    textScale: clampedTextScale,
-                    lineStyle: _LineStyle.dashed,
-                  ),
-                ),
-                // Ads node
-                Positioned(
-                  left: adsCenter.dx - nodeSize / 2,
-                  top: adsCenter.dy - nodeSize / 2,
-                  child: _ThirdPartyNode(
-                    icon: LucideIcons.signal,
-                    label: labels.ads,
-                    categoryLabel: labels.thirdParty,
-                    pathColor: adsPathColor,
-                    backgroundColor: surfaces.card,
-                    foregroundColor: scheme.onSurface,
-                    size: nodeSize,
-                    textScale: clampedTextScale,
-                    lineStyle: _LineStyle.dashed,
-                    isWarning: true,
-                  ),
-                ),
-                // First Party label (above hosting/app maker)
-                if (!useVerticalLayout)
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(EnpriveRadii.card),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+          child: SizedBox(
+            width: contentWidth - 12,
+            height: contentHeight,
+            child: CustomPaint(
+              painter: painter,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Top legend badges: First party & Third parties (never overlapping)
                   Positioned(
-                    top: 8,
-                    left: hostingCenter.dx - 60,
-                    right: hostingCenter.dx + 60,
-                    child: Center(
-                      child: _CategoryBadge(
-                        label: labels.firstParty,
-                        color: firstPartyColor,
-                        textScale: clampedTextScale,
-                        maxWidth: width * 0.5,
-                      ),
-                    ),
-                  )
-                else
-                  Positioned(
-                    top: hostingCenter.dy - nodeSize / 2 - 28,
-                    left: 16,
-                    right: 16,
-                    child: Center(
-                      child: _CategoryBadge(
-                        label: labels.firstParty,
-                        color: firstPartyColor,
-                        textScale: clampedTextScale,
-                        maxWidth: width - 32,
-                      ),
+                    top: 0,
+                    left: 6,
+                    right: 6,
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _CategoryBadge(
+                          label: labels.firstParty,
+                          color: firstPartyColor,
+                          textScale: 1.0,
+                          maxWidth: width * 0.46,
+                          isFirstParty: true,
+                        ),
+                        _CategoryBadge(
+                          label: labels.thirdParty,
+                          color: thirdPartyColor,
+                          textScale: 1.0,
+                          maxWidth: width * 0.46,
+                          isFirstParty: false,
+                        ),
+                      ],
                     ),
                   ),
-                // Third Party label (above analytics/ads)
-                if (!useVerticalLayout)
+                  // You (Child) node
                   Positioned(
-                    top: 8,
-                    left: analyticsCenter.dx - 80,
-                    right: analyticsCenter.dx + 80,
-                    child: Center(
-                      child: _CategoryBadge(
-                        label: labels.thirdParty,
-                        color: thirdPartyColor,
-                        textScale: clampedTextScale,
-                        maxWidth: width * 0.5,
-                      ),
-                    ),
-                  )
-                else
-                  Positioned(
-                    top: analyticsCenter.dy - nodeSize / 2 - 28,
-                    left: 16,
-                    right: 16,
-                    child: Center(
-                      child: _CategoryBadge(
-                        label: labels.thirdParty,
-                        color: thirdPartyColor,
-                        textScale: clampedTextScale,
-                        maxWidth: width - 32,
-                      ),
+                    left: youCenter.dx - nodeBoxWidth / 2,
+                    top: youCenter.dy - nodeSize / 2,
+                    width: nodeBoxWidth,
+                    child: _DiagramNode(
+                      icon: LucideIcons.user,
+                      label: labels.you,
+                      backgroundColor: scheme.primaryContainer,
+                      foregroundColor: scheme.onPrimaryContainer,
+                      size: nodeSize,
+                      textScale: 1.0,
                     ),
                   ),
-                // Deni mascot
-                if (!useVerticalLayout)
+                  // App node
                   Positioned(
-                    bottom: 16,
-                    right: 16,
-                    child: DeniAnimatedMascot(
-                      size: deniSize,
-                      pose: DeniPose.explaining,
-                      holdStill: true,
-                      showAmbientGlow: false,
+                    left: appCenter.dx - nodeBoxWidth / 2,
+                    top: appCenter.dy - nodeSize / 2,
+                    width: nodeBoxWidth,
+                    child: _DiagramNode(
+                      icon: LucideIcons.smartphone,
+                      label: labels.app,
+                      backgroundColor: scheme.secondaryContainer,
+                      foregroundColor: scheme.onSecondaryContainer,
+                      size: nodeSize,
+                      textScale: 1.0,
+                      isPrimary: true,
                     ),
-                  )
-                else
+                  ),
+                  // Hosting/Crash node
                   Positioned(
-                    bottom: 16,
-                    left: 16,
-                    right: 16,
-                    child: Center(
+                    left: hostingCenter.dx - nodeBoxWidth / 2,
+                    top: hostingCenter.dy - nodeSize / 2,
+                    width: nodeBoxWidth,
+                    child: _ThirdPartyNode(
+                      icon: LucideIcons.server,
+                      label: labels.hosting,
+                      categoryLabel: labels.thirdParty,
+                      pathColor: hostingColor,
+                      backgroundColor: surfaces.card,
+                      foregroundColor: scheme.onSurface,
+                      size: nodeSize,
+                      textScale: 1.0,
+                      lineStyle: _LineStyle.dashed,
+                    ),
+                  ),
+                  // Analytics node
+                  Positioned(
+                    left: analyticsCenter.dx - nodeBoxWidth / 2,
+                    top: analyticsCenter.dy - nodeSize / 2,
+                    width: nodeBoxWidth,
+                    child: _ThirdPartyNode(
+                      icon: LucideIcons.barChart2,
+                      label: labels.analytics,
+                      categoryLabel: labels.thirdParty,
+                      pathColor: analyticsPathColor,
+                      backgroundColor: surfaces.card,
+                      foregroundColor: scheme.onSurface,
+                      size: nodeSize,
+                      textScale: 1.0,
+                      lineStyle: _LineStyle.dashed,
+                    ),
+                  ),
+                  // Ads node
+                  Positioned(
+                    left: adsCenter.dx - nodeBoxWidth / 2,
+                    top: adsCenter.dy - nodeSize / 2,
+                    width: nodeBoxWidth,
+                    child: _ThirdPartyNode(
+                      icon: LucideIcons.signal,
+                      label: labels.ads,
+                      categoryLabel: labels.thirdParty,
+                      pathColor: adsPathColor,
+                      backgroundColor: surfaces.card,
+                      foregroundColor: scheme.onSurface,
+                      size: nodeSize,
+                      textScale: 1.0,
+                      lineStyle: _LineStyle.dashed,
+                      isWarning: true,
+                    ),
+                  ),
+                  // Deni mascot
+                  if (!useVerticalLayout)
+                    PositionedDirectional(
+                      bottom: 4,
+                      start: 10,
                       child: DeniAnimatedMascot(
                         size: deniSize,
                         pose: DeniPose.explaining,
                         holdStill: true,
                         showAmbientGlow: false,
                       ),
+                    )
+                  else
+                    Positioned(
+                      bottom: 4,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: DeniAnimatedMascot(
+                          size: deniSize,
+                          pose: DeniPose.explaining,
+                          holdStill: true,
+                          showAmbientGlow: false,
+                        ),
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         );
+
+        return constraints.maxHeight.isFinite
+            ? SingleChildScrollView(primary: false, child: diagramBody)
+            : diagramBody;
       },
     );
   }
@@ -412,18 +391,6 @@ class _FlowPainter extends CustomPainter {
       canvas,
       youCenter,
       appCenter,
-      onSurfaceColor.withValues(alpha: 0.6),
-      strokeWidth,
-      arrowHeadLength,
-      arrowHeadAngle,
-      isRtl,
-    );
-
-    // App to App Maker (first party) - solid teal
-    _drawArrow(
-      canvas,
-      appCenter,
-      hostingCenter,
       appMakerPathColor,
       strokeWidth,
       arrowHeadLength,
@@ -432,34 +399,202 @@ class _FlowPainter extends CustomPainter {
       isSolid: true,
     );
 
-    // App to Hosting/Crash (third party, neutral) - dashed
-    _drawArrow(
+    if (useVerticalLayout) {
+      // Draw a clean side trunk in vertical mode so dashed arrows never cut
+      // through intermediate nodes or text labels.
+      final trunkX = isRtl ? size.width - 14.0 : 14.0;
+      _drawBranchedConnector(
+        canvas,
+        from: appCenter,
+        to: hostingCenter,
+        trunkX: trunkX,
+        color: hostingColor,
+        strokeWidth: strokeWidth,
+        headLength: arrowHeadLength,
+        headAngle: arrowHeadAngle,
+        dashWidth: dashWidth,
+        dashSpace: dashSpace,
+      );
+      _drawBranchedConnector(
+        canvas,
+        from: appCenter,
+        to: analyticsCenter,
+        trunkX: trunkX,
+        color: analyticsPathColor,
+        strokeWidth: strokeWidth,
+        headLength: arrowHeadLength,
+        headAngle: arrowHeadAngle,
+        dashWidth: dashWidth,
+        dashSpace: dashSpace,
+      );
+      _drawBranchedConnector(
+        canvas,
+        from: appCenter,
+        to: adsCenter,
+        trunkX: trunkX,
+        color: adsPathColor,
+        strokeWidth: strokeWidth,
+        headLength: arrowHeadLength,
+        headAngle: arrowHeadAngle,
+        dashWidth: dashWidth,
+        dashSpace: dashSpace,
+      );
+      return;
+    }
+
+    // Horizontal branches: smooth cubic connectors entering the side of each
+    // third-party circle so lines never cross node labels below the circles.
+    _drawCurvedHorizontalBranch(
       canvas,
-      appCenter,
-      analyticsCenter,
-      hostingColor,
-      strokeWidth,
-      arrowHeadLength,
-      arrowHeadAngle,
-      isRtl,
-      isSolid: false,
+      from: appCenter,
+      to: hostingCenter,
+      color: hostingColor,
+      strokeWidth: strokeWidth,
+      headLength: arrowHeadLength,
+      headAngle: arrowHeadAngle,
       dashWidth: dashWidth,
       dashSpace: dashSpace,
     );
 
-    // App to Analytics (third party) - dashed
-    _drawArrow(
+    _drawCurvedHorizontalBranch(
       canvas,
-      appCenter,
-      adsCenter,
-      analyticsPathColor,
-      strokeWidth,
-      arrowHeadLength,
-      arrowHeadAngle,
-      isRtl,
-      isSolid: false,
+      from: appCenter,
+      to: analyticsCenter,
+      color: analyticsPathColor,
+      strokeWidth: strokeWidth,
+      headLength: arrowHeadLength,
+      headAngle: arrowHeadAngle,
       dashWidth: dashWidth,
       dashSpace: dashSpace,
+    );
+
+    _drawCurvedHorizontalBranch(
+      canvas,
+      from: appCenter,
+      to: adsCenter,
+      color: adsPathColor,
+      strokeWidth: strokeWidth,
+      headLength: arrowHeadLength,
+      headAngle: arrowHeadAngle,
+      dashWidth: dashWidth,
+      dashSpace: dashSpace,
+    );
+  }
+
+  void _drawCurvedHorizontalBranch(
+    Canvas canvas, {
+    required Offset from,
+    required Offset to,
+    required Color color,
+    required double strokeWidth,
+    required double headLength,
+    required double headAngle,
+    required double dashWidth,
+    required double dashSpace,
+  }) {
+    const nodeRadius = 28.0;
+    final dirX = to.dx >= from.dx ? 1.0 : -1.0;
+    final start = Offset(from.dx + dirX * nodeRadius, from.dy);
+    final end = Offset(to.dx - dirX * nodeRadius, to.dy);
+    final midX = (start.dx + end.dx) / 2;
+
+    final path = Path()
+      ..moveTo(start.dx, start.dy)
+      ..cubicTo(midX, start.dy, midX, end.dy, end.dx, end.dy);
+
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final dashPath = Path();
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final nextDistance = math.min(distance + dashWidth, metric.length);
+        dashPath.addPath(metric.extractPath(distance, nextDistance), Offset.zero);
+        distance = nextDistance + dashSpace;
+      }
+    }
+    canvas.drawPath(dashPath, paint);
+
+    final direction = Offset(dirX, 0);
+    final perpendicular = const Offset(0, 1);
+    final arrowBase = end - direction * headLength;
+    final left = arrowBase + perpendicular * headLength * math.sin(headAngle);
+    final right = arrowBase - perpendicular * headLength * math.sin(headAngle);
+    final arrowPath = Path()
+      ..moveTo(end.dx, end.dy)
+      ..lineTo(left.dx, left.dy)
+      ..lineTo(right.dx, right.dy)
+      ..close();
+    canvas.drawPath(
+      arrowPath,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill,
+    );
+  }
+
+  void _drawBranchedConnector(
+    Canvas canvas, {
+    required Offset from,
+    required Offset to,
+    required double trunkX,
+    required Color color,
+    required double strokeWidth,
+    required double headLength,
+    required double headAngle,
+    required double dashWidth,
+    required double dashSpace,
+  }) {
+    const nodeRadius = 28.0;
+    final dirToTrunk = trunkX < from.dx ? -1.0 : 1.0;
+    final start = Offset(from.dx + dirToTrunk * nodeRadius, from.dy);
+    final corner1 = Offset(trunkX, from.dy);
+    final corner2 = Offset(trunkX, to.dy);
+    final end = Offset(to.dx + dirToTrunk * nodeRadius, to.dy);
+
+    final path = Path()
+      ..moveTo(start.dx, start.dy)
+      ..lineTo(corner1.dx, corner1.dy)
+      ..lineTo(corner2.dx, corner2.dy)
+      ..lineTo(end.dx, end.dy);
+
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+
+    final dashPath = Path();
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final nextDistance = math.min(distance + dashWidth, metric.length);
+        dashPath.addPath(metric.extractPath(distance, nextDistance), Offset.zero);
+        distance = nextDistance + dashSpace;
+      }
+    }
+    canvas.drawPath(dashPath, paint);
+
+    final direction = Offset(-dirToTrunk, 0);
+    final perpendicular = const Offset(0, 1);
+    final arrowBase = end - direction * headLength;
+    final left = arrowBase + perpendicular * headLength * math.sin(headAngle);
+    final right = arrowBase - perpendicular * headLength * math.sin(headAngle);
+    final arrowPath = Path()
+      ..moveTo(end.dx, end.dy)
+      ..lineTo(left.dx, left.dy)
+      ..lineTo(right.dx, right.dy)
+      ..close();
+    canvas.drawPath(
+      arrowPath,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill,
     );
   }
 
@@ -726,12 +861,14 @@ class _CategoryBadge extends StatelessWidget {
     required this.color,
     required this.textScale,
     required this.maxWidth,
+    required this.isFirstParty,
   });
 
   final String label;
   final Color color;
   final double textScale;
   final double maxWidth;
+  final bool isFirstParty;
 
   @override
   Widget build(BuildContext context) {
@@ -739,7 +876,7 @@ class _CategoryBadge extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(999),
@@ -749,12 +886,7 @@ class _CategoryBadge extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                label == 'First party' || label.contains('First') ||
-                        label.contains('First-party') ||
-                        label.contains('first party') ||
-                        label.contains('first-party')
-                    ? LucideIcons.shieldCheck
-                    : LucideIcons.users,
+                isFirstParty ? LucideIcons.shieldCheck : LucideIcons.users,
                 size: 14 * textScale,
                 color: color,
               ),
