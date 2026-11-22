@@ -23,8 +23,10 @@ abstract final class EnpriveBreakpoints {
   static const double large = 1200.0;
 }
 
-/// Consistent accessible `48x48dp` Settings button rendered in top-level compact
-/// AppBars (and hidden when the leading [M3ENavigationRail] footer owns Settings).
+/// Standard Material icon button with a gear for Settings, rendered in
+/// top-level compact app bars (and in the rail footer on wider windows).
+/// Kept as a framework [IconButton] (not `M3EIconButton`) so its tooltip and
+/// semantics stay a single node.
 class EnpriveSettingsAppBarButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String tooltip;
@@ -37,24 +39,17 @@ class EnpriveSettingsAppBarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final surfaces = context.enpriveSurfaces;
+    final scheme = EnpriveM3ETheme.of(context).colorScheme;
 
     return IconButton(
       tooltip: tooltip,
       onPressed: onPressed,
       style: IconButton.styleFrom(
-        backgroundColor: surfaces.card,
-        foregroundColor: scheme.onSurface,
-        fixedSize: const Size(44, 44),
+        foregroundColor: scheme.onSurfaceVariant,
         minimumSize: const Size(48, 48),
         tapTargetSize: MaterialTapTargetSize.padded,
-        padding: EdgeInsets.zero,
-        side: BorderSide(color: surfaces.hairlineBorder),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
-      icon: const Icon(LucideIcons.slidersHorizontal, size: 19),
+      icon: const Icon(LucideIcons.settings, size: 22),
     );
   }
 }
@@ -100,7 +95,6 @@ class EnpriveNavigationShell extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
-    final surfaces = context.enpriveSurfaces;
     final textScale = MediaQuery.textScalerOf(context).scale(1.0);
 
     return PopScope(
@@ -127,13 +121,8 @@ class EnpriveNavigationShell extends StatelessWidget {
               backgroundColor: scheme.surface,
               extendBody: false,
               body: bodyBuilder(context, true),
-              bottomNavigationBar: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: surfaces.card,
-                  border: Border(
-                    top: BorderSide(color: surfaces.hairlineBorder, width: 1),
-                  ),
-                ),
+              bottomNavigationBar: ColoredBox(
+                color: scheme.surfaceContainer,
                 child: Padding(
                   padding: EdgeInsets.only(top: textScale > 1.3 ? 6.0 : 0.0),
                   child: M3ETheme(
@@ -147,7 +136,7 @@ class EnpriveNavigationShell extends StatelessWidget {
                       size: M3ENavBarSize.small,
                       labelBehavior: M3ENavBarLabelBehavior.alwaysShow,
                       indicatorStyle: M3ENavBarIndicatorStyle.pill,
-                      backgroundColor: surfaces.card,
+                      backgroundColor: scheme.surfaceContainer,
                       indicatorColor: scheme.secondaryContainer,
                       elevation: 0,
                       safeArea: true,
@@ -195,8 +184,8 @@ class EnpriveNavigationShell extends StatelessWidget {
                   modality: M3ENavigationRailModality.standard,
                   selectedIndex: selectedIndex,
                   onDestinationSelected: _handleDestinationTap,
-                  background: surfaces.card,
-                  showDivider: true,
+                  background: scheme.surface,
+                  showDivider: false,
                   trailingAtBottom: true,
                   labelBehavior: M3ENavigationRailLabelBehavior.alwaysShow,
                   sections: [
@@ -232,10 +221,7 @@ class EnpriveNavigationShell extends StatelessWidget {
                         ? TextButton.icon(
                             key: const Key('nav_settings_btn'),
                             onPressed: onOpenSettings,
-                            icon: const Icon(
-                              LucideIcons.slidersHorizontal,
-                              size: 19,
-                            ),
+                            icon: const Icon(LucideIcons.settings, size: 20),
                             label: Text(l10n.navSettings),
                           )
                         : EnpriveSettingsAppBarButton(

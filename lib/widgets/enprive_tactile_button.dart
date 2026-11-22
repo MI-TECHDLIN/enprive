@@ -3,18 +3,40 @@ import 'package:flutter/material.dart';
 import '../core/theme/enprive_theme.dart';
 import 'enprive_tactile_pressable.dart';
 
-/// A tactile pressable pill button with a solid 4dp bottom lip that physically
-/// collapses and subtly morphs corner curvature on press (M3 Expressive pattern),
-/// adapting automatically to Light and Dark themes via [EnpriveSurfaceTokens].
+/// Emphasis of an [EnpriveTactileButton], highest first.
+enum EnpriveButtonVariant {
+  /// `primary` fill: the one main action on a screen.
+  filled,
+
+  /// `secondaryContainer` fill: supporting actions next to a filled button.
+  tonal,
+
+  /// `outlineVariant` border on the surface: a way to change your mind.
+  outlined,
+
+  /// No container: the lowest-priority action inside a group.
+  text,
+}
+
+/// Enprive's Material 3 Expressive button.
 ///
-/// Focus, keyboard, pointer and semantic activation come from the shared
-/// [EnpriveTactilePressable] core.
+/// A full-pill face (56dp, M3E medium) whose corners morph to 12dp while
+/// pressed on the fast spatial spring, colored from the theme roles of
+/// [variant]. Focus, keyboard, pointer and semantic activation come from the
+/// shared [EnpriveTactilePressable] core, so Tab, Enter, Space, the focus ring
+/// and TalkBack behave as before. The label wraps instead of shrinking when
+/// text is scaled up, and the shape stays still under reduced motion.
 class EnpriveTactileButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
+
+  /// Shorthand for [EnpriveButtonVariant.tonal] when [variant] is not given.
   final bool isSecondary;
   final Widget? leading;
+
+  /// Minimum height of the button face.
   final double height;
+  final EnpriveButtonVariant? variant;
 
   const EnpriveTactileButton({
     super.key,
@@ -22,8 +44,16 @@ class EnpriveTactileButton extends StatelessWidget {
     required this.onPressed,
     this.isSecondary = false,
     this.leading,
-    this.height = 54.0,
+    this.height = 56.0,
+    this.variant,
   });
+
+  /// Corner radius of the face while pressed.
+  static const double pressedRadius = 12.0;
+
+  EnpriveButtonVariant get effectiveVariant =>
+      variant ??
+      (isSecondary ? EnpriveButtonVariant.tonal : EnpriveButtonVariant.filled);
 
   @override
   Widget build(BuildContext context) {
@@ -38,81 +68,86 @@ class EnpriveTactileButton extends StatelessWidget {
     final bool isEnabled = onPressed != null;
     final bool reduceMotion =
         MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    final surfaces = context.surfaceTokens;
+    final scheme = EnpriveM3ETheme.of(context).colorScheme;
+    final surfaces = context.enpriveSurfaces;
+    final typography = EnpriveM3ETheme.of(context).typography;
+    final buttonVariant = effectiveVariant;
 
-    final Color faceColor = isEnabled
-        ? (isSecondary
-              ? surfaces.tactileSecondaryBg
-              : surfaces.tactilePrimaryBg)
-        : surfaces.disabledBg;
+    final (Color face, Color ink, Color? border) = !isEnabled
+        ? (
+            buttonVariant == EnpriveButtonVariant.text
+                ? Colors.transparent
+                : surfaces.disabledBg,
+            surfaces.disabledFg,
+            null,
+          )
+        : switch (buttonVariant) {
+            EnpriveButtonVariant.filled => (
+              scheme.primary,
+              scheme.onPrimary,
+              null,
+            ),
+            EnpriveButtonVariant.tonal => (
+              scheme.secondaryContainer,
+              scheme.onSecondaryContainer,
+              null,
+            ),
+            EnpriveButtonVariant.outlined => (
+              Colors.transparent,
+              scheme.onSurfaceVariant,
+              scheme.outlineVariant,
+            ),
+            EnpriveButtonVariant.text => (
+              Colors.transparent,
+              scheme.primary,
+              null,
+            ),
+          };
 
-    final Color lipColor = isEnabled
-        ? (isSecondary
-              ? surfaces.tactileSecondaryLip
-              : surfaces.tactilePrimaryLip)
-        : surfaces.hairlineBorder;
-
-    final Color textColor = isEnabled
-        ? (isSecondary
-              ? surfaces.tactileSecondaryFg
-              : surfaces.tactilePrimaryFg)
-        : surfaces.disabledFg;
-
-    const double lipHeight = 4.0;
-    final double topMargin = isPressed && !reduceMotion ? lipHeight : 0.0;
-    final double currentLip = isPressed && !reduceMotion ? 0.0 : lipHeight;
-    // M3 Expressive interactive shape tension: stadium at rest, slightly squircle on press
-    final double cornerRadius = isPressed && !reduceMotion ? 16.0 : height / 2;
+    final bool morph = isPressed && !reduceMotion;
+    final double radius = morph ? pressedRadius : height / 2;
+    final TextStyle labelStyle =
+        (buttonVariant == EnpriveButtonVariant.filled
+                ? typography.emphasized.titleMedium
+                : typography.baseline.titleMedium)
+            .copyWith(color: ink, height: 1.25);
 
     return AnimatedContainer(
-      duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 90),
-      curve: Curves.easeOutCubic,
-      margin: EdgeInsets.only(top: topMargin),
-      constraints: const BoxConstraints(
-        minHeight: EnpriveSpacing.minTouchTarget,
+      duration: reduceMotion
+          ? Duration.zero
+          : EnpriveSpringCurve.fastSpatial.duration,
+      curve: EnpriveSpringCurve.fastSpatial,
+      constraints: BoxConstraints(
+        minHeight: height < EnpriveSpacing.minTouchTarget
+            ? EnpriveSpacing.minTouchTarget
+            : height,
       ),
-      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       decoration: BoxDecoration(
-        color: faceColor,
-        borderRadius: BorderRadius.circular(cornerRadius),
-        border: isSecondary || !isEnabled
-            ? Border.all(
-                color: isEnabled
-                    ? surfaces.tactileSecondaryBorder
-                    : surfaces.hairlineBorder,
-                width: 1.5,
-              )
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: lipColor,
-            offset: Offset(0, currentLip),
-            blurRadius: 0,
-          ),
-        ],
+        color: face,
+        borderRadius: BorderRadius.circular(radius),
+        border: border == null ? null : Border.all(color: border),
       ),
       child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (leading != null) ...[leading!, const SizedBox(width: 8)],
-                Text(
-                  label,
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontFamily: EnpriveTheme.primaryDisplayFontFamily,
-                    color: textColor,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
+        heightFactor: 1,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (leading != null) ...[
+              IconTheme.merge(
+                data: IconThemeData(color: ink, size: 20),
+                child: leading!,
+              ),
+              const SizedBox(width: 8),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: labelStyle,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

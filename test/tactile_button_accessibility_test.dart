@@ -379,9 +379,9 @@ void main() {
     }
 
     testWidgets(
-      'press lip collapses on pointer down and stays still under reduced motion',
+      'press morphs the pill to 12dp corners and stays still under reduced motion',
       (WidgetTester tester) async {
-        Future<double> topMarginWhilePressed({
+        Future<BorderRadiusGeometry?> radiusWhilePressed({
           required bool reduceMotion,
         }) async {
           await tester.pumpWidget(
@@ -402,14 +402,22 @@ void main() {
               matching: find.byType(AnimatedContainer),
             ),
           );
-          final margin = container.margin! as EdgeInsets;
+          final decoration = container.decoration! as BoxDecoration;
+          expect(decoration.boxShadow, isNull);
+          expect(container.margin, isNull);
           await gesture.up();
           await tester.pumpAndSettle();
-          return margin.top;
+          return decoration.borderRadius;
         }
 
-        expect(await topMarginWhilePressed(reduceMotion: false), 4.0);
-        expect(await topMarginWhilePressed(reduceMotion: true), 0.0);
+        expect(
+          await radiusWhilePressed(reduceMotion: false),
+          BorderRadius.circular(EnpriveTactileButton.pressedRadius),
+        );
+        expect(
+          await radiusWhilePressed(reduceMotion: true),
+          BorderRadius.circular(28),
+        );
       },
     );
   });

@@ -629,8 +629,6 @@ class _SettingsScreenState extends State<SettingsScreen>
           return Scaffold(
             backgroundColor: scheme.surface,
             appBar: AppBar(
-              backgroundColor: scheme.surface,
-              surfaceTintColor: Colors.transparent,
               leading: IconButton(
                 key: const Key('settings_back_btn'),
                 tooltip: MaterialLocalizations.of(context).backButtonTooltip,
@@ -639,7 +637,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
               title: Text(
                 l10n.settingsTitle,
-                style: m3e.typography.emphasized.titleLarge.copyWith(
+                style: m3e.typeScale.titleLarge.copyWith(
                   color: scheme.onSurface,
                 ),
               ),

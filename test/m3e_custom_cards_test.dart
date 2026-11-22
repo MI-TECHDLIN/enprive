@@ -87,7 +87,7 @@ void main() {
 
   group('Custom Tactile Material 3 Expressive Card Family', () {
     testWidgets(
-      'EnpriveMaterialCardSurface applies grounded lip, depresses on tap, and respects disableAnimations',
+      'EnpriveMaterialCardSurface is a tonal face with no outline or lip, morphs on press, and stays still under reduced motion',
       (WidgetTester tester) async {
         var tapCount = 0;
 
@@ -113,11 +113,16 @@ void main() {
             .first;
         final shellRest = tester.widget<AnimatedContainer>(shellFinder);
         final restDecoration = shellRest.decoration! as BoxDecoration;
-        expect(restDecoration.boxShadow, isNotEmpty);
-        expect(restDecoration.boxShadow!.first.offset, const Offset(0, 4.0));
-        expect(shellRest.margin, const EdgeInsets.only(top: 0, bottom: 4.0));
+        expect(restDecoration.boxShadow, isNull);
+        expect(restDecoration.border, isNull);
+        expect(shellRest.margin, isNull);
+        expect(
+          restDecoration.color,
+          EnpriveM3ETheme.lightColorScheme.surfaceContainer,
+        );
+        expect(restDecoration.borderRadius, BorderRadius.circular(24));
 
-        // Pointer down compresses lip to 0 and shifts top margin to 4.0
+        // Pointer down tightens the corners; nothing moves vertically.
         final center = tester.getCenter(find.text('Interactive Card Body'));
         final gesture = await tester.startGesture(center);
         await tester.pump(const Duration(milliseconds: 120));
@@ -125,23 +130,19 @@ void main() {
         final pressedShell = tester.widget<AnimatedContainer>(shellFinder);
         final pressedDecoration = pressedShell.decoration! as BoxDecoration;
         expect(pressedDecoration.boxShadow, isNull);
-        expect(
-          pressedShell.margin,
-          const EdgeInsets.only(top: 4.0, bottom: 0.0),
-        );
-        expect(pressedDecoration.borderRadius, BorderRadius.circular(19));
+        expect(pressedShell.margin, isNull);
+        expect(pressedDecoration.borderRadius, BorderRadius.circular(18));
 
         await gesture.up();
         await tester.pumpAndSettle();
         expect(tapCount, 1);
 
-        // Reduced motion disables press displacement
+        // Reduced motion keeps the resting shape while pressed.
         await tester.pumpWidget(
           _wrapInM3EApp(
             disableAnimations: true,
             child: EnpriveMaterialCardSurface(
               key: const Key('reduced_surface'),
-              lipHeight: 4.0,
               borderRadius: BorderRadius.circular(24),
               onPressed: () {},
               child: const Text('Reduced Motion Card'),
@@ -162,9 +163,45 @@ void main() {
               )
               .first,
         );
-        expect(reducedShell.margin, const EdgeInsets.only(top: 0, bottom: 4.0));
+        expect(
+          (reducedShell.decoration! as BoxDecoration).borderRadius,
+          BorderRadius.circular(24),
+        );
         await g2.up();
         await tester.pump();
+      },
+    );
+
+    testWidgets(
+      'EnpriveMaterialCardSurface selected variant uses the secondary container fill',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          _wrapInM3EApp(
+            mode: ThemeMode.dark,
+            child: const EnpriveMaterialCardSurface(
+              key: Key('selected_surface'),
+              variant: EnpriveCardVariant.selected,
+              child: Text('Selected'),
+            ),
+          ),
+        );
+        await tester.pump();
+        final shell = tester.widget<AnimatedContainer>(
+          find
+              .descendant(
+                of: find.byKey(const Key('selected_surface')),
+                matching: find.byType(AnimatedContainer),
+              )
+              .first,
+        );
+        final decoration = shell.decoration! as BoxDecoration;
+        expect(
+          decoration.color,
+          EnpriveM3ETheme.of(
+            tester.element(find.text('Selected')),
+          ).colorScheme.secondaryContainer,
+        );
+        expect(decoration.border, isNull);
       },
     );
 

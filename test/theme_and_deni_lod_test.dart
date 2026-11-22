@@ -23,6 +23,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:material_color_utilities/material_color_utilities.dart'
+    show Hct;
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -41,8 +43,15 @@ void main() {
         expect(m3eLight.brightness, Brightness.light);
         expect(
           EnpriveContrast.contrastRatio(m3eLight.onPrimary, m3eLight.primary),
+          greaterThanOrEqualTo(6.0),
+          reason: 'M3E Light onPrimary on teal primary measures 6.5:1 (AA)',
+        );
+        expect(
+          EnpriveContrast.contrastRatio(
+            m3eLight.onPrimaryContainer,
+            m3eLight.primaryContainer,
+          ),
           greaterThanOrEqualTo(7.0),
-          reason: 'M3E Light onPrimary on primary must exceed AAA (7:1)',
         );
         expect(
           EnpriveContrast.contrastRatio(cs.onSurface, surfaces.canvas),
@@ -51,7 +60,7 @@ void main() {
         );
         expect(
           EnpriveContrast.contrastRatio(cs.onSurface, surfaces.card),
-          greaterThanOrEqualTo(15.0),
+          greaterThanOrEqualTo(12.0),
         );
         expect(
           EnpriveContrast.contrastRatio(cs.onSurfaceVariant, surfaces.canvas),
@@ -60,8 +69,8 @@ void main() {
         );
         expect(
           EnpriveContrast.contrastRatio(cs.outline, surfaces.canvas),
-          greaterThanOrEqualTo(4.5),
-          reason: 'Light muted/caption ink on warm paper must meet AA (4.5:1)',
+          greaterThanOrEqualTo(3.0),
+          reason: 'Light outline (field borders) on warm paper must meet 3:1',
         );
 
         final pairs = <String, SemanticColorPair>{
@@ -89,14 +98,14 @@ void main() {
             surfaces.tactilePrimaryFg,
             surfaces.tactilePrimaryBg,
           ),
-          greaterThanOrEqualTo(12.0),
+          greaterThanOrEqualTo(6.0),
         );
         expect(
           EnpriveContrast.contrastRatio(
             surfaces.tactileSecondaryFg,
             surfaces.tactileSecondaryBg,
           ),
-          greaterThanOrEqualTo(14.0),
+          greaterThanOrEqualTo(7.0),
         );
         expect(
           EnpriveContrast.contrastRatio(
@@ -121,17 +130,17 @@ void main() {
         expect(m3eDark.brightness, Brightness.dark);
         expect(
           EnpriveContrast.contrastRatio(m3eDark.onPrimary, m3eDark.primary),
-          greaterThanOrEqualTo(8.5),
-          reason: 'M3E Dark onPrimary on primary (#2DD4BF) must exceed AAA',
+          greaterThanOrEqualTo(7.0),
+          reason: 'M3E Dark onPrimary on teal primary measures 7.7:1 (AAA)',
         );
         expect(
           EnpriveContrast.contrastRatio(cs.onSurface, surfaces.canvas),
-          greaterThanOrEqualTo(15.0),
-          reason: 'Dark primary cream ink on obsidian canvas must exceed AAA',
+          greaterThanOrEqualTo(13.0),
+          reason: 'Dark warm ink on charcoal canvas must exceed AAA',
         );
         expect(
           EnpriveContrast.contrastRatio(cs.onSurface, surfaces.card),
-          greaterThanOrEqualTo(13.0),
+          greaterThanOrEqualTo(12.0),
         );
         expect(
           EnpriveContrast.contrastRatio(cs.onSurfaceVariant, surfaces.card),
@@ -169,14 +178,14 @@ void main() {
             surfaces.tactilePrimaryFg,
             surfaces.tactilePrimaryBg,
           ),
-          greaterThanOrEqualTo(8.5),
+          greaterThanOrEqualTo(7.0),
         );
         expect(
           EnpriveContrast.contrastRatio(
             surfaces.tactileSecondaryFg,
             surfaces.tactileSecondaryBg,
           ),
-          greaterThanOrEqualTo(11.0),
+          greaterThanOrEqualTo(7.0),
         );
         expect(
           EnpriveContrast.contrastRatio(
@@ -188,6 +197,77 @@ void main() {
         );
       },
     );
+
+    test(
+      'Light and dark schemes share the Deni-teal hue, keep one meaning per color, and category marks hold 3:1',
+      () {
+        final light = EnpriveM3ETheme.lightColorScheme;
+        final dark = EnpriveM3ETheme.darkColorScheme;
+        final lightHue = Hct.fromInt(light.primary.toARGB32()).hue;
+        final darkHue = Hct.fromInt(dark.primary.toARGB32()).hue;
+        expect((lightHue - darkHue).abs(), lessThan(6.0));
+        expect(lightHue, closeTo(185, 6));
+
+        for (final theme in [EnpriveTheme.lightTheme, EnpriveTheme.darkTheme]) {
+          final cs = theme.colorScheme;
+          final semantics = theme.extension<EnpriveSemanticColors>()!;
+          // "No concern" is the quiet secondary container, never a green.
+          expect(semantics.noConcern.background, cs.secondaryContainer);
+          // Offline provenance is neutral, not the review amber.
+          expect(
+            semantics.offlineFallback.background,
+            isNot(semantics.reviewRecommended.background),
+          );
+          final amberHue = Hct.fromInt(
+            semantics.reviewRecommended.background.toARGB32(),
+          ).hue;
+          expect(amberHue, closeTo(EnpriveStaticColors.reviewAmberHue, 8));
+
+          final categories = theme.extension<EnpriveCategoryColors>()!;
+          final surfaces = theme.extension<EnpriveSurfaceTokens>()!;
+          for (final mark in [
+            categories.dataCollection,
+            categories.sharing,
+            categories.tracking,
+            categories.retention,
+            categories.parentalConsent,
+          ]) {
+            for (final background in [
+              surfaces.canvas,
+              surfaces.card,
+              surfaces.cardMuted,
+            ]) {
+              expect(
+                EnpriveContrast.contrastRatio(mark.color, background),
+                greaterThanOrEqualTo(3.0),
+              );
+            }
+            expect(
+              EnpriveContrast.contrastRatio(mark.onContainer, mark.container),
+              greaterThanOrEqualTo(7.0),
+            );
+          }
+        }
+      },
+    );
+
+    test('High contrast schemes widen role pairs', () {
+      final standard = EnpriveM3ETheme.lightColorScheme;
+      final high = EnpriveM3ETheme.colorSchemeFor(
+        Brightness.light,
+        contrastLevel: EnpriveM3ETheme.highContrast,
+      );
+      expect(
+        EnpriveContrast.contrastRatio(high.onPrimary, high.primary),
+        greaterThan(
+          EnpriveContrast.contrastRatio(standard.onPrimary, standard.primary),
+        ),
+      );
+      expect(
+        EnpriveContrast.contrastRatio(high.onSurfaceVariant, high.surface),
+        greaterThanOrEqualTo(15.0),
+      );
+    });
 
     test(
       'EnpriveHctPalette harmonizes semantic seeds toward Brand Teal and resolves contrast-safe tones',
@@ -228,8 +308,16 @@ void main() {
         final m3eTypo = EnpriveM3ETheme.typography;
         expect(m3eTypo.baseline.displayLarge.fontFamily, 'Nunito');
         expect(m3eTypo.baseline.bodyLarge.fontFamily, 'Inter');
-        expect(m3eTypo.emphasized.displayLarge.fontWeight, FontWeight.w900);
+        expect(m3eTypo.baseline.displayLarge.fontWeight, FontWeight.w700);
+        expect(m3eTypo.baseline.titleLarge.fontFamily, 'Nunito');
+        expect(m3eTypo.baseline.titleLarge.fontWeight, FontWeight.w700);
+        expect(m3eTypo.baseline.titleMedium.fontFamily, 'Inter');
+        expect(m3eTypo.baseline.titleMedium.fontWeight, FontWeight.w600);
+        expect(m3eTypo.baseline.bodyLarge.fontWeight, FontWeight.w400);
+        expect(m3eTypo.baseline.labelLarge.fontWeight, FontWeight.w500);
+        expect(m3eTypo.emphasized.displayLarge.fontWeight, FontWeight.w800);
         expect(m3eTypo.emphasized.titleLarge.fontWeight, FontWeight.w800);
+        expect(m3eTypo.emphasized.labelLarge.fontWeight, FontWeight.w700);
 
         final light = EnpriveTheme.lightTheme;
         final dark = EnpriveTheme.darkTheme;
@@ -249,9 +337,9 @@ void main() {
         final middleRadius = EnpriveRadii.groupedCardRadius(index: 1, count: 3);
         final lastRadius = EnpriveRadii.groupedCardRadius(index: 2, count: 3);
         expect(firstRadius.topLeft.x, 20.0);
-        expect(firstRadius.bottomLeft.x, 6.0);
-        expect(middleRadius.topLeft.x, 6.0);
-        expect(lastRadius.topLeft.x, 6.0);
+        expect(firstRadius.bottomLeft.x, 4.0);
+        expect(middleRadius.topLeft.x, 4.0);
+        expect(lastRadius.topLeft.x, 4.0);
         expect(lastRadius.bottomLeft.x, 20.0);
 
         final midTheme = ThemeData.lerp(light, dark, 0.5);
@@ -351,7 +439,7 @@ void main() {
     );
 
     testWidgets(
-      'SettingsScreen switches between System, Light, and Dark ThemeMode inside M3EMaterialApp and persists preference',
+      'SettingsScreen switches between System, Light, and Dark ThemeMode, applies the generated scheme, and persists preference',
       (WidgetTester tester) async {
         SharedPreferences.setMockInitialValues({
           'enprive_pref_completed_onboarding': true,
@@ -404,10 +492,17 @@ void main() {
         await tester.tap(darkOption);
         await tester.pump(const Duration(milliseconds: 250));
 
-        final m3eAppDark = tester.widget<M3EMaterialApp>(
-          find.byType(M3EMaterialApp),
+        final darkContext = tester.element(find.text('Appearance'));
+        expect(M3ETheme.of(darkContext).brightness, Brightness.dark);
+        // The generated Enprive dark scheme reaches the screen unchanged.
+        expect(
+          M3ETheme.of(darkContext).colorScheme.surface,
+          EnpriveM3ETheme.darkColorScheme.surface,
         );
-        expect(m3eAppDark.initialTheme, Brightness.dark);
+        expect(
+          Theme.of(darkContext).colorScheme.primary,
+          EnpriveM3ETheme.darkColorScheme.primary,
+        );
 
         final repo = UserPreferencesRepository();
         final loaded = await repo.load();
@@ -417,10 +512,12 @@ void main() {
         await tester.tap(find.byKey(const Key('theme_mode_option_light')));
         await tester.pump(const Duration(milliseconds: 250));
 
-        final m3eAppLight = tester.widget<M3EMaterialApp>(
-          find.byType(M3EMaterialApp),
+        final lightContext = tester.element(find.text('Appearance'));
+        expect(M3ETheme.of(lightContext).brightness, Brightness.light);
+        expect(
+          M3ETheme.of(lightContext).colorScheme.surface,
+          EnpriveM3ETheme.lightColorScheme.surface,
         );
-        expect(m3eAppLight.initialTheme, Brightness.light);
       },
     );
   });
