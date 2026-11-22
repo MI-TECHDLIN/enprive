@@ -229,7 +229,7 @@
   "cancellingAnalysis": "Cancelling…",
   "analysisCancelledNotice": "Review cancelled.",
   "cloudTimedOutNotice": "Cloud AI timed out before responding. No automatic retry was sent.",
-  "cloudFallbackBannerTitle": "Cloud unavailable — checked on this phone",
+  "cloudFallbackBannerTitle": "Cloud unavailable: checked on this phone",
   "cloudFallbackBannerBody": "Cloud analysis was unavailable, so Enprive checked this policy directly on your phone.",
   "appPickerFilterAll": "All apps",
   "@appPickerFilterAll": {
@@ -471,7 +471,7 @@
   "@voiceSummaryConsentDisclosure": {
     "description": "Disclosure text inside CloudConsentSheet before requesting cloud plain-language summarization"
   },
-  "voiceFallbackDeviceNotice": "Expressive cloud voice was unavailable — using this phone’s offline voice instead.",
+  "voiceFallbackDeviceNotice": "Expressive cloud voice was unavailable: using this phone's offline voice instead.",
   "@voiceFallbackDeviceNotice": {
     "description": "Honest notice shown when consented Gemini TTS fails or times out and falls back to local Android TTS"
   },
@@ -738,7 +738,7 @@
   "@associationStatusUnverifiedTitle": {
     "description": "Plain-language heading when the policy does not mention the linked app name or ID and has no conflicting IDs"
   },
-  "associationStatusUnverifiedBody": "This policy does not name {appName} or its app ID. Double-check that it is the right policy — linking it here does not prove ownership.",
+  "associationStatusUnverifiedBody": "This policy does not name {appName} or its app ID. Double-check that it is the right policy: linking it here does not prove ownership.",
   "@associationStatusUnverifiedBody": {
     "description": "Plain-language explanation when the user linked an app whose name and ID do not appear in the policy",
     "placeholders": {
@@ -747,7 +747,7 @@
       }
     }
   },
-  "associationStatusUnverifiedUrlHostBody": "The web address includes words from {appName}, but the policy text itself does not name this app. Double-check that it is the right policy — linking it here does not prove ownership.",
+  "associationStatusUnverifiedUrlHostBody": "The web address includes words from {appName}, but the policy text itself does not name this app. Double-check that it is the right policy: linking it here does not prove ownership.",
   "@associationStatusUnverifiedUrlHostBody": {
     "description": "Plain-language explanation when only the URL domain matches the linked app name",
     "placeholders": {

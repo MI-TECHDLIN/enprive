@@ -13,6 +13,39 @@
 
 ---
 
+## Iteration 11 — Learn Lessons 5-8 (Topics 2, 5, 7, 9) + Em Dash Cleanup
+
+- **Date**: 2026-11-22
+- **Branch / Commits**: `fm/enprive-learn-wire-2` (`c29704d`)
+- **Models Used**: Nemotron 3 Ultra (nvidia/nemotron-3-ultra-550b-a55b)
+- **What Was Built**:
+  - Added 4 new illustrated offline Learn lessons to the data-driven registry (`buildLearnLessons`):
+    - Lesson 5 (Topic 2): What Data Apps Collect — DataCollectionDiagram
+    - Lesson 6 (Topic 5): Retention and Deletion — RetentionTimelineDiagram
+    - Lesson 7 (Topic 7): Spotting Unclear Policies & Tricky Buttons — PolicyFogDiagram
+    - Lesson 8 (Topic 9): Safe-Sharing Habits for Kids — SafeSharingDiagram
+  - Added all lesson strings to `lib/l10n/app_en.arb` (English template; `flutter gen-l10n` ran; 11 secondary locales tracked in `untranslated_messages.json`)
+  - Updated `LearnLessonIds` with 4 new stable identifiers
+  - Wired each lesson to its Phase 2 diagram with localized labels
+  - Extended `test/learn_lessons_test.dart` for 8 lessons (light/dark, 200% text, Arabic RTL, Semantics, Listen toggles, quick check, Prev/Next nav)
+  - Fixed `PolicyFogDiagram` rendering overflow at 200% text scale in narrow width via `LayoutBuilder` adaptive header
+  - Replaced all em dashes in Lessons 1-8 with commas, colons, or plain hyphens per review notes
+  - Applied all review-note edits: plain words for technical terms, softened Topic 5 quiz answer, removed "30 to 90 days" example, "the app can collect" wording, global "everyone at school" wording, three short age cards, plausible distractors
+- **Challenges & Fixes**:
+  - *Challenge*: `PolicyFogDiagram` overflowed at 200% text scale in narrow horizontal layout (card width ~117dp). 
+  - *Fix*: Added `LayoutBuilder` in `_PolicyExampleCard` to detect narrow constraints (<200dp) and switch to column layout; added `ConstrainedBox(minWidth: 0)` + `Flexible` + `TextOverflow.ellipsis` for badge text to prevent inner Row overflow.
+  - *Challenge*: Tests expected "Lesson X of 4" but now 8 lessons exist.
+  - *Fix*: Updated all progress assertions to "Lesson X of 8" and lesson specs to use correct lesson numbers (1-8).
+- **Verification**:
+  - `flutter analyze`: 0 issues
+  - `flutter test`: 382 tests passing (including `learn_diagrams_batch2_test.dart`)
+  - `flutter build apk --debug --target-platform android-arm64`: Success
+  - Emulator `emulator-5554`: Installed APK, captured screenshots for all 4 new lessons in light mode
+- **Next Immediate Action**: PR #28 opened for review; await merge approval
+- **Recommended Model for Next Turn**: Gemini 4 Argon
+
+---
+
 ## Current Project Snapshot
 - **Project**: **Enprive** (`com.mitechdlin.enprive`, Kotlin namespace `com.example.enprive`) — Evidence-First Hybrid AI Privacy Assistant for Parents & Teachers (**Google #BuildHybridAI 2026**)
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`

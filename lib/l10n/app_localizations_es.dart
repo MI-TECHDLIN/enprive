@@ -636,7 +636,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cloudFallbackBannerTitle =>
-      'Cloud unavailable — checked on this phone';
+      'Cloud unavailable: checked on this phone';
 
   @override
   String get cloudFallbackBannerBody =>
@@ -836,7 +836,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get voiceFallbackDeviceNotice =>
-      'Expressive cloud voice was unavailable — using this phone’s offline voice instead.';
+      'Expressive cloud voice was unavailable: using this phone\'s offline voice instead.';
 
   @override
   String get voiceUnavailableNotice =>
@@ -1049,12 +1049,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String associationStatusUnverifiedBody(String appName) {
-    return 'This policy does not name $appName or its app ID. Double-check that it is the right policy — linking it here does not prove ownership.';
+    return 'This policy does not name $appName or its app ID. Double-check that it is the right policy: linking it here does not prove ownership.';
   }
 
   @override
   String associationStatusUnverifiedUrlHostBody(String appName) {
-    return 'The web address includes words from $appName, but the policy text itself does not name this app. Double-check that it is the right policy — linking it here does not prove ownership.';
+    return 'The web address includes words from $appName, but the policy text itself does not name this app. Double-check that it is the right policy: linking it here does not prove ownership.';
   }
 
   @override

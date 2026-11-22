@@ -1237,7 +1237,7 @@ abstract class AppLocalizations {
   /// No description provided for @cloudFallbackBannerTitle.
   ///
   /// In en, this message translates to:
-  /// **'Cloud unavailable — checked on this phone'**
+  /// **'Cloud unavailable: checked on this phone'**
   String get cloudFallbackBannerTitle;
 
   /// No description provided for @cloudFallbackBannerBody.
@@ -1609,7 +1609,7 @@ abstract class AppLocalizations {
   /// Honest notice shown when consented Gemini TTS fails or times out and falls back to local Android TTS
   ///
   /// In en, this message translates to:
-  /// **'Expressive cloud voice was unavailable — using this phone’s offline voice instead.'**
+  /// **'Expressive cloud voice was unavailable: using this phone\'s offline voice instead.'**
   String get voiceFallbackDeviceNotice;
 
   /// Honest notice shown when neither cloud TTS nor local Android TTS can speak the summary
@@ -1903,13 +1903,13 @@ abstract class AppLocalizations {
   /// Plain-language explanation when the user linked an app whose name and ID do not appear in the policy
   ///
   /// In en, this message translates to:
-  /// **'This policy does not name {appName} or its app ID. Double-check that it is the right policy — linking it here does not prove ownership.'**
+  /// **'This policy does not name {appName} or its app ID. Double-check that it is the right policy: linking it here does not prove ownership.'**
   String associationStatusUnverifiedBody(String appName);
 
   /// Plain-language explanation when only the URL domain matches the linked app name
   ///
   /// In en, this message translates to:
-  /// **'The web address includes words from {appName}, but the policy text itself does not name this app. Double-check that it is the right policy — linking it here does not prove ownership.'**
+  /// **'The web address includes words from {appName}, but the policy text itself does not name this app. Double-check that it is the right policy: linking it here does not prove ownership.'**
   String associationStatusUnverifiedUrlHostBody(String appName);
 
   /// Plain-language warning heading when the policy mentions a different app ID than the linked app
