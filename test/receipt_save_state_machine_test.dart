@@ -771,7 +771,7 @@ void main() {
         find.byKey(const Key('review_result_save_failure_banner')),
         findsOneWidget,
       );
-      expect(find.text('Focus Reader'), findsOneWidget);
+      expect(find.text('Focus Reader'), findsWidgets);
       expect(await repo.loadReceipts(), isEmpty);
 
       // Retry succeeds and transitions cleanly to Saved

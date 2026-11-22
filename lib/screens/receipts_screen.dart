@@ -290,6 +290,10 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                             onSaveReceipt: widget.onSaveReceipt,
                                             onDeleteReceipt:
                                                 widget.onDeleteReceipt,
+                                            savedReceipts:
+                                                List<
+                                                  PolicyReviewReceipt
+                                                >.unmodifiable(widget.receipts),
                                             receiptRepository:
                                                 widget.receiptRepository,
                                             isReceiptSaved:

@@ -1,4 +1,5 @@
 import '../evidence/evidence_validator.dart';
+import '../permissions/permission_comparator.dart';
 import 'review_models.dart';
 
 /// Conservative, clause-aware deterministic scanner used strictly for offline local
@@ -398,8 +399,7 @@ class DeterministicClauseScanner {
       explanation: explanation,
       whatPolicySays:
           'Exact match found in this policy (${EvidenceValidator.normalize(excerpt).length} chars).',
-      whatAndroidReports:
-          'Text-only check. Pick this app under Check an app to compare locally with Android OS permissions.',
+      whatAndroidReports: PermissionComparator.standaloneAndroidReportText,
       unknowns: [unknown],
       status: isMatched
           ? EvidenceStatus.sourceMatched

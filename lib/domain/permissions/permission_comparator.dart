@@ -145,6 +145,9 @@ class _SensitivePermissionSpec {
 /// permission states against captured policy claims.
 /// Privacy Guardrail: Never invokes cloud or generative AI models.
 class PermissionComparator {
+  static const String standaloneAndroidReportText =
+      'No app is linked yet. Link an installed app on this review to compare with phone permissions.';
+
   static const String calibratedLimitationNotice =
       'Android reports this permission state on this phone. It does not prove whether the app actually accessed or transmitted data.';
 
@@ -643,6 +646,34 @@ class PermissionComparator {
     }
 
     return updated;
+  }
+
+  /// Strips previously attached on-device permission findings and resets
+  /// policy findings' `whatAndroidReports` to standalone copy so changing or
+  /// unlinking an installed app on an open review is clean and idempotent.
+  static List<VerifiedFinding> stripDeviceReportFromFindings(
+    List<VerifiedFinding> findings,
+  ) {
+    final cleaned = <VerifiedFinding>[];
+    for (final f in findings) {
+      if (f.isDeviceObserved) continue;
+      cleaned.add(
+        VerifiedFinding(
+          id: f.id,
+          title: f.title,
+          category: f.category,
+          severity: f.severity,
+          exactExcerpt: f.exactExcerpt,
+          explanation: f.explanation,
+          whatPolicySays: f.whatPolicySays,
+          whatAndroidReports: standaloneAndroidReportText,
+          unknowns: f.unknowns,
+          status: f.status,
+          contextWindow: f.contextWindow,
+        ),
+      );
+    }
+    return List<VerifiedFinding>.unmodifiable(cleaned);
   }
 
   static const Map<String, List<String>> _companionCategoryKeywords = {

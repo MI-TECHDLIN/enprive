@@ -1779,6 +1779,235 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reviewed source'**
   String get sourceButtonTooltip;
+
+  /// Primary action button on a policy-first review to link an installed app and compare its phone permissions
+  ///
+  /// In en, this message translates to:
+  /// **'Link an installed app'**
+  String get linkInstalledAppBtn;
+
+  /// Heading of the card inviting the user to link an installed app to a policy-first review
+  ///
+  /// In en, this message translates to:
+  /// **'Compare with an app on this phone'**
+  String get linkInstalledAppCardTitle;
+
+  /// Plain-language explanation of linking an installed app after a policy-first review
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an installed app to compare its Android permissions with this policy in the same review. Your app list stays on this phone.'**
+  String get linkInstalledAppCardBody;
+
+  /// Bottom sheet title when picking an installed app to link to an open policy review
+  ///
+  /// In en, this message translates to:
+  /// **'Link an installed app'**
+  String get linkAppPickerTitle;
+
+  /// Bottom sheet title when switching the installed app linked to an open policy review
+  ///
+  /// In en, this message translates to:
+  /// **'Change linked app'**
+  String get changeLinkedAppPickerTitle;
+
+  /// Subtitle explaining local-only installed app linking inside the app picker
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an app on this phone to compare its permissions with this policy. Your app list never leaves this phone.'**
+  String get linkAppPickerSubtitle;
+
+  /// Short neutral badge marking the app currently linked to the open review
+  ///
+  /// In en, this message translates to:
+  /// **'Linked'**
+  String get linkedAppCurrentlySelectedBadge;
+
+  /// Label above the currently linked app identity on a combined review
+  ///
+  /// In en, this message translates to:
+  /// **'Linked app on this phone'**
+  String get linkedAppSectionLabel;
+
+  /// Action button to switch the installed app linked to an open review
+  ///
+  /// In en, this message translates to:
+  /// **'Change app'**
+  String get btnChangeLinkedApp;
+
+  /// Action button to remove the linked installed app and return to the policy-only review
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink app'**
+  String get btnUnlinkApp;
+
+  /// Action button to attach or replace the privacy policy for the currently linked app
+  ///
+  /// In en, this message translates to:
+  /// **'Attach updated privacy policy'**
+  String get btnUpdatePrivacyPolicy;
+
+  /// Confirmation snackbar after linking an installed app to a policy review
+  ///
+  /// In en, this message translates to:
+  /// **'Linked {appName}. Permissions compared on this phone.'**
+  String linkedAppSnack(String appName);
+
+  /// Confirmation snackbar when a newly linked app triggers a mismatch or ambiguity notice
+  ///
+  /// In en, this message translates to:
+  /// **'Linked {appName}. Check the app-policy match note below.'**
+  String linkedAppCheckMatchSnack(String appName);
+
+  /// Snackbar when re-selecting the already linked app whose permissions have not changed
+  ///
+  /// In en, this message translates to:
+  /// **'{appName} is already linked with the same permissions.'**
+  String linkedAppUnchangedSnack(String appName);
+
+  /// Confirmation snackbar after unlinking an installed app from an open review
+  ///
+  /// In en, this message translates to:
+  /// **'Unlinked {appName}. Showing the policy review only.'**
+  String unlinkedAppSnack(String appName);
+
+  /// Plain-language heading when the linked app's package ID appears in the policy text or URL
+  ///
+  /// In en, this message translates to:
+  /// **'App ID found in this policy'**
+  String get associationStatusPackageTitle;
+
+  /// Plain-language non-ownership explanation when the linked app's package ID is mentioned
+  ///
+  /// In en, this message translates to:
+  /// **'This policy mentions {packageName}. That suggests it may describe {appName}, though text alone does not prove who owns this policy.'**
+  String associationStatusPackageBody(String packageName, String appName);
+
+  /// Plain-language heading when the linked app's display name appears in the policy text
+  ///
+  /// In en, this message translates to:
+  /// **'App name found in this policy'**
+  String get associationStatusNameTitle;
+
+  /// Plain-language non-ownership explanation when the linked app's name is mentioned
+  ///
+  /// In en, this message translates to:
+  /// **'This policy mentions {appName}. That suggests it may describe this app, though a name match does not prove who owns this policy.'**
+  String associationStatusNameBody(String appName);
+
+  /// Plain-language heading when the policy does not mention the linked app name or ID and has no conflicting IDs
+  ///
+  /// In en, this message translates to:
+  /// **'Linked by you for comparison'**
+  String get associationStatusUnverifiedTitle;
+
+  /// Plain-language explanation when the user linked an app whose name and ID do not appear in the policy
+  ///
+  /// In en, this message translates to:
+  /// **'This policy does not name {appName} or its app ID. Double-check that it is the right policy — linking it here does not prove ownership.'**
+  String associationStatusUnverifiedBody(String appName);
+
+  /// Plain-language explanation when only the URL domain matches the linked app name
+  ///
+  /// In en, this message translates to:
+  /// **'The web address includes words from {appName}, but the policy text itself does not name this app. Double-check that it is the right policy — linking it here does not prove ownership.'**
+  String associationStatusUnverifiedUrlHostBody(String appName);
+
+  /// Plain-language warning heading when the policy mentions a different app ID than the linked app
+  ///
+  /// In en, this message translates to:
+  /// **'This policy may be for a different app'**
+  String get associationStatusUnmatchedTitle;
+
+  /// Plain-language warning explaining a policy-to-app mismatch
+  ///
+  /// In en, this message translates to:
+  /// **'This policy does not mention {appName}. Instead, it names {otherApps}. Check that you linked the right app or opened the right policy.'**
+  String associationStatusUnmatchedBody(String appName, String otherApps);
+
+  /// Plain-language warning heading when the policy mentions both the linked app and other app IDs
+  ///
+  /// In en, this message translates to:
+  /// **'This policy mentions more than one app'**
+  String get associationStatusAmbiguousConflictTitle;
+
+  /// Plain-language warning explaining conflicting app IDs in the same policy
+  ///
+  /// In en, this message translates to:
+  /// **'This policy mentions {appName} alongside {otherApps}. It may cover several apps or a shared company policy, so check that it applies here.'**
+  String associationStatusAmbiguousConflictBody(
+    String appName,
+    String otherApps,
+  );
+
+  /// Plain-language warning heading when multiple installed apps share the name mentioned in the policy
+  ///
+  /// In en, this message translates to:
+  /// **'More than one app on this phone has a similar name'**
+  String get associationStatusAmbiguousPeerTitle;
+
+  /// Plain-language warning explaining peer display-name ambiguity on the user's phone
+  ///
+  /// In en, this message translates to:
+  /// **'This policy mentions {appName} without listing one exact app ID, and other apps on your phone ({otherApps}) have a similar name. Make sure you linked the right one.'**
+  String associationStatusAmbiguousPeerBody(String appName, String otherApps);
+
+  /// Fallback plain-language warning for an ambiguous app-policy match
+  ///
+  /// In en, this message translates to:
+  /// **'This policy could refer to more than one app. Double-check that it applies to {appName}.'**
+  String associationStatusAmbiguousGenericBody(String appName);
+
+  /// Non-ownership disclaimer shown on app-policy identity notices
+  ///
+  /// In en, this message translates to:
+  /// **'Text and web links never prove who published or owns a policy.'**
+  String get associationOwnershipLimitation;
+
+  /// Plain-language non-accusatory summary when one or more phone permissions are not mentioned in the policy
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 permission on this phone is not clearly mentioned in this policy. A mismatch is a prompt to look closer, not proof of wrongdoing.} other{{count} permissions on this phone are not clearly mentioned in this policy. A mismatch is a prompt to look closer, not proof of wrongdoing.}}'**
+  String permissionComparisonMismatchNote(int count);
+
+  /// Plain-language summary when no checked phone permissions contradict the policy
+  ///
+  /// In en, this message translates to:
+  /// **'None of the checked permissions on this phone contradict this policy. Permissions alone cannot show what an app actually sends.'**
+  String get permissionComparisonNoMismatchNote;
+
+  /// Calibrated limitation disclaimer below the permission comparison list
+  ///
+  /// In en, this message translates to:
+  /// **'Android shows permission settings on this phone only. This comparison is a prompt to look closer, never proof of wrongdoing or that data was sent.'**
+  String get permissionComparisonLimitationNote;
+
+  /// Neutral factual chip when a permission is mentioned in the policy but not requested by the installed app
+  ///
+  /// In en, this message translates to:
+  /// **'Not requested by app'**
+  String get permissionNotRequestedOnPhone;
+
+  /// Neutral factual chip when a permission is mentioned in a sample policy but not in the sample fixture
+  ///
+  /// In en, this message translates to:
+  /// **'Not requested in sample'**
+  String get permissionNotRequestedInSample;
+
+  /// Heading when a linked installed app has no permissions in the checked sensitive categories
+  ///
+  /// In en, this message translates to:
+  /// **'No sensitive permissions matched in this check'**
+  String get permissionsEmptyComparisonTitle;
+
+  /// Plain-language summary when a linked installed app declares zero sensitive catalog permissions
+  ///
+  /// In en, this message translates to:
+  /// **'Android lists {requestedCount} permissions ({grantedCount} allowed) for {appName}, with none in the sensitive categories checked here (location, camera, microphone, contacts, photos, or ad ID).'**
+  String permissionsEmptyComparisonBody(
+    int requestedCount,
+    int grantedCount,
+    String appName,
+  );
 }
 
 class _AppLocalizationsDelegate

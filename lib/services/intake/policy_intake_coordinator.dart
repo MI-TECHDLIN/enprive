@@ -486,6 +486,22 @@ class PolicyIntakeCoordinator {
     );
   }
 
+  /// Evaluates deterministic textual/URL association signals between
+  /// [selectedApp] and a captured privacy policy without asserting ownership.
+  AppPolicyAssociationReport evaluateAppPolicyAssociation({
+    required SelectedAppReference? selectedApp,
+    required String policyText,
+    String? policyUrl,
+    TrustedSampleFixture? trustedSampleFixture,
+  }) {
+    return _evaluateAssociation(
+      selectedApp: selectedApp,
+      policyText: policyText,
+      policyUrl: policyUrl,
+      trustedSampleFixture: trustedSampleFixture,
+    );
+  }
+
   /// Hydrates on-device Android permissions for [app] without leaving the phone.
   Future<SelectedAppReference> hydrateAppPermissions(
     SelectedAppReference app,

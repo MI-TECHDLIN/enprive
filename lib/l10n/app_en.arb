@@ -624,5 +624,241 @@
   "sourceButtonTooltip": "Reviewed source",
   "@sourceButtonTooltip": {
     "description": "Tooltip for the icon button that opens the reviewed policy snapshot"
+  },
+  "linkInstalledAppBtn": "Link an installed app",
+  "@linkInstalledAppBtn": {
+    "description": "Primary action button on a policy-first review to link an installed app and compare its phone permissions"
+  },
+  "linkInstalledAppCardTitle": "Compare with an app on this phone",
+  "@linkInstalledAppCardTitle": {
+    "description": "Heading of the card inviting the user to link an installed app to a policy-first review"
+  },
+  "linkInstalledAppCardBody": "Pick an installed app to compare its Android permissions with this policy in the same review. Your app list stays on this phone.",
+  "@linkInstalledAppCardBody": {
+    "description": "Plain-language explanation of linking an installed app after a policy-first review"
+  },
+  "linkAppPickerTitle": "Link an installed app",
+  "@linkAppPickerTitle": {
+    "description": "Bottom sheet title when picking an installed app to link to an open policy review"
+  },
+  "changeLinkedAppPickerTitle": "Change linked app",
+  "@changeLinkedAppPickerTitle": {
+    "description": "Bottom sheet title when switching the installed app linked to an open policy review"
+  },
+  "linkAppPickerSubtitle": "Pick an app on this phone to compare its permissions with this policy. Your app list never leaves this phone.",
+  "@linkAppPickerSubtitle": {
+    "description": "Subtitle explaining local-only installed app linking inside the app picker"
+  },
+  "linkedAppCurrentlySelectedBadge": "Linked",
+  "@linkedAppCurrentlySelectedBadge": {
+    "description": "Short neutral badge marking the app currently linked to the open review"
+  },
+  "linkedAppSectionLabel": "Linked app on this phone",
+  "@linkedAppSectionLabel": {
+    "description": "Label above the currently linked app identity on a combined review"
+  },
+  "btnChangeLinkedApp": "Change app",
+  "@btnChangeLinkedApp": {
+    "description": "Action button to switch the installed app linked to an open review"
+  },
+  "btnUnlinkApp": "Unlink app",
+  "@btnUnlinkApp": {
+    "description": "Action button to remove the linked installed app and return to the policy-only review"
+  },
+  "btnUpdatePrivacyPolicy": "Attach updated privacy policy",
+  "@btnUpdatePrivacyPolicy": {
+    "description": "Action button to attach or replace the privacy policy for the currently linked app"
+  },
+  "linkedAppSnack": "Linked {appName}. Permissions compared on this phone.",
+  "@linkedAppSnack": {
+    "description": "Confirmation snackbar after linking an installed app to a policy review",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "linkedAppCheckMatchSnack": "Linked {appName}. Check the app-policy match note below.",
+  "@linkedAppCheckMatchSnack": {
+    "description": "Confirmation snackbar when a newly linked app triggers a mismatch or ambiguity notice",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "linkedAppUnchangedSnack": "{appName} is already linked with the same permissions.",
+  "@linkedAppUnchangedSnack": {
+    "description": "Snackbar when re-selecting the already linked app whose permissions have not changed",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "unlinkedAppSnack": "Unlinked {appName}. Showing the policy review only.",
+  "@unlinkedAppSnack": {
+    "description": "Confirmation snackbar after unlinking an installed app from an open review",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "associationStatusPackageTitle": "App ID found in this policy",
+  "@associationStatusPackageTitle": {
+    "description": "Plain-language heading when the linked app's package ID appears in the policy text or URL"
+  },
+  "associationStatusPackageBody": "This policy mentions {packageName}. That suggests it may describe {appName}, though text alone does not prove who owns this policy.",
+  "@associationStatusPackageBody": {
+    "description": "Plain-language non-ownership explanation when the linked app's package ID is mentioned",
+    "placeholders": {
+      "packageName": {
+        "type": "String"
+      },
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "associationStatusNameTitle": "App name found in this policy",
+  "@associationStatusNameTitle": {
+    "description": "Plain-language heading when the linked app's display name appears in the policy text"
+  },
+  "associationStatusNameBody": "This policy mentions {appName}. That suggests it may describe this app, though a name match does not prove who owns this policy.",
+  "@associationStatusNameBody": {
+    "description": "Plain-language non-ownership explanation when the linked app's name is mentioned",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "associationStatusUnverifiedTitle": "Linked by you for comparison",
+  "@associationStatusUnverifiedTitle": {
+    "description": "Plain-language heading when the policy does not mention the linked app name or ID and has no conflicting IDs"
+  },
+  "associationStatusUnverifiedBody": "This policy does not name {appName} or its app ID. Double-check that it is the right policy — linking it here does not prove ownership.",
+  "@associationStatusUnverifiedBody": {
+    "description": "Plain-language explanation when the user linked an app whose name and ID do not appear in the policy",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "associationStatusUnverifiedUrlHostBody": "The web address includes words from {appName}, but the policy text itself does not name this app. Double-check that it is the right policy — linking it here does not prove ownership.",
+  "@associationStatusUnverifiedUrlHostBody": {
+    "description": "Plain-language explanation when only the URL domain matches the linked app name",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "associationStatusUnmatchedTitle": "This policy may be for a different app",
+  "@associationStatusUnmatchedTitle": {
+    "description": "Plain-language warning heading when the policy mentions a different app ID than the linked app"
+  },
+  "associationStatusUnmatchedBody": "This policy does not mention {appName}. Instead, it names {otherApps}. Check that you linked the right app or opened the right policy.",
+  "@associationStatusUnmatchedBody": {
+    "description": "Plain-language warning explaining a policy-to-app mismatch",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "otherApps": {
+        "type": "String"
+      }
+    }
+  },
+  "associationStatusAmbiguousConflictTitle": "This policy mentions more than one app",
+  "@associationStatusAmbiguousConflictTitle": {
+    "description": "Plain-language warning heading when the policy mentions both the linked app and other app IDs"
+  },
+  "associationStatusAmbiguousConflictBody": "This policy mentions {appName} alongside {otherApps}. It may cover several apps or a shared company policy, so check that it applies here.",
+  "@associationStatusAmbiguousConflictBody": {
+    "description": "Plain-language warning explaining conflicting app IDs in the same policy",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "otherApps": {
+        "type": "String"
+      }
+    }
+  },
+  "associationStatusAmbiguousPeerTitle": "More than one app on this phone has a similar name",
+  "@associationStatusAmbiguousPeerTitle": {
+    "description": "Plain-language warning heading when multiple installed apps share the name mentioned in the policy"
+  },
+  "associationStatusAmbiguousPeerBody": "This policy mentions {appName} without listing one exact app ID, and other apps on your phone ({otherApps}) have a similar name. Make sure you linked the right one.",
+  "@associationStatusAmbiguousPeerBody": {
+    "description": "Plain-language warning explaining peer display-name ambiguity on the user's phone",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "otherApps": {
+        "type": "String"
+      }
+    }
+  },
+  "associationStatusAmbiguousGenericBody": "This policy could refer to more than one app. Double-check that it applies to {appName}.",
+  "@associationStatusAmbiguousGenericBody": {
+    "description": "Fallback plain-language warning for an ambiguous app-policy match",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "associationOwnershipLimitation": "Text and web links never prove who published or owns a policy.",
+  "@associationOwnershipLimitation": {
+    "description": "Non-ownership disclaimer shown on app-policy identity notices"
+  },
+  "permissionComparisonMismatchNote": "{count, plural, =1{1 permission on this phone is not clearly mentioned in this policy. A mismatch is a prompt to look closer, not proof of wrongdoing.} other{{count} permissions on this phone are not clearly mentioned in this policy. A mismatch is a prompt to look closer, not proof of wrongdoing.}}",
+  "@permissionComparisonMismatchNote": {
+    "description": "Plain-language non-accusatory summary when one or more phone permissions are not mentioned in the policy",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "permissionComparisonNoMismatchNote": "None of the checked permissions on this phone contradict this policy. Permissions alone cannot show what an app actually sends.",
+  "@permissionComparisonNoMismatchNote": {
+    "description": "Plain-language summary when no checked phone permissions contradict the policy"
+  },
+  "permissionComparisonLimitationNote": "Android shows permission settings on this phone only. This comparison is a prompt to look closer, never proof of wrongdoing or that data was sent.",
+  "@permissionComparisonLimitationNote": {
+    "description": "Calibrated limitation disclaimer below the permission comparison list"
+  },
+  "permissionNotRequestedOnPhone": "Not requested by app",
+  "@permissionNotRequestedOnPhone": {
+    "description": "Neutral factual chip when a permission is mentioned in the policy but not requested by the installed app"
+  },
+  "permissionNotRequestedInSample": "Not requested in sample",
+  "@permissionNotRequestedInSample": {
+    "description": "Neutral factual chip when a permission is mentioned in a sample policy but not in the sample fixture"
+  },
+  "permissionsEmptyComparisonTitle": "No sensitive permissions matched in this check",
+  "@permissionsEmptyComparisonTitle": {
+    "description": "Heading when a linked installed app has no permissions in the checked sensitive categories"
+  },
+  "permissionsEmptyComparisonBody": "Android lists {requestedCount} permissions ({grantedCount} allowed) for {appName}, with none in the sensitive categories checked here (location, camera, microphone, contacts, photos, or ad ID).",
+  "@permissionsEmptyComparisonBody": {
+    "description": "Plain-language summary when a linked installed app declares zero sensitive catalog permissions",
+    "placeholders": {
+      "requestedCount": {
+        "type": "int"
+      },
+      "grantedCount": {
+        "type": "int"
+      },
+      "appName": {
+        "type": "String"
+      }
+    }
   }
 }
