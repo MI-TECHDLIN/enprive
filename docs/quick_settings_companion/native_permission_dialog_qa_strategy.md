@@ -27,7 +27,7 @@ Do **not** bundle the QA helper inside Enprive's Flutter/Android binary or relea
 
 | Attribute | Required Value |
 |---|---|
-| `applicationId` | `dev.enprive.qa.permissionprobe` *(distinct from `com.example.enprive` / production ID)* |
+| `applicationId` | `dev.enprive.qa.permissionprobe` *(distinct from `com.mitechdlin.enprive`)* |
 | `compileSdk` / `targetSdk` | `35` (Android 15) |
 | `minSdk` | `26` |
 | Declared Manifest Permissions | `android.permission.CAMERA`, `android.permission.RECORD_AUDIO`, `android.permission.ACCESS_FINE_LOCATION` |

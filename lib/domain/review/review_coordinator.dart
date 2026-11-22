@@ -6,6 +6,8 @@ import '../companion/companion_policy_resolver.dart';
 import '../evidence/evidence_validator.dart';
 import '../permissions/permission_comparator.dart';
 import '../privacy/pii_redactor.dart';
+import '../voice/deni_voice_summary.dart';
+import 'app_policy_association.dart';
 import 'deterministic_clause_scanner.dart';
 import 'policy_sufficiency.dart';
 import 'review_models.dart';
@@ -261,7 +263,7 @@ class ReviewCoordinator {
         requestId: '${reqId}_appcheck',
         steps: processSteps,
         stage: 'sending_appcheck',
-        label: 'Streaming reasoning with App Check protection',
+        label: 'Checking policy in the cloud',
         inferenceSource: 'IN_CLOUD',
       );
 
@@ -347,19 +349,19 @@ class ReviewCoordinator {
       overallState: ReviewOverallState.insufficientEvidence,
       inferenceSource: InferenceSource.offlineDeterministic,
       summary:
-          'Device Permission Inspection for ${appPermissions.appName} '
-          '(${appPermissions.packageName}): $requestedCount Android '
-          '${requestedCount == 1 ? 'permission' : 'permissions'} declared '
-          '($grantedCount granted). No privacy policy was provided or '
+          'Phone permissions checked for ${appPermissions.appName} '
+          '(App ID: ${appPermissions.packageName}): $requestedCount Android '
+          '${requestedCount == 1 ? 'permission' : 'permissions'} listed by this app '
+          '($grantedCount allowed). No privacy policy was provided or '
           'compared yet.',
       calibratedDisclaimer:
-          'Permission inspection only — no privacy policy has been reviewed. '
+          'Phone permissions only — no privacy policy has been reviewed. '
           '${_localizedDisclaimerFor(languageCode)}',
       findings: const [],
       permissionReport: report,
       processSteps: const [
-        'Queried Android PackageManager locally on this phone',
-        'Skipped AI/cloud calls because no privacy policy was supplied',
+        'Checked app permissions on this phone',
+        'Skipped AI and cloud checks because no privacy policy was provided',
       ],
       diagnosticKind: ReviewDiagnosticKind.devicePermissionInspection,
       sourceSnapshot: PolicySourceSnapshot(
@@ -370,7 +372,7 @@ class ReviewCoordinator {
         appIdentityMatchStatus: AppIdentityMatchStatus.notApplicable,
         sourceSha256Hash: '',
         limitationNote:
-            'Android PackageManager inspection on this device only; no privacy policy was supplied.',
+            'Checked app permissions on this phone only; no privacy policy was provided.',
       ),
       languageCode: languageCode,
     );
@@ -497,20 +499,201 @@ class ReviewCoordinator {
     );
   }
 
+  static final RegExp _permissionSummarySuffixPattern = RegExp(
+    r' (?:Local Android inspection also spotted|Synthetic sample comparison also includes) \d+ (?:illustrative )?undisclosed permission requests?\.$',
+  );
+
+  static const String _linkedComparisonProcessStep =
+      'Compared policy with permissions on this phone';
+
+  static String _stripPermissionSummarySuffix(String summary) =>
+      summary.replaceFirst(_permissionSummarySuffixPattern, '').trimRight();
+
+  /// Deterministically links an installed Android app to an open policy review
+  /// strictly on-device without invoking generative AI, cloud endpoints, or
+  /// receipt persistence.
+  ///
+  /// Reuses [AppPolicyAssociationEvaluator] (`provesDeveloperOwnership == false`)
+  /// and [PermissionComparator] so policy-first and app-first paths produce the
+  /// exact same calibrated comparison and evidence separation.
+  AppPolicyLinkResult linkInstalledAppToReceipt({
+    required PolicyReviewReceipt receipt,
+    required AppPermissionSnapshot appPermissions,
+    List<AppIdentityCandidate> peerCandidates = const <AppIdentityCandidate>[],
+    String? draftId,
+    DateTime? createdAt,
+    String? supersedesReceiptId,
+    DateTime? evaluatedAt,
+  }) {
+    final cleanPkg = appPermissions.packageName.trim();
+    if (cleanPkg.isEmpty) {
+      throw ArgumentError.value(
+        appPermissions.packageName,
+        'appPermissions',
+        'Linking an installed app requires a non-empty Android package name.',
+      );
+    }
+
+    final policyUrl =
+        receipt.sourceSnapshot?.canonicalUrl?.trim().isNotEmpty == true
+        ? receipt.sourceSnapshot!.canonicalUrl!.trim()
+        : (receipt.sourceSnapshot?.requestedUrl?.trim().isNotEmpty == true
+              ? receipt.sourceSnapshot!.requestedUrl!.trim()
+              : null);
+
+    final associationReport = AppPolicyAssociationEvaluator.evaluate(
+      AppPolicyAssociationInput(
+        packageName: cleanPkg,
+        appName: appPermissions.appName,
+        policyText: receipt.snapshotText,
+        policyUrl: policyUrl,
+        candidateApps: peerCandidates,
+        evaluatedAt: (evaluatedAt ?? DateTime.now()).toUtc(),
+      ),
+    );
+
+    // First strip any previous linked-app device observations so switching
+    // from App A -> App B is clean, deterministic, and idempotent.
+    final baseUnlinked = _stripLinkedAppFromReceipt(receipt);
+    final updatedSnapshot = baseUnlinked.sourceSnapshot?.copyWith(
+      appIdentityMatchStatus:
+          baseUnlinked.sourceSnapshot?.sourceType == PolicySourceType.sample
+          ? AppIdentityMatchStatus.sampleFixture
+          : AppIdentityMatchStatus.unverifiedUserSupplied,
+    );
+    final updatedSteps = <String>[
+      ...baseUnlinked.processSteps,
+      if (!baseUnlinked.processSteps.contains(_linkedComparisonProcessStep))
+        _linkedComparisonProcessStep,
+    ];
+    final cleanBase = baseUnlinked.copyWith(
+      id: draftId ?? baseUnlinked.id,
+      createdAt: createdAt ?? baseUnlinked.createdAt,
+      sourceSnapshot: updatedSnapshot,
+      processSteps: List<String>.unmodifiable(updatedSteps),
+      supersedesReceiptId: supersedesReceiptId,
+    );
+
+    final linked = _attachPermissionComparison(cleanBase, appPermissions);
+    return AppPolicyLinkResult(
+      receipt: linked,
+      associationReport: associationReport,
+    );
+  }
+
+  /// Deterministically unlinks an installed Android app from an open policy
+  /// review strictly on-device, removing device-observed permission findings
+  /// while preserving all captured policy quotes, provenance, and SHA-256 hash.
+  AppPolicyLinkResult unlinkInstalledAppFromReceipt({
+    required PolicyReviewReceipt receipt,
+    String? draftId,
+    DateTime? createdAt,
+    String? supersedesReceiptId,
+    DateTime? evaluatedAt,
+  }) {
+    final stripped = _stripLinkedAppFromReceipt(receipt);
+    final updatedSnapshot = stripped.sourceSnapshot?.copyWith(
+      appIdentityMatchStatus:
+          stripped.sourceSnapshot?.sourceType == PolicySourceType.sample
+          ? AppIdentityMatchStatus.sampleFixture
+          : AppIdentityMatchStatus.notApplicable,
+    );
+    final unlinkedReceipt = stripped.copyWith(
+      id: draftId ?? stripped.id,
+      createdAt: createdAt ?? stripped.createdAt,
+      sourceSnapshot: updatedSnapshot,
+      supersedesReceiptId: supersedesReceiptId,
+      clearPermissionReport: true,
+    );
+
+    final policyUrl =
+        unlinkedReceipt.sourceSnapshot?.canonicalUrl?.trim().isNotEmpty == true
+        ? unlinkedReceipt.sourceSnapshot!.canonicalUrl!.trim()
+        : (unlinkedReceipt.sourceSnapshot?.requestedUrl?.trim().isNotEmpty ==
+                  true
+              ? unlinkedReceipt.sourceSnapshot!.requestedUrl!.trim()
+              : null);
+    final associationReport = AppPolicyAssociationEvaluator.evaluate(
+      AppPolicyAssociationInput(
+        policyText: unlinkedReceipt.snapshotText,
+        policyUrl: policyUrl,
+        evaluatedAt: (evaluatedAt ?? DateTime.now()).toUtc(),
+      ),
+    );
+    return AppPolicyLinkResult(
+      receipt: unlinkedReceipt,
+      associationReport: associationReport,
+    );
+  }
+
+  PolicyReviewReceipt _stripLinkedAppFromReceipt(PolicyReviewReceipt receipt) {
+    final policyFindings = PermissionComparator.stripDeviceReportFromFindings(
+      receipt.findings,
+    );
+    final cleanSummary = _stripPermissionSummarySuffix(receipt.summary);
+    final cleanSteps = receipt.processSteps
+        .where((step) => step != _linkedComparisonProcessStep)
+        .toList(growable: false);
+
+    final ReviewOverallState recalculatedState;
+    if (receipt.overallState == ReviewOverallState.insufficientEvidence ||
+        receipt.diagnosticKind ==
+            ReviewDiagnosticKind.insufficientPolicyMaterial ||
+        receipt.diagnosticKind == ReviewDiagnosticKind.failedModelInference) {
+      recalculatedState = ReviewOverallState.insufficientEvidence;
+    } else if (policyFindings.any((f) => f.isSourceMatched)) {
+      recalculatedState = ReviewOverallState.reviewRecommended;
+    } else if (receipt.diagnosticKind ==
+        ReviewDiagnosticKind.cloudUnavailableLocalFallback) {
+      recalculatedState = ReviewOverallState.insufficientEvidence;
+    } else {
+      recalculatedState = ReviewOverallState.noConcern;
+    }
+
+    return PolicyReviewReceipt(
+      id: receipt.id,
+      subjectTitle: receipt.subjectTitle,
+      sourceLabel: receipt.sourceLabel,
+      snapshotText: receipt.snapshotText,
+      snapshotDigest: receipt.snapshotDigest,
+      createdAt: receipt.createdAt,
+      overallState: recalculatedState,
+      inferenceSource: receipt.inferenceSource,
+      summary: cleanSummary,
+      calibratedDisclaimer: receipt.calibratedDisclaimer,
+      findings: policyFindings,
+      permissionReport: null,
+      processSteps: cleanSteps,
+      thoughtSummary: receipt.thoughtSummary,
+      thoughtSignature: receipt.thoughtSignature,
+      diagnosticKind: receipt.diagnosticKind,
+      sourceSnapshot: receipt.sourceSnapshot,
+      languageCode: receipt.languageCode,
+      supersedesReceiptId: receipt.supersedesReceiptId,
+    );
+  }
+
   PolicyReviewReceipt _attachPermissionComparison(
     PolicyReviewReceipt baseReceipt,
     AppPermissionSnapshot? appPermissions,
   ) {
     if (appPermissions == null) return baseReceipt;
 
+    final isSampleFixture =
+        baseReceipt.sourceSnapshot?.sourceType == PolicySourceType.sample ||
+        baseReceipt.sourceSnapshot?.appIdentityMatchStatus ==
+            AppIdentityMatchStatus.sampleFixture;
+
     final report = PermissionComparator.compare(
       snapshot: appPermissions,
       policyText: baseReceipt.snapshotText,
+      isSampleFixture: isSampleFixture,
     );
     final enrichedFindings =
         PermissionComparator.enrichFindingsWithDeviceReport(
           policyFindings: baseReceipt.findings,
           report: report,
+          isSampleFixture: isSampleFixture,
         );
 
     // Explicit verdict-state precedence:
@@ -535,7 +718,9 @@ class ReviewCoordinator {
     }
 
     final permissionNote = report.mismatchCount > 0
-        ? ' Local Android inspection also spotted ${report.mismatchCount} undisclosed permission ${report.mismatchCount == 1 ? 'request' : 'requests'}.'
+        ? (isSampleFixture
+              ? ' Synthetic sample comparison also includes ${report.mismatchCount} illustrative undisclosed permission ${report.mismatchCount == 1 ? 'request' : 'requests'}.'
+              : ' Local Android inspection also spotted ${report.mismatchCount} undisclosed permission ${report.mismatchCount == 1 ? 'request' : 'requests'}.')
         : '';
 
     return PolicyReviewReceipt(
@@ -557,7 +742,147 @@ class ReviewCoordinator {
       diagnosticKind: baseReceipt.diagnosticKind,
       sourceSnapshot: baseReceipt.sourceSnapshot,
       languageCode: baseReceipt.languageCode,
+      supersedesReceiptId: baseReceipt.supersedesReceiptId,
     );
+  }
+
+  /// Generates a plain-language, evidence-grounded summary of the current review
+  /// for Deni to display alongside spoken playback.
+  ///
+  /// Privacy & Fallback Contract:
+  /// 1. Only `sourceMatched` policy findings enter AI prompts — installed app
+  ///    lists, package names, and Android OS permissions stay strictly on-device.
+  /// 2. Without explicit [cloudConsent], attempts `ONLY_ON_DEVICE` inference first;
+  ///    when unavailable or too long, returns an immediately usable deterministic
+  ///    plain-language template paired with `requiresCloudConsent = true` and the
+  ///    exact canonical redacted cloud payload for optional CloudConsentSheet opt-in.
+  /// 3. With explicit [cloudConsent], sends the exact [canonicalRedactedPayload]
+  ///    once (`ONLY_IN_CLOUD`, App Check protected, 0 retries) and falls back
+  ///    deterministically on failure or timeout without inventing claims.
+  Future<DeniVoiceSummary> generateDeniVoiceSummary({
+    required PolicyReviewReceipt receipt,
+    AppPolicyAssociationReport? associationReport,
+    bool cloudConsent = false,
+    bool forceDeterministicTemplate = false,
+    String languageCode = 'en',
+    String? canonicalRedactedPayload,
+    String? requestId,
+  }) async {
+    final promptPayload = DeniVoiceSummaryBuilder.buildPromptPayload(receipt);
+
+    // No verified policy clauses to simplify (e.g., permission-only, no-concern,
+    // or insufficient evidence) -> return honest deterministic summary locally.
+    if (forceDeterministicTemplate || promptPayload.isEmpty) {
+      return DeniVoiceSummaryBuilder.buildDeterministic(
+        receipt: receipt,
+        associationReport: associationReport,
+        languageCode: languageCode,
+      );
+    }
+
+    final reqId = (requestId != null && requestId.trim().isNotEmpty)
+        ? requestId.trim()
+        : 'vsum_${DateTime.now().millisecondsSinceEpoch}';
+
+    if (!cloudConsent) {
+      if (PiiRedactor.isComprehensivePolicy(promptPayload)) {
+        return DeniVoiceSummaryBuilder.buildDeterministic(
+          receipt: receipt,
+          associationReport: associationReport,
+          languageCode: languageCode,
+          requiresCloudConsent: true,
+          consentReason:
+              'These verified findings exceed on-device summary limits. You can use the offline summary now or send the redacted findings to Cloud AI once.',
+          redactedCloudPayload: canonicalCloudPayload(promptPayload),
+        );
+      }
+
+      try {
+        final localResult = await _bridge.analyseText(
+          requestId: reqId,
+          task: 'summarize_voice',
+          text: promptPayload,
+          cloudConsent: false,
+          requestedMode: 'ONLY_ON_DEVICE',
+          languageCode: languageCode,
+        );
+        if (localResult.status == HybridStatus.success &&
+            localResult.structuredOutput != null) {
+          return DeniVoiceSummaryBuilder.validateAndMergeModelOutput(
+            structuredOutput: localResult.structuredOutput!,
+            receipt: receipt,
+            associationReport: associationReport,
+            inferenceSource: parseInferenceSource(localResult.inferenceSource),
+            languageCode: languageCode,
+          );
+        }
+        return DeniVoiceSummaryBuilder.buildDeterministic(
+          receipt: receipt,
+          associationReport: associationReport,
+          languageCode: languageCode,
+          requiresCloudConsent: true,
+          consentReason:
+              localResult.message ??
+              'On-device AI is unavailable on this phone right now. Showing Enprive’s offline plain-language summary.',
+          redactedCloudPayload: canonicalCloudPayload(promptPayload),
+        );
+      } on HybridOperationCancelledException catch (e) {
+        if (!e.isTimeout) rethrow;
+        return DeniVoiceSummaryBuilder.buildDeterministic(
+          receipt: receipt,
+          associationReport: associationReport,
+          languageCode: languageCode,
+          requiresCloudConsent: true,
+          consentReason:
+              'On-device summary timed out. Showing Enprive’s offline plain-language summary.',
+          redactedCloudPayload: canonicalCloudPayload(promptPayload),
+        );
+      }
+    }
+
+    // Explicit per-operation cloud consent granted: send exact redacted payload once.
+    final textForCloud =
+        canonicalRedactedPayload ?? canonicalCloudPayload(promptPayload);
+    try {
+      final cloudResult = await _bridge.analyseText(
+        requestId: '${reqId}_appcheck',
+        task: 'summarize_voice',
+        text: textForCloud,
+        cloudConsent: true,
+        requestedMode: 'ONLY_IN_CLOUD',
+        languageCode: languageCode,
+      );
+      if (cloudResult.status == HybridStatus.success &&
+          cloudResult.structuredOutput != null) {
+        return DeniVoiceSummaryBuilder.validateAndMergeModelOutput(
+          structuredOutput: cloudResult.structuredOutput!,
+          receipt: receipt,
+          associationReport: associationReport,
+          inferenceSource: parseInferenceSource(cloudResult.inferenceSource),
+          languageCode: languageCode,
+        );
+      }
+      return DeniVoiceSummaryBuilder.buildDeterministic(
+        receipt: receipt,
+        associationReport: associationReport,
+        languageCode: languageCode,
+        requiresCloudConsent: true,
+        redactedCloudPayload: textForCloud,
+        fallbackNote:
+            'Cloud AI summary was unavailable. Showing Enprive’s offline plain-language summary.',
+      );
+    } on HybridOperationCancelledException catch (e) {
+      if (!e.isTimeout) rethrow;
+      return DeniVoiceSummaryBuilder.buildDeterministic(
+        receipt: receipt,
+        associationReport: associationReport,
+        languageCode: languageCode,
+        requiresCloudConsent: true,
+        redactedCloudPayload: textForCloud,
+        fallbackNote:
+            'Cloud AI timed out before responding. Showing Enprive’s offline plain-language summary.',
+      );
+    }
   }
 
   /// 1-turn grounded explanation from Deni for the "Why this finding?" sheet.
@@ -689,7 +1014,7 @@ class ReviewCoordinator {
           requestId: '${reqId}_appcheck',
           steps: processSteps,
           stage: 'sending_appcheck',
-          label: 'Streaming explanation with App Check protection',
+          label: 'Getting explanation from the cloud',
           inferenceSource: 'IN_CLOUD',
         );
         res = await _bridge.analyseText(
@@ -1105,7 +1430,7 @@ class ReviewCoordinator {
           whatPolicySays: isSourceMatched
               ? 'Verbatim match confirmed in captured snapshot (${EvidenceValidator.normalize(quote).length} chars).'
               : 'Model cited a passage that could not be matched verbatim in the captured snapshot.',
-          whatAndroidReports: 'Text-only policy review. Run "Check an app" to compare against live Android OS permissions.',
+          whatAndroidReports: PermissionComparator.standaloneAndroidReportText,
           unknowns: rawUnknowns,
           status: isSourceMatched
               ? EvidenceStatus.sourceMatched

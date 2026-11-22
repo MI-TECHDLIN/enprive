@@ -9,7 +9,9 @@ import '../core/theme/enprive_theme.dart';
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
+import '../services/intake/policy_intake_coordinator.dart';
 import '../services/network/policy_url_retriever.dart';
+import '../services/platform/companion_bridge.dart';
 import '../services/storage/receipt_repository.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_tactile_button.dart';
@@ -48,6 +50,9 @@ class ReceiptsScreen extends StatefulWidget {
   final VoidCallback? onOpenSettings;
   final bool isActiveTab;
   final PolicyUrlRetriever? urlRetriever;
+  final PolicyIntakeCoordinator? intakeCoordinator;
+  final CompanionBridge? companionBridge;
+  final ReviewExitGuardController? reviewExitGuard;
 
   const ReceiptsScreen({
     super.key,
@@ -62,6 +67,9 @@ class ReceiptsScreen extends StatefulWidget {
     this.onOpenSettings,
     this.isActiveTab = false,
     this.urlRetriever,
+    this.intakeCoordinator,
+    this.companionBridge,
+    this.reviewExitGuard,
   });
 
   @override
@@ -74,6 +82,34 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
   bool _isSearching = false;
   String _searchQuery = '';
 
+  /// Receipts removed from view while their Undo snackbar is showing. The
+  /// stored receipt is deleted through [ReceiptsScreen.onDeleteReceipt] only
+  /// once the snackbar closes without Undo.
+  final Set<String> _pendingDeleteIds = <String>{};
+
+  void _requestDelete(PolicyReviewReceipt receipt, AppLocalizations l10n) {
+    if (!_pendingDeleteIds.add(receipt.id)) return;
+    setState(() {});
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    final controller = messenger.showSnackBar(
+      SnackBar(
+        content: Text(l10n.receiptDeletedSnack(receipt.subjectTitle)),
+        action: SnackBarAction(label: l10n.btnUndo, onPressed: () {}),
+      ),
+    );
+    unawaited(
+      controller.closed.then((reason) async {
+        if (reason == SnackBarClosedReason.action) {
+          if (mounted) setState(() => _pendingDeleteIds.remove(receipt.id));
+          return;
+        }
+        await widget.onDeleteReceipt(receipt.id);
+        if (mounted) setState(() => _pendingDeleteIds.remove(receipt.id));
+      }),
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -83,6 +119,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
   List<PolicyReviewReceipt> get _filteredReceipts {
     final query = _searchQuery.trim().toLowerCase();
     return widget.receipts.where((r) {
+      if (_pendingDeleteIds.contains(r.id)) return false;
       final matchesFilter = switch (_activeFilter) {
         _ReceiptFilter.all => true,
         _ReceiptFilter.reviewRecommended =>
@@ -123,7 +160,11 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 840),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: EnpriveSpacing.marginFor(
+                      MediaQuery.sizeOf(context).width,
+                    ),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -150,33 +191,23 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                 }
                               });
                             },
+                            isSelected: _isSearching,
                             style: IconButton.styleFrom(
                               backgroundColor: _isSearching
-                                  ? scheme.primaryContainer
-                                  : context.enpriveSurfaces.card,
+                                  ? scheme.secondaryContainer
+                                  : null,
                               foregroundColor: _isSearching
-                                  ? scheme.onPrimaryContainer
-                                  : scheme.onSurface,
-                              fixedSize: const Size(44, 44),
+                                  ? scheme.onSecondaryContainer
+                                  : scheme.onSurfaceVariant,
                               minimumSize: const Size(48, 48),
                               tapTargetSize: MaterialTapTargetSize.padded,
-                              padding: EdgeInsets.zero,
-                              side: BorderSide(
-                                color: _isSearching
-                                    ? scheme.primary.withValues(alpha: 0.25)
-                                    : context.enpriveSurfaces.hairlineBorder,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
                             ),
                             icon: Icon(
                               _isSearching ? LucideIcons.x : LucideIcons.search,
-                              size: 19,
+                              size: 22,
                             ),
                           ),
                           if (widget.onOpenSettings != null) ...[
-                            const SizedBox(width: 8),
                             EnpriveSettingsAppBarButton(
                               key: widget.isActiveTab
                                   ? const Key('nav_settings_btn')
@@ -227,10 +258,20 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                 padding: const EdgeInsets.only(bottom: 28),
                                 itemCount: filtered.length,
                                 separatorBuilder: (_, _) =>
-                                    const SizedBox(height: 16),
+                                    const SizedBox(height: 8),
                                 itemBuilder: (context, index) {
                                   final receipt = filtered[index];
-                                  return _M3EReceiptCard(
+                                  return Dismissible(
+                                    key: ValueKey<String>(
+                                      'receipt_dismissible_${receipt.id}',
+                                    ),
+                                    direction: DismissDirection.endToStart,
+                                    background: _DeleteSwipeBackground(
+                                      label: l10n.btnDelete,
+                                    ),
+                                    onDismissed: (_) =>
+                                        _requestDelete(receipt, l10n),
+                                    child: _M3EReceiptCard(
                                     receipt: receipt,
                                     l10n: l10n,
                                     onOpen: () {
@@ -240,9 +281,19 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                             receipt: receipt,
                                             coordinator: widget.coordinator,
                                             urlRetriever: widget.urlRetriever,
+                                            intakeCoordinator:
+                                                widget.intakeCoordinator,
+                                            companionBridge:
+                                                widget.companionBridge,
+                                            exitGuardController:
+                                                widget.reviewExitGuard,
                                             onSaveReceipt: widget.onSaveReceipt,
                                             onDeleteReceipt:
                                                 widget.onDeleteReceipt,
+                                            savedReceipts:
+                                                List<
+                                                  PolicyReviewReceipt
+                                                >.unmodifiable(widget.receipts),
                                             receiptRepository:
                                                 widget.receiptRepository,
                                             isReceiptSaved:
@@ -255,11 +306,9 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                         ),
                                       );
                                     },
-                                    onDelete: () => unawaited(
-                                      Future.sync(
-                                        () => widget.onDeleteReceipt(receipt.id),
-                                      ),
-                                    ),
+                                    onDelete: () =>
+                                        _requestDelete(receipt, l10n),
+                                  ),
                                   );
                                 },
                               ),
@@ -292,7 +341,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
             children: [
               const DeniAnimatedMascot(
                 size: 96,
-                pose: DeniPose.idle,
+                pose: DeniPose.carryReceipt,
               ),
               const SizedBox(height: 20),
               Text(
@@ -367,6 +416,41 @@ class _M3EReceiptCard extends StatelessWidget {
       deviceObservedLabel: l10n.statusDeviceObserved,
       onOpen: onOpen,
       onDelete: onDelete,
+    );
+  }
+}
+
+/// Revealed behind a receipt while it is swiped toward delete.
+class _DeleteSwipeBackground extends StatelessWidget {
+  final String label;
+
+  const _DeleteSwipeBackground({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+    return Container(
+      alignment: AlignmentDirectional.centerEnd,
+      padding: const EdgeInsetsDirectional.only(end: 24),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(LucideIcons.trash2, size: 20, color: scheme.onErrorContainer),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: m3e.typeScale.labelLarge.copyWith(
+              color: scheme.onErrorContainer,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -189,7 +189,7 @@ class EnpriveQuoteCard extends StatelessWidget {
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
-                                    'Snapshot digest · FNV-1a 64-bit · $sha256Digest',
+                                    'Document fingerprint · $sha256Digest',
                                     overflow: TextOverflow.ellipsis,
                                     style: typeExt.sha256Hash.copyWith(
                                       fontSize: 11.5,
@@ -209,7 +209,7 @@ class EnpriveQuoteCard extends StatelessWidget {
                                       ..showSnackBar(
                                         const SnackBar(
                                           content: Text(
-                                            'Snapshot digest copied',
+                                            'Document fingerprint copied',
                                           ),
                                           behavior: SnackBarBehavior.floating,
                                           duration: Duration(seconds: 2),

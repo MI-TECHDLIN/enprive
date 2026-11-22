@@ -87,6 +87,7 @@ class _CompanionScreenState extends State<CompanionScreen>
   DeclaredSensitivePermission? _selectedPermission;
   GuidedPermissionOption? _selectedGuidedOption;
   bool _showUnsureGuide = false;
+  bool _showCompanionAdvancedDetails = false;
 
   final List<PolicyReviewReceipt> _sessionReceipts = [];
   final Set<String> _persistedReceiptIds = <String>{};
@@ -387,10 +388,10 @@ class _CompanionScreenState extends State<CompanionScreen>
                       : DeclaredPermissionGrantStatus.denied),
             isRuntimePermission: !isAdId,
             statusNote: isAdId
-                ? 'Declared in APK manifest · Platform ID'
+                ? 'Listed by app · Ad ID'
                 : (isGranted
-                      ? 'Declared · Currently granted'
-                      : 'Declared · Currently denied'),
+                      ? 'Listed by app · Allowed'
+                      : 'Listed by app · Not allowed'),
           );
         })
         .toList(growable: false);
@@ -1159,7 +1160,7 @@ class _CompanionScreenState extends State<CompanionScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           EnpriveCompanionCard(
-            pose: DeniPose.support,
+            pose: DeniPose.peek,
             layout: EnpriveCompanionLayout.peeking,
             badgeText: 'LOCK SCREEN PROTECTED',
             badgeIcon: LucideIcons.lock,
@@ -1190,16 +1191,16 @@ class _CompanionScreenState extends State<CompanionScreen>
 
     if (_isResolvingForeground) {
       headline = 'Checking which app you were using…';
-      subtitle = 'Running a single one-time local UsageStats lookup without monitoring your screen.';
+      subtitle = 'Checking once on this phone without watching your screen.';
     } else if (_continuedWithoutAppContext) {
       headline = 'General Android permission guide';
       subtitle = 'No app selected. Enprive explains Android permissions using local guidance only.';
     } else if (_isAppConfirmed) {
       headline = 'You\'re looking at ${_confirmedAppLabel ?? 'this app'}.';
-      subtitle = 'Permissions listed below come from the APK manifest — Android still controls whichever prompt is on screen.';
+      subtitle = 'Permissions listed below come from the app on your phone — Android still controls whichever popup is on screen.';
     } else {
       headline = 'Deni — Enprive Companion';
-      subtitle = 'Ask Deni about an app\'s declared permissions and verified policy disclosures.';
+      subtitle = 'Ask Deni about an app\'s permissions and what its privacy policy says.';
     }
 
     return EnpriveMaterialCardSurface(
@@ -1302,7 +1303,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            res.packageName!,
+                            'App ID: ${res.packageName!}',
                             style: m3e.typeScale.labelSmall.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),
@@ -1621,7 +1622,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                     ),
                     if (_confirmedPackageName != null)
                       Text(
-                        _confirmedPackageName!,
+                        'App ID: ${_confirmedPackageName!}',
                         style: m3e.typeScale.labelSmall.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
@@ -1640,7 +1641,7 @@ class _CompanionScreenState extends State<CompanionScreen>
               !_continuedWithoutAppContext) ...[
             const SizedBox(height: 6),
             Text(
-              'Android App permissions shown are local PackageManager observations only.',
+              'Permissions shown below are read directly from your phone.',
               style: m3e.typeScale.labelSmall.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
@@ -1695,7 +1696,7 @@ class _CompanionScreenState extends State<CompanionScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Permission metadata unavailable',
+              'Couldn\'t read app permissions',
               style: m3e.typeScale.titleSmall.copyWith(
                 color: scheme.onSurface,
                 fontWeight: FontWeight.w800,
@@ -1732,7 +1733,7 @@ class _CompanionScreenState extends State<CompanionScreen>
         ),
         const SizedBox(height: 4),
         Text(
-          'These are sensitive permissions declared in the app manifest, not a guarantee of the active prompt on your screen.',
+          'These are permissions the app lists on your phone, not necessarily the popup on your screen right now.',
           style: m3e.typeScale.bodySmall.copyWith(
             color: scheme.onSurfaceVariant,
           ),
@@ -1746,7 +1747,7 @@ class _CompanionScreenState extends State<CompanionScreen>
             lipHeight: 2.0,
             padding: const EdgeInsets.all(14),
             child: Text(
-              'No sensitive runtime permissions declared by this app.',
+              'This app doesn\'t ask for any sensitive permissions on your phone.',
               style: m3e.typeScale.bodyMedium.copyWith(color: scheme.onSurface),
             ),
           )
@@ -1858,7 +1859,7 @@ class _CompanionScreenState extends State<CompanionScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Match what the Android prompt asked for',
+            'Match what the popup on your screen asked for',
             style: m3e.typeScale.titleSmall.copyWith(
               color: scheme.onSurface,
               fontWeight: FontWeight.w800,
@@ -1964,7 +1965,7 @@ class _CompanionScreenState extends State<CompanionScreen>
               _buildSectionBlock(
                 m3e,
                 scheme,
-                label: '2. What the app has declared',
+                label: '2. What the app asks for on your phone',
                 body:
                     '${explanation.whatAppDeclared}\n${explanation.grantStatusSummary}',
               ),
@@ -1981,15 +1982,79 @@ class _CompanionScreenState extends State<CompanionScreen>
                 for (final quote in explanation.verbatimExcerpts) ...[
                   EnpriveQuoteCard(
                     quote: quote,
-                    sha256Digest: explanation.matchedReceipt?.snapshotDigest,
-                    footerCaption: _formatSha256Footer(
-                      explanation
-                          .matchedReceipt
-                          ?.sourceSnapshot
-                          ?.sourceSha256Hash,
-                    ),
+                    statusLabel: 'Exact quote from policy',
                   ),
                   const SizedBox(height: 8),
+                ],
+                if ((explanation.matchedReceipt?.snapshotDigest.isNotEmpty ??
+                        false) ||
+                    _formatSha256Footer(
+                          explanation
+                              .matchedReceipt
+                              ?.sourceSnapshot
+                              ?.sourceSha256Hash,
+                        ) !=
+                        null) ...[
+                  InkWell(
+                    key: const Key('companion_advanced_details_toggle'),
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () => setState(
+                      () => _showCompanionAdvancedDetails =
+                          !_showCompanionAdvancedDetails,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _showCompanionAdvancedDetails
+                                ? LucideIcons.chevronUp
+                                : LucideIcons.chevronDown,
+                            size: 16,
+                            color: scheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              'Advanced details',
+                              style: m3e.typography.emphasized.labelMedium
+                                  .copyWith(color: scheme.primary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (_showCompanionAdvancedDetails) ...[
+                    const SizedBox(height: 4),
+                    if (explanation.matchedReceipt?.snapshotDigest.isNotEmpty ??
+                        false)
+                      Text(
+                        'Document fingerprint · ${explanation.matchedReceipt!.snapshotDigest}',
+                        style: m3e.typeScale.labelSmall.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    if (_formatSha256Footer(
+                          explanation
+                              .matchedReceipt
+                              ?.sourceSnapshot
+                              ?.sourceSha256Hash,
+                        ) !=
+                        null)
+                      Text(
+                        _formatSha256Footer(
+                          explanation
+                              .matchedReceipt
+                              ?.sourceSnapshot
+                              ?.sourceSha256Hash,
+                        )!,
+                        style: m3e.typeScale.labelSmall.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
                 ],
               ],
               if (explanation.hasVerifiedPolicy &&

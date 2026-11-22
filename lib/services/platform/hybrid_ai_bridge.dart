@@ -171,12 +171,149 @@ class HybridAnalysisResult {
   }
 }
 
+enum VoicePlaybackState {
+  idle,
+  synthesizing,
+  playing,
+  completed,
+  stopped,
+  error,
+}
+
+enum VoicePlaybackRoute {
+  none,
+  geminiCloudTts,
+  androidLocalTts,
+  transcriptOnly,
+}
+
+class VoicePlaybackEvent {
+  final String requestId;
+  final VoicePlaybackState state;
+  final VoicePlaybackRoute route;
+  final String? voiceName;
+  final String? modelName;
+  final String? errorCode;
+  final String? message;
+
+  const VoicePlaybackEvent({
+    required this.requestId,
+    required this.state,
+    required this.route,
+    this.voiceName,
+    this.modelName,
+    this.errorCode,
+    this.message,
+  });
+
+  factory VoicePlaybackEvent.fromMap(Map<dynamic, dynamic> map) {
+    return VoicePlaybackEvent(
+      requestId: map['requestId'] as String? ?? '',
+      state: _parseState(map['state'] as String?),
+      route: _parseRoute(map['route'] as String?),
+      voiceName: (map['voiceName'] as String?)?.trim(),
+      modelName: (map['modelName'] as String?)?.trim(),
+      errorCode: (map['errorCode'] as String?)?.trim(),
+      message: (map['message'] as String?)?.trim(),
+    );
+  }
+
+  static VoicePlaybackState _parseState(String? raw) {
+    return switch (raw?.trim().toLowerCase()) {
+      'synthesizing' => VoicePlaybackState.synthesizing,
+      'playing' => VoicePlaybackState.playing,
+      'completed' => VoicePlaybackState.completed,
+      'stopped' => VoicePlaybackState.stopped,
+      'error' => VoicePlaybackState.error,
+      _ => VoicePlaybackState.idle,
+    };
+  }
+
+  static VoicePlaybackRoute _parseRoute(String? raw) {
+    return switch (raw?.trim().toUpperCase()) {
+      'GEMINI_CLOUD_TTS' => VoicePlaybackRoute.geminiCloudTts,
+      'ANDROID_LOCAL_TTS' => VoicePlaybackRoute.androidLocalTts,
+      'TRANSCRIPT_ONLY' => VoicePlaybackRoute.transcriptOnly,
+      _ => VoicePlaybackRoute.none,
+    };
+  }
+}
+
+class VoiceSpeakResult {
+  final String status;
+  final VoicePlaybackRoute route;
+  final String? voiceName;
+  final String? modelName;
+  final String? fallbackReason;
+  final String? errorCode;
+  final String? message;
+
+  const VoiceSpeakResult({
+    required this.status,
+    required this.route,
+    this.voiceName,
+    this.modelName,
+    this.fallbackReason,
+    this.errorCode,
+    this.message,
+  });
+
+  bool get isCompletedOrPlaying =>
+      status == 'completed' ||
+      status == 'fallback_local' ||
+      status == 'started_local';
+
+  bool get fellBackToLocal => status == 'fallback_local';
+  bool get wasCancelled => status == 'cancelled';
+  bool get wasBlocked => status == 'blocked';
+
+  factory VoiceSpeakResult.fromMap(Map<dynamic, dynamic> map) {
+    return VoiceSpeakResult(
+      status: (map['status'] as String?)?.trim().toLowerCase() ?? 'failed',
+      route: VoicePlaybackEvent._parseRoute(map['route'] as String?),
+      voiceName: (map['voiceName'] as String?)?.trim(),
+      modelName: (map['modelName'] as String?)?.trim(),
+      fallbackReason: (map['fallbackReason'] as String?)?.trim(),
+      errorCode: (map['errorCode'] as String?)?.trim(),
+      message: (map['message'] as String?)?.trim(),
+    );
+  }
+}
+
+class LocalTtsAvailability {
+  final bool isReady;
+  final bool isLanguageAvailable;
+  final String resolvedLocale;
+  final String message;
+
+  const LocalTtsAvailability({
+    required this.isReady,
+    required this.isLanguageAvailable,
+    required this.resolvedLocale,
+    required this.message,
+  });
+
+  bool get canSpeakLocally => isReady && isLanguageAvailable;
+
+  factory LocalTtsAvailability.fromMap(Map<dynamic, dynamic> map) {
+    return LocalTtsAvailability(
+      isReady: map['isReady'] as bool? ?? false,
+      isLanguageAvailable: map['isLanguageAvailable'] as bool? ?? false,
+      resolvedLocale: map['resolvedLocale'] as String? ?? 'en-US',
+      message:
+          map['message'] as String? ??
+          'On-device voice availability could not be checked.',
+    );
+  }
+}
+
 class HybridAiBridge {
   static const MethodChannel _channel = MethodChannel('com.enprive/hybrid_ai');
   static const int _maxCachedAppIcons = 200;
   static final Set<StreamController<AnalysisStreamEvent>> _nativeListeners = {};
   static final Set<StreamController<IncomingIntentPayload>>
   _incomingIntentListeners = {};
+  static final Set<StreamController<VoicePlaybackEvent>> _voiceListeners = {};
   static bool _handlerBound = false;
 
   final LinkedHashMap<String, Uint8List?> _appIconCache =
@@ -187,6 +324,8 @@ class HybridAiBridge {
       StreamController<AnalysisStreamEvent>.broadcast();
   final StreamController<IncomingIntentPayload> _incomingPayloadController =
       StreamController<IncomingIntentPayload>.broadcast();
+  final StreamController<VoicePlaybackEvent> _voiceEventsController =
+      StreamController<VoicePlaybackEvent>.broadcast();
 
   Stream<AnalysisStreamEvent> get analysisEvents {
     _nativeListeners.add(_analysisEventsController);
@@ -200,9 +339,21 @@ class HybridAiBridge {
     return _incomingPayloadController.stream;
   }
 
+  Stream<VoicePlaybackEvent> get voicePlaybackEvents {
+    _voiceListeners.add(_voiceEventsController);
+    _ensureHandlerBound();
+    return _voiceEventsController.stream;
+  }
+
   void emitProcessEvent(AnalysisStreamEvent event) {
     if (!_analysisEventsController.isClosed) {
       _analysisEventsController.add(event);
+    }
+  }
+
+  void emitVoicePlaybackEvent(VoicePlaybackEvent event) {
+    if (!_voiceEventsController.isClosed) {
+      _voiceEventsController.add(event);
     }
   }
 
@@ -227,6 +378,16 @@ class HybridAiBridge {
             for (final controller in List.of(_incomingIntentListeners)) {
               if (!controller.isClosed) {
                 controller.add(payload);
+              }
+            }
+          }
+        } else if (call.method == 'onVoicePlaybackEvent') {
+          final args = call.arguments;
+          if (args is Map) {
+            final event = VoicePlaybackEvent.fromMap(args);
+            for (final controller in List.of(_voiceListeners)) {
+              if (!controller.isClosed) {
+                controller.add(event);
               }
             }
           }
@@ -364,15 +525,54 @@ class HybridAiBridge {
     }
   }
 
+  /// Checks runtime availability of local Android TextToSpeech for [languageCode].
+  Future<LocalTtsAvailability> checkTtsAvailability({
+    String languageCode = 'en',
+  }) async {
+    try {
+      final res = await _channel.invokeMethod<Map>('checkTtsAvailability', {
+        'languageCode': languageCode,
+      });
+      if (res == null) {
+        return const LocalTtsAvailability(
+          isReady: false,
+          isLanguageAvailable: false,
+          resolvedLocale: 'en-US',
+          message: 'On-device speech availability could not be confirmed.',
+        );
+      }
+      return LocalTtsAvailability.fromMap(res);
+    } on PlatformException catch (e) {
+      return LocalTtsAvailability(
+        isReady: false,
+        isLanguageAvailable: false,
+        resolvedLocale: languageCode,
+        message: e.message ?? 'On-device speech engine unavailable.',
+      );
+    } on MissingPluginException {
+      return const LocalTtsAvailability(
+        isReady: false,
+        isLanguageAvailable: false,
+        resolvedLocale: 'en-US',
+        message: 'Native speech engine not attached.',
+      );
+    }
+  }
+
   /// Speaks [text] aloud using the local Android TextToSpeech engine.
   Future<bool> speakText(
     String text, {
     String languageCode = 'en',
+    String? requestId,
+    double? speechRate,
   }) async {
+    _ensureHandlerBound();
     try {
       final res = await _channel.invokeMethod<bool>('speakText', {
         'text': text,
         'languageCode': languageCode,
+        'requestId': ?requestId,
+        'speechRate': ?speechRate,
       });
       return res ?? false;
     } on PlatformException {
@@ -382,7 +582,63 @@ class HybridAiBridge {
     }
   }
 
-  /// Stops any active Android TextToSpeech playback.
+  /// Synthesizes and plays Deni's expressive voice via Firebase AI Logic
+  /// (`gemini-3.8-flash-tts`, prebuilt voice `Puck`).
+  ///
+  /// Privacy Guardrail: Requires explicit per-operation [cloudConsent] == true.
+  /// When [cloudConsent] is false, this blocks locally with zero platform or
+  /// network calls. On cloud timeout/error, optionally falls back to local
+  /// Android TextToSpeech without retrying cloud.
+  Future<VoiceSpeakResult> speakWithGeminiTts({
+    required String requestId,
+    required String text,
+    required bool cloudConsent,
+    String languageCode = 'en',
+    bool fallbackToLocalOnFailure = true,
+  }) async {
+    if (!cloudConsent) {
+      return const VoiceSpeakResult(
+        status: 'blocked',
+        route: VoicePlaybackRoute.none,
+        errorCode: 'CLOUD_CONSENT_REQUIRED',
+        message: 'Expressive cloud voice requires explicit permission.',
+      );
+    }
+    _ensureHandlerBound();
+    try {
+      final res = await _channel.invokeMethod<Map>('speakWithGeminiTts', {
+        'requestId': requestId,
+        'text': text,
+        'languageCode': languageCode,
+        'cloudConsent': true,
+        'fallbackToLocalOnFailure': fallbackToLocalOnFailure,
+      });
+      if (res == null) {
+        return const VoiceSpeakResult(
+          status: 'failed',
+          route: VoicePlaybackRoute.transcriptOnly,
+          message: 'Empty response from voice engine.',
+        );
+      }
+      return VoiceSpeakResult.fromMap(res);
+    } on PlatformException catch (e) {
+      return VoiceSpeakResult(
+        status: 'failed',
+        route: VoicePlaybackRoute.transcriptOnly,
+        errorCode: e.code,
+        message: e.message ?? 'Expressive cloud voice failed.',
+      );
+    } on MissingPluginException {
+      return const VoiceSpeakResult(
+        status: 'unavailable',
+        route: VoicePlaybackRoute.transcriptOnly,
+        errorCode: 'MISSING_PLUGIN',
+        message: 'Native voice engine unavailable in this environment.',
+      );
+    }
+  }
+
+  /// Stops any active Android TextToSpeech or Gemini Cloud TTS playback.
   Future<bool> stopSpeaking() async {
     try {
       final res = await _channel.invokeMethod<bool>('stopSpeaking');

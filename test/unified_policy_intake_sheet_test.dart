@@ -227,7 +227,7 @@ void main() {
         await tester.tap(find.byKey(const Key('open_unified_intake_btn')));
         await _flush(tester);
 
-        expect(find.text('Inspect policy text'), findsOneWidget);
+        expect(find.text('Check policy text'), findsOneWidget);
         expect(find.text('Review on this phone'), findsNothing);
         expect(find.text('Try sample text'), findsNothing);
 
@@ -263,7 +263,7 @@ void main() {
 
         await tester.tap(find.text('Policy link'));
         await _flush(tester);
-        expect(find.text('Fetch & inspect policy'), findsOneWidget);
+        expect(find.text('Open & check policy'), findsOneWidget);
         expect(find.text('Review on this phone'), findsNothing);
 
         await tester.enterText(
@@ -377,7 +377,157 @@ void main() {
           find.byKey(const Key('intake_selected_app_card')),
           findsOneWidget,
         );
-        expect(find.text('com.example.focus'), findsOneWidget);
+        expect(find.text('App ID: com.example.focus'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      '2b. omits Retry fetch for blocked host, invalid URL, and oversized URL while keeping Retry for transient failures',
+      (WidgetTester tester) async {
+        var timeoutAttempts = 0;
+        var networkAttempts = 0;
+        final coordinator = PolicyIntakeCoordinator(
+          urlRetriever: PolicyUrlRetriever(
+            dnsLookup: publicDns,
+            maxResponseBytes: 512,
+            clock: () => fixedClock,
+            clientFactory: () => MockClient((request) async {
+              if (request.url.path == '/huge') {
+                return http.Response(
+                  'A' * 1024,
+                  200,
+                  headers: {'content-type': 'text/plain'},
+                );
+              }
+              if (request.url.path == '/network-error') {
+                networkAttempts++;
+                throw const SocketException('Simulated connection drop');
+              }
+              if (request.url.path == '/flaky-timeout') {
+                timeoutAttempts++;
+                if (timeoutAttempts == 1) {
+                  throw TimeoutException('Simulated timeout');
+                }
+                return http.Response(
+                  '<html><body><p>$validPolicyText</p></body></html>',
+                  200,
+                  headers: {'content-type': 'text/html'},
+                );
+              }
+              return http.Response('Not Found', 404);
+            }),
+          ),
+          clock: () => fixedClock,
+        );
+
+        PolicyIntakeSuccess? outcome;
+        await tester.pumpWidget(
+          _buildSheetApp(
+            config: PolicyIntakeSheetConfig(
+              coordinator: coordinator,
+              initialMode: PolicyIntakeMode.url,
+            ),
+            onResult: (r) => outcome = r,
+          ),
+        );
+        await tester.tap(find.byKey(const Key('open_unified_intake_btn')));
+        await _flush(tester);
+
+        final urlFieldFinder = find.byKey(const Key('intake_url_field'));
+        final submitBtnFinder = find.byKey(
+          const Key('intake_primary_submit_btn'),
+        );
+        final editUrlBtnFinder = find.byKey(
+          const Key('intake_recovery_edit_url_btn'),
+        );
+        final retryBtnFinder = find.byKey(
+          const Key('intake_recovery_retry_btn'),
+        );
+
+        // 1) SSRF-blocked loopback host: no Retry fetch; Edit URL / Paste / Document offered
+        await tester.enterText(urlFieldFinder, 'http://127.0.0.1/privacy');
+        await _tapVisible(tester, submitBtnFinder);
+        await _flush(tester);
+
+        expect(find.byKey(const Key('intake_error_banner')), findsOneWidget);
+        expect(retryBtnFinder, findsNothing);
+        expect(editUrlBtnFinder, findsOneWidget);
+        expect(find.byKey(const Key('intake_recovery_paste_btn')), findsOneWidget);
+        expect(find.byKey(const Key('intake_recovery_doc_btn')), findsOneWidget);
+        expect(
+          tester.getSize(editUrlBtnFinder).height,
+          greaterThanOrEqualTo(48.0),
+        );
+
+        // Tapping Edit URL focuses and selects the URL field so user can replace it
+        final urlFieldWidget = tester.widget<TextField>(urlFieldFinder);
+        urlFieldWidget.focusNode!.unfocus();
+        await tester.pump();
+        expect(urlFieldWidget.focusNode!.hasFocus, isFalse);
+
+        await _tapVisible(tester, editUrlBtnFinder);
+        await tester.pump();
+        expect(urlFieldWidget.focusNode!.hasFocus, isTrue);
+        expect(urlFieldWidget.controller!.text, 'http://127.0.0.1/privacy');
+        expect(
+          urlFieldWidget.controller!.selection,
+          const TextSelection(baseOffset: 0, extentOffset: 24),
+        );
+
+        // 2) Invalid URL: no Retry fetch; Edit URL / Paste / Document offered
+        await tester.enterText(urlFieldFinder, 'ftp://example.org/privacy');
+        await _tapVisible(tester, submitBtnFinder);
+        await _flush(tester);
+
+        expect(find.byKey(const Key('intake_error_banner')), findsOneWidget);
+        expect(retryBtnFinder, findsNothing);
+        expect(editUrlBtnFinder, findsOneWidget);
+        expect(find.byKey(const Key('intake_recovery_paste_btn')), findsOneWidget);
+        expect(find.byKey(const Key('intake_recovery_doc_btn')), findsOneWidget);
+
+        // 3) Oversized URL: no Retry fetch; Edit URL / Paste / Document offered
+        await tester.enterText(urlFieldFinder, 'https://example.org/huge');
+        await _tapVisible(tester, submitBtnFinder);
+        await _flush(tester);
+
+        expect(find.byKey(const Key('intake_error_banner')), findsOneWidget);
+        expect(retryBtnFinder, findsNothing);
+        expect(editUrlBtnFinder, findsOneWidget);
+
+        // 4) Transient network error: Retry fetch IS offered (no Edit URL replacement)
+        await tester.enterText(
+          urlFieldFinder,
+          'https://example.org/network-error',
+        );
+        await _tapVisible(tester, submitBtnFinder);
+        await _flush(tester);
+
+        expect(networkAttempts, 1);
+        expect(find.byKey(const Key('intake_error_banner')), findsOneWidget);
+        expect(retryBtnFinder, findsOneWidget);
+        expect(editUrlBtnFinder, findsNothing);
+
+        // 5) Transient timeout: Retry fetch IS offered and succeeds on retry
+        await tester.enterText(
+          urlFieldFinder,
+          'https://example.org/flaky-timeout',
+        );
+        await _tapVisible(tester, submitBtnFinder);
+        await _flush(tester);
+
+        expect(find.byKey(const Key('intake_error_banner')), findsOneWidget);
+        expect(retryBtnFinder, findsOneWidget);
+        expect(editUrlBtnFinder, findsNothing);
+
+        await _tapVisible(tester, retryBtnFinder);
+        await _flush(tester);
+
+        expect(timeoutAttempts, 2);
+        expect(outcome, isNotNull);
+        expect(
+          outcome!.capturedSnapshot.sourceLabel,
+          'https://example.org/flaky-timeout',
+        );
       },
     );
 
@@ -992,12 +1142,12 @@ void main() {
         await tester.tap(find.byKey(const Key('intake_select_app_btn')));
         await _flush(tester);
         expect(find.text('Alpha Notes'), findsOneWidget);
-        expect(find.text('com.alpha.notes'), findsOneWidget);
+        expect(find.text('App ID: com.alpha.notes'), findsOneWidget);
 
         await tester.tap(find.byKey(const Key('intake_change_app_btn')));
         await _flush(tester);
         expect(find.text('Focus Reader'), findsOneWidget);
-        expect(find.text('com.alpha.notes'), findsNothing);
+        expect(find.text('App ID: com.alpha.notes'), findsNothing);
 
         await tester.tap(find.byKey(const Key('intake_remove_app_btn')));
         await _flush(tester);
@@ -1228,7 +1378,7 @@ void main() {
           find.byKey(const Key('intake_association_change_app_btn')),
         );
         await _flush(tester);
-        expect(find.text('org.example.focusreader'), findsOneWidget);
+        expect(find.text('App ID: org.example.focusreader'), findsOneWidget);
         expect(
           find.byKey(const Key('intake_association_warning_card')),
           findsNothing,
@@ -1358,7 +1508,7 @@ void main() {
           findsOneWidget,
         );
         expect(find.text('Classroom Companion'), findsOneWidget);
-        expect(find.text('com.school.classroom'), findsOneWidget);
+        expect(find.text('App ID: com.school.classroom'), findsOneWidget);
         expect(find.byKey(const Key('intake_title_field')), findsNothing);
         expect(find.byKey(const Key('intake_select_app_btn')), findsNothing);
         expect(find.byKey(const Key('intake_play_store_btn')), findsNothing);
@@ -1458,7 +1608,7 @@ void main() {
           'https://failed.example.org/privacy',
         );
         expect(find.text('Classroom Companion'), findsOneWidget);
-        expect(find.text('com.school.classroom'), findsOneWidget);
+        expect(find.text('App ID: com.school.classroom'), findsOneWidget);
         expect(find.byKey(const Key('intake_error_banner')), findsOneWidget);
         expect(find.text('Temporary network failure.'), findsOneWidget);
 
@@ -1540,7 +1690,7 @@ void main() {
           find.byKey(const Key('intake_selected_app_card')),
           findsOneWidget,
         );
-        expect(find.text('com.unlocked.reader'), findsOneWidget);
+        expect(find.text('App ID: com.unlocked.reader'), findsOneWidget);
         expect(find.byKey(const Key('intake_error_banner')), findsOneWidget);
         expect(find.text('The link returned HTTP 404.'), findsOneWidget);
       },
@@ -1689,7 +1839,9 @@ void main() {
           TextDirection.rtl,
         );
         expect(
-          Directionality.of(tester.element(find.text('com.rtl.sampleapp'))),
+          Directionality.of(
+            tester.element(find.textContaining('com.rtl.sampleapp')),
+          ),
           TextDirection.ltr,
         );
         expect(

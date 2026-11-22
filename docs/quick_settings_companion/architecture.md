@@ -35,7 +35,7 @@ flowchart TD
    - Uses `startActivityAndCollapse(PendingIntent)` with `PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE` on Android 14+ (API 34+), retaining `@Suppress("DEPRECATION") startActivityAndCollapse(Intent)` for Android 8–13 (`minSdk = 26`).
 
 2. **[CompanionContract.kt](../../android/app/src/main/kotlin/com/example/enprive/CompanionContract.kt)**:
-   - Explicit action `com.example.enprive.action.OPEN_COMPANION` with `INVOCATION_SOURCE`, `INVOCATION_TIMESTAMP_MS`, and UUID `INVOCATION_ID`. Never passes any fabricated package name in intent extras.
+   - Explicit action `com.mitechdlin.enprive.action.OPEN_COMPANION` with `INVOCATION_SOURCE`, `INVOCATION_TIMESTAMP_MS`, and UUID `INVOCATION_ID`. Never passes any fabricated package name in intent extras.
    - `InvocationTracker` (synchronized bounded LRU set of max 64 IDs) guarantees repeated delivery or Activity restarts never replay an already-consumed tile tap.
    - `QuickSettingsTileStateStore` persists local tile installation/decline flags so Enprive does not nag users who dismissed `StatusBarManager.requestAddTileService`.
    - Strict package name regex validator (`^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)+$`).
@@ -43,7 +43,7 @@ flowchart TD
 3. **[ForegroundAppResolver.kt](../../android/app/src/main/kotlin/com/example/enprive/ForegroundAppResolver.kt)**:
    - Performs strictly one-time `UsageStatsManager.queryEvents()` lookup when requested on `Dispatchers.IO`.
    - Configurable windows: `DEFAULT_CANDIDATE_WINDOW_MS = 30_000L`, `DEFAULT_STALE_CUTOFF_MS = 120_000L`, `DEFAULT_AMBIGUITY_TIE_WINDOW_MS = 8_000L`.
-   - Excludes `com.example.enprive` and filters strictly transient interaction shells (`com.android.systemui`, permission controllers, package installers, resolver, and active home launchers) without discarding legitimate preinstalled user apps (Chrome, Maps, etc.).
+   - Excludes Enprive's own package (`com.mitechdlin.enprive`, resolved dynamically via `context.packageName`) and filters strictly transient interaction shells (`com.android.systemui`, permission controllers, package installers, resolver, and active home launchers) without discarding legitimate preinstalled user apps (Chrome, Maps, etc.).
    - Distinguishes all 7 explicit resolution statuses (`identified`, `ambiguous`, `stale`, `usageAccessDenied`, `noRecentApplication`, `packageNotVisible`, `resolutionFailed`).
 
 4. **[AppPackageInspector.kt](../../android/app/src/main/kotlin/com/example/enprive/AppPackageInspector.kt)**:

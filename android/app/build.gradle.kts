@@ -18,24 +18,14 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.enprive"
+        // Production Android application ID (independent of Kotlin namespace = "com.example.enprive").
+        applicationId = "com.mitechdlin.enprive"
         // Min SDK 26 is required for Firebase AI Logic on-device (Gemini Nano)
         minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        val localPropsFile = rootProject.file("local.properties")
-        val localProps = Properties()
-        if (localPropsFile.exists()) {
-            localPropsFile.inputStream().use { stream ->
-                localProps.load(stream)
-            }
-        }
-        val appCheckDebugToken = localProps.getProperty("APP_CHECK_DEBUG_TOKEN") ?: ""
-        manifestPlaceholders["firebaseAppCheckDebugSecret"] = appCheckDebugToken
     }
 
     val keystorePropsFile = rootProject.file("key.properties")
@@ -137,10 +127,10 @@ flutter {
 }
 
 dependencies {
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
-    implementation("com.google.firebase:firebase-ai:18.2.0")
+    implementation(platform("com.google.firebase:firebase-bom:35.2.0"))
+    implementation("com.google.firebase:firebase-ai")
     implementation("com.google.firebase:firebase-ai-ondevice:16.0.0-beta08")
-    implementation("com.google.firebase:firebase-appcheck-debug")
+    debugImplementation("com.google.firebase:firebase-appcheck-debug")
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")

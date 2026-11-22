@@ -168,7 +168,7 @@ void main() {
       await _flushPickerAsync(tester);
 
       expect(find.text('Field Notebook'), findsOneWidget);
-      expect(find.text('com.example.notebook'), findsOneWidget);
+      expect(find.text('App ID: com.example.notebook'), findsOneWidget);
       expect(find.text('EduTrack'), findsNothing);
       expect(find.text('CalmMath'), findsNothing);
       expect(find.text('Try a sample kids app'), findsNothing);
@@ -295,7 +295,7 @@ void main() {
         await _flushPickerAsync(tester);
 
         expect(find.text('App 120'), findsOneWidget);
-        expect(find.text('com.example.app120'), findsOneWidget);
+        expect(find.text('App ID: com.example.app120'), findsOneWidget);
 
         // Search bar remains pinned at the same vertical position while scrolling.
         final searchBarAfterScroll = tester.getTopLeft(
@@ -617,7 +617,7 @@ void main() {
         expect(
           find.descendant(
             of: permRow,
-            matching: find.text('Permissions inspected'),
+            matching: find.text('Permissions checked'),
           ),
           findsOneWidget,
         );
@@ -709,8 +709,8 @@ void main() {
         await _flushPickerAsync(tester);
 
         expect(find.text('Focus Reader'), findsNWidgets(2));
-        expect(find.text('com.alpha.focusreader'), findsOneWidget);
-        expect(find.text('com.beta.focusreader'), findsOneWidget);
+        expect(find.text('App ID: com.alpha.focusreader'), findsOneWidget);
+        expect(find.text('App ID: com.beta.focusreader'), findsOneWidget);
 
         await tester.tap(
           find.byKey(const ValueKey('app_picker_row_com.beta.focusreader')),
@@ -845,7 +845,7 @@ void main() {
         await _flushPickerAsync(tester);
 
         expect(find.text('تطبيق القراءة للأطفال'), findsOneWidget);
-        expect(find.text('com.example.arabickids'), findsOneWidget);
+        expect(find.textContaining('com.example.arabickids'), findsOneWidget);
         expect(find.byIcon(LucideIcons.chevronLeft), findsOneWidget);
         expect(find.byIcon(LucideIcons.chevronRight), findsNothing);
         expect(tester.takeException(), isNull);
@@ -908,7 +908,7 @@ void main() {
           final pkgText = tester.widget<Text>(
             find.descendant(
               of: rowFinder,
-              matching: find.text('com.example.contrast'),
+              matching: find.text('App ID: com.example.contrast'),
             ),
           );
           expect(
@@ -1079,10 +1079,10 @@ void main() {
         await _flushPickerAsync(tester);
 
         const expected = <String, String>{
-          'com.example.insufficient': 'Permissions inspected',
+          'com.example.insufficient': 'Permissions checked',
           'com.example.validated': 'Policy review saved',
           'com.example.fallback': 'Policy review saved',
-          'com.example.permonly': 'Permissions inspected',
+          'com.example.permonly': 'Permissions checked',
           'com.example.none': 'Not reviewed',
         };
         final scrollable = find
@@ -1288,7 +1288,7 @@ void main() {
         final data = rowNode.getSemanticsData();
         expect(
           data.label,
-          'Talkback Notes, com.example.talkback, ${l10n.appPickerStatusNotReviewed}',
+          'Talkback Notes, App ID: com.example.talkback, ${l10n.appPickerStatusNotReviewed}',
         );
         expect(data.label.contains('\n'), isFalse);
         expect(data.flagsCollection.isButton, isTrue);
@@ -1350,6 +1350,306 @@ void main() {
         expect(data.label.contains('\n'), isFalse);
         expect(data.flagsCollection.isButton, isTrue);
         expect(data.hasAction(ui.SemanticsAction.tap), isTrue);
+        expect(tester.takeException(), isNull);
+        handle.dispose();
+      },
+    );
+  });
+
+  group('Step C / Defect 4: Picker search clear button accessibility', () {
+    testWidgets(
+      '29. hides clear control when empty, exposes a labeled actionable clear button without leaking Clear into the search field when non-empty, and clears query while keeping filters intact',
+      (WidgetTester tester) async {
+        final handle = tester.ensureSemantics();
+        var listCalls = 0;
+        messenger.setMockMethodCallHandler(hybridChannel, (call) async {
+          if (call.method == 'listLaunchableApps') {
+            listCalls++;
+            return <Map<String, Object?>>[
+              {
+                'packageName': 'org.example.sketchpad',
+                'appName': 'Sketch Pad',
+                'isSystemApp': false,
+              },
+              {
+                'packageName': 'com.vendor.clockworks',
+                'appName': 'World Clock',
+                'isSystemApp': true,
+              },
+              {
+                'packageName': 'com.vendor.camera',
+                'appName': 'System Camera',
+                'isSystemApp': true,
+              },
+            ];
+          }
+          return null;
+        });
+
+        await tester.pumpWidget(_buildHarness(bridge: HybridAiBridge()));
+        await _flushPickerAsync(tester);
+
+        final l10n = lookupAppLocalizations(const Locale('en'));
+        final searchBarFinder = find.byKey(const Key('app_picker_search_bar'));
+        final clearBtnFinder = find.byKey(
+          const Key('app_picker_clear_search_btn'),
+        );
+
+        // Empty query: no clear button inside the search bar
+        expect(clearBtnFinder, findsNothing);
+        expect(
+          find.descendant(
+            of: searchBarFinder,
+            matching: find.byType(IconButton),
+          ),
+          findsNothing,
+        );
+        expect(
+          find.descendant(
+            of: searchBarFinder,
+            matching: find.byType(M3EIconButton),
+          ),
+          findsNothing,
+        );
+
+        // Enter a search query
+        await tester.enterText(find.byType(EditableText), 'sketch');
+        await tester.pump();
+
+        expect(find.text('Sketch Pad'), findsOneWidget);
+        expect(find.text('World Clock'), findsNothing);
+
+        // Package M3EIconButton must not be used (its semantics split label from action)
+        expect(
+          find.descendant(
+            of: searchBarFinder,
+            matching: find.byType(M3EIconButton),
+          ),
+          findsNothing,
+        );
+        expect(clearBtnFinder, findsOneWidget);
+        expect(
+          find.descendant(
+            of: searchBarFinder,
+            matching: find.byType(IconButton),
+          ),
+          findsOneWidget,
+        );
+
+        // >= 48dp hit target
+        final clearSize = tester.getSize(clearBtnFinder);
+        expect(clearSize.width, greaterThanOrEqualTo(48.0));
+        expect(clearSize.height, greaterThanOrEqualTo(48.0));
+
+        // Inspect semantics across the sheet: search field stays coherent and
+        // never leaks "Clear", and no unlabeled button node exists.
+        final allNodes = _collectSemanticsNodes(tester);
+        final textFieldNodes = allNodes
+            .where((n) => n.getSemanticsData().flagsCollection.isTextField)
+            .toList();
+        expect(textFieldNodes, isNotEmpty);
+        for (final fieldNode in textFieldNodes) {
+          final fieldData = fieldNode.getSemanticsData();
+          expect(
+            fieldData.label,
+            isNot(contains('Clear')),
+            reason:
+                'Search field semantics label must not leak Clear. Got: "${fieldData.label}"',
+          );
+          expect(
+            fieldData.tooltip,
+            isNot(contains('Clear')),
+            reason:
+                'Search field tooltip must not leak Clear. Got: "${fieldData.tooltip}"',
+          );
+        }
+        expect(
+          textFieldNodes.any(
+            (n) => n.getSemanticsData().label == l10n.appPickerSearchHint,
+          ),
+          isTrue,
+          reason:
+              'Expected parent search field semantics node to carry exact hint label "${l10n.appPickerSearchHint}".',
+        );
+
+        // Every actionable button node in the sheet carries an accessible name.
+        for (final node in allNodes) {
+          final d = node.getSemanticsData();
+          if (d.flagsCollection.isButton &&
+              !d.flagsCollection.isTextField &&
+              d.hasAction(ui.SemanticsAction.tap)) {
+            expect(
+              d.label.isNotEmpty || d.tooltip.isNotEmpty,
+              isTrue,
+              reason: 'Found unlabeled actionable button node: $node',
+            );
+          }
+        }
+
+        // The actionable clear button node itself carries the localized name,
+        // button role, tap action, and focusability.
+        final clearNode = tester.getSemantics(clearBtnFinder);
+        final clearData = clearNode.getSemanticsData();
+        expect(clearData.flagsCollection.isButton, isTrue);
+        expect(clearData.hasAction(ui.SemanticsAction.tap), isTrue);
+        expect(
+          clearData.flagsCollection.isFocused,
+          isNot(ui.Tristate.none),
+          reason: 'Clear button must be focusable.',
+        );
+        final clearAccessibleName = clearData.label.isNotEmpty
+            ? clearData.label
+            : clearData.tooltip;
+        expect(clearAccessibleName, l10n.tooltipClearSearch);
+
+        // Localized clear label is announced exactly once across the tree.
+        final allClearMentions = allNodes.fold<int>(0, (sum, n) {
+          final d = n.getSemanticsData();
+          return sum +
+              l10n.tooltipClearSearch.allMatches(d.label).length +
+              l10n.tooltipClearSearch.allMatches(d.tooltip).length;
+        });
+        expect(
+          allClearMentions,
+          1,
+          reason:
+              'Clear label "${l10n.tooltipClearSearch}" must be announced exactly once.',
+        );
+
+        // Activate via SemanticsAction.tap and verify controller + list restore
+        final semanticsOwner = tester
+            .renderObject(searchBarFinder)
+            .owner!
+            .semanticsOwner!;
+        semanticsOwner.performAction(clearNode.id, ui.SemanticsAction.tap);
+        await tester.pump();
+
+        final editable = tester.widget<EditableText>(find.byType(EditableText));
+        expect(editable.controller.text, isEmpty);
+        expect(find.text('Sketch Pad'), findsOneWidget);
+        expect(find.text('World Clock'), findsOneWidget);
+        expect(find.text('System Camera'), findsOneWidget);
+        expect(clearBtnFinder, findsNothing);
+
+        // Filtering stays intact when combining filter chip + search + pointer tap
+        await tester.tap(find.byKey(const Key('app_picker_filter_system')));
+        await tester.pump();
+        expect(find.text('Sketch Pad'), findsNothing);
+        expect(find.text('World Clock'), findsOneWidget);
+        expect(find.text('System Camera'), findsOneWidget);
+
+        await tester.enterText(find.byType(EditableText), 'camera');
+        await tester.pump();
+        expect(find.text('System Camera'), findsOneWidget);
+        expect(find.text('World Clock'), findsNothing);
+        expect(clearBtnFinder, findsOneWidget);
+
+        await tester.tap(clearBtnFinder);
+        await tester.pump();
+        expect(editable.controller.text, isEmpty);
+        expect(clearBtnFinder, findsNothing);
+        expect(find.text('System Camera'), findsOneWidget);
+        expect(find.text('World Clock'), findsOneWidget);
+        expect(find.text('Sketch Pad'), findsNothing);
+        expect(listCalls, 1);
+        expect(tester.takeException(), isNull);
+        handle.dispose();
+      },
+    );
+
+    testWidgets(
+      '30. search clear button remains accessible and >= 48dp under Arabic RTL and 200% text scaling',
+      (WidgetTester tester) async {
+        final handle = tester.ensureSemantics();
+        messenger.setMockMethodCallHandler(hybridChannel, (call) async {
+          if (call.method == 'listLaunchableApps') {
+            return <Map<String, Object?>>[
+              {
+                'packageName': 'com.example.arabickids',
+                'appName': 'تطبيق القراءة للأطفال',
+                'isSystemApp': false,
+              },
+              {
+                'packageName': 'com.example.mathkids',
+                'appName': 'تطبيق الحساب',
+                'isSystemApp': false,
+              },
+            ];
+          }
+          return null;
+        });
+
+        tester.view.physicalSize = const Size(360, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        await tester.pumpWidget(
+          _buildHarness(
+            bridge: HybridAiBridge(),
+            locale: const Locale('ar'),
+            textScale: 2.0,
+          ),
+        );
+        await _flushPickerAsync(tester);
+
+        final l10nAr = lookupAppLocalizations(const Locale('ar'));
+        final searchBarFinder = find.byKey(const Key('app_picker_search_bar'));
+        final clearBtnFinder = find.byKey(
+          const Key('app_picker_clear_search_btn'),
+        );
+        expect(clearBtnFinder, findsNothing);
+
+        await tester.enterText(find.byType(EditableText), 'الحساب');
+        await tester.pump();
+
+        expect(find.text('تطبيق الحساب'), findsOneWidget);
+        expect(find.text('تطبيق القراءة للأطفال'), findsNothing);
+        expect(clearBtnFinder, findsOneWidget);
+
+        final clearSize = tester.getSize(clearBtnFinder);
+        expect(clearSize.width, greaterThanOrEqualTo(48.0));
+        expect(clearSize.height, greaterThanOrEqualTo(48.0));
+
+        // Verify RTL placement: trailing clear button sits on the left half
+        final barRect = tester.getRect(searchBarFinder);
+        final clearRect = tester.getRect(clearBtnFinder);
+        expect(clearRect.center.dx, lessThan(barRect.center.dx));
+
+        final allNodes = _collectSemanticsNodes(tester);
+        for (final node in allNodes) {
+          final d = node.getSemanticsData();
+          if (d.flagsCollection.isTextField) {
+            expect(d.label, isNot(contains('Clear')));
+          }
+        }
+        final clearNode = tester.getSemantics(clearBtnFinder);
+        final clearData = clearNode.getSemanticsData();
+        expect(clearData.flagsCollection.isButton, isTrue);
+        expect(clearData.hasAction(ui.SemanticsAction.tap), isTrue);
+        expect(clearData.flagsCollection.isFocused, isNot(ui.Tristate.none));
+        final clearName = clearData.label.isNotEmpty
+            ? clearData.label
+            : clearData.tooltip;
+        expect(clearName, l10nAr.tooltipClearSearch);
+
+        await tester.tap(clearBtnFinder);
+        await tester.pump();
+
+        expect(
+          tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+          isEmpty,
+        );
+        expect(clearBtnFinder, findsNothing);
+        expect(find.text('تطبيق القراءة للأطفال'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.text('تطبيق الحساب'),
+          200,
+          scrollable: find.descendant(
+            of: find.byType(CustomScrollView),
+            matching: find.byType(Scrollable),
+          ),
+        );
+        expect(find.text('تطبيق الحساب'), findsOneWidget);
         expect(tester.takeException(), isNull);
         handle.dispose();
       },

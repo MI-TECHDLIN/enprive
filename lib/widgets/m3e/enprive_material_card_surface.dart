@@ -7,32 +7,35 @@ import '../../core/theme/enprive_theme.dart';
 
 /// Material 3 Expressive surface roles supported by [EnpriveMaterialCardSurface].
 enum EnpriveCardVariant {
-  /// Crisp primary surface with strong tactile lip (e.g. actionable cards, companion cards).
+  /// Everyday card on the page canvas (`surfaceContainer`).
   elevated,
 
-  /// High-chroma/tonal container fill (e.g. stat tiles, telemetry bento blocks).
+  /// Tonal well one step stronger (`surfaceContainerHigh`), e.g. stat tiles.
   tonal,
 
-  /// Warm archival paper / obsidian slate well for policy quotes and evidence receipts.
+  /// Quiet paper well for policy quotes and evidence receipts.
   archival,
 
-  /// Low-glare outline container for secondary specs and read-only detail rows.
+  /// Quietest step (`surfaceContainerLow`) for secondary, read-only rows.
   outlined,
 
-  /// Selected state surface using dual cues (2dp primary border + container tint + tighter corner radius).
+  /// Selected state: `secondaryContainer` fill plus a tighter corner; pair it
+  /// with a check icon in the child so selection never relies on color alone.
   selected,
 }
 
-/// Core tactile Material 3 Expressive card foundation for Enprive.
+/// Core Material 3 Expressive card foundation for Enprive.
 ///
-/// Merges real [M3ECard] interaction state layers, focus/hover handling, and
-/// accessibility semantics with Enprive's signature [EnpriveTactileButton]
-/// physical construction:
-/// - Crisp `1.5dp` (`2.0dp` when selected) Material border
-/// - Grounded solid `0dp`-blur bottom lip (`lipHeight`) in matching/harmonized stone or dark slate
-/// - Zero-layout-jump press depression (`topMargin + currentLip == lipHeight`)
-/// - M3E spatial corner-radius morphing (`24dp` -> `18dp` on press)
-/// - Full `disableAnimations` / reduced-motion compliance
+/// Wraps a real [M3ECard] (state layers, focus ring, hover, haptics and
+/// semantics) in a tonal face:
+/// - no outline and no shadow: depth comes from `surfaceContainer*` steps;
+/// - the fill is chosen per [variant] unless [backgroundColor] is given;
+/// - interactive cards morph their corners slightly tighter while pressed,
+///   on the fast spatial spring, and stay still under reduced motion.
+///
+/// [lipHeight], [lipColor], [borderColor], [borderWidth] and [accentColor]
+/// are kept for source compatibility with existing call sites and have no
+/// visual effect in the tonal skin.
 class EnpriveMaterialCardSurface extends StatefulWidget {
   final Widget child;
   final EnpriveCardVariant variant;
@@ -63,11 +66,13 @@ class EnpriveMaterialCardSurface extends StatefulWidget {
     this.borderColor,
     this.lipColor,
     this.accentColor,
-    this.borderRadius = const BorderRadius.all(Radius.circular(24)),
+    this.borderRadius = const BorderRadius.all(
+      Radius.circular(EnpriveRadii.card),
+    ),
     this.pressedBorderRadius,
     this.lipHeight,
     this.borderWidth,
-    this.padding = const EdgeInsets.all(18),
+    this.padding = const EdgeInsets.all(16),
     this.margin,
     this.selected = false,
     this.enabled = true,
@@ -75,68 +80,22 @@ class EnpriveMaterialCardSurface extends StatefulWidget {
     this.haptic = M3EHapticFeedback.light,
   });
 
-  /// Resolves a harmonized bottom tactile lip color matching the surface tone.
-  static Color resolveLipColor(
-    BuildContext context,
-    Color faceColor, {
-    Color? accentColor,
-    bool selected = false,
-  }) {
-    final surfaces = context.enpriveSurfaces;
-    final scheme = EnpriveM3ETheme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    if (selected) {
-      final keyAccent = accentColor ?? scheme.primary;
-      return Color.lerp(
-        keyAccent,
-        surfaces.tactileSecondaryLip,
-        isDark ? 0.55 : 0.28,
-      )!;
-    }
-
-    if (faceColor == surfaces.card ||
-        faceColor == surfaces.cardElevated ||
-        faceColor == surfaces.tactileSecondaryBg) {
-      return surfaces.tactileSecondaryLip;
-    }
-
-    return Color.lerp(
-      faceColor,
-      isDark ? surfaces.tactileSecondaryLip : surfaces.strongBorder,
-      isDark ? 0.72 : 0.44,
-    )!;
-  }
-
-  /// Resolves the resting Material border color matching card variant and selection.
-  static Color resolveBorderColor(
+  /// The tonal fill for [variant] (or the selected fill) in the current theme.
+  static Color resolveFaceColor(
     BuildContext context, {
     required EnpriveCardVariant variant,
-    required Color faceColor,
-    Color? borderColor,
-    Color? accentColor,
     bool selected = false,
   }) {
-    if (borderColor != null) return borderColor;
-    final surfaces = context.enpriveSurfaces;
     final scheme = EnpriveM3ETheme.of(context).colorScheme;
-
     if (selected || variant == EnpriveCardVariant.selected) {
-      return accentColor ?? scheme.primary;
+      return scheme.secondaryContainer;
     }
-
     return switch (variant) {
-      EnpriveCardVariant.elevated => surfaces.tactileSecondaryBorder,
-      EnpriveCardVariant.tonal => Color.lerp(
-        faceColor,
-        surfaces.strongBorder,
-        0.55,
-      )!,
-      EnpriveCardVariant.archival => surfaces.strongBorder.withValues(
-        alpha: 0.72,
-      ),
-      EnpriveCardVariant.outlined => surfaces.strongBorder,
-      EnpriveCardVariant.selected => accentColor ?? scheme.primary,
+      EnpriveCardVariant.elevated => scheme.surfaceContainer,
+      EnpriveCardVariant.tonal => scheme.surfaceContainerHigh,
+      EnpriveCardVariant.archival => context.enpriveSurfaces.quoteSurface,
+      EnpriveCardVariant.outlined => scheme.surfaceContainerLow,
+      EnpriveCardVariant.selected => scheme.secondaryContainer,
     };
   }
 
@@ -148,11 +107,10 @@ class EnpriveMaterialCardSurface extends StatefulWidget {
 class _EnpriveMaterialCardSurfaceState
     extends State<EnpriveMaterialCardSurface> {
   bool _isPressed = false;
-  bool _isHovered = false;
-  bool _isFocused = false;
 
   bool get _isInteractive =>
-      widget.enabled && (widget.onPressed != null || widget.onLongPress != null);
+      widget.enabled &&
+      (widget.onPressed != null || widget.onLongPress != null);
 
   void _setPressed(bool value) {
     if (_isPressed == value || !mounted) return;
@@ -162,8 +120,8 @@ class _EnpriveMaterialCardSurfaceState
   BorderRadius _tightenRadius(BorderRadius base) {
     if (widget.pressedBorderRadius != null) return widget.pressedBorderRadius!;
     Radius shrink(Radius r) {
-      if (r.x <= 8) return Radius.circular(math.max(4.0, r.x - 1.5));
-      return Radius.circular(math.max(12.0, r.x - 5.0));
+      if (r.x <= 8) return r;
+      return Radius.circular(math.max(12.0, r.x - 6.0));
     }
 
     return BorderRadius.only(
@@ -174,89 +132,30 @@ class _EnpriveMaterialCardSurfaceState
     );
   }
 
-  BorderRadius _insetRadius(BorderRadius base, double inset) {
-    Radius insetCorner(Radius r) => Radius.circular(math.max(0.0, r.x - inset));
-    return BorderRadius.only(
-      topLeft: insetCorner(base.topLeft),
-      topRight: insetCorner(base.topRight),
-      bottomLeft: insetCorner(base.bottomLeft),
-      bottomRight: insetCorner(base.bottomRight),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final surfaces = context.enpriveSurfaces;
     final motion = context.enpriveMotion;
     final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
     final effectiveSelected =
         widget.selected || widget.variant == EnpriveCardVariant.selected;
-
-    final Color defaultFace = switch (widget.variant) {
-      EnpriveCardVariant.elevated => surfaces.card,
-      EnpriveCardVariant.tonal => surfaces.cardMuted,
-      EnpriveCardVariant.archival => surfaces.quoteSurface,
-      EnpriveCardVariant.outlined => surfaces.canvas,
-      EnpriveCardVariant.selected => scheme.primaryContainer,
-    };
-    final Color faceColor = widget.backgroundColor ?? defaultFace;
-
-    final double restingLip =
-        widget.lipHeight ??
-        (effectiveSelected
-            ? 3.5
-            : (_isInteractive
-                  ? 3.5
-                  : (widget.variant == EnpriveCardVariant.outlined
-                        ? 1.5
-                        : 2.5)));
-
-    final double effectiveBorderWidth =
-        widget.borderWidth ?? (effectiveSelected ? 2.0 : 1.5);
-
-    final Color resolvedBorder = EnpriveMaterialCardSurface.resolveBorderColor(
-      context,
-      variant: widget.variant,
-      faceColor: faceColor,
-      borderColor: widget.borderColor,
-      accentColor: widget.accentColor,
-      selected: effectiveSelected,
-    );
-
-    final Color hoveredBorder =
-        (_isHovered || _isFocused) && !effectiveSelected && _isInteractive
-        ? Color.lerp(resolvedBorder, scheme.primary, 0.45)!
-        : resolvedBorder;
-
-    final Color resolvedLip =
-        widget.lipColor ??
-        EnpriveMaterialCardSurface.resolveLipColor(
+    final Color faceColor =
+        widget.backgroundColor ??
+        EnpriveMaterialCardSurface.resolveFaceColor(
           context,
-          faceColor,
-          accentColor: widget.accentColor,
+          variant: widget.variant,
           selected: effectiveSelected,
         );
 
-    final bool depressed = _isInteractive && _isPressed && !reduceMotion;
-    final double topOffset = depressed ? restingLip : 0.0;
-    final double currentLip = depressed ? 0.0 : restingLip;
-
-    final BorderRadius activeRadius = depressed
+    final bool morph =
+        !reduceMotion && ((_isInteractive && _isPressed) || effectiveSelected);
+    final BorderRadius activeRadius = morph
         ? _tightenRadius(widget.borderRadius)
         : widget.borderRadius;
-    final BorderRadius innerRadius = _insetRadius(
-      activeRadius,
-      effectiveBorderWidth,
-    );
 
     final Duration animDuration = reduceMotion
         ? Duration.zero
-        : (_isPressed
-              ? const Duration(milliseconds: 90)
-              : motion.spatialFast);
+        : motion.spatialFast;
     final Curve animCurve = reduceMotion
         ? Curves.linear
         : motion.emphasizedCurve;
@@ -265,8 +164,9 @@ class _EnpriveMaterialCardSurfaceState
       variant: M3ECardVariant.filled,
       color: faceColor,
       elevation: 0,
-      border: BorderSide.none,
-      borderRadius: innerRadius,
+      // No border argument: M3ECard turns any BorderSide (even
+      // BorderSide.none) into Border.all, which paints a 1px hairline.
+      borderRadius: activeRadius,
       padding: EdgeInsets.zero,
       enabled: widget.enabled,
       onPressed: _isInteractive ? widget.onPressed : null,
@@ -278,21 +178,7 @@ class _EnpriveMaterialCardSurfaceState
       trackHover: true,
       animationDuration: animDuration,
       animationCurve: animCurve,
-      onStateChanged: (states) {
-        final nextPressed = states.pressed;
-        final nextHovered = states.hovered;
-        final nextFocused = states.focused;
-        if (nextPressed != _isPressed ||
-            nextHovered != _isHovered ||
-            nextFocused != _isFocused) {
-          if (!mounted) return;
-          setState(() {
-            _isPressed = nextPressed;
-            _isHovered = nextHovered;
-            _isFocused = nextFocused;
-          });
-        }
-      },
+      onStateChanged: (states) => _setPressed(states.pressed),
       child: Padding(padding: widget.padding, child: widget.child),
     );
 
@@ -309,23 +195,7 @@ class _EnpriveMaterialCardSurfaceState
     Widget animatedShell = AnimatedContainer(
       duration: animDuration,
       curve: animCurve,
-      margin: EdgeInsets.only(top: topOffset, bottom: currentLip),
-      decoration: BoxDecoration(
-        color: faceColor,
-        borderRadius: activeRadius,
-        border: effectiveBorderWidth > 0
-            ? Border.all(color: hoveredBorder, width: effectiveBorderWidth)
-            : null,
-        boxShadow: currentLip > 0
-            ? [
-                BoxShadow(
-                  color: resolvedLip,
-                  offset: Offset(0, currentLip),
-                  blurRadius: 0,
-                ),
-              ]
-            : null,
-      ),
+      decoration: BoxDecoration(color: faceColor, borderRadius: activeRadius),
       clipBehavior: Clip.antiAlias,
       child: cardBody,
     );

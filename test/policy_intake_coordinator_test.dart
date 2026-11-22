@@ -235,16 +235,29 @@ void main() {
           if (host == 'private-dns.example.org') {
             return [InternetAddress('10.0.0.5')];
           }
+          if (host == 'offline.example.org') {
+            throw const SocketException('Simulated DNS failure');
+          }
           return [fakePublicIp];
         },
         maxResponseBytes: 128,
         clock: () => fixedClock,
         clientFactory: () => MockClient((request) async {
           switch (request.url.path) {
+            case '/redirect-loopback':
+              return http.Response(
+                '',
+                302,
+                headers: {'location': 'http://127.0.0.1/internal'},
+              );
             case '/notfound':
               return http.Response('Not Found', 404);
+            case '/unavailable':
+              return http.Response('Service Unavailable', 503);
             case '/timeout':
               throw TimeoutException('Simulated timeout');
+            case '/network':
+              throw const SocketException('Simulated connection reset');
             case '/huge':
               return http.Response(
                 'A' * 512,
@@ -273,32 +286,60 @@ void main() {
         clock: () => fixedClock,
       );
 
-      final cases = <(String, PolicyIntakeFailureKind)>[
-        ('http://127.0.0.1/privacy', PolicyIntakeFailureKind.unsafeDestination),
+      final cases = <(String, PolicyIntakeFailureKind, bool)>[
+        (
+          'http://127.0.0.1/privacy',
+          PolicyIntakeFailureKind.unsafeDestination,
+          false,
+        ),
         (
           'http://169.254.169.254/meta',
           PolicyIntakeFailureKind.unsafeDestination,
+          false,
         ),
         (
           'https://private-dns.example.org/p',
           PolicyIntakeFailureKind.unsafeDestination,
+          false,
         ),
-        ('ftp://example.org/privacy', PolicyIntakeFailureKind.invalidUrl),
-        ('not a url', PolicyIntakeFailureKind.invalidUrl),
-        ('https://example.org/notfound', PolicyIntakeFailureKind.httpError),
-        ('https://example.org/timeout', PolicyIntakeFailureKind.timeout),
-        ('https://example.org/huge', PolicyIntakeFailureKind.sizeExceeded),
+        (
+          'https://example.org/redirect-loopback',
+          PolicyIntakeFailureKind.unsafeDestination,
+          false,
+        ),
+        ('ftp://example.org/privacy', PolicyIntakeFailureKind.invalidUrl, false),
+        ('not a url', PolicyIntakeFailureKind.invalidUrl, false),
+        ('https://example.org/notfound', PolicyIntakeFailureKind.httpError, true),
+        (
+          'https://example.org/unavailable',
+          PolicyIntakeFailureKind.httpError,
+          true,
+        ),
+        ('https://example.org/timeout', PolicyIntakeFailureKind.timeout, true),
+        (
+          'https://example.org/network',
+          PolicyIntakeFailureKind.networkError,
+          true,
+        ),
+        (
+          'https://offline.example.org/privacy',
+          PolicyIntakeFailureKind.networkError,
+          true,
+        ),
+        ('https://example.org/huge', PolicyIntakeFailureKind.sizeExceeded, false),
         (
           'https://example.org/binary.pdf',
           PolicyIntakeFailureKind.unsupportedContentType,
+          false,
         ),
         (
           'https://example.org/challenge',
           PolicyIntakeFailureKind.emptyOrErrorPage,
+          true,
         ),
       ];
 
-      for (final (url, expectedKind) in cases) {
+      for (final (url, expectedKind, expectedCanRetry) in cases) {
         final locator = UrlPolicyLocator(
           rawUrl: url,
           userSubjectTitle: 'Kept Title',
@@ -310,7 +351,30 @@ void main() {
         expect((failure.locator as UrlPolicyLocator).rawUrl, url);
         expect(failure.locator.userSubjectTitle, 'Kept Title');
         expect(failure.failedSourceSnapshot, isNotNull, reason: url);
-        expect(failure.canRetrySameLocator, isTrue);
+        expect(
+          failure.canRetrySameLocator,
+          expectedCanRetry,
+          reason: '$url ($expectedKind)',
+        );
+        if (!expectedCanRetry &&
+            (expectedKind == PolicyIntakeFailureKind.unsafeDestination ||
+                expectedKind == PolicyIntakeFailureKind.invalidUrl)) {
+          expect(
+            failure.recoveryHint.toLowerCase(),
+            contains('edit'),
+            reason: '$url should guide the user to edit the URL',
+          );
+          expect(
+            failure.recoveryHint.toLowerCase(),
+            contains('paste'),
+            reason: '$url should guide the user to paste text',
+          );
+          expect(
+            failure.recoveryHint.toLowerCase(),
+            contains('import'),
+            reason: '$url should guide the user to import a document',
+          );
+        }
       }
     });
 
@@ -345,6 +409,7 @@ void main() {
       final outcome = await pending;
       expect(outcome, isA<PolicyIntakeFailure>());
       expect(outcome.isCancelled, isTrue);
+      expect((outcome as PolicyIntakeFailure).canRetrySameLocator, isTrue);
       expect((outcome.locator as UrlPolicyLocator).rawUrl, urlLocator.rawUrl);
       expect(outcome.locator.userSubjectTitle, 'Slow Site');
 
@@ -730,6 +795,91 @@ void main() {
       expect(hydrated.permissionSnapshot!.requestedPermissions, const [
         'android.permission.CAMERA',
       ]);
+    });
+
+    test('classifyIncomingPayloadLocator classifies URL, shared text, selected text, document, and blank payloads without I/O', () {
+      final coordinator = PolicyIntakeCoordinator(clock: () => fixedClock);
+
+      final chromeUrl = coordinator.classifyIncomingPayloadLocator(
+        const IncomingIntentPayload(
+          kind: 'text_or_url',
+          sourceAction: 'ACTION_SEND',
+          text: 'App Privacy Policy - https://example.org/privacy',
+          subject: 'App Privacy',
+        ),
+      );
+      expect(chromeUrl, isA<UrlPolicyLocator>());
+      expect((chromeUrl as UrlPolicyLocator).rawUrl, 'https://example.org/privacy');
+      expect(chromeUrl.userSubjectTitle, 'App Privacy');
+
+      final sharedText = coordinator.classifyIncomingPayloadLocator(
+        const IncomingIntentPayload(
+          kind: 'text_or_url',
+          sourceAction: 'ACTION_SEND',
+          text: sampleValidPolicy,
+          subject: 'Shared App',
+        ),
+      );
+      expect(sharedText, isA<TextPolicyLocator>());
+      expect(sharedText!.sourceType, PolicySourceType.sharedText);
+      expect((sharedText as TextPolicyLocator).sourceAction, 'ACTION_SEND');
+
+      final selectedText = coordinator.classifyIncomingPayloadLocator(
+        const IncomingIntentPayload(
+          kind: 'text',
+          sourceAction: 'ACTION_PROCESS_TEXT',
+          text: sampleValidPolicy,
+        ),
+      );
+      expect(selectedText, isA<TextPolicyLocator>());
+      expect(selectedText!.sourceType, PolicySourceType.selectedText);
+      expect(
+        (selectedText as TextPolicyLocator).sourceAction,
+        'ACTION_PROCESS_TEXT',
+      );
+
+      final selectedUrl = coordinator.classifyIncomingPayloadLocator(
+        const IncomingIntentPayload(
+          kind: 'text',
+          sourceAction: 'ACTION_PROCESS_TEXT',
+          text: 'https://selected.example.org/terms',
+        ),
+      );
+      expect(selectedUrl, isA<UrlPolicyLocator>());
+      expect(
+        (selectedUrl as UrlPolicyLocator).rawUrl,
+        'https://selected.example.org/terms',
+      );
+
+      final docLocator = coordinator.classifyIncomingPayloadLocator(
+        const IncomingIntentPayload(
+          kind: 'document',
+          sourceAction: 'ACTION_SEND',
+          document: DocumentExtractionOutcome(
+            status: 'ok',
+            documentType: 'pdf',
+            fileName: 'notice.pdf',
+            mimeType: 'application/pdf',
+            byteLength: 1024,
+            extractedText: sampleValidPolicy,
+            userMessage: 'OK',
+          ),
+        ),
+      );
+      expect(docLocator, isA<DocumentPolicyLocator>());
+      expect(
+        (docLocator as DocumentPolicyLocator).isPreExtractedIncomingShare,
+        isTrue,
+      );
+
+      final blank = coordinator.classifyIncomingPayloadLocator(
+        const IncomingIntentPayload(
+          kind: 'text',
+          sourceAction: 'ACTION_PROCESS_TEXT',
+          text: '   \n  ',
+        ),
+      );
+      expect(blank, isNull);
     });
   });
 

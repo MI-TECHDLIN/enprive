@@ -223,7 +223,7 @@ class PolicyIntakeCoordinator {
         selectedApp: selectedApp,
         userMessage: retrieval.userMessage,
         recoveryHint: _urlRecoveryHint(failureKind),
-        canRetrySameLocator: true,
+        canRetrySameLocator: _canRetryUrlFailure(failureKind),
         failedSourceSnapshot: retrieval.sourceSnapshot,
         urlRetrievalResult: retrieval,
         sufficiencyResult: retrieval.sufficiencyResult,
@@ -385,6 +385,48 @@ class PolicyIntakeCoordinator {
     );
   }
 
+  /// Classifies an incoming Android share (`ACTION_SEND`) or text-selection
+  /// (`ACTION_PROCESS_TEXT`) payload into a typed [PolicyLocator] without
+  /// performing network I/O or text sufficiency checks.
+  ///
+  /// Returns `null` when a non-document payload carries only blank text.
+  PolicyLocator? classifyIncomingPayloadLocator(IncomingIntentPayload payload) {
+    if (payload.kind == 'document') {
+      final doc = payload.document;
+      return DocumentPolicyLocator(
+        userSubjectTitle: payload.subject,
+        fileName: doc?.fileName,
+        mimeType: doc?.mimeType,
+        byteLength: doc?.byteLength,
+        documentType: doc?.documentType,
+        sourceAction: payload.sourceAction,
+        isPreExtractedIncomingShare: true,
+      );
+    }
+
+    final rawText = (payload.text ?? '').trim();
+    if (rawText.isEmpty) return null;
+
+    final sharedUrl = PolicyUrlRetriever.extractSharedUrl(rawText);
+    if (sharedUrl != null) {
+      return UrlPolicyLocator(
+        rawUrl: sharedUrl,
+        userSubjectTitle: payload.subject,
+        sourceAction: payload.sourceAction,
+      );
+    }
+
+    final sourceType = payload.sourceAction == 'ACTION_SEND'
+        ? PolicySourceType.sharedText
+        : PolicySourceType.selectedText;
+    return TextPolicyLocator(
+      rawText: rawText,
+      sourceType: sourceType,
+      userSubjectTitle: payload.subject,
+      sourceAction: payload.sourceAction,
+    );
+  }
+
   /// Routes a structured Android share (`ACTION_SEND`) or text selection
   /// (`ACTION_PROCESS_TEXT`) payload through the shared intake pipeline.
   Future<PolicyIntakeOutcome> captureIncomingPayload({
@@ -441,6 +483,22 @@ class PolicyIntakeCoordinator {
         sourceAction: payload.sourceAction,
       ),
       selectedApp: selectedApp,
+    );
+  }
+
+  /// Evaluates deterministic textual/URL association signals between
+  /// [selectedApp] and a captured privacy policy without asserting ownership.
+  AppPolicyAssociationReport evaluateAppPolicyAssociation({
+    required SelectedAppReference? selectedApp,
+    required String policyText,
+    String? policyUrl,
+    TrustedSampleFixture? trustedSampleFixture,
+  }) {
+    return _evaluateAssociation(
+      selectedApp: selectedApp,
+      policyText: policyText,
+      policyUrl: policyUrl,
+      trustedSampleFixture: trustedSampleFixture,
     );
   }
 
@@ -690,12 +748,37 @@ class PolicyIntakeCoordinator {
     };
   }
 
+  static bool _canRetryUrlFailure(PolicyIntakeFailureKind kind) {
+    return switch (kind) {
+      PolicyIntakeFailureKind.unsafeDestination ||
+      PolicyIntakeFailureKind.invalidUrl ||
+      PolicyIntakeFailureKind.sizeExceeded ||
+      PolicyIntakeFailureKind.unsupportedContentType => false,
+      PolicyIntakeFailureKind.networkError ||
+      PolicyIntakeFailureKind.timeout ||
+      PolicyIntakeFailureKind.httpError ||
+      PolicyIntakeFailureKind.emptyOrErrorPage ||
+      PolicyIntakeFailureKind.insufficientPolicy ||
+      PolicyIntakeFailureKind.cancelled => true,
+      _ => false,
+    };
+  }
+
   static String _urlRecoveryHint(PolicyIntakeFailureKind kind) {
     return switch (kind) {
-      PolicyIntakeFailureKind.unsupportedContentType => 'Save supported PDF, TXT, or DOCX documents locally and import them with Document mode, or paste the policy text directly.',
+      PolicyIntakeFailureKind.unsafeDestination =>
+        'Edit the URL to a public https:// privacy policy link, paste the policy text directly, or import a local PDF, TXT, or DOCX document.',
+      PolicyIntakeFailureKind.invalidUrl =>
+        'Edit the URL to a valid public https:// privacy policy link, paste the policy text directly, or import a local PDF, TXT, or DOCX document.',
+      PolicyIntakeFailureKind.sizeExceeded =>
+        'Edit the URL to a smaller privacy policy page, paste the policy text directly, or import a saved PDF, TXT, or DOCX document.',
+      PolicyIntakeFailureKind.unsupportedContentType =>
+        'Save supported PDF, TXT, or DOCX documents locally and import them with Document mode, or paste the policy text directly.',
       PolicyIntakeFailureKind.emptyOrErrorPage ||
-      PolicyIntakeFailureKind.insufficientPolicy => 'Open the policy page in your browser and copy/paste the policy paragraphs or share the text to Enprive.',
-      _ => 'Check the web address, paste the privacy policy text directly, or import a local PDF, TXT, or DOCX document.',
+      PolicyIntakeFailureKind.insufficientPolicy =>
+        'Open the policy page in your browser and copy/paste the policy paragraphs or share the text to Enprive.',
+      _ =>
+        'Check the web address, paste the privacy policy text directly, or import a local PDF, TXT, or DOCX document.',
     };
   }
 }

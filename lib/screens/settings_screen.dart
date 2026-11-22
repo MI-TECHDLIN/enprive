@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:iconify_flutter/icons/ph.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 
@@ -12,9 +11,9 @@ import '../services/platform/companion_bridge.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
 import '../services/storage/receipt_repository.dart';
 import '../widgets/deni_animated_mascot.dart';
-import '../widgets/enprive_duotone_icon.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/language_picker_sheet.dart';
+import '../widgets/m3e/enprive_connected_button_group.dart';
 import '../widgets/m3e/enprive_m3e_components.dart';
 import '../widgets/private_readiness_sheet.dart';
 
@@ -277,41 +276,21 @@ class _SettingsScreenState extends State<SettingsScreen>
                   widget.onLocaleChanged(picked);
                 }
               },
+              leading: Icon(
+                LucideIcons.languages,
+                color: scheme.onSurfaceVariant,
+              ),
               title: Text(
                 l10n.languageTitle,
-                style: m3e.typeScale.titleSmall.copyWith(
-                  fontWeight: FontWeight.w700,
+                style: m3e.typeScale.titleMedium.copyWith(
                   color: scheme.onSurface,
                 ),
               ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: semantics.onDevice.background,
-                      borderRadius: BorderRadius.circular(EnpriveRadii.pill),
-                      border: Border.all(color: semantics.onDevice.border),
-                    ),
-                    child: Text(
-                      activeLang.nativeName,
-                      style: m3e.typeScale.labelMedium.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: semantics.onDevice.foreground,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Icon(
-                    LucideIcons.chevronRight,
-                    size: 18,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ],
+              subtitle: Text(
+                activeLang.nativeName,
+                style: m3e.typeScale.bodyMedium.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ),
             if (widget.onReplayOnboarding != null)
@@ -321,17 +300,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                   vertical: 4,
                 ),
                 onTap: widget.onReplayOnboarding,
+                leading: Icon(
+                  LucideIcons.sparkles,
+                  color: scheme.onSurfaceVariant,
+                ),
                 title: Text(
                   l10n.meetDeniGuide,
-                  style: m3e.typeScale.titleSmall.copyWith(
-                    fontWeight: FontWeight.w700,
+                  style: m3e.typeScale.titleMedium.copyWith(
                     color: scheme.onSurface,
                   ),
-                ),
-                trailing: Icon(
-                  LucideIcons.chevronRight,
-                  size: 18,
-                  color: scheme.onSurfaceVariant,
                 ),
               ),
             ListTile(
@@ -339,10 +316,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                 horizontal: 20,
                 vertical: 4,
               ),
+              leading: Icon(
+                LucideIcons.trash2,
+                color: scheme.onSurfaceVariant,
+              ),
               title: Text(
                 l10n.clearSavedReceiptsCount(widget.savedReceiptsCount),
-                style: m3e.typeScale.titleSmall.copyWith(
-                  fontWeight: FontWeight.w700,
+                style: m3e.typeScale.titleMedium.copyWith(
                   color: scheme.onSurface,
                 ),
               ),
@@ -353,10 +333,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                 child: Text(
                   l10n.btnClear,
                   style: TextStyle(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: widget.savedReceiptsCount == 0
                         ? surfaces.disabledFg
-                        : semantics.reviewRecommended.foreground,
+                        : scheme.error,
                   ),
                 ),
               ),
@@ -371,9 +351,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                 constraints: const BoxConstraints(maxWidth: 760),
                 child: SingleChildScrollView(
                   padding: EdgeInsets.fromLTRB(
-                    20,
+                    EnpriveSpacing.marginFor(MediaQuery.sizeOf(context).width),
                     widget.showAppBar ? 8 : 12,
-                    20,
+                    EnpriveSpacing.marginFor(MediaQuery.sizeOf(context).width),
                     32,
                   ),
                   child: Column(
@@ -388,88 +368,67 @@ class _SettingsScreenState extends State<SettingsScreen>
                         const SizedBox(height: 20),
                       ],
 
-                  // 1. Deni Companion Status M3ECard (LOD 2: 76dp standard companion)
-                  Center(
+                  // 1. Readiness: compact Deni beside the status, one tonal action.
+                  EnpriveMaterialCardSurface(
+                    key: const Key('settings_readiness_card'),
+                    borderRadius: BorderRadius.circular(EnpriveRadii.card),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Transform.translate(
-                          offset: const Offset(0, 10),
-                          child: DeniAnimatedMascot(
-                            size: 76,
-                            pose: _isCheckingModel
-                                ? DeniPose.thinking
-                                : (effectiveReady
-                                      ? DeniPose.idle
-                                      : DeniPose.support),
-                          ),
-                        ),
-                        EnpriveMaterialCardSurface(
-                          variant: EnpriveCardVariant.elevated,
-                          backgroundColor: surfaces.card,
-                          borderRadius: BorderRadius.circular(EnpriveRadii.xl),
-                          lipHeight: 3.0,
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            children: [
-                              Row(
+                        Row(
+                          children: [
+                            ExcludeSemantics(
+                              child: SizedBox(
+                                width: 56,
+                                height: 56,
+                                child: Center(
+                                  child: DeniAnimatedMascot(
+                                    size: 46,
+                                    pose: _isCheckingModel
+                                        ? DeniPose.thinking
+                                        : (effectiveReady
+                                              ? DeniPose.idle
+                                              : DeniPose.support),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: semantics.onDevice.background,
-                                      borderRadius: BorderRadius.circular(14),
-                                      border: Border.all(
-                                        color: semantics.onDevice.border,
-                                      ),
-                                    ),
-                                    child: EnpriveDuotoneIcon(
-                                      Ph.shield_check_duotone,
-                                      color: semantics.onDevice.icon,
-                                      size: 22,
+                                  Text(
+                                    l10n.privateAnalysisTitle,
+                                    style: m3e.typeScale.titleMedium.copyWith(
+                                      color: scheme.onSurface,
                                     ),
                                   ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          l10n.privateAnalysisTitle,
-                                          style: m3e.typeScale.titleMedium
-                                              .copyWith(
-                                                fontWeight: FontWeight.w800,
-                                                color: scheme.onSurface,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          effectiveReady
-                                              ? l10n.onDeviceReadyMsg
-                                              : l10n.localScannerProtectedMsg,
-                                          style: m3e.typeScale.bodySmall
-                                              .copyWith(
-                                                color: scheme.onSurfaceVariant,
-                                              ),
-                                        ),
-                                      ],
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    effectiveReady
+                                        ? l10n.onDeviceReadyMsg
+                                        : l10n.localScannerProtectedMsg,
+                                    style: m3e.typeScale.bodyMedium.copyWith(
+                                      color: scheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 16),
-                              EnpriveTactileButton(
-                                label: _isCheckingModel
-                                    ? l10n.statusChecking
-                                    : l10n.btnCheckReadiness,
-                                isSecondary: true,
-                                onPressed: _isCheckingModel
-                                    ? null
-                                    : _handleCheckOrPrepareModel,
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        EnpriveTactileButton(
+                          label: _isCheckingModel
+                              ? l10n.statusChecking
+                              : l10n.btnCheckReadiness,
+                          isSecondary: true,
+                          height: 48,
+                          onPressed: _isCheckingModel
+                              ? null
+                              : _handleCheckOrPrepareModel,
                         ),
                       ],
                     ),
@@ -480,46 +439,31 @@ class _SettingsScreenState extends State<SettingsScreen>
                   // 2. Explanation Depth Selector (48dp+ accessible touch targets)
                   Text(
                     l10n.howShouldDeniExplain,
-                    style: m3e.typography.emphasized.titleMedium.copyWith(
-                      fontWeight: FontWeight.w800,
+                    style: m3e.typeScale.titleMedium.copyWith(
                       color: scheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: ExplanationDepth.values.map((depth) {
-                      final isSelected = widget.explanationDepth == depth;
-                      final (iconData, label) = switch (depth) {
-                        ExplanationDepth.simple => (
-                          LucideIcons.sparkles,
-                          l10n.depthQuick,
-                        ),
-                        ExplanationDepth.balanced => (
-                          LucideIcons.scale,
-                          l10n.depthBalanced,
-                        ),
-                        ExplanationDepth.detailed => (
-                          LucideIcons.bookOpen,
-                          l10n.depthFull,
-                        ),
-                      };
-                      return Expanded(
-                        child: Padding(
-                          padding: EdgeInsetsDirectional.only(
-                            end: depth != ExplanationDepth.detailed
-                                ? 10.0
-                                : 0.0,
-                          ),
-                          child: EnpriveBentoChoiceCard.compactOption(
-                            title: label,
-                            icon: iconData,
-                            selected: isSelected,
-                            onPressed: () =>
-                                widget.onExplanationDepthChanged(depth),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                  EnpriveConnectedButtonGroup<ExplanationDepth>(
+                    selected: widget.explanationDepth,
+                    onSelected: widget.onExplanationDepthChanged,
+                    options: [
+                      EnpriveGroupOption(
+                        value: ExplanationDepth.simple,
+                        label: l10n.depthQuick,
+                        icon: LucideIcons.sparkles,
+                      ),
+                      EnpriveGroupOption(
+                        value: ExplanationDepth.balanced,
+                        label: l10n.depthBalanced,
+                        icon: LucideIcons.scale,
+                      ),
+                      EnpriveGroupOption(
+                        value: ExplanationDepth.detailed,
+                        label: l10n.depthFull,
+                        icon: LucideIcons.bookOpen,
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 28),
@@ -527,34 +471,33 @@ class _SettingsScreenState extends State<SettingsScreen>
                   // 3. Appearance (System / Light / Dark — Brand-Locked HCT)
                   Text(
                     'Appearance',
-                    style: m3e.typography.emphasized.titleMedium.copyWith(
-                      fontWeight: FontWeight.w800,
+                    style: m3e.typeScale.titleMedium.copyWith(
                       color: scheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      for (final (index, entry) in [
-                        (ThemeMode.system, LucideIcons.smartphone, 'System'),
-                        (ThemeMode.light, LucideIcons.sun, 'Light'),
-                        (ThemeMode.dark, LucideIcons.moon, 'Dark'),
-                      ].indexed)
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsetsDirectional.only(
-                              end: index < 2 ? 10.0 : 0.0,
-                            ),
-                            child: EnpriveBentoChoiceCard.compactOption(
-                              key: Key('theme_mode_option_${entry.$1.name}'),
-                              title: entry.$3,
-                              icon: entry.$2,
-                              selected: widget.currentThemeMode == entry.$1,
-                              onPressed: () =>
-                                  widget.onThemeModeChanged?.call(entry.$1),
-                            ),
-                          ),
-                        ),
+                  EnpriveConnectedButtonGroup<ThemeMode>(
+                    selected: widget.currentThemeMode,
+                    onSelected: (mode) => widget.onThemeModeChanged?.call(mode),
+                    options: const [
+                      EnpriveGroupOption(
+                        key: Key('theme_mode_option_system'),
+                        value: ThemeMode.system,
+                        label: 'System',
+                        icon: LucideIcons.smartphone,
+                      ),
+                      EnpriveGroupOption(
+                        key: Key('theme_mode_option_light'),
+                        value: ThemeMode.light,
+                        label: 'Light',
+                        icon: LucideIcons.sun,
+                      ),
+                      EnpriveGroupOption(
+                        key: Key('theme_mode_option_dark'),
+                        value: ThemeMode.dark,
+                        label: 'Dark',
+                        icon: LucideIcons.moon,
+                      ),
                     ],
                   ),
 
@@ -563,8 +506,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   // 4. Preferences Group (M3E Tactile Segmented Containment)
                   Text(
                     l10n.preferencesSection,
-                    style: m3e.typography.emphasized.titleMedium.copyWith(
-                      fontWeight: FontWeight.w800,
+                    style: m3e.typeScale.titleMedium.copyWith(
                       color: scheme.onSurface,
                     ),
                   ),
@@ -595,8 +537,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   // 5. Connect Enprive to Quick Settings & Optional Usage Access
                   Text(
                     'Connect Enprive to Quick Settings',
-                    style: m3e.typography.emphasized.titleMedium.copyWith(
-                      fontWeight: FontWeight.w800,
+                    style: m3e.typeScale.titleMedium.copyWith(
                       color: scheme.onSurface,
                     ),
                   ),
@@ -629,8 +570,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           return Scaffold(
             backgroundColor: scheme.surface,
             appBar: AppBar(
-              backgroundColor: scheme.surface,
-              surfaceTintColor: Colors.transparent,
+              titleSpacing: 0,
               leading: IconButton(
                 key: const Key('settings_back_btn'),
                 tooltip: MaterialLocalizations.of(context).backButtonTooltip,
@@ -639,7 +579,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
               title: Text(
                 l10n.settingsTitle,
-                style: m3e.typography.emphasized.titleLarge.copyWith(
+                style: m3e.typeScale.titleLarge.copyWith(
                   color: scheme.onSurface,
                 ),
               ),
@@ -715,12 +655,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                       : semantics.onDevice.foreground,
                 ),
               ),
-            ),
-            const SizedBox(width: 6),
-            Icon(
-              LucideIcons.chevronRight,
-              size: 18,
-              color: scheme.onSurfaceVariant,
             ),
           ],
         ),
@@ -819,11 +753,6 @@ class _SettingsScreenState extends State<SettingsScreen>
             style: m3e.typeScale.bodySmall.copyWith(
               color: scheme.onSurfaceVariant,
             ),
-          ),
-          trailing: Icon(
-            LucideIcons.chevronRight,
-            size: 18,
-            color: scheme.onSurfaceVariant,
           ),
         ),
     ];

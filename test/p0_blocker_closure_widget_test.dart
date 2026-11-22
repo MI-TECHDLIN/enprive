@@ -19,6 +19,7 @@ import 'package:enprive/services/network/policy_url_retriever.dart';
 import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/widgets/cloud_consent_sheet.dart';
 import 'package:enprive/widgets/deni_animated_mascot.dart';
+import 'package:enprive/widgets/intake/unified_policy_intake_sheet.dart';
 import 'package:enprive/widgets/m3e/enprive_m3e_components.dart';
 
 Future<void> _pumpAndFlush(WidgetTester tester, {int steps = 6}) async {
@@ -52,7 +53,7 @@ void main() {
 
   group('P0 Blocker Closure Widget & End-to-End Parity Tests', () {
     testWidgets(
-      'Link mode removes fake URL substitution: 404 -> INSUFFICIENT_EVIDENCE with fallback prompt; real HTML -> real extracted policy & SHA-256 provenance',
+      'Link mode removes fake URL substitution: 404 stays inside UnifiedPolicyIntakeSheet with inline recovery; real HTML -> real extracted policy & SHA-256 provenance',
       (WidgetTester tester) async {
         final requestedUris = <Uri>[];
         final retriever = PolicyUrlRetriever(
@@ -127,9 +128,10 @@ void main() {
 
         expect(find.byType(DeniAnimatedMascot), findsOneWidget);
 
-        // Open Paste / URL / Document sheet
+        // Open UnifiedPolicyIntakeSheet
         await tester.tap(find.text('Paste terms or URL'));
         await _pumpAndFlush(tester);
+        expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
 
         // Switch to Policy link mode
         await tester.tap(find.text('Policy link'));
@@ -139,43 +141,38 @@ void main() {
         expect(find.text('edutrack.example.edu/privacy'), findsNothing);
         expect(find.text('calmmath.example.org/privacy'), findsNothing);
 
-        // 1) Enter EduTrack URL that returns HTTP 404 -> MUST NOT substitute bundled fixture!
+        // 1) Enter EduTrack URL that returns HTTP 404 -> MUST NOT substitute bundled fixture
+        // and MUST NOT present an HTTP failure as a captured ReviewResultScreen!
         await tester.enterText(
-          find.widgetWithText(TextField, 'https://example.com/privacy-policy'),
+          find.byKey(const Key('intake_url_field')),
           'https://edutrack.example.edu/privacy',
         );
-        await tester.tap(find.text('Review on this phone'));
+        await tester.tap(find.byKey(const Key('intake_primary_submit_btn')));
         await _pumpAndFlush(tester, steps: 10);
 
         expect(
           requestedUris.any((u) => u.toString() == 'https://edutrack.example.edu/privacy'),
           isTrue,
         );
-        expect(find.byType(ReviewResultScreen), findsOneWidget);
-        expect(find.text('Insufficient evidence'), findsOneWidget);
+        expect(find.byType(ReviewResultScreen), findsNothing);
+        expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
+        expect(find.byKey(const Key('intake_error_banner')), findsOneWidget);
         expect(
-          find.textContaining('Paste the privacy policy text manually'),
+          find.textContaining('paste the privacy policy text'),
           findsWidgets,
         );
         expect(find.textContaining('Background GPS Tracking'), findsNothing);
 
-        // Return to Home
-        await tester.tap(find.byTooltip('Close'));
-        await _pumpAndFlush(tester);
-        await tester.tap(find.text('Discard without saving'));
-        await _pumpAndFlush(tester);
-
-        // 2) Enter CalmMath domain URL serving real "GreenLeaf Journal" HTML -> analyzes GreenLeaf HTML, NOT CalmMath fixture
-        await tester.tap(find.text('Paste terms or URL'));
-        await _pumpAndFlush(tester);
-        await tester.tap(find.text('Policy link'));
-        await _pumpAndFlush(tester);
-
+        // 2) Replace URL inline with CalmMath domain serving real "GreenLeaf Journal" HTML
+        // -> analyzes GreenLeaf HTML, NOT CalmMath fixture
         await tester.enterText(
-          find.widgetWithText(TextField, 'https://example.com/privacy-policy'),
+          find.byKey(const Key('intake_url_field')),
           'https://calmmath.example.org/privacy',
         );
-        await tester.tap(find.text('Review on this phone'));
+        final submitBtn = find.byKey(const Key('intake_primary_submit_btn'));
+        await tester.ensureVisible(submitBtn);
+        await tester.pump();
+        await tester.tap(submitBtn);
         await _pumpAndFlush(tester, steps: 10);
 
         expect(find.byType(ReviewResultScreen), findsOneWidget);
@@ -184,10 +181,15 @@ void main() {
           findsOneWidget,
         );
         await tester.scrollUntilVisible(
-          find.textContaining('SHA-256 source hash'),
+          find.byKey(const Key('source_advanced_details_toggle')),
           300,
           scrollable: find.byType(Scrollable).first,
         );
+        expect(find.textContaining('SHA-256 source hash'), findsNothing);
+        await tester.tap(
+          find.byKey(const Key('source_advanced_details_toggle')),
+        );
+        await tester.pump();
         expect(
           find.textContaining('https://calmmath.example.org/privacy'),
           findsWidgets,
@@ -267,12 +269,13 @@ void main() {
         );
         await _pumpAndFlush(tester);
 
-        // 1) Successful PDF extraction
+        // 1) Successful PDF extraction via UnifiedPolicyIntakeSheet
         await tester.tap(find.text('Paste terms or URL'));
         await _pumpAndFlush(tester);
+        expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
         await tester.tap(find.text('Document'));
         await _pumpAndFlush(tester);
-        await tester.tap(find.text('Choose document (PDF, TXT, DOCX)'));
+        await tester.tap(find.byKey(const Key('intake_primary_submit_btn')));
         await _pumpAndFlush(tester, steps: 10);
 
         expect(find.byType(ReviewResultScreen), findsOneWidget);
@@ -280,10 +283,14 @@ void main() {
           extractedPdfPolicy,
         );
         await tester.scrollUntilVisible(
-          find.textContaining('SHA-256 source hash'),
+          find.byKey(const Key('source_advanced_details_toggle')),
           300,
           scrollable: find.byType(Scrollable).first,
         );
+        await tester.tap(
+          find.byKey(const Key('source_advanced_details_toggle')),
+        );
+        await tester.pump();
         expect(find.textContaining('school_policy.pdf'), findsWidgets);
         expect(find.textContaining('application/pdf'), findsWidgets);
         expect(find.textContaining(expectedSha.substring(0, 12)), findsWidgets);
@@ -293,17 +300,18 @@ void main() {
         await tester.tap(find.text('Discard without saving'));
         await _pumpAndFlush(tester);
 
-        // 2) Password-protected PDF -> INSUFFICIENT_EVIDENCE with manual paste fallback prompt
+        // 2) Password-protected PDF -> fails closed inline inside UnifiedPolicyIntakeSheet with manual paste fallback
         returnCorruptDoc = true;
         await tester.tap(find.text('Paste terms or URL'));
         await _pumpAndFlush(tester);
         await tester.tap(find.text('Document'));
         await _pumpAndFlush(tester);
-        await tester.tap(find.text('Choose document (PDF, TXT, DOCX)'));
+        await tester.tap(find.byKey(const Key('intake_primary_submit_btn')));
         await _pumpAndFlush(tester, steps: 10);
 
-        expect(find.byType(ReviewResultScreen), findsOneWidget);
-        expect(find.text('Insufficient evidence'), findsOneWidget);
+        expect(find.byType(ReviewResultScreen), findsNothing);
+        expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
+        expect(find.byKey(const Key('intake_error_banner')), findsOneWidget);
         expect(
           find.textContaining('password-protected'),
           findsWidgets,
@@ -414,10 +422,14 @@ void main() {
 
         expect(find.byType(ReviewResultScreen), findsOneWidget);
         await tester.scrollUntilVisible(
-          find.textContaining('SHA-256 source hash'),
+          find.byKey(const Key('source_advanced_details_toggle')),
           300,
           scrollable: find.byType(Scrollable).first,
         );
+        await tester.tap(
+          find.byKey(const Key('source_advanced_details_toggle')),
+        );
+        await tester.pump();
         expect(find.textContaining('notice.docx'), findsWidgets);
         expect(
           find.textContaining(
@@ -795,10 +807,10 @@ void main() {
         await tester.tap(find.text('Policy link'));
         await _pumpAndFlush(tester);
         await tester.enterText(
-          find.byType(TextField).last,
+          find.byKey(const Key('intake_url_field')),
           'https://ululab.com/privacy-policy/',
         );
-        await tester.tap(find.text('Review on this phone'));
+        await tester.tap(find.byKey(const Key('intake_primary_submit_btn')));
         await _pumpAndFlush(tester, steps: 8);
 
         expect(find.byType(CloudConsentSheet), findsOneWidget);
@@ -864,10 +876,10 @@ void main() {
         await tester.tap(find.text('Policy link'));
         await _pumpAndFlush(tester);
         await tester.enterText(
-          find.byType(TextField).last,
+          find.byKey(const Key('intake_url_field')),
           'https://ululab.com/privacy-policy/',
         );
-        await tester.tap(find.text('Review on this phone'));
+        await tester.tap(find.byKey(const Key('intake_primary_submit_btn')));
         await _pumpAndFlush(tester, steps: 8);
 
         expect(find.byType(CloudConsentSheet), findsOneWidget);

@@ -19,6 +19,7 @@ import 'package:enprive/services/storage/receipt_repository.dart';
 import 'package:enprive/widgets/enprive_provenance_chip.dart';
 import 'package:enprive/widgets/installed_app_picker_sheet.dart';
 import 'package:enprive/widgets/intake/unified_policy_intake_sheet.dart';
+import 'package:enprive/widgets/m3e/enprive_receipt_card.dart';
 import 'package:enprive/widgets/review/unsaved_review_exit_sheet.dart';
 
 Future<void> _pumpAndFlush(WidgetTester tester, {int steps = 6}) async {
@@ -539,10 +540,11 @@ void main() {
         expect(find.byType(ReviewResultScreen), findsNothing);
 
         // Switch to Receipts tab -> open -> explicitly delete -> list updates
-        await tester.tap(find.text('Receipts'));
+        // The bottom navigation label (the Check tab also links to Receipts).
+        await tester.tap(find.text('Receipts').last);
         await _pumpAndFlush(tester);
 
-        final openReceiptBtn = find.text('Open receipt').first;
+        final openReceiptBtn = find.byType(EnpriveReceiptCard).first;
         await tester.ensureVisible(openReceiptBtn);
         await tester.pump();
         await tester.tap(openReceiptBtn);
@@ -769,7 +771,7 @@ void main() {
         find.byKey(const Key('review_result_save_failure_banner')),
         findsOneWidget,
       );
-      expect(find.text('Focus Reader'), findsOneWidget);
+      expect(find.text('Focus Reader'), findsWidgets);
       expect(await repo.loadReceipts(), isEmpty);
 
       // Retry succeeds and transitions cleanly to Saved

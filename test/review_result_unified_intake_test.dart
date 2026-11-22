@@ -23,10 +23,13 @@ import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/services/storage/receipt_repository.dart';
 import 'package:enprive/widgets/cloud_consent_sheet.dart';
 import 'package:enprive/widgets/enprive_provenance_chip.dart';
+import 'package:enprive/widgets/enprive_tactile_button.dart';
 import 'package:enprive/widgets/intake/unified_policy_intake_sheet.dart';
 import 'package:enprive/widgets/m3e/enprive_m3e_components.dart';
 import 'package:enprive/widgets/review/unsaved_review_exit_sheet.dart';
 import 'package:enprive/widgets/review_progress_sheet.dart';
+
+import 'support/keyboard_focus.dart';
 
 Future<void> _pumpAndFlush(WidgetTester tester, {int steps = 6}) async {
   await tester.pump();
@@ -325,7 +328,7 @@ void main() {
         expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
         expect(find.byKey(const Key('intake_locked_app_header')), findsOneWidget);
         expect(find.text('Focus Reader'), findsWidgets);
-        expect(find.text('com.focus.reader'), findsWidgets);
+        expect(find.text('App ID: com.focus.reader'), findsWidgets);
         expect(find.byKey(const Key('intake_select_app_btn')), findsNothing);
         expect(find.byKey(const Key('intake_change_app_btn')), findsNothing);
         expect(find.byKey(const Key('intake_remove_app_btn')), findsNothing);
@@ -401,11 +404,16 @@ void main() {
         await _pumpAndFlush(tester, steps: 8);
         expect(analyseCalls, hasLength(2));
         await tester.scrollUntilVisible(
-          find.textContaining('File: initial-focus.pdf'),
+          find.byKey(const Key('source_advanced_details_toggle')),
           240,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.textContaining('Local PDF document'), findsOneWidget);
+        expect(find.textContaining('Local PDF file'), findsOneWidget);
+        await tester.tap(
+          find.byKey(const Key('source_advanced_details_toggle')),
+        );
+        await tester.pump();
+        expect(find.textContaining('File: initial-focus.pdf'), findsOneWidget);
         expect(await repo.loadReceipts(), isEmpty);
 
         // Re-mount permission-only screen for URL 404 retry + Play Store helper + redirect provenance + Document updates
@@ -465,20 +473,24 @@ void main() {
         expect(await repo.loadReceipts(), isEmpty); // First review stays unsaved draft!
 
         await tester.scrollUntilVisible(
-          find.textContaining('Redirected from:'),
+          find.byKey(const Key('source_advanced_details_toggle')),
           240,
           scrollable: find.byType(Scrollable).first,
         );
+        expect(
+          find.textContaining('Where this policy came from · Public web link'),
+          findsOneWidget,
+        );
+        await tester.tap(
+          find.byKey(const Key('source_advanced_details_toggle')),
+        );
+        await tester.pump();
         expect(
           find.textContaining('Canonical URL: https://legal.focus.example.com/privacy'),
           findsOneWidget,
         );
         expect(
           find.textContaining('Redirected from: https://focus.example.com/404'),
-          findsOneWidget,
-        );
-        expect(
-          find.textContaining('Source provenance · Public URL'),
           findsOneWidget,
         );
         expect(
@@ -529,7 +541,7 @@ void main() {
           240,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.textContaining('Local PDF document'), findsOneWidget);
+        expect(find.textContaining('Local PDF file'), findsOneWidget);
         expect(
           find.textContaining(
             EvidenceValidator.computeSha256SourceHash(pdfPolicy).substring(0, 12),
@@ -546,7 +558,7 @@ void main() {
           240,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.textContaining('Local text document'), findsOneWidget);
+        expect(find.textContaining('Local text file'), findsOneWidget);
         expect(
           find.textContaining(
             EvidenceValidator.computeSha256SourceHash(txtPolicy).substring(0, 12),
@@ -563,7 +575,7 @@ void main() {
           240,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.textContaining('Local DOCX document'), findsOneWidget);
+        expect(find.textContaining('Local Word (DOCX) file'), findsOneWidget);
         expect(
           find.textContaining(
             EvidenceValidator.computeSha256SourceHash(docxPolicy).substring(0, 12),
@@ -1179,7 +1191,7 @@ void main() {
         });
         await _pumpAndFlush(tester);
         expect(find.textContaining('STALE RESULT MUST NEVER APPEAR'), findsNothing);
-        expect(find.text('Device Permission Inspection'), findsWidgets);
+        expect(find.text('Phone permissions checked'), findsWidgets);
 
         // Start a second pending review, then dispose via Close button (rapid double-tap) -> cancels cleanly, pops ONCE
         final secondOpenCta = find.text("Add this app's privacy policy").first;
@@ -1371,7 +1383,7 @@ void main() {
           find.textContaining('LATE CLOUD RESULT MUST NEVER APPLY'),
           findsNothing,
         );
-        expect(find.text('Device Permission Inspection'), findsWidgets);
+        expect(find.text('Phone permissions checked'), findsWidgets);
 
         // B. Receipt replacement via didUpdateWidget while UnifiedPolicyIntakeSheet is open drops stale intake
         final activeReceiptNotifier = ValueNotifier<PolicyReviewReceipt>(
@@ -1414,6 +1426,63 @@ void main() {
           find.textContaining('Focus Reader v1 reviewed cleanly.'),
           findsOneWidget,
         );
+      },
+    );
+
+    testWidgets(
+      '7. Step B: hero CTA and permission-only CTA are keyboard reachable, announced once, and Enter opens the intake sheet',
+      (WidgetTester tester) async {
+        final handle = tester.ensureSemantics();
+        final coordinator = ReviewCoordinator();
+        final repo = ReceiptRepository(useInMemoryOnly: true);
+        await tester.pumpWidget(
+          _wrapM3E(
+            home: ReviewResultScreen(
+              receipt: _buildPermissionOnlyReceipt(coordinator),
+              coordinator: coordinator,
+              intakeCoordinator: PolicyIntakeCoordinator(
+                urlRetriever: PolicyUrlRetriever(dnsLookup: _fakePublicDns),
+              ),
+              companionBridge: CompanionBridge(),
+              receiptRepository: repo,
+              onSaveReceipt: repo.saveReceipt,
+            ),
+          ),
+        );
+        await _pumpAndFlush(tester);
+
+        const ctaLabel = "Add this app's privacy policy";
+        final heroCta = find.descendant(
+          of: find.byType(EnpriveReviewHeroCard),
+          matching: find.text(ctaLabel),
+        );
+        final cardCta = find.descendant(
+          of: find.byType(EnpriveTactileButton),
+          matching: find.text(ctaLabel),
+        );
+
+        for (final cta in [heroCta, cardCta]) {
+          expect(cta, findsOneWidget);
+          final data = tester.getSemantics(cta).getSemanticsData();
+          expect(data.label, ctaLabel);
+          expect(data.flagsCollection.isButton, isTrue);
+          expect(data.hasAction(SemanticsAction.tap), isTrue);
+
+          await tabTo(tester, cta, maxTabs: 60);
+          await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+          await _pumpAndFlush(tester);
+          expect(find.byType(UnifiedPolicyIntakeSheet), findsOneWidget);
+          expect(
+            find.byKey(const Key('intake_locked_app_header')),
+            findsOneWidget,
+          );
+
+          await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+          await _pumpAndFlush(tester);
+          expect(find.byType(UnifiedPolicyIntakeSheet), findsNothing);
+        }
+        expect(tester.takeException(), isNull);
+        handle.dispose();
       },
     );
   });

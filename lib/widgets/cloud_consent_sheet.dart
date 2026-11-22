@@ -26,6 +26,11 @@ class CloudConsentSheet extends StatelessWidget {
   final String policyText;
   final String? canonicalRedactedPreview;
   final String? deviceReason;
+  final String? titleOverride;
+  final String? disclosureOverride;
+  final String? primaryActionLabelOverride;
+  final String? secondaryActionLabelOverride;
+  final String? payloadCategoryLabelOverride;
 
   const CloudConsentSheet({
     super.key,
@@ -33,6 +38,11 @@ class CloudConsentSheet extends StatelessWidget {
     required this.policyText,
     this.canonicalRedactedPreview,
     this.deviceReason,
+    this.titleOverride,
+    this.disclosureOverride,
+    this.primaryActionLabelOverride,
+    this.secondaryActionLabelOverride,
+    this.payloadCategoryLabelOverride,
   });
 
   static Future<CloudConsentDecision> show(
@@ -41,6 +51,11 @@ class CloudConsentSheet extends StatelessWidget {
     required String policyText,
     String? canonicalRedactedPreview,
     String? deviceReason,
+    String? titleOverride,
+    String? disclosureOverride,
+    String? primaryActionLabelOverride,
+    String? secondaryActionLabelOverride,
+    String? payloadCategoryLabelOverride,
   }) async {
     final decision = await showModalBottomSheet<CloudConsentDecision>(
       context: context,
@@ -52,6 +67,11 @@ class CloudConsentSheet extends StatelessWidget {
         policyText: policyText,
         canonicalRedactedPreview: canonicalRedactedPreview,
         deviceReason: deviceReason,
+        titleOverride: titleOverride,
+        disclosureOverride: disclosureOverride,
+        primaryActionLabelOverride: primaryActionLabelOverride,
+        secondaryActionLabelOverride: secondaryActionLabelOverride,
+        payloadCategoryLabelOverride: payloadCategoryLabelOverride,
       ),
     );
     return decision ?? CloudConsentDecision.cancelled;
@@ -122,9 +142,11 @@ class CloudConsentSheet extends StatelessWidget {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              const DeniAnimatedMascot(
-                                size: 42,
-                                pose: DeniPose.explaining,
+                              const ExcludeSemantics(
+                                child: DeniAnimatedMascot(
+                                  size: 42,
+                                  pose: DeniPose.explaining,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -132,12 +154,10 @@ class CloudConsentSheet extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      l10n.chooseReviewModeTitle,
-                                      style: m3e.typography.emphasized.titleMedium
-                                          .copyWith(
-                                            fontWeight: FontWeight.w800,
-                                            color: scheme.onSurface,
-                                          ),
+                                      titleOverride ?? l10n.chooseReviewModeTitle,
+                                      style: m3e.typeScale.titleLarge.copyWith(
+                                        color: scheme.onSurface,
+                                      ),
                                     ),
                                     if (subjectTitle.trim().isNotEmpty) ...[
                                       const SizedBox(height: 2),
@@ -184,6 +204,14 @@ class CloudConsentSheet extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            _WhatWouldBeSent(
+                              maskedCount: detectedTokens.isEmpty
+                                  ? 0
+                                  : (redaction.replacementCount > 0
+                                        ? redaction.replacementCount
+                                        : detectedTokens.length),
+                            ),
+                            const SizedBox(height: 14),
                             if (trimmedReason != null &&
                                 trimmedReason.isNotEmpty) ...[
                               Container(
@@ -260,14 +288,20 @@ class CloudConsentSheet extends StatelessWidget {
                               quote: scrubbedPreview,
                               selectable: true,
                               statusLabel: detectedTokens.isEmpty
-                                  ? 'No PII found'
-                                  : 'Masked (${redaction.replacementCount > 0 ? redaction.replacementCount : detectedTokens.length})',
-                              categoryLabel: 'Exact cloud payload',
+                                  ? l10n.cloudPayloadNoPiiLabel
+                                  : l10n.cloudPayloadHiddenCount(
+                                      redaction.replacementCount > 0
+                                          ? redaction.replacementCount
+                                          : detectedTokens.length,
+                                    ),
+                              categoryLabel:
+                                  payloadCategoryLabelOverride ??
+                                  l10n.cloudPayloadLabel,
                               spineColor: semantics.inCloud.foreground,
                             ),
                             const SizedBox(height: 14),
                             Text(
-                              l10n.cloudConsentDisclosure,
+                              disclosureOverride ?? l10n.cloudConsentDisclosure,
                               style: m3e.typeScale.bodySmall.copyWith(
                                 color: scheme.onSurfaceVariant,
                                 height: 1.45,
@@ -284,26 +318,20 @@ class CloudConsentSheet extends StatelessWidget {
                       top: false,
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(24, 14, 24, 18),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            EnpriveTactileButton(
-                              label: l10n.btnUseCloud,
-                              onPressed: () => Navigator.pop(
-                                context,
-                                CloudConsentDecision.useCloudOnce,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            EnpriveTactileButton(
-                              label: l10n.btnReviewOnPhone,
-                              isSecondary: true,
-                              onPressed: () => Navigator.pop(
-                                context,
-                                CloudConsentDecision.reviewLocally,
-                              ),
-                            ),
-                          ],
+                        child: _ConsentActionPair(
+                          onDeviceLabel:
+                              secondaryActionLabelOverride ??
+                              l10n.btnReviewOnPhone,
+                          cloudLabel:
+                              primaryActionLabelOverride ?? l10n.btnUseCloud,
+                          onDevice: () => Navigator.pop(
+                            context,
+                            CloudConsentDecision.reviewLocally,
+                          ),
+                          onCloud: () => Navigator.pop(
+                            context,
+                            CloudConsentDecision.useCloudOnce,
+                          ),
                         ),
                       ),
                     ),
@@ -314,6 +342,145 @@ class CloudConsentSheet extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Summary at the top of the consent sheet: what leaves the phone, how much
+/// is masked first, and what never leaves.
+class _WhatWouldBeSent extends StatelessWidget {
+  final int maskedCount;
+
+  const _WhatWouldBeSent({required this.maskedCount});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ??
+        lookupAppLocalizations(const Locale('en'));
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+
+    Widget line(IconData icon, String text) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18, color: scheme.onSurfaceVariant),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                style: m3e.typeScale.bodyMedium.copyWith(
+                  color: scheme.onSurface,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      key: const Key('cloud_consent_summary'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(EnpriveRadii.card),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(
+              l10n.consentWhatWouldBeSent,
+              style: m3e.typeScale.titleMedium.copyWith(
+                color: scheme.onSurface,
+              ),
+            ),
+          ),
+          line(LucideIcons.fileText, l10n.consentSentScope),
+          line(LucideIcons.eyeOff, l10n.consentMaskedCount(maskedCount)),
+          line(LucideIcons.smartphone, l10n.consentStaysOnPhone),
+        ],
+      ),
+    );
+  }
+}
+
+/// Split action pair. The on-device review (the product default) comes
+/// first and carries the filled emphasis; cloud is the tonal alternative.
+/// The pair sits side by side when both labels fit on one line, otherwise
+/// it stacks with the on-device action on top.
+class _ConsentActionPair extends StatelessWidget {
+  final String onDeviceLabel;
+  final String cloudLabel;
+  final VoidCallback onDevice;
+  final VoidCallback onCloud;
+
+  const _ConsentActionPair({
+    required this.onDeviceLabel,
+    required this.cloudLabel,
+    required this.onDevice,
+    required this.onCloud,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final onDeviceButton = EnpriveTactileButton(
+      key: const Key('cloud_consent_on_device_btn'),
+      label: onDeviceLabel,
+      onPressed: onDevice,
+    );
+    final cloudButton = EnpriveTactileButton(
+      key: const Key('cloud_consent_cloud_btn'),
+      label: cloudLabel,
+      variant: EnpriveButtonVariant.tonal,
+      onPressed: onCloud,
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 8.0;
+        final halfWidth = (constraints.maxWidth - gap) / 2;
+        final style = EnpriveM3ETheme.of(
+          context,
+        ).typography.emphasized.titleMedium;
+        final textScaler = MediaQuery.textScalerOf(context);
+        bool fits(String label) {
+          final painter = TextPainter(
+            text: TextSpan(text: label, style: style),
+            textDirection: Directionality.of(context),
+            textScaler: textScaler,
+            maxLines: 1,
+          )..layout();
+          final fitsHalf = painter.width + 48 <= halfWidth;
+          painter.dispose();
+          return fitsHalf;
+        }
+
+        if (fits(onDeviceLabel) && fits(cloudLabel)) {
+          return Row(
+            children: [
+              Expanded(child: onDeviceButton),
+              const SizedBox(width: gap),
+              Expanded(child: cloudButton),
+            ],
+          );
+        }
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            onDeviceButton,
+            const SizedBox(height: gap),
+            cloudButton,
+          ],
+        );
+      },
     );
   }
 }

@@ -289,7 +289,7 @@ void main() {
       );
       await tester.pump();
       expect(
-        find.text('Reading policy clauses on this phone…'),
+        find.text('Reading policy text on this phone…'),
         findsOneWidget,
       );
 
@@ -305,7 +305,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('Reading policy clauses on this phone…'), findsNothing);
+      expect(find.text('Reading policy text on this phone…'), findsNothing);
       expect(
         find.text('Streaming reasoning & thought signature'),
         findsOneWidget,
@@ -314,7 +314,7 @@ void main() {
         find.text('Verifying sharing clause verbatim boundaries.'),
         findsOneWidget,
       );
-      expect(find.textContaining('Thought signature'), findsOneWidget);
+      expect(find.textContaining('Check ID'), findsNothing);
     },
   );
 
@@ -345,21 +345,22 @@ void main() {
         find.text('Masked 2 personal details with placeholders'),
         findsNothing,
       );
-      expect(find.textContaining('Thought signature:'), findsOneWidget);
-      expect(find.text('View streamed thoughts'), findsOneWidget);
+      expect(find.textContaining('Check ID:'), findsNothing);
+      expect(find.text('How Enprive checked this'), findsOneWidget);
       expect(
         find.text('Matched clause about ad network telemetry.'),
         findsNothing,
       );
 
-      await tester.tap(find.text('View streamed thoughts'));
+      await tester.tap(find.text('How Enprive checked this'));
       await tester.pump();
 
-      expect(find.text('Hide streamed thoughts'), findsOneWidget);
+      expect(find.text('Hide how Enprive checked this'), findsOneWidget);
       expect(
         find.text('Matched clause about ad network telemetry.'),
         findsOneWidget,
       );
+      expect(find.textContaining('Check ID:'), findsOneWidget);
     },
   );
 
@@ -599,9 +600,9 @@ void main() {
 
       expect(find.text('On this device'), findsOneWidget);
       expect(find.text('In the cloud'), findsOneWidget);
-      expect(find.text('Offline local scan'), findsOneWidget);
-      expect(find.text('Processing source unknown'), findsOneWidget);
-      expect(find.text('Processing location unavailable'), findsOneWidget);
+      expect(find.text('Checked offline on this phone'), findsOneWidget);
+      expect(find.text('Source unknown'), findsOneWidget);
+      expect(find.text('Source not available'), findsOneWidget);
     },
   );
 
@@ -785,7 +786,7 @@ void main() {
       await tester.tap(reviewOnPhoneBtn);
       await _flushBridgeAndPump(tester);
 
-      expect(find.text('Offline local scan'), findsOneWidget);
+      expect(find.text('Checked offline on this phone'), findsOneWidget);
       expect(analyseCalls.where((c) => c['cloudConsent'] == true), isEmpty);
 
       // Navigate back to Home
@@ -946,7 +947,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Deni’s Answer'), findsOneWidget);
-      expect(find.text('Offline local scan'), findsOneWidget);
+      expect(find.text('Checked offline on this phone'), findsOneWidget);
       expect(analyseCalls.where((c) => c['cloudConsent'] == true), isEmpty);
 
       // 3. Ask another question and approve "Use cloud for this check"
@@ -1073,7 +1074,7 @@ void main() {
       await _flushBridgeAndPump(tester);
 
       // Synthetic sample badge shown next to Home sample cards
-      expect(find.text('Synthetic example'), findsAtLeastNWidgets(1));
+      expect(find.text('Sample app'), findsAtLeastNWidgets(1));
 
       final checkAppBtn = find.text('Check an app');
       await tester.ensureVisible(checkAppBtn);
@@ -1091,12 +1092,12 @@ void main() {
       await _flushBridgeAndPump(tester);
       await _flushBridgeAndPump(tester);
 
-      // Opens Device Permission Inspection directly with 0 analyseText AI calls
+      // Opens Phone permissions checked directly with 0 analyseText AI calls
       expect(find.byType(ReviewResultScreen), findsOneWidget);
-      expect(find.text('Device Permission Inspection'), findsWidgets);
-      expect(find.text('Granted'), findsWidgets);
-      expect(find.text('Not granted'), findsWidgets);
-      expect(find.text('View reviewed policy snapshot'), findsNothing);
+      expect(find.text('Phone permissions checked'), findsWidgets);
+      expect(find.text('Allowed on this phone'), findsWidgets);
+      expect(find.text('Not allowed'), findsWidgets);
+      expect(find.text('View reviewed policy text'), findsNothing);
       expect(nativeCalls.where((c) => c.method == 'analyseText'), isEmpty);
 
       // Tap optional CTA "Add this app's privacy policy"
@@ -1232,7 +1233,7 @@ void main() {
       );
       await _flushBridgeAndPump(tester);
 
-      final viewSnapshotBtn = find.text('View reviewed policy snapshot').last;
+      final viewSnapshotBtn = find.text('View reviewed policy text').last;
       await tester.ensureVisible(viewSnapshotBtn);
       await tester.pump();
       await tester.tap(viewSnapshotBtn);
@@ -1240,15 +1241,23 @@ void main() {
 
       expect(find.textContaining('SHA-256 ·'), findsNothing);
       expect(
-        find.textContaining('not cryptographic SHA-256'),
+        find.text('Document fingerprint · #9a8b7c6d5e4f3210'),
+        findsNothing,
+      );
+      await tester.tap(
+        find.byKey(const Key('snapshot_advanced_details_toggle')),
+      );
+      await tester.pump();
+      expect(
+        find.textContaining('helps verify this is the exact text Enprive checked'),
         findsAtLeastNWidgets(1),
       );
       expect(
-        find.text('Snapshot digest · FNV-1a 64-bit · #9a8b7c6d5e4f3210'),
+        find.text('Document fingerprint · #9a8b7c6d5e4f3210'),
         findsOneWidget,
       );
 
-      final copyDigestBtn = find.text('Copy digest').first;
+      final copyDigestBtn = find.text('Copy fingerprint').first;
       await tester.ensureVisible(copyDigestBtn);
       await tester.pump();
       await tester.tap(copyDigestBtn);

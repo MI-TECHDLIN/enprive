@@ -242,12 +242,12 @@ class DeclaredSensitivePermission {
   });
 
   String get shortStatusLabel => switch (grantStatus) {
-        DeclaredPermissionGrantStatus.granted => 'Declared · Currently granted',
-        DeclaredPermissionGrantStatus.denied => 'Declared · Currently denied',
+        DeclaredPermissionGrantStatus.granted => 'Listed by app · Allowed',
+        DeclaredPermissionGrantStatus.denied => 'Listed by app · Not allowed',
         DeclaredPermissionGrantStatus.unavailable =>
-          'Declared · Status unavailable',
+          'Listed by app · Status unknown',
         DeclaredPermissionGrantStatus.manifestDeclaredOnly =>
-          'Declared in manifest · Platform ID',
+          'Listed by app · Ad ID',
       };
 
   factory DeclaredSensitivePermission.fromMap(Map<dynamic, dynamic> map) {
@@ -259,7 +259,7 @@ class DeclaredSensitivePermission {
       grantStatus: _parseGrantStatus(map['grantStatus'] as String?),
       isRuntimePermission: map['isRuntimePermission'] as bool? ?? true,
       statusNote:
-          map['statusNote'] as String? ?? 'Declared in Android manifest',
+          map['statusNote'] as String? ?? 'Listed by this app on your phone',
     );
   }
 

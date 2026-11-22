@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
 import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_tokens.dart';
+import 'deni_gesture.dart';
 
 enum DeniPose {
   idle,
@@ -11,6 +14,41 @@ enum DeniPose {
   listening,
   support,
   celebrating,
+
+  /// Points at the screen's next step (Check home, "Check an app").
+  pointing,
+
+  /// Raises an open palm: "I can explain this" (Ask Deni entry points).
+  raiseHand,
+
+  /// Holds the privacy promise shield (onboarding last screen only; never on a
+  /// review result, and never with a check mark).
+  holdShield,
+
+  /// Carries and places a receipt slip (saving a review, Receipts).
+  carryReceipt,
+
+  /// Rises over a card edge with hands on the ledge (Quick Settings card,
+  /// empty states).
+  peek,
+}
+
+extension DeniPoseIntent on DeniPose {
+  /// Whether this pose plays a one-shot [DeniGesture] on arrival.
+  bool get hasIntentGesture => switch (this) {
+    DeniPose.pointing ||
+    DeniPose.raiseHand ||
+    DeniPose.holdShield ||
+    DeniPose.carryReceipt ||
+    DeniPose.peek => true,
+    _ => false,
+  };
+
+  /// Whether the gesture has a direction that mirrors in right-to-left layouts.
+  bool get isDirectional => switch (this) {
+    DeniPose.pointing || DeniPose.raiseHand || DeniPose.peek => true,
+    _ => false,
+  };
 }
 
 /// Three-tier Level-of-Detail (LOD) system for Deni (Concept C):
@@ -21,11 +59,7 @@ enum DeniPose {
 ///   positioned strictly outside the facial zone and within safe canvas bounds.
 /// - [hero] (`116dp+`): Full multi-prop choreography, secondary callouts, and
 ///   ambient radial stage lighting.
-enum DeniLodTier {
-  compact,
-  standard,
-  hero,
-}
+enum DeniLodTier { compact, standard, hero }
 
 /// Interactive sculpted vector mascot for Deni (Concept C: The Protective Pebble
 /// with Paper Tab).
@@ -37,13 +71,30 @@ enum DeniLodTier {
 /// - 8% phase-lagged secondary follow-through on the folded cream paper slip
 /// - Height-coupled contact shadow (`shadowTrack`)
 /// - Three-tier responsive LOD (`compact` 48–64dp, `standard` 68–112dp, `hero` 116dp+)
-/// - Non-certification trust guardrails: zero safety-certification shields or checkmarks
+/// - Intent poses ([DeniPose.pointing], [DeniPose.raiseHand],
+///   [DeniPose.holdShield], [DeniPose.carryReceipt], [DeniPose.peek]) with long
+///   arms and mitten hands; each plays one [DeniGesture] per arrival, then rests
+///   on its story pose while only the breathing loop continues. Gaze follows the
+///   hand, and directional gestures mirror in right-to-left layouts.
+/// - Hand rules: compact shows at most one hand and no props; hands never cover
+///   the face; reduced motion and [holdStill] show the still story pose only.
+/// - Non-certification trust guardrails: zero checkmarks or thumbs up; the
+///   shield is only the onboarding privacy promise, never a review verdict
+/// - Decorative for screen readers unless [onTap] is set, in which case it is a
+///   button named by [semanticLabel] (Deni addendum placement rules)
 class DeniAnimatedMascot extends StatefulWidget {
   final double size;
   final DeniPose pose;
   final VoidCallback? onTap;
   final bool showAmbientGlow;
   final DeniLodTier? lodOverride;
+
+  /// Freezes Deni on the still story pose, for example while the user reads a
+  /// long passage or listens to speech.
+  final bool holdStill;
+
+  /// Accessible name used only when [onTap] makes Deni a button.
+  final String? semanticLabel;
 
   const DeniAnimatedMascot({
     super.key,
@@ -52,6 +103,8 @@ class DeniAnimatedMascot extends StatefulWidget {
     this.onTap,
     this.showAmbientGlow = true,
     this.lodOverride,
+    this.holdStill = false,
+    this.semanticLabel,
   });
 
   /// Resolves the canonical [DeniLodTier] for a given logical [size] in dp:
@@ -64,8 +117,7 @@ class DeniAnimatedMascot extends StatefulWidget {
     return DeniLodTier.hero;
   }
 
-  DeniLodTier get effectiveLodTier =>
-      lodOverride ?? resolveTierForSize(size);
+  DeniLodTier get effectiveLodTier => lodOverride ?? resolveTierForSize(size);
 
   @override
   State<DeniAnimatedMascot> createState() => _DeniAnimatedMascotState();
@@ -76,18 +128,26 @@ class _DeniAnimatedMascotState extends State<DeniAnimatedMascot>
   late final AnimationController _loopController;
   late final AnimationController _blinkController;
   late final AnimationController _springController;
+  late final DeniGesture _gesture;
   final math.Random _random = math.Random();
   Timer? _blinkTimer;
+  bool _reduceMotion = false;
+  bool _arrivalHandled = false;
+
+  /// Motion runs only when the platform allows animation and the host has not
+  /// asked Deni to hold still.
+  bool get _motionAllowed => !_reduceMotion && !widget.holdStill;
 
   @override
   void initState() {
     super.initState();
 
-    // 3.6s master loop (within the 3.0–6.0s optimal window from physics.md)
+    // 3.6s master loop (within the 3.0–6.0s optimal window from physics.md).
+    // Started and stopped by [_syncMotion] so reduced motion keeps no ticker.
     _loopController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3600),
-    )..repeat();
+    );
 
     // 120ms natural blink (within 0.08–0.14s spec from physics.md)
     _blinkController = AnimationController(
@@ -101,17 +161,51 @@ class _DeniAnimatedMascotState extends State<DeniAnimatedMascot>
       vsync: this,
       duration: const Duration(milliseconds: 450),
     );
+
+    // One-shot intent gesture, separate from the idle loop.
+    _gesture = DeniGesture(vsync: this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    _syncMotion();
+    if (!_arrivalHandled) {
+      // One gesture per screen arrival.
+      _arrivalHandled = true;
+      _playGestureIfNeeded();
+    }
   }
 
   @override
   void didUpdateWidget(covariant DeniAnimatedMascot oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.pose != widget.pose) {
-      final reduceMotion =
-          MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-      if (!reduceMotion) {
-        _springController.forward(from: 0.0);
-      }
+    if (oldWidget.holdStill != widget.holdStill) {
+      _syncMotion();
+    }
+    if (oldWidget.pose != widget.pose && _motionAllowed) {
+      _springController.forward(from: 0.0);
+      _playGestureIfNeeded();
+    }
+  }
+
+  void _syncMotion() {
+    if (_motionAllowed) {
+      if (!_loopController.isAnimating) _loopController.repeat();
+    } else {
+      _loopController.stop();
+      _springController.stop();
+      _springController.value = 0.0;
+      _gesture.rest();
+    }
+  }
+
+  void _playGestureIfNeeded() {
+    if (_motionAllowed && widget.pose.hasIntentGesture) {
+      _gesture.play();
+    } else {
+      _gesture.rest();
     }
   }
 
@@ -121,9 +215,7 @@ class _DeniAnimatedMascotState extends State<DeniAnimatedMascot>
     _blinkTimer?.cancel();
     _blinkTimer = Timer(delay, () async {
       if (!mounted) return;
-      final reduceMotion =
-          MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-      if (!reduceMotion) {
+      if (_motionAllowed) {
         await _blinkController.forward();
         if (!mounted) return;
         await _blinkController.reverse();
@@ -133,9 +225,9 @@ class _DeniAnimatedMascotState extends State<DeniAnimatedMascot>
   }
 
   void _handleTap() {
-    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    if (!reduceMotion) {
+    if (_motionAllowed) {
       _springController.forward(from: 0.0);
+      _playGestureIfNeeded();
     }
     widget.onTap?.call();
   }
@@ -146,15 +238,16 @@ class _DeniAnimatedMascotState extends State<DeniAnimatedMascot>
     _loopController.dispose();
     _blinkController.dispose();
     _springController.dispose();
+    _gesture.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool reduceMotion =
-        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final bool still = !_motionAllowed;
     final DeniLodTier lod = widget.effectiveLodTier;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool isRtl = Directionality.maybeOf(context) == TextDirection.rtl;
     final semantics = context.semanticColors;
 
     final (double widthFactor, double heightFactor) = switch (lod) {
@@ -163,48 +256,57 @@ class _DeniAnimatedMascotState extends State<DeniAnimatedMascot>
       DeniLodTier.hero => (1.32, 1.24),
     };
 
-    return Semantics(
-      label:
-          'Deni, your privacy guide (${widget.pose.name} state, ${lod.name} detail)',
-      button: widget.onTap != null,
-      image: true,
-      child: GestureDetector(
-        onTap: widget.onTap != null ? _handleTap : null,
-        behavior: HitTestBehavior.opaque,
-        child: SizedBox(
-          width: widget.size * widthFactor,
-          height: widget.size * heightFactor,
-          child: AnimatedBuilder(
-            animation: Listenable.merge([
-              _loopController,
-              _blinkController,
-              _springController,
-            ]),
-            builder: (context, _) {
-              // When reduced motion is requested, pick the expressive keyframe (0.35)
-              // that carries the story clearly (per rigging.md Reduced-motion poses).
-              final double phase = reduceMotion ? 0.35 : _loopController.value;
-              final double blink = reduceMotion ? 0.0 : _blinkController.value;
-              final double springT =
-                  reduceMotion ? 0.0 : _springController.value;
+    final Widget mascot = GestureDetector(
+      onTap: widget.onTap != null ? _handleTap : null,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: widget.size * widthFactor,
+        height: widget.size * heightFactor,
+        child: AnimatedBuilder(
+          animation: Listenable.merge([
+            _loopController,
+            _blinkController,
+            _springController,
+            _gesture.listenable,
+          ]),
+          builder: (context, _) {
+            // When Deni is still, pick the expressive keyframe (0.35) that
+            // carries the story clearly (per rigging.md Reduced-motion poses);
+            // the gesture rests on its story pose (reach 1.0).
+            final double phase = still ? 0.35 : _loopController.value;
+            final double blink = still ? 0.0 : _blinkController.value;
+            final double springT = still ? 0.0 : _springController.value;
 
-              return CustomPaint(
-                painter: _DeniRiggedActionPainter(
-                  phase: phase,
-                  blink: blink,
-                  springT: springT,
-                  pose: widget.pose,
-                  lod: lod,
-                  isDark: isDark,
-                  showAmbientGlow: widget.showAmbientGlow,
-                  primaryGlowColor: semantics.deniPrimaryGlow,
-                  secondaryGlowColor: semantics.deniSecondaryGlow,
-                ),
-              );
-            },
-          ),
+            return CustomPaint(
+              painter: _DeniRiggedActionPainter(
+                phase: phase,
+                blink: blink,
+                springT: springT,
+                gestureReach: still ? 1.0 : _gesture.reach,
+                gestureCrouch: still ? 0.0 : _gesture.crouch,
+                gestureProgress: still ? 1.0 : _gesture.progress,
+                pose: widget.pose,
+                lod: lod,
+                isDark: isDark,
+                isRtl: isRtl,
+                showAmbientGlow: widget.showAmbientGlow,
+                primaryGlowColor: semantics.deniPrimaryGlow,
+                secondaryGlowColor: semantics.deniSecondaryGlow,
+              ),
+            );
+          },
         ),
       ),
+    );
+
+    if (widget.onTap == null) {
+      // Decorative: adjacent text already labels the content.
+      return ExcludeSemantics(child: mascot);
+    }
+    return Semantics(
+      label: widget.semanticLabel ?? 'Deni, your privacy guide',
+      button: true,
+      child: mascot,
     );
   }
 }
@@ -213,9 +315,13 @@ class _DeniRiggedActionPainter extends CustomPainter {
   final double phase;
   final double blink;
   final double springT;
+  final double gestureReach;
+  final double gestureCrouch;
+  final double gestureProgress;
   final DeniPose pose;
   final DeniLodTier lod;
   final bool isDark;
+  final bool isRtl;
   final bool showAmbientGlow;
   final Color primaryGlowColor;
   final Color secondaryGlowColor;
@@ -224,13 +330,38 @@ class _DeniRiggedActionPainter extends CustomPainter {
     required this.phase,
     required this.blink,
     required this.springT,
+    required this.gestureReach,
+    required this.gestureCrouch,
+    required this.gestureProgress,
     required this.pose,
     required this.lod,
     required this.isDark,
+    required this.isRtl,
     required this.showAmbientGlow,
     required this.primaryGlowColor,
     required this.secondaryGlowColor,
   });
+
+  /// Horizontal sign of directional gestures: `1` reaches toward the right in
+  /// left-to-right layouts, `-1` toward the left in right-to-left layouts.
+  double get _dir => (isRtl && pose.isDirectional) ? -1.0 : 1.0;
+
+  /// Body-space shoulder height shared by every intent pose arm.
+  static const double _shoulderDy = 0.10;
+
+  /// Where the eyes look, in eye-radius units, so gaze follows the hand.
+  Offset get _gazeTarget {
+    final double r = gestureReach.clamp(0.0, 1.0);
+    return switch (pose) {
+          DeniPose.pointing => Offset(0.30 * _dir, 0.16),
+          DeniPose.raiseHand => Offset(0.24 * _dir, -0.22),
+          DeniPose.holdShield => const Offset(0.0, 0.20),
+          DeniPose.carryReceipt => const Offset(0.0, 0.24),
+          DeniPose.peek => Offset(0.10 * _dir, 0.22),
+          _ => Offset.zero,
+        } *
+        r;
+  }
 
   /// Area-interpolated squash/stretch from `svg-mascot-animator/references/physics.md`:
   /// `preserve = 0.55` keeps the solid ceramic pebble silhouette without melting.
@@ -281,8 +412,11 @@ class _DeniRiggedActionPainter extends CustomPainter {
     }
 
     final double breatheSin = math.sin(phase * 2 * math.pi);
-    final double sy = 1.0 + (breatheSin * 0.024) + springDelta;
+    // Intent gestures add a small anticipation crouch on top of breathing.
+    final double sy =
+        1.0 + (breatheSin * 0.024) + springDelta - gestureCrouch * 0.035;
     final double lift = (breatheSin * 0.5 + 0.5) * 0.022;
+    final double reach = gestureReach;
 
     final double tilt = switch (pose) {
       DeniPose.listening => -0.045 + math.sin(phase * 4 * math.pi) * 0.035,
@@ -291,6 +425,12 @@ class _DeniRiggedActionPainter extends CustomPainter {
       DeniPose.explaining => 0.020 + math.sin(phase * 2 * math.pi) * 0.016,
       DeniPose.idle => math.sin(phase * 2 * math.pi) * 0.015,
       DeniPose.celebrating => 0.0,
+      // Lean into the point; lean slightly away from a raised hand.
+      DeniPose.pointing => _dir * 0.035 * reach + breatheSin * 0.010,
+      DeniPose.raiseHand => -_dir * 0.020 * reach + breatheSin * 0.012,
+      DeniPose.holdShield => breatheSin * 0.008,
+      DeniPose.carryReceipt => breatheSin * 0.010,
+      DeniPose.peek => _dir * 0.050 * reach + breatheSin * 0.010,
     };
 
     return (lift, sy, tilt);
@@ -306,11 +446,15 @@ class _DeniRiggedActionPainter extends CustomPainter {
     // of the avatar box so the face and crown paper tab read with maximum clarity.
     // In LOD 2/3, Deni shifts slightly left when right-side props (thinking/explaining)
     // are active so props never overlap the face or clip the right canvas edge.
-    final double cx = isCompact
-        ? w * 0.50
-        : ((pose == DeniPose.thinking || pose == DeniPose.explaining)
-              ? w * 0.41
-              : w * 0.48);
+    // Directional intent poses shift away from the reaching hand (mirrored in RTL).
+    final double cx = switch (pose) {
+      DeniPose.pointing => w * (0.50 - _dir * (isCompact ? 0.06 : 0.09)),
+      DeniPose.raiseHand => w * (0.50 - _dir * (isCompact ? 0.04 : 0.05)),
+      DeniPose.holdShield || DeniPose.carryReceipt || DeniPose.peek => w * 0.50,
+      _ when isCompact => w * 0.50,
+      DeniPose.thinking || DeniPose.explaining => w * 0.41,
+      _ => w * 0.48,
+    };
     final double groundY = isCompact ? h * 0.90 : h * 0.89;
 
     final double pw = isCompact
@@ -323,12 +467,23 @@ class _DeniRiggedActionPainter extends CustomPainter {
     final (double jumpHeightRatio, double sy, double bodyTilt) =
         _computeKinematics();
     final double sx = _squashX(sy);
-    final double elevationPx = jumpHeightRatio * h;
+    final bool isPeek = pose == DeniPose.peek;
+    // Peek sinks the body behind the ledge at [groundY] and rises with reach.
+    final double peekSinkPx = isPeek
+        ? ph * (0.26 + 0.60 * (1.0 - gestureReach)).clamp(0.0, 1.2)
+        : 0.0;
+    final double elevationPx = jumpHeightRatio * h - peekSinkPx;
 
     // Secondary motion with 8% phase lag (`physics.md` Lag and follow-through)
     final double laggedPhase = (phase - 0.08) % 1.0;
     final double laggedSin = math.sin(laggedPhase * 2 * math.pi);
     final double fastSin = math.sin(phase * 4 * math.pi);
+
+    if (isPeek) {
+      // Everything behind the ledge is hidden, as if Deni stands behind a card.
+      canvas.save();
+      canvas.clipRect(Rect.fromLTRB(0, 0, w, groundY));
+    }
 
     // 1. Subtle Ambient Glow behind Deni (Theme-aware for Light & Dark canvas)
     if (showAmbientGlow) {
@@ -336,15 +491,9 @@ class _DeniRiggedActionPainter extends CustomPainter {
       final double glowRadius = isCompact ? w * 0.42 : w * 0.46;
       final glowPaint = Paint()
         ..shader = RadialGradient(
-          colors: [
-            primaryGlowColor,
-            secondaryGlowColor,
-            Colors.transparent,
-          ],
+          colors: [primaryGlowColor, secondaryGlowColor, Colors.transparent],
           stops: const [0.0, 0.58, 1.0],
-        ).createShader(
-          Rect.fromCircle(center: glowCenter, radius: glowRadius),
-        );
+        ).createShader(Rect.fromCircle(center: glowCenter, radius: glowRadius));
       canvas.drawCircle(glowCenter, glowRadius, glowPaint);
     }
 
@@ -352,19 +501,24 @@ class _DeniRiggedActionPainter extends CustomPainter {
     final double heightFactor = (jumpHeightRatio / 0.14).clamp(0.0, 1.0);
     final double shadowScale = (1.0 - 0.42 * heightFactor) * (sx * 0.95);
     final double baseShadowAlpha = isDark ? 0.34 : 0.17;
-    final double shadowAlpha =
-        (baseShadowAlpha - 0.09 * heightFactor).clamp(0.05, 0.40);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(cx, groundY),
-        width: pw * 0.84 * shadowScale,
-        height: ph * 0.11 * shadowScale,
-      ),
-      Paint()
-        ..color = (isDark ? Colors.black : const Color(0xFF0E4A43))
-            .withValues(alpha: shadowAlpha)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+    final double shadowAlpha = (baseShadowAlpha - 0.09 * heightFactor).clamp(
+      0.05,
+      0.40,
     );
+    // A peeking Deni stands behind the ledge, so it casts no floor shadow.
+    if (!isPeek) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(cx, groundY),
+          width: pw * 0.84 * shadowScale,
+          height: ph * 0.11 * shadowScale,
+        ),
+        Paint()
+          ..color = (isDark ? Colors.black : const Color(0xFF0E4A43))
+              .withValues(alpha: shadowAlpha)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+      );
+    }
 
     // 3. Celebrating Landing Ripple / Debris Ring
     if (pose == DeniPose.celebrating && phase >= 0.52 && phase <= 0.86) {
@@ -395,11 +549,31 @@ class _DeniRiggedActionPainter extends CustomPainter {
     canvas.translate(-cx, -bodyCenterY);
 
     // 5. Background Flippers
+    final bool compactSingleHand =
+        isCompact &&
+        (pose == DeniPose.pointing ||
+            pose == DeniPose.raiseHand ||
+            pose == DeniPose.peek);
     if (isCompact) {
       // In LOD 1 (compact), use clean side flippers for idle/thinking/explaining/celebrating
       // so articulated arms never cross over or obscure Deni's face at 48-64dp!
       if (pose == DeniPose.support) {
         _drawSupportShoulders(canvas, cx, bodyCenterY, pw, ph);
+      } else if (compactSingleHand) {
+        // At most one hand at compact size: keep the flipper on the far side.
+        if (_dir > 0) {
+          _drawLeftFlipper(canvas, cx, bodyCenterY, pw, ph, laggedSin, fastSin);
+        } else {
+          _drawRightFlipper(
+            canvas,
+            cx,
+            bodyCenterY,
+            pw,
+            ph,
+            laggedSin,
+            fastSin,
+          );
+        }
       } else {
         _drawLeftFlipper(canvas, cx, bodyCenterY, pw, ph, laggedSin, fastSin);
         _drawRightFlipper(canvas, cx, bodyCenterY, pw, ph, laggedSin, fastSin);
@@ -407,7 +581,7 @@ class _DeniRiggedActionPainter extends CustomPainter {
     } else if (pose == DeniPose.idle || pose == DeniPose.celebrating) {
       _drawLeftFlipper(canvas, cx, bodyCenterY, pw, ph, laggedSin, fastSin);
       _drawRightFlipper(canvas, cx, bodyCenterY, pw, ph, laggedSin, fastSin);
-    } else {
+    } else if (!pose.hasIntentGesture) {
       _drawSupportShoulders(canvas, cx, bodyCenterY, pw, ph);
     }
 
@@ -493,9 +667,23 @@ class _DeniRiggedActionPainter extends CustomPainter {
         _drawSupportClaspedHands(canvas, cx, bodyCenterY, pw, ph, laggedSin);
       } else if (pose == DeniPose.listening) {
         _drawCompactListeningCups(canvas, cx, bodyCenterY, pw, ph);
+      } else if (pose == DeniPose.pointing) {
+        _drawPointingScene(canvas, cx, bodyCenterY, pw, ph, laggedSin);
+      } else if (pose == DeniPose.raiseHand) {
+        _drawRaiseHandScene(canvas, cx, bodyCenterY, pw, ph, laggedSin);
       }
     } else {
       switch (pose) {
+        case DeniPose.pointing:
+          _drawPointingScene(canvas, cx, bodyCenterY, pw, ph, laggedSin);
+        case DeniPose.raiseHand:
+          _drawRaiseHandScene(canvas, cx, bodyCenterY, pw, ph, laggedSin);
+        case DeniPose.carryReceipt:
+          _drawCarryReceiptScene(canvas, cx, bodyCenterY, pw, ph, laggedSin);
+        case DeniPose.holdShield:
+        case DeniPose.peek:
+          // Drawn in world space below so the props stay still while Deni breathes.
+          break;
         case DeniPose.thinking:
           _drawThinkingScene(
             canvas,
@@ -536,6 +724,28 @@ class _DeniRiggedActionPainter extends CustomPainter {
 
     canvas.restore();
 
+    // Maps a body-space point through the body rig (tilt, squash, elevation).
+    Offset bodyToWorld(Offset p) {
+      final Offset d = p - Offset(cx, bodyCenterY);
+      final double c = math.cos(bodyTilt);
+      final double s = math.sin(bodyTilt);
+      final Offset rotated = Offset(
+        cx + d.dx * c - d.dy * s,
+        bodyCenterY + d.dx * s + d.dy * c,
+      );
+      return Offset(
+        cx + (rotated.dx - cx) * sx,
+        groundY + (rotated.dy - groundY) * sy - elevationPx,
+      );
+    }
+
+    if (isPeek) {
+      canvas.restore();
+      _drawPeekLedge(canvas, cx, groundY, w, pw, ph);
+    } else if (pose == DeniPose.holdShield && !isCompact) {
+      _drawHoldShieldScene(canvas, cx, bodyCenterY, pw, ph, bodyToWorld);
+    }
+
     // 10. Additional External Floating Badges / Sparkles (scaled by LOD tier)
     _drawExternalBadges(
       canvas,
@@ -564,14 +774,7 @@ class _DeniRiggedActionPainter extends CustomPainter {
         right,
         cy - ph * 0.02,
       )
-      ..cubicTo(
-        right,
-        cy + ph * 0.30,
-        cx + pw * 0.32,
-        bottom,
-        cx,
-        bottom,
-      )
+      ..cubicTo(right, cy + ph * 0.30, cx + pw * 0.32, bottom, cx, bottom)
       ..cubicTo(
         cx - pw * 0.32,
         bottom,
@@ -580,14 +783,7 @@ class _DeniRiggedActionPainter extends CustomPainter {
         left,
         cy - ph * 0.02,
       )
-      ..cubicTo(
-        left,
-        cy - ph * 0.32,
-        cx - pw * 0.34,
-        top,
-        cx,
-        top,
-      )
+      ..cubicTo(left, cy - ph * 0.32, cx - pw * 0.34, top, cx, top)
       ..close();
   }
 
@@ -710,14 +906,21 @@ class _DeniRiggedActionPainter extends CustomPainter {
         Paint()..color = const Color(0xFF152036),
       );
       canvas.drawRRect(
-        RRect.fromRectAndRadius(cupRect.deflate(1.5), Radius.circular(pw * 0.05)),
+        RRect.fromRectAndRadius(
+          cupRect.deflate(1.5),
+          Radius.circular(pw * 0.05),
+        ),
         Paint()..color = const Color(0xFFFFFBF4),
       );
     }
   }
 
-  /// Helper to draw a sculpted 3D-shaded teal arm segment + rounded paw pad
+  /// Helper to draw a sculpted 3D-shaded teal arm segment + mitten hand
   /// between [shoulder] and [handCenter].
+  ///
+  /// The mitten (palm highlight, small thumb) points along the forearm unless
+  /// [handAngle] overrides it. [thumbSide] picks which side of the forearm the
+  /// thumb sits on (`-1` or `1`, in the hand's own frame).
   void _drawArticulatedArm({
     required Canvas canvas,
     required Offset shoulder,
@@ -725,6 +928,9 @@ class _DeniRiggedActionPainter extends CustomPainter {
     required Offset handCenter,
     required double armThickness,
     required double pawRadius,
+    _MittenShape hand = _MittenShape.grip,
+    double? handAngle,
+    double thumbSide = -1.0,
   }) {
     final Path shadowPath = Path()
       ..moveTo(shoulder.dx, shoulder.dy + 2)
@@ -770,19 +976,542 @@ class _DeniRiggedActionPainter extends CustomPainter {
         ..style = PaintingStyle.stroke,
     );
 
-    canvas.drawCircle(
-      handCenter,
-      pawRadius,
-      Paint()..color = const Color(0xFF2CB5A5),
+    final Offset forearm = handCenter - elbowControl;
+    _drawMitten(
+      canvas,
+      center: handCenter,
+      radius: pawRadius,
+      angle: handAngle ?? math.atan2(forearm.dy, forearm.dx),
+      shape: hand,
+      thumbSide: thumbSide,
     );
-    canvas.drawCircle(
-      handCenter,
-      pawRadius,
+  }
+
+  /// Mitten hand in its own frame: `+x` runs from the wrist toward the
+  /// fingertips, so one rotation orients the whole hand.
+  void _drawMitten(
+    Canvas canvas, {
+    required Offset center,
+    required double radius,
+    required double angle,
+    _MittenShape shape = _MittenShape.grip,
+    double thumbSide = -1.0,
+  }) {
+    final double r = radius;
+    final double outlineWidth = math.max(1.0, r * 0.13);
+    final Paint fill = Paint()..color = const Color(0xFF2CB5A5);
+    final Paint outline = Paint()
+      ..color = const Color(0xFF0D5950)
+      ..strokeWidth = outlineWidth
+      ..style = PaintingStyle.stroke;
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(angle);
+
+    final Rect palm = switch (shape) {
+      _MittenShape.openPalm => Rect.fromCenter(
+        center: Offset(r * 0.30, 0),
+        width: r * 2.45,
+        height: r * 2.05,
+      ),
+      _MittenShape.point => Rect.fromCenter(
+        center: Offset(r * 0.05, 0),
+        width: r * 1.95,
+        height: r * 1.75,
+      ),
+      _MittenShape.grip => Rect.fromCenter(
+        center: Offset(r * 0.12, 0),
+        width: r * 2.20,
+        height: r * 1.85,
+      ),
+    };
+
+    if (shape == _MittenShape.point) {
+      // Extended index finger, drawn first so the mitten overlaps its root.
+      final Offset fingerRoot = Offset(r * 0.70, -thumbSide * r * 0.18);
+      final Offset fingerTip = Offset(r * 1.85, -thumbSide * r * 0.10);
+      canvas.drawLine(
+        fingerRoot,
+        fingerTip,
+        Paint()
+          ..color = const Color(0xFF0D5950)
+          ..strokeWidth = r * 0.78 + outlineWidth * 2
+          ..strokeCap = StrokeCap.round,
+      );
+      canvas.drawLine(
+        fingerRoot,
+        fingerTip,
+        Paint()
+          ..color = const Color(0xFF2CB5A5)
+          ..strokeWidth = r * 0.78
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+
+    canvas.drawOval(palm, fill);
+    // Palm highlight toward the light (top-left of the pebble's rim light).
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: palm.center + Offset(-r * 0.10, -r * 0.28),
+        width: palm.width * 0.46,
+        height: palm.height * 0.36,
+      ),
+      Paint()..color = const Color(0xFF4FD1C5).withValues(alpha: 0.72),
+    );
+    canvas.drawOval(palm, outline);
+
+    // Small thumb on the chosen side; spread wider on an open palm.
+    final bool open = shape == _MittenShape.openPalm;
+    canvas.save();
+    canvas.translate(
+      r * (open ? 0.05 : -0.02),
+      thumbSide * r * (open ? 1.00 : 0.82),
+    );
+    canvas.rotate(thumbSide * (open ? 0.95 : 0.55));
+    final Rect thumb = Rect.fromCenter(
+      center: Offset.zero,
+      width: r * 1.00,
+      height: r * 0.64,
+    );
+    canvas.drawOval(thumb, fill);
+    canvas.drawOval(thumb, outline);
+    canvas.restore();
+
+    canvas.restore();
+  }
+
+  /// Relaxed arm hanging along the body side, used by the far arm of one-hand
+  /// intent poses so Deni always reads with two arms at standard and hero sizes.
+  void _drawRestingArm(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double pw,
+    double ph,
+    double side,
+    double laggedSin,
+  ) {
+    final Offset shoulder = Offset(
+      cx + side * pw * 0.37,
+      cy + ph * _shoulderDy,
+    );
+    final Offset elbow = Offset(cx + side * pw * 0.56, cy + ph * 0.24);
+    final Offset hand = Offset(
+      cx + side * pw * 0.50,
+      cy + ph * 0.38 + laggedSin * 1.2,
+    );
+    _drawArticulatedArm(
+      canvas: canvas,
+      shoulder: shoulder,
+      elbowControl: elbow,
+      handCenter: hand,
+      armThickness: pw * 0.115,
+      pawRadius: pw * 0.072,
+      thumbSide: side,
+    );
+  }
+
+  /// Angle between [rest] and [target] at the current gesture reach, with a
+  /// 6–10% phase-lagged follow-through on the breathing loop.
+  double _armAngle(double rest, double target, double laggedSin) {
+    return rest + (target - rest) * gestureReach + laggedSin * 0.02;
+  }
+
+  /// POINTING (all tiers): the near arm swings up from the body side about the
+  /// shoulder and points with an extended finger toward the next step; the far
+  /// arm rests (standard and hero only). Points down-and-out so the eye travels
+  /// to the content below Deni.
+  void _drawPointingScene(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double pw,
+    double ph,
+    double laggedSin,
+  ) {
+    final bool isCompact = lod == DeniLodTier.compact;
+    final double d = _dir;
+    if (!isCompact) {
+      _drawRestingArm(canvas, cx, cy, pw, ph, -d, laggedSin);
+    }
+
+    final Offset shoulder = Offset(cx + d * pw * 0.36, cy + ph * _shoulderDy);
+    final double armLength = pw * (isCompact ? 0.30 : 0.46);
+    final double a = _armAngle(1.10, 0.62, laggedSin);
+    final Offset hand =
+        shoulder + Offset(math.cos(a) * d, math.sin(a)) * armLength;
+    final Offset elbow =
+        shoulder +
+        Offset(math.cos(a + 0.35) * d, math.sin(a + 0.35)) * (armLength * 0.55);
+    _drawArticulatedArm(
+      canvas: canvas,
+      shoulder: shoulder,
+      elbowControl: elbow,
+      handCenter: hand,
+      armThickness: pw * (isCompact ? 0.13 : 0.115),
+      pawRadius: pw * (isCompact ? 0.085 : 0.072),
+      hand: _MittenShape.point,
+      thumbSide: -d,
+    );
+  }
+
+  /// RAISE HAND (all tiers): the near arm lifts an open palm beside the head,
+  /// clear of the face, and the palm waves once as the gesture settles. Small
+  /// sparkles mark the AI feature; compact keeps a single sparkle.
+  void _drawRaiseHandScene(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double pw,
+    double ph,
+    double laggedSin,
+  ) {
+    final bool isCompact = lod == DeniLodTier.compact;
+    final double d = _dir;
+    if (!isCompact) {
+      _drawRestingArm(canvas, cx, cy, pw, ph, -d, laggedSin);
+    }
+
+    final Offset shoulder = Offset(cx + d * pw * 0.38, cy + ph * 0.06);
+    final double armLength = pw * (isCompact ? 0.36 : 0.48);
+    final double a = _armAngle(1.10, -1.15, laggedSin);
+    final Offset hand =
+        shoulder + Offset(math.cos(a) * d, math.sin(a)) * armLength;
+    final Offset elbow =
+        shoulder +
+        Offset(math.cos(a + 0.45) * d, math.sin(a + 0.45)) * (armLength * 0.55);
+
+    // One palm wave during the settle beat (pendulum, decaying to rest).
+    final double releaseEnd = DeniGesture.releaseEndFraction;
+    double wave = 0.0;
+    if (gestureProgress > releaseEnd && gestureProgress < 1.0) {
+      final double u = (gestureProgress - releaseEnd) / (1.0 - releaseEnd);
+      wave = 0.34 * math.sin(u * 2 * math.pi) * (1.0 - u);
+    }
+    final double forearmAngle = math.atan2(math.sin(a), math.cos(a) * d);
+
+    _drawArticulatedArm(
+      canvas: canvas,
+      shoulder: shoulder,
+      elbowControl: elbow,
+      handCenter: hand,
+      armThickness: pw * (isCompact ? 0.13 : 0.115),
+      pawRadius: pw * (isCompact ? 0.090 : 0.078),
+      hand: _MittenShape.openPalm,
+      handAngle: forearmAngle + wave * d,
+      thumbSide: -d,
+    );
+
+    final double sparkleScale = gestureReach.clamp(0.0, 1.15);
+    _drawSparkle(
+      canvas,
+      hand + Offset(d * pw * 0.20, -ph * 0.12),
+      pw * (isCompact ? 0.075 : 0.060) * sparkleScale,
+      EnpriveColors.apricot,
+    );
+    if (!isCompact) {
+      _drawSparkle(
+        canvas,
+        hand + Offset(d * pw * 0.27, ph * 0.04),
+        pw * 0.040 * sparkleScale,
+        isDark ? EnpriveColors.tealDarkAccent : EnpriveColors.teal,
+      );
+    }
+  }
+
+  /// Receipt slip drawn with the crown paper tab's cream gradient and curl, so
+  /// the receipt Deni carries reads as the same paper as Deni's signature tab.
+  void _drawReceiptSlip(Canvas canvas, Rect rect) {
+    final double toothW = rect.width / 5;
+    final double toothH = rect.height * 0.07;
+    final double corner = rect.width * 0.12;
+
+    final Path slip = Path()
+      ..moveTo(rect.left, rect.top + corner)
+      ..quadraticBezierTo(rect.left, rect.top, rect.left + corner, rect.top)
+      ..lineTo(rect.right - corner * 1.4, rect.top)
+      ..lineTo(rect.right, rect.top + corner * 1.4)
+      ..lineTo(rect.right, rect.bottom - toothH);
+    for (int i = 0; i < 5; i++) {
+      final double x1 = rect.right - toothW * (i + 0.5);
+      final double x2 = rect.right - toothW * (i + 1);
+      slip
+        ..lineTo(x1, rect.bottom)
+        ..lineTo(x2, rect.bottom - toothH);
+    }
+    slip.close();
+
+    canvas.drawPath(
+      slip.shift(const Offset(0, 2.5)),
       Paint()
-        ..color = const Color(0xFF0D5950)
-        ..strokeWidth = 1.2
+        ..color = const Color(0xFF0E4A43).withValues(alpha: 0.18)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+    );
+    canvas.drawPath(
+      slip,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFF9EC), Color(0xFFF9EBD2), Color(0xFFF0D9B5)],
+        ).createShader(rect),
+    );
+    canvas.drawPath(
+      slip,
+      Paint()
+        ..color = const Color(0xFFE3C598)
+        ..strokeWidth = math.max(1.0, rect.width * 0.025)
         ..style = PaintingStyle.stroke,
     );
+
+    // Folded corner, the same curl colour as the crown tab.
+    canvas.drawPath(
+      Path()
+        ..moveTo(rect.right - corner * 1.4, rect.top)
+        ..lineTo(rect.right - corner * 1.4, rect.top + corner * 1.4)
+        ..lineTo(rect.right, rect.top + corner * 1.4)
+        ..close(),
+      Paint()..color = const Color(0xFFE3C598),
+    );
+
+    final double inset = rect.width * 0.16;
+    final double lineWidth = math.max(1.2, rect.height * 0.045);
+    canvas.drawLine(
+      Offset(rect.left + inset, rect.top + rect.height * 0.22),
+      Offset(rect.left + rect.width * 0.58, rect.top + rect.height * 0.22),
+      Paint()
+        ..color = EnpriveColors.tealStrong
+        ..strokeWidth = lineWidth * 1.3
+        ..strokeCap = StrokeCap.round,
+    );
+    for (int i = 0; i < 3; i++) {
+      final double ly = rect.top + rect.height * (0.42 + i * 0.16);
+      canvas.drawLine(
+        Offset(rect.left + inset, ly),
+        Offset(rect.right - inset - (i == 1 ? rect.width * 0.14 : 0), ly),
+        Paint()
+          ..color = EnpriveColors.ink.withValues(alpha: 0.26)
+          ..strokeWidth = lineWidth
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  /// CARRY RECEIPT (standard and hero): both hands hold a receipt slip in front
+  /// of the lower body, below the mouth, and set it down with one settle. Hero
+  /// adds the small stack of saved slips it lands on.
+  void _drawCarryReceiptScene(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double pw,
+    double ph,
+    double laggedSin,
+  ) {
+    // 1.0 while still carrying, 0.0 once placed; the settle overshoot dips
+    // slightly below so the slip lands with a small bounce.
+    final double carry = 1.0 - gestureReach;
+    final double slipH = ph * 0.34;
+    final Rect slipRect = Rect.fromCenter(
+      center: Offset(cx, cy + ph * (0.33 - 0.06 * carry) + laggedSin * 0.6),
+      width: pw * 0.40,
+      height: slipH,
+    );
+
+    if (lod == DeniLodTier.hero) {
+      for (int i = 0; i < 2; i++) {
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(
+              center: Offset(cx, cy + ph * (0.505 - i * 0.035)),
+              width: pw * (0.50 - i * 0.05),
+              height: ph * 0.032,
+            ),
+            Radius.circular(ph * 0.016),
+          ),
+          Paint()
+            ..color = i == 0
+                ? const Color(0xFFE3C598)
+                : const Color(0xFFF9EBD2),
+        );
+      }
+    }
+
+    _drawReceiptSlip(canvas, slipRect);
+
+    for (final double side in [-1.0, 1.0]) {
+      _drawArticulatedArm(
+        canvas: canvas,
+        shoulder: Offset(cx + side * pw * 0.37, cy + ph * _shoulderDy),
+        elbowControl: Offset(cx + side * pw * 0.47, cy + ph * 0.30),
+        handCenter: Offset(
+          cx + side * slipRect.width * 0.50,
+          slipRect.center.dy + ph * 0.03,
+        ),
+        armThickness: pw * 0.11,
+        pawRadius: pw * 0.068,
+        thumbSide: side,
+      );
+    }
+  }
+
+  /// HOLD SHIELD (standard and hero, world space): the privacy promise. The
+  /// shield rises once into place and then stays perfectly still while only
+  /// Deni breathes; arms reach from the breathing shoulders to its edges. The
+  /// emblem is a keyhole, never a check mark, because this is a promise about
+  /// data staying on the phone, not a verdict about an app.
+  void _drawHoldShieldScene(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double pw,
+    double ph,
+    Offset Function(Offset) bodyToWorld,
+  ) {
+    final double shieldW = pw * 0.46;
+    final double shieldH = ph * 0.42;
+    final Offset c = Offset(
+      cx,
+      cy + ph * 0.31 + (1.0 - gestureReach) * ph * 0.10,
+    );
+    final double top = c.dy - shieldH / 2;
+    final double bottom = c.dy + shieldH / 2;
+    final double left = c.dx - shieldW / 2;
+    final double right = c.dx + shieldW / 2;
+
+    final Path shield = Path()
+      ..moveTo(c.dx, top)
+      ..quadraticBezierTo(
+        c.dx + shieldW * 0.25,
+        top + shieldH * 0.10,
+        right,
+        top + shieldH * 0.08,
+      )
+      ..lineTo(right, top + shieldH * 0.42)
+      ..cubicTo(
+        right,
+        top + shieldH * 0.72,
+        c.dx + shieldW * 0.25,
+        bottom - shieldH * 0.08,
+        c.dx,
+        bottom,
+      )
+      ..cubicTo(
+        c.dx - shieldW * 0.25,
+        bottom - shieldH * 0.08,
+        left,
+        top + shieldH * 0.72,
+        left,
+        top + shieldH * 0.42,
+      )
+      ..lineTo(left, top + shieldH * 0.08)
+      ..quadraticBezierTo(
+        c.dx - shieldW * 0.25,
+        top + shieldH * 0.10,
+        c.dx,
+        top,
+      )
+      ..close();
+
+    final Rect shieldBounds = Rect.fromLTRB(left, top, right, bottom);
+    canvas.drawPath(
+      shield.shift(const Offset(0, 3)),
+      Paint()
+        ..color = const Color(0xFF0E4A43).withValues(alpha: 0.22)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+    );
+    canvas.drawPath(
+      shield,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFC9F7EF), Color(0xFF92F4E4), Color(0xFF6FDCCB)],
+        ).createShader(shieldBounds),
+    );
+    canvas.drawPath(
+      shield,
+      Paint()
+        ..color = const Color(0xFF0D5950)
+        ..strokeWidth = math.max(1.4, pw * 0.024)
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke,
+    );
+
+    // Keyhole emblem: private by default.
+    final Paint emblem = Paint()..color = const Color(0xFF0D5950);
+    final Offset hole = Offset(c.dx, c.dy - shieldH * 0.07);
+    canvas.drawCircle(hole, shieldW * 0.105, emblem);
+    canvas.drawPath(
+      Path()
+        ..moveTo(c.dx - shieldW * 0.045, hole.dy)
+        ..lineTo(c.dx + shieldW * 0.045, hole.dy)
+        ..lineTo(c.dx + shieldW * 0.075, c.dy + shieldH * 0.20)
+        ..lineTo(c.dx - shieldW * 0.075, c.dy + shieldH * 0.20)
+        ..close(),
+      emblem,
+    );
+
+    for (final double side in [-1.0, 1.0]) {
+      final Offset shoulder = bodyToWorld(
+        Offset(cx + side * pw * 0.38, cy + ph * 0.08),
+      );
+      final Offset hand = Offset(
+        c.dx + side * shieldW * 0.47,
+        c.dy - shieldH * 0.04,
+      );
+      _drawArticulatedArm(
+        canvas: canvas,
+        shoulder: shoulder,
+        elbowControl: Offset(cx + side * pw * 0.52, cy + ph * 0.26),
+        handCenter: hand,
+        armThickness: pw * 0.11,
+        pawRadius: pw * 0.070,
+        thumbSide: side,
+      );
+    }
+  }
+
+  /// PEEK (all tiers, world space): Deni has risen from behind the ledge at
+  /// [ledgeY] and rests mitten hands on it; compact rests one hand only. The
+  /// hands emerge from behind the ledge as the body rises.
+  void _drawPeekLedge(
+    Canvas canvas,
+    double cx,
+    double ledgeY,
+    double w,
+    double pw,
+    double ph,
+  ) {
+    final bool isCompact = lod == DeniLodTier.compact;
+    canvas.drawLine(
+      Offset(w * 0.08, ledgeY),
+      Offset(w * 0.92, ledgeY),
+      Paint()
+        ..color = isDark ? const Color(0xFF4C463E) : const Color(0xFFCFC5BB)
+        ..strokeWidth = math.max(1.5, ph * 0.025)
+        ..strokeCap = StrokeCap.round,
+    );
+
+    final double r = pw * (isCompact ? 0.085 : 0.075);
+    final double hidden = (0.60 - gestureReach).clamp(0.0, 0.60) / 0.60;
+    final double handY = ledgeY - r * 0.30 + hidden * r * 3.0;
+    final List<double> sides = isCompact ? [_dir] : [-1.0, 1.0];
+
+    canvas.save();
+    canvas.clipRect(Rect.fromLTRB(0, 0, w, ledgeY + r * 0.95));
+    for (final double side in sides) {
+      _drawMitten(
+        canvas,
+        center: Offset(cx + side * pw * 0.30, handY),
+        radius: r,
+        // Fingers curl over the ledge toward the viewer.
+        angle: math.pi / 2 - side * 0.35,
+        thumbSide: side,
+      );
+    }
+    canvas.restore();
   }
 
   /// THINKING SCENE (LOD 2 & LOD 3):
@@ -1090,10 +1819,7 @@ class _DeniRiggedActionPainter extends CustomPainter {
 
     final Offset pointerTip = Offset(boardRect.left + 5, activeRowY);
     final Offset rightShoulder = Offset(cx + pw * 0.33, cy + ph * 0.14);
-    final Offset batonGrip = Offset(
-      cx + pw * 0.37,
-      activeRowY + ph * 0.11,
-    );
+    final Offset batonGrip = Offset(cx + pw * 0.37, activeRowY + ph * 0.11);
     final Offset rightElbow = Offset(
       cx + pw * 0.34,
       math.max(rightShoulder.dy, batonGrip.dy) + ph * 0.05,
@@ -1116,11 +1842,7 @@ class _DeniRiggedActionPainter extends CustomPainter {
         ..strokeWidth = 2.4
         ..strokeCap = StrokeCap.round,
     );
-    canvas.drawCircle(
-      pointerTip,
-      2.4,
-      Paint()..color = EnpriveColors.apricot,
-    );
+    canvas.drawCircle(pointerTip, 2.4, Paint()..color = EnpriveColors.apricot);
   }
 
   /// LISTENING SCENE (LOD 2 & LOD 3)
@@ -1186,8 +1908,10 @@ class _DeniRiggedActionPainter extends CustomPainter {
 
     final Offset rightShoulder = Offset(cx + pw * 0.34, cy + ph * 0.16);
     final Offset rightElbow = Offset(cx + pw * 0.52, cy + ph * 0.14);
-    final Offset cupGrip =
-        Offset(rightCup.dx - pw * 0.01, rightCup.dy + ph * 0.06);
+    final Offset cupGrip = Offset(
+      rightCup.dx - pw * 0.01,
+      rightCup.dy + ph * 0.06,
+    );
     _drawArticulatedArm(
       canvas: canvas,
       shoulder: rightShoulder,
@@ -1199,8 +1923,10 @@ class _DeniRiggedActionPainter extends CustomPainter {
 
     final Offset leftShoulder = Offset(cx - pw * 0.34, cy + ph * 0.16);
     final Offset leftElbow = Offset(cx - pw * 0.44, cy + ph * 0.24);
-    final Offset leftHand =
-        Offset(cx - pw * 0.36, cy + ph * 0.20 + laggedSin * 1.5);
+    final Offset leftHand = Offset(
+      cx - pw * 0.36,
+      cy + ph * 0.20 + laggedSin * 1.5,
+    );
     _drawArticulatedArm(
       canvas: canvas,
       shoulder: leftShoulder,
@@ -1272,15 +1998,15 @@ class _DeniRiggedActionPainter extends CustomPainter {
         Radius.circular(pw * 0.08),
       ),
       Paint()
-        ..shader = const LinearGradient(
-          colors: [Color(0xFF33B9A9), Color(0xFF167C70)],
-        ).createShader(
-          Rect.fromCenter(
-            center: Offset.zero,
-            width: pw * 0.25,
-            height: ph * 0.135,
-          ),
-        ),
+        ..shader =
+            const LinearGradient(colors: [Color(0xFF33B9A9), Color(0xFF167C70)])
+                .createShader(
+                  Rect.fromCenter(
+                    center: Offset.zero,
+                    width: pw * 0.25,
+                    height: ph * 0.135,
+                  ),
+                ),
     );
     canvas.restore();
 
@@ -1297,15 +2023,15 @@ class _DeniRiggedActionPainter extends CustomPainter {
         Radius.circular(pw * 0.08),
       ),
       Paint()
-        ..shader = const LinearGradient(
-          colors: [Color(0xFF28A798), Color(0xFF126E63)],
-        ).createShader(
-          Rect.fromCenter(
-            center: Offset.zero,
-            width: pw * 0.25,
-            height: ph * 0.135,
-          ),
-        ),
+        ..shader =
+            const LinearGradient(colors: [Color(0xFF28A798), Color(0xFF126E63)])
+                .createShader(
+                  Rect.fromCenter(
+                    center: Offset.zero,
+                    width: pw * 0.25,
+                    height: ph * 0.135,
+                  ),
+                ),
     );
     canvas.restore();
   }
@@ -1361,46 +2087,28 @@ class _DeniRiggedActionPainter extends CustomPainter {
       )
       ..lineTo(tabW * 0.32, -tabH * 0.52)
       ..lineTo(tabW * 0.24, tabH * 0.16)
-      ..quadraticBezierTo(
-        tabW * 0.12,
-        tabH * 0.36,
-        -tabW * 0.02,
-        tabH * 0.36,
-      )
+      ..quadraticBezierTo(tabW * 0.12, tabH * 0.36, -tabW * 0.02, tabH * 0.36)
       ..lineTo(-tabW * 0.44, tabH * 0.34)
-      ..quadraticBezierTo(
-        -tabW * 0.50,
-        tabH * 0.32,
-        -tabW * 0.46,
-        tabH * 0.20,
-      )
+      ..quadraticBezierTo(-tabW * 0.50, tabH * 0.32, -tabW * 0.46, tabH * 0.20)
       ..close();
 
     canvas.drawPath(
       frontSlip,
       Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFFF9EC),
-            Color(0xFFF9EBD2),
-            Color(0xFFF0D9B5),
-          ],
-        ).createShader(
-          Rect.fromCenter(center: Offset.zero, width: tabW, height: tabH),
-        ),
+        ..shader =
+            const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFFF9EC), Color(0xFFF9EBD2), Color(0xFFF0D9B5)],
+            ).createShader(
+              Rect.fromCenter(center: Offset.zero, width: tabW, height: tabH),
+            ),
     );
 
     final Path curlFlap = Path()
       ..moveTo(tabW * 0.24, tabH * 0.16)
       ..quadraticBezierTo(tabW * 0.04, tabH * 0.14, 0.0, tabH * 0.36)
-      ..quadraticBezierTo(
-        tabW * 0.16,
-        tabH * 0.34,
-        tabW * 0.24,
-        tabH * 0.16,
-      )
+      ..quadraticBezierTo(tabW * 0.16, tabH * 0.34, tabW * 0.24, tabH * 0.16)
       ..close();
     canvas.drawPath(curlFlap, Paint()..color = const Color(0xFFE3C598));
 
@@ -1476,7 +2184,8 @@ class _DeniRiggedActionPainter extends CustomPainter {
         canvas.scale(1.0, openScaleY);
 
         if (pose == DeniPose.thinking) {
-          final double scanX = eyeRadius * 0.22 +
+          final double scanX =
+              eyeRadius * 0.22 +
               math.sin(phase * 4 * math.pi) * (eyeRadius * 0.18);
           final double scanY =
               math.sin(phase * 2 * math.pi) * (eyeRadius * 0.20);
@@ -1485,11 +2194,7 @@ class _DeniRiggedActionPainter extends CustomPainter {
             eyeRadius * 1.06,
             Paint()..color = const Color(0xFFFFFBF4),
           );
-          canvas.drawCircle(
-            Offset(scanX, scanY),
-            eyeRadius * 0.76,
-            inkPaint,
-          );
+          canvas.drawCircle(Offset(scanX, scanY), eyeRadius * 0.76, inkPaint);
           canvas.drawCircle(
             Offset(scanX - eyeRadius * 0.22, scanY - eyeRadius * 0.22),
             eyeRadius * 0.25,
@@ -1514,12 +2219,17 @@ class _DeniRiggedActionPainter extends CustomPainter {
             Paint()..color = Colors.white,
           );
         } else {
-          final double glanceX = pose == DeniPose.explaining
+          // Intent poses look toward what the hand is doing.
+          final Offset gaze = _gazeTarget * eyeRadius;
+          final double glanceX = pose.hasIntentGesture
+              ? gaze.dx
+              : pose == DeniPose.explaining
               ? eyeRadius * 0.22
               : math.sin(phase * 2 * math.pi) * (eyeRadius * 0.08);
-          canvas.drawCircle(Offset(glanceX, 0), eyeRadius, inkPaint);
+          final double glanceY = pose.hasIntentGesture ? gaze.dy : 0.0;
+          canvas.drawCircle(Offset(glanceX, glanceY), eyeRadius, inkPaint);
           canvas.drawCircle(
-            Offset(glanceX - eyeRadius * 0.32, -eyeRadius * 0.30),
+            Offset(glanceX - eyeRadius * 0.32, glanceY - eyeRadius * 0.30),
             eyeRadius * 0.32,
             Paint()..color = Colors.white,
           );
@@ -1548,8 +2258,8 @@ class _DeniRiggedActionPainter extends CustomPainter {
         );
 
       case DeniPose.explaining:
-        final double talkOpen =
-            (math.sin(phase * 6 * math.pi) * 0.5 + 0.5).clamp(0.18, 1.0);
+        final double talkOpen = (math.sin(phase * 6 * math.pi) * 0.5 + 0.5)
+            .clamp(0.18, 1.0);
         canvas.drawRRect(
           RRect.fromRectAndRadius(
             Rect.fromCenter(
@@ -1565,12 +2275,7 @@ class _DeniRiggedActionPainter extends CustomPainter {
       case DeniPose.listening:
         final Path happyListen = Path()
           ..moveTo(cx - pw * 0.062, mouthY)
-          ..quadraticBezierTo(
-            cx,
-            mouthY + ph * 0.048,
-            cx + pw * 0.062,
-            mouthY,
-          );
+          ..quadraticBezierTo(cx, mouthY + ph * 0.048, cx + pw * 0.062, mouthY);
         canvas.drawPath(happyListen, mouthStroke);
 
       default:
@@ -1620,10 +2325,11 @@ class _DeniRiggedActionPainter extends CustomPainter {
             Offset(cx + b.$1, cy + b.$2 + anim * 2.0),
             b.$3,
             Paint()
-              ..color = (isDark
-                      ? EnpriveColors.tealDarkAccent
-                      : EnpriveColors.teal)
-                  .withValues(alpha: (0.65 + 0.30 * anim).clamp(0.30, 0.95)),
+              ..color =
+                  (isDark ? EnpriveColors.tealDarkAccent : EnpriveColors.teal)
+                      .withValues(
+                        alpha: (0.65 + 0.30 * anim).clamp(0.30, 0.95),
+                      ),
           );
         }
 
@@ -1659,8 +2365,9 @@ class _DeniRiggedActionPainter extends CustomPainter {
               Offset(speechRect.left + 4, barY),
               Offset(speechRect.right - (i == 1 ? 6 : 4), barY),
               Paint()
-                ..color =
-                    i == 0 ? EnpriveColors.tealStrong : EnpriveColors.apricot
+                ..color = i == 0
+                    ? EnpriveColors.tealStrong
+                    : EnpriveColors.apricot
                 ..strokeWidth = 1.8
                 ..strokeCap = StrokeCap.round,
             );
@@ -1720,10 +2427,9 @@ class _DeniRiggedActionPainter extends CustomPainter {
             1.30,
             false,
             Paint()
-              ..color = (isDark
-                      ? EnpriveColors.tealDarkAccent
-                      : EnpriveColors.teal)
-                  .withValues(alpha: 0.28 + 0.55 * pulse)
+              ..color =
+                  (isDark ? EnpriveColors.tealDarkAccent : EnpriveColors.teal)
+                      .withValues(alpha: 0.28 + 0.55 * pulse)
               ..strokeWidth = isCompact ? 1.8 : 2.2
               ..strokeCap = StrokeCap.round
               ..style = PaintingStyle.stroke,
@@ -1802,6 +2508,11 @@ class _DeniRiggedActionPainter extends CustomPainter {
         );
 
       case DeniPose.idle:
+      case DeniPose.pointing:
+      case DeniPose.raiseHand:
+      case DeniPose.holdShield:
+      case DeniPose.carryReceipt:
+      case DeniPose.peek:
         break;
     }
   }
@@ -1822,9 +2533,25 @@ class _DeniRiggedActionPainter extends CustomPainter {
     return oldDelegate.phase != phase ||
         oldDelegate.blink != blink ||
         oldDelegate.springT != springT ||
+        oldDelegate.gestureReach != gestureReach ||
+        oldDelegate.gestureCrouch != gestureCrouch ||
+        oldDelegate.gestureProgress != gestureProgress ||
         oldDelegate.pose != pose ||
         oldDelegate.lod != lod ||
         oldDelegate.isDark != isDark ||
+        oldDelegate.isRtl != isRtl ||
         oldDelegate.showAmbientGlow != showAmbientGlow;
   }
+}
+
+/// Mitten hand shapes for [_DeniRiggedActionPainter._drawMitten].
+enum _MittenShape {
+  /// Closed mitten holding a prop or resting.
+  grip,
+
+  /// Mitten with the index finger extended.
+  point,
+
+  /// Open palm with the thumb spread.
+  openPalm,
 }
