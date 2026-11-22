@@ -1491,6 +1491,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit URL'**
   String get intakeRecoveryEditUrl;
+
+  /// Section card heading for Deni's evidence-grounded plain-language summary alongside audio playback
+  ///
+  /// In en, this message translates to:
+  /// **'Deni’s plain-language summary'**
+  String get voiceSummaryTitle;
+
+  /// Status text shown while Deni generates a plain-language summary on-device or in the cloud
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing plain-language summary…'**
+  String get voiceSummaryPreparing;
+
+  /// Status text shown while Gemini TTS synthesizes speech after user consent
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing Deni’s expressive voice…'**
+  String get voiceSynthesizingExpressive;
+
+  /// Accessible button label to read Deni's plain-language summary aloud using this phone's offline voice
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get voiceBtnListenOffline;
+
+  /// Accessible button label to stop active Deni voice playback or cancel speech synthesis
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get voiceBtnStop;
+
+  /// Accessible button label to request Deni's expressive Gemini voice after explicit consent
+  ///
+  /// In en, this message translates to:
+  /// **'Expressive voice'**
+  String get voiceBtnExpressiveCloud;
+
+  /// Optional action allowing the user to enhance the offline plain-language summary via CloudConsentSheet
+  ///
+  /// In en, this message translates to:
+  /// **'Summarize with Cloud AI'**
+  String get voiceBtnSummarizeCloud;
+
+  /// Badge identifying playback via Firebase AI Logic Gemini TTS prebuilt voice Puck
+  ///
+  /// In en, this message translates to:
+  /// **'Expressive voice · Puck'**
+  String get voiceBadgeExpressive;
+
+  /// Badge identifying playback via local Android TextToSpeech
+  ///
+  /// In en, this message translates to:
+  /// **'Device voice · Offline'**
+  String get voiceBadgeDeviceOffline;
+
+  /// Button label on a summary point to expand or collapse its linked verbatim policy excerpt
+  ///
+  /// In en, this message translates to:
+  /// **'Source quote'**
+  String get voiceViewSourceQuote;
+
+  /// Button label to collapse an expanded verbatim policy excerpt inside Deni's summary card
+  ///
+  /// In en, this message translates to:
+  /// **'Hide quote'**
+  String get voiceHideSourceQuote;
+
+  /// Button label inside an expanded summary evidence quote to open full WhyThisFindingSheet details
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect finding'**
+  String get voiceInspectFinding;
+
+  /// CloudConsentSheet title when the user requests expressive Gemini TTS playback
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Deni’s voice'**
+  String get voiceConsentTitle;
+
+  /// Disclosure text inside CloudConsentSheet before requesting Gemini TTS speech synthesis
+  ///
+  /// In en, this message translates to:
+  /// **'To speak this summary with Deni’s expressive Gemini voice (Puck), Enprive will send only the redacted summary text shown above to Firebase AI Logic for this single request. Your installed apps and Android permissions are never sent.'**
+  String get voiceConsentDisclosure;
+
+  /// Primary consent button approving one Gemini TTS request
+  ///
+  /// In en, this message translates to:
+  /// **'Use expressive voice once'**
+  String get voiceConsentPrimaryAction;
+
+  /// Secondary button choosing local offline Android TextToSpeech without cloud upload
+  ///
+  /// In en, this message translates to:
+  /// **'Speak on this phone'**
+  String get voiceConsentSecondaryAction;
+
+  /// Category label on the preview card inside CloudConsentSheet for voice playback
+  ///
+  /// In en, this message translates to:
+  /// **'Exact spoken script'**
+  String get voiceConsentPayloadLabel;
+
+  /// CloudConsentSheet title when the user opts into cloud plain-language summarization
+  ///
+  /// In en, this message translates to:
+  /// **'Summarize findings with Cloud AI'**
+  String get voiceSummaryConsentTitle;
+
+  /// Disclosure text inside CloudConsentSheet before requesting cloud plain-language summarization
+  ///
+  /// In en, this message translates to:
+  /// **'To rewrite these verified policy findings in plain language in the cloud, Enprive will send only the redacted excerpts shown above to Firebase AI Logic once. Your installed apps and Android permissions are never sent.'**
+  String get voiceSummaryConsentDisclosure;
+
+  /// Honest notice shown when consented Gemini TTS fails or times out and falls back to local Android TTS
+  ///
+  /// In en, this message translates to:
+  /// **'Expressive cloud voice was unavailable — using this phone’s offline voice instead.'**
+  String get voiceFallbackDeviceNotice;
+
+  /// Honest notice shown when neither cloud TTS nor local Android TTS can speak the summary
+  ///
+  /// In en, this message translates to:
+  /// **'Voice playback is unavailable for this language on this phone. You can read Deni’s summary above.'**
+  String get voiceUnavailableNotice;
+
+  /// Accessibility tooltip for starting voice playback of Deni's plain-language summary
+  ///
+  /// In en, this message translates to:
+  /// **'Listen to Deni’s plain-language summary'**
+  String get voiceTooltipReadSummary;
+
+  /// Accessibility tooltip for stopping voice playback
+  ///
+  /// In en, this message translates to:
+  /// **'Stop reading aloud'**
+  String get voiceTooltipStopReading;
 }
 
 class _AppLocalizationsDelegate

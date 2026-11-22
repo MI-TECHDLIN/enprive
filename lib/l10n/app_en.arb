@@ -394,5 +394,97 @@
   "intakeRecoveryEditUrl": "Edit URL",
   "@intakeRecoveryEditUrl": {
     "description": "Inline recovery action focusing the URL input field after a blocked or invalid URL failure"
+  },
+  "voiceSummaryTitle": "Deni’s plain-language summary",
+  "@voiceSummaryTitle": {
+    "description": "Section card heading for Deni's evidence-grounded plain-language summary alongside audio playback"
+  },
+  "voiceSummaryPreparing": "Preparing plain-language summary…",
+  "@voiceSummaryPreparing": {
+    "description": "Status text shown while Deni generates a plain-language summary on-device or in the cloud"
+  },
+  "voiceSynthesizingExpressive": "Preparing Deni’s expressive voice…",
+  "@voiceSynthesizingExpressive": {
+    "description": "Status text shown while Gemini TTS synthesizes speech after user consent"
+  },
+  "voiceBtnListenOffline": "Listen",
+  "@voiceBtnListenOffline": {
+    "description": "Accessible button label to read Deni's plain-language summary aloud using this phone's offline voice"
+  },
+  "voiceBtnStop": "Stop",
+  "@voiceBtnStop": {
+    "description": "Accessible button label to stop active Deni voice playback or cancel speech synthesis"
+  },
+  "voiceBtnExpressiveCloud": "Expressive voice",
+  "@voiceBtnExpressiveCloud": {
+    "description": "Accessible button label to request Deni's expressive Gemini voice after explicit consent"
+  },
+  "voiceBtnSummarizeCloud": "Summarize with Cloud AI",
+  "@voiceBtnSummarizeCloud": {
+    "description": "Optional action allowing the user to enhance the offline plain-language summary via CloudConsentSheet"
+  },
+  "voiceBadgeExpressive": "Expressive voice · Puck",
+  "@voiceBadgeExpressive": {
+    "description": "Badge identifying playback via Firebase AI Logic Gemini TTS prebuilt voice Puck"
+  },
+  "voiceBadgeDeviceOffline": "Device voice · Offline",
+  "@voiceBadgeDeviceOffline": {
+    "description": "Badge identifying playback via local Android TextToSpeech"
+  },
+  "voiceViewSourceQuote": "Source quote",
+  "@voiceViewSourceQuote": {
+    "description": "Button label on a summary point to expand or collapse its linked verbatim policy excerpt"
+  },
+  "voiceHideSourceQuote": "Hide quote",
+  "@voiceHideSourceQuote": {
+    "description": "Button label to collapse an expanded verbatim policy excerpt inside Deni's summary card"
+  },
+  "voiceInspectFinding": "Inspect finding",
+  "@voiceInspectFinding": {
+    "description": "Button label inside an expanded summary evidence quote to open full WhyThisFindingSheet details"
+  },
+  "voiceConsentTitle": "Choose Deni’s voice",
+  "@voiceConsentTitle": {
+    "description": "CloudConsentSheet title when the user requests expressive Gemini TTS playback"
+  },
+  "voiceConsentDisclosure": "To speak this summary with Deni’s expressive Gemini voice (Puck), Enprive will send only the redacted summary text shown above to Firebase AI Logic for this single request. Your installed apps and Android permissions are never sent.",
+  "@voiceConsentDisclosure": {
+    "description": "Disclosure text inside CloudConsentSheet before requesting Gemini TTS speech synthesis"
+  },
+  "voiceConsentPrimaryAction": "Use expressive voice once",
+  "@voiceConsentPrimaryAction": {
+    "description": "Primary consent button approving one Gemini TTS request"
+  },
+  "voiceConsentSecondaryAction": "Speak on this phone",
+  "@voiceConsentSecondaryAction": {
+    "description": "Secondary button choosing local offline Android TextToSpeech without cloud upload"
+  },
+  "voiceConsentPayloadLabel": "Exact spoken script",
+  "@voiceConsentPayloadLabel": {
+    "description": "Category label on the preview card inside CloudConsentSheet for voice playback"
+  },
+  "voiceSummaryConsentTitle": "Summarize findings with Cloud AI",
+  "@voiceSummaryConsentTitle": {
+    "description": "CloudConsentSheet title when the user opts into cloud plain-language summarization"
+  },
+  "voiceSummaryConsentDisclosure": "To rewrite these verified policy findings in plain language in the cloud, Enprive will send only the redacted excerpts shown above to Firebase AI Logic once. Your installed apps and Android permissions are never sent.",
+  "@voiceSummaryConsentDisclosure": {
+    "description": "Disclosure text inside CloudConsentSheet before requesting cloud plain-language summarization"
+  },
+  "voiceFallbackDeviceNotice": "Expressive cloud voice was unavailable — using this phone’s offline voice instead.",
+  "@voiceFallbackDeviceNotice": {
+    "description": "Honest notice shown when consented Gemini TTS fails or times out and falls back to local Android TTS"
+  },
+  "voiceUnavailableNotice": "Voice playback is unavailable for this language on this phone. You can read Deni’s summary above.",
+  "@voiceUnavailableNotice": {
+    "description": "Honest notice shown when neither cloud TTS nor local Android TTS can speak the summary"
+  },
+  "voiceTooltipReadSummary": "Listen to Deni’s plain-language summary",
+  "@voiceTooltipReadSummary": {
+    "description": "Accessibility tooltip for starting voice playback of Deni's plain-language summary"
+  },
+  "voiceTooltipStopReading": "Stop reading aloud",
+  "@voiceTooltipStopReading": {
+    "description": "Accessibility tooltip for stopping voice playback"
   }
 }

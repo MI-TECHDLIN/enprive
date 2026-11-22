@@ -11,6 +11,7 @@ import '../domain/review/app_policy_association.dart'
     show AppPolicyAssociationReport, AppPolicyAssociationState;
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
+import '../domain/voice/deni_voice_summary.dart';
 import '../l10n/app_localizations.dart';
 import '../services/intake/policy_intake_coordinator.dart';
 import '../services/network/policy_url_retriever.dart';
@@ -20,6 +21,7 @@ import '../services/storage/receipt_repository.dart';
 import '../widgets/analysis_process_trace.dart';
 import '../widgets/cloud_consent_sheet.dart';
 import '../widgets/deni_animated_mascot.dart';
+import '../widgets/deni_voice_summary_card.dart';
 import '../widgets/enprive_provenance_chip.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/intake/unified_policy_intake_sheet.dart';
@@ -115,7 +117,17 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
   bool _allowImmediatePop = false;
   Completer<bool>? _pendingExitCompleter;
   bool _isDeleting = false;
-  bool _isSpeaking = false;
+  DeniVoiceSummary? _voiceSummary;
+  bool _isGeneratingSummary = false;
+  bool _isVoiceConsentOpen = false;
+  VoicePlaybackState _voicePlaybackState = VoicePlaybackState.idle;
+  VoicePlaybackRoute _activeVoiceRoute = VoicePlaybackRoute.none;
+  String? _voiceStatusNotice;
+  int _voiceSequence = 0;
+  int _summarySequence = 0;
+  String? _activeSummaryRequestId;
+  bool _isSummaryCloudRequest = false;
+  StreamSubscription<VoicePlaybackEvent>? _voiceEventsSub;
   bool _isOpeningAttachSheet = false;
   bool _isAttachingPolicy = false;
   bool _isAttachingCloud = false;
@@ -123,6 +135,10 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
   int _attachSequence = 0;
   int _draftCounter = 0;
   String? _attachRequestId;
+
+  bool get _isSpeaking =>
+      _voicePlaybackState == VoicePlaybackState.synthesizing ||
+      _voicePlaybackState == VoicePlaybackState.playing;
 
   PolicyIntakeCoordinator _resolveIntakeCoordinator() =>
       widget.intakeCoordinator ??
@@ -139,6 +155,57 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     _activeAssociationReport = widget.initialAssociationReport;
     _initLifecycleFromTruthSource();
     widget.exitGuardController?.attach(_requestExternalExit);
+    _voiceSummary = DeniVoiceSummaryBuilder.buildDeterministic(
+      receipt: _activeReceipt,
+      associationReport: _activeAssociationReport,
+      languageCode: _activeReceipt.languageCode,
+    );
+    _bindVoicePlaybackStream();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(_refreshVoiceSummaryOnDeviceFirst());
+      }
+    });
+  }
+
+  void _bindVoicePlaybackStream() {
+    _voiceEventsSub?.cancel();
+    _voiceEventsSub = widget.coordinator.bridge.voicePlaybackEvents.listen((
+      event,
+    ) {
+      if (!mounted) return;
+      switch (event.state) {
+        case VoicePlaybackState.synthesizing:
+          setState(() {
+            _voicePlaybackState = VoicePlaybackState.synthesizing;
+            _activeVoiceRoute = event.route;
+          });
+          break;
+        case VoicePlaybackState.playing:
+          setState(() {
+            _voicePlaybackState = VoicePlaybackState.playing;
+            if (event.route != VoicePlaybackRoute.none) {
+              _activeVoiceRoute = event.route;
+            }
+          });
+          break;
+        case VoicePlaybackState.completed:
+        case VoicePlaybackState.stopped:
+        case VoicePlaybackState.idle:
+          setState(() {
+            _voicePlaybackState = VoicePlaybackState.idle;
+          });
+          break;
+        case VoicePlaybackState.error:
+          setState(() {
+            _voicePlaybackState = VoicePlaybackState.idle;
+            if (event.message != null && event.message!.isNotEmpty) {
+              _voiceStatusNotice = event.message;
+            }
+          });
+          break;
+      }
+    });
   }
 
   bool _isPersistedInTruthSource(String receiptId) {
@@ -214,14 +281,24 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       oldWidget.exitGuardController?.detach(_requestExternalExit);
       widget.exitGuardController?.attach(_requestExternalExit);
     }
+    if (oldWidget.coordinator != widget.coordinator) {
+      _bindVoicePlaybackStream();
+    }
     if (oldWidget.receipt.id != widget.receipt.id ||
         oldWidget.receipt != widget.receipt) {
       _cancelInFlightAttachSilently();
+      _cancelVoiceAndSummarySilently();
       _activeReceipt = widget.receipt;
       _activeAssociationReport = widget.initialAssociationReport;
       _allowImmediatePop = false;
       _isExiting = false;
       _initLifecycleFromTruthSource();
+      _voiceSummary = DeniVoiceSummaryBuilder.buildDeterministic(
+        receipt: _activeReceipt,
+        associationReport: _activeAssociationReport,
+        languageCode: _activeReceipt.languageCode,
+      );
+      unawaited(_refreshVoiceSummaryOnDeviceFirst());
     } else if (oldWidget.isInitiallySaved != widget.isInitiallySaved ||
         oldWidget.receiptRepository != widget.receiptRepository ||
         oldWidget.isReceiptSaved != widget.isReceiptSaved) {
@@ -246,6 +323,25 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     }
   }
 
+  void _cancelVoiceAndSummarySilently() {
+    _voiceSequence++;
+    _summarySequence++;
+    final sumReq = _activeSummaryRequestId;
+    final wasCloudSummary = _isSummaryCloudRequest;
+    _activeSummaryRequestId = null;
+    _isSummaryCloudRequest = false;
+    _isGeneratingSummary = false;
+    _voiceStatusNotice = null;
+    if (sumReq != null) {
+      final cancelId = wasCloudSummary ? '${sumReq}_appcheck' : sumReq;
+      unawaited(widget.coordinator.bridge.cancelAnalysis(requestId: cancelId));
+    }
+    if (_isSpeaking) {
+      _voicePlaybackState = VoicePlaybackState.idle;
+      unawaited(widget.coordinator.bridge.stopSpeaking());
+    }
+  }
+
   @override
   void dispose() {
     widget.exitGuardController?.detach(_requestExternalExit);
@@ -254,15 +350,21 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       pending.complete(true);
     }
     _pendingExitCompleter = null;
+    _voiceEventsSub?.cancel();
+    _voiceEventsSub = null;
     _cancelInFlightAttachSilently();
-    if (_isSpeaking) {
-      widget.coordinator.bridge.stopSpeaking();
-    }
+    _cancelVoiceAndSummarySilently();
     super.dispose();
   }
 
   DeniPose get _statePose {
-    if (_isSpeaking) return DeniPose.listening;
+    if (_voicePlaybackState == VoicePlaybackState.playing) {
+      return DeniPose.listening;
+    }
+    if (_voicePlaybackState == VoicePlaybackState.synthesizing ||
+        _isGeneratingSummary) {
+      return DeniPose.thinking;
+    }
     if (_isSaved) return DeniPose.celebrating;
     return switch (_activeReceipt.overallState) {
       ReviewOverallState.reviewRecommended => DeniPose.explaining,
@@ -271,19 +373,319 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     };
   }
 
-  Future<void> _toggleVoicePlayback(String stateTitle) async {
-    if (_isSpeaking) {
-      await widget.coordinator.bridge.stopSpeaking();
+  DeniVoiceSummary get _effectiveVoiceSummary =>
+      _voiceSummary ??
+      DeniVoiceSummaryBuilder.buildDeterministic(
+        receipt: _activeReceipt,
+        associationReport: _activeAssociationReport,
+        languageCode: _activeReceipt.languageCode,
+      );
+
+  Future<void> _refreshVoiceSummaryOnDeviceFirst() async {
+    final receipt = _activeReceipt;
+    final association = _activeAssociationReport;
+    final lang = mounted
+        ? (Localizations.maybeLocaleOf(context)?.languageCode ??
+              receipt.languageCode)
+        : receipt.languageCode;
+
+    final baseline = DeniVoiceSummaryBuilder.buildDeterministic(
+      receipt: receipt,
+      associationReport: association,
+      languageCode: lang,
+    );
+
+    if (DeniVoiceSummaryBuilder.selectSourceMatchedFindings(receipt).isEmpty) {
       if (!mounted) return;
-      setState(() => _isSpeaking = false);
+      setState(() {
+        _voiceSummary = baseline;
+        _isGeneratingSummary = false;
+      });
       return;
     }
 
-    setState(() => _isSpeaking = true);
-    final lang = Localizations.localeOf(context).languageCode;
-    final spokenText =
-        '${_activeReceipt.subjectTitle}. $stateTitle. ${_activeReceipt.summary}';
-    await widget.coordinator.bridge.speakText(spokenText, languageCode: lang);
+    final seq = ++_summarySequence;
+    final reqId = 'vsum_${DateTime.now().microsecondsSinceEpoch}';
+    if (mounted) {
+      setState(() {
+        _voiceSummary = baseline;
+        _isGeneratingSummary = true;
+        _activeSummaryRequestId = reqId;
+        _isSummaryCloudRequest = false;
+      });
+    }
+
+    try {
+      final generated = await widget.coordinator.generateDeniVoiceSummary(
+        receipt: receipt,
+        associationReport: association,
+        cloudConsent: false,
+        languageCode: lang,
+        requestId: reqId,
+      );
+      if (!mounted || seq != _summarySequence) return;
+      setState(() {
+        _voiceSummary = generated;
+        _isGeneratingSummary = false;
+        _activeSummaryRequestId = null;
+      });
+    } on HybridOperationCancelledException {
+      if (!mounted || seq != _summarySequence) return;
+      setState(() {
+        _isGeneratingSummary = false;
+        _activeSummaryRequestId = null;
+      });
+    } catch (_) {
+      if (!mounted || seq != _summarySequence) return;
+      setState(() {
+        _voiceSummary = baseline;
+        _isGeneratingSummary = false;
+        _activeSummaryRequestId = null;
+      });
+    }
+  }
+
+  Future<void> _enhanceSummaryWithCloud(AppLocalizations l10n) async {
+    if (_isGeneratingSummary || _isVoiceConsentOpen) return;
+    final receipt = _activeReceipt;
+    final association = _activeAssociationReport;
+    final rawPayload = DeniVoiceSummaryBuilder.buildPromptPayload(receipt);
+    if (rawPayload.isEmpty) return;
+    final canonicalPayload =
+        _voiceSummary?.redactedCloudPayload ??
+        ReviewCoordinator.canonicalCloudPayload(rawPayload);
+
+    _isVoiceConsentOpen = true;
+    final CloudConsentDecision decision;
+    try {
+      decision = await CloudConsentSheet.show(
+        context,
+        subjectTitle: receipt.subjectTitle,
+        policyText: rawPayload,
+        canonicalRedactedPreview: canonicalPayload,
+        deviceReason: _voiceSummary?.consentReason,
+        titleOverride: l10n.voiceSummaryConsentTitle,
+        disclosureOverride: l10n.voiceSummaryConsentDisclosure,
+      );
+    } finally {
+      _isVoiceConsentOpen = false;
+    }
+    if (!mounted || decision == CloudConsentDecision.cancelled) return;
+
+    final lang =
+        Localizations.maybeLocaleOf(context)?.languageCode ??
+        receipt.languageCode;
+
+    if (decision == CloudConsentDecision.reviewLocally) {
+      setState(() {
+        _voiceSummary = DeniVoiceSummaryBuilder.buildDeterministic(
+          receipt: receipt,
+          associationReport: association,
+          languageCode: lang,
+          requiresCloudConsent: true,
+          redactedCloudPayload: canonicalPayload,
+        );
+      });
+      return;
+    }
+
+    final seq = ++_summarySequence;
+    final reqId = 'vsum_${DateTime.now().microsecondsSinceEpoch}';
+    setState(() {
+      _isGeneratingSummary = true;
+      _activeSummaryRequestId = reqId;
+      _isSummaryCloudRequest = true;
+    });
+
+    try {
+      final generated = await widget.coordinator.generateDeniVoiceSummary(
+        receipt: receipt,
+        associationReport: association,
+        cloudConsent: true,
+        languageCode: lang,
+        canonicalRedactedPayload: canonicalPayload,
+        requestId: reqId,
+      );
+      if (!mounted || seq != _summarySequence) return;
+      setState(() {
+        _voiceSummary = generated;
+        _isGeneratingSummary = false;
+        _activeSummaryRequestId = null;
+        _isSummaryCloudRequest = false;
+      });
+    } on HybridOperationCancelledException {
+      if (!mounted || seq != _summarySequence) return;
+      setState(() {
+        _isGeneratingSummary = false;
+        _activeSummaryRequestId = null;
+        _isSummaryCloudRequest = false;
+      });
+    }
+  }
+
+  Future<void> _stopVoicePlayback() async {
+    _voiceSequence++;
+    await widget.coordinator.bridge.stopSpeaking();
+    if (!mounted) return;
+    setState(() {
+      _voicePlaybackState = VoicePlaybackState.idle;
+    });
+  }
+
+  Future<void> _playSummaryLocally(AppLocalizations l10n) async {
+    final summary = _effectiveVoiceSummary;
+    final script = summary.spokenScript;
+    if (script.trim().isEmpty) return;
+
+    final lang =
+        Localizations.maybeLocaleOf(context)?.languageCode ??
+        _activeReceipt.languageCode;
+    final seq = ++_voiceSequence;
+    final reqId = 'tts_local_${DateTime.now().microsecondsSinceEpoch}';
+
+    setState(() {
+      _voicePlaybackState = VoicePlaybackState.playing;
+      _activeVoiceRoute = VoicePlaybackRoute.androidLocalTts;
+      _voiceStatusNotice = null;
+    });
+
+    final spoke = await widget.coordinator.bridge.speakText(
+      script,
+      languageCode: lang,
+      requestId: reqId,
+    );
+    if (!mounted || seq != _voiceSequence) return;
+    if (!spoke) {
+      setState(() {
+        _voicePlaybackState = VoicePlaybackState.idle;
+        _activeVoiceRoute = VoicePlaybackRoute.transcriptOnly;
+        _voiceStatusNotice = l10n.voiceUnavailableNotice;
+      });
+    }
+  }
+
+  Future<void> _requestExpressiveVoicePlayback(AppLocalizations l10n) async {
+    if (_isSpeaking) {
+      await _stopVoicePlayback();
+      return;
+    }
+    if (_isVoiceConsentOpen) return;
+
+    final summary = _effectiveVoiceSummary;
+    final rawScript = summary.spokenScript;
+    if (rawScript.trim().isEmpty) return;
+    final canonicalScript = ReviewCoordinator.canonicalCloudPayload(rawScript);
+
+    _isVoiceConsentOpen = true;
+    final CloudConsentDecision decision;
+    try {
+      decision = await CloudConsentSheet.show(
+        context,
+        subjectTitle: _activeReceipt.subjectTitle,
+        policyText: rawScript,
+        canonicalRedactedPreview: canonicalScript,
+        titleOverride: l10n.voiceConsentTitle,
+        disclosureOverride: l10n.voiceConsentDisclosure,
+        primaryActionLabelOverride: l10n.voiceConsentPrimaryAction,
+        secondaryActionLabelOverride: l10n.voiceConsentSecondaryAction,
+        payloadCategoryLabelOverride: l10n.voiceConsentPayloadLabel,
+      );
+    } finally {
+      _isVoiceConsentOpen = false;
+    }
+    if (!mounted || decision == CloudConsentDecision.cancelled) return;
+
+    if (decision == CloudConsentDecision.reviewLocally) {
+      await _playSummaryLocally(l10n);
+      return;
+    }
+
+    final lang =
+        Localizations.maybeLocaleOf(context)?.languageCode ??
+        _activeReceipt.languageCode;
+    final seq = ++_voiceSequence;
+    final reqId = 'tts_gemini_${DateTime.now().microsecondsSinceEpoch}';
+
+    setState(() {
+      _voicePlaybackState = VoicePlaybackState.synthesizing;
+      _activeVoiceRoute = VoicePlaybackRoute.geminiCloudTts;
+      _voiceStatusNotice = null;
+    });
+
+    final result = await widget.coordinator.bridge.speakWithGeminiTts(
+      requestId: reqId,
+      text: canonicalScript,
+      cloudConsent: true,
+      languageCode: lang,
+      fallbackToLocalOnFailure: true,
+    );
+    if (!mounted || seq != _voiceSequence) return;
+
+    if (result.wasCancelled) {
+      setState(() {
+        _voicePlaybackState = VoicePlaybackState.idle;
+      });
+      return;
+    }
+
+    if (result.fellBackToLocal) {
+      setState(() {
+        _voicePlaybackState = VoicePlaybackState.playing;
+        _activeVoiceRoute = VoicePlaybackRoute.androidLocalTts;
+        _voiceStatusNotice =
+            result.message ?? l10n.voiceFallbackDeviceNotice;
+      });
+      return;
+    }
+
+    if (result.status == 'completed') {
+      setState(() {
+        _voicePlaybackState = VoicePlaybackState.idle;
+        _activeVoiceRoute = VoicePlaybackRoute.geminiCloudTts;
+        _voiceStatusNotice = null;
+      });
+      return;
+    }
+
+    // Cloud failed and native player did not report local fallback (e.g. plugin unavailable)
+    final spokeLocal = await widget.coordinator.bridge.speakText(
+      canonicalScript,
+      languageCode: lang,
+      requestId: '${reqId}_dart_fallback',
+    );
+    if (!mounted || seq != _voiceSequence) return;
+    if (spokeLocal) {
+      setState(() {
+        _voicePlaybackState = VoicePlaybackState.playing;
+        _activeVoiceRoute = VoicePlaybackRoute.androidLocalTts;
+        _voiceStatusNotice =
+            result.message ?? l10n.voiceFallbackDeviceNotice;
+      });
+    } else {
+      setState(() {
+        _voicePlaybackState = VoicePlaybackState.idle;
+        _activeVoiceRoute = VoicePlaybackRoute.transcriptOnly;
+        _voiceStatusNotice =
+            result.message ?? l10n.voiceUnavailableNotice;
+      });
+    }
+  }
+
+  Future<void> _toggleVoicePlayback(AppLocalizations l10n) async {
+    if (_isSpeaking) {
+      await _stopVoicePlayback();
+      return;
+    }
+    await _requestExpressiveVoicePlayback(l10n);
+  }
+
+  void _openFindingById(String findingId) {
+    for (final finding in _activeReceipt.findings) {
+      if (finding.id == findingId) {
+        _openFindingDetails(finding);
+        return;
+      }
+    }
   }
 
   (SemanticColorPair pair, IconData icon, String title, String subtitle)
@@ -537,6 +939,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       );
       // Do NOT auto-save when attaching or updating a policy: keep historical
       // receipts untouched and require an explicit Save action.
+      _cancelVoiceAndSummarySilently();
       setState(() {
         _activeReceipt = updated;
         _activeAssociationReport = intake!.associationReport;
@@ -544,7 +947,13 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
             ? ReceiptLifecycleState.modifiedSavedDraft
             : ReceiptLifecycleState.draft;
         _saveErrorMessage = null;
+        _voiceSummary = DeniVoiceSummaryBuilder.buildDeterministic(
+          receipt: updated,
+          associationReport: intake.associationReport,
+          languageCode: updated.languageCode,
+        );
       });
+      unawaited(_refreshVoiceSummaryOnDeviceFirst());
     } on HybridOperationCancelledException catch (e) {
       if (mounted && seq == _attachSequence && e.isTimeout) {
         messenger
@@ -1186,10 +1595,9 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               },
                               isSpeaking: _isSpeaking,
                               voiceTooltip: _isSpeaking
-                                  ? 'Stop reading aloud'
-                                  : 'Read summary aloud',
-                              onVoiceAction: () =>
-                                  _toggleVoicePlayback(stateTitle),
+                                  ? l10n.voiceTooltipStopReading
+                                  : l10n.voiceTooltipReadSummary,
+                              onVoiceAction: () => _toggleVoicePlayback(l10n),
                               primaryCtaLabel:
                                   receipt.isPermissionOnlyInspection
                                   ? l10n.addAppPrivacyPolicyBtn
@@ -1221,8 +1629,25 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                   );
                                 }
                               },
-                              onMascotTap: () =>
-                                  _toggleVoicePlayback(stateTitle),
+                              onMascotTap: () => _toggleVoicePlayback(l10n),
+                            ),
+                            const SizedBox(height: 18),
+
+                            DeniVoiceSummaryCard(
+                              summary: _effectiveVoiceSummary,
+                              isGeneratingSummary: _isGeneratingSummary,
+                              playbackState: _voicePlaybackState,
+                              activeRoute: _activeVoiceRoute,
+                              statusNotice: _voiceStatusNotice,
+                              onPlayOffline: () =>
+                                  unawaited(_playSummaryLocally(l10n)),
+                              onPlayExpressiveCloud: () => unawaited(
+                                _requestExpressiveVoicePlayback(l10n),
+                              ),
+                              onStop: () => unawaited(_stopVoicePlayback()),
+                              onEnhanceSummaryWithCloud: () =>
+                                  unawaited(_enhanceSummaryWithCloud(l10n)),
+                              onOpenFinding: _openFindingById,
                             ),
                             const SizedBox(height: 22),
 

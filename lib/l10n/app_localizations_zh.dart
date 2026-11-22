@@ -735,4 +735,79 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get intakeRecoveryEditUrl => 'Edit URL';
+
+  @override
+  String get voiceSummaryTitle => 'Deni’s plain-language summary';
+
+  @override
+  String get voiceSummaryPreparing => 'Preparing plain-language summary…';
+
+  @override
+  String get voiceSynthesizingExpressive =>
+      'Preparing Deni’s expressive voice…';
+
+  @override
+  String get voiceBtnListenOffline => 'Listen';
+
+  @override
+  String get voiceBtnStop => 'Stop';
+
+  @override
+  String get voiceBtnExpressiveCloud => 'Expressive voice';
+
+  @override
+  String get voiceBtnSummarizeCloud => 'Summarize with Cloud AI';
+
+  @override
+  String get voiceBadgeExpressive => 'Expressive voice · Puck';
+
+  @override
+  String get voiceBadgeDeviceOffline => 'Device voice · Offline';
+
+  @override
+  String get voiceViewSourceQuote => 'Source quote';
+
+  @override
+  String get voiceHideSourceQuote => 'Hide quote';
+
+  @override
+  String get voiceInspectFinding => 'Inspect finding';
+
+  @override
+  String get voiceConsentTitle => 'Choose Deni’s voice';
+
+  @override
+  String get voiceConsentDisclosure =>
+      'To speak this summary with Deni’s expressive Gemini voice (Puck), Enprive will send only the redacted summary text shown above to Firebase AI Logic for this single request. Your installed apps and Android permissions are never sent.';
+
+  @override
+  String get voiceConsentPrimaryAction => 'Use expressive voice once';
+
+  @override
+  String get voiceConsentSecondaryAction => 'Speak on this phone';
+
+  @override
+  String get voiceConsentPayloadLabel => 'Exact spoken script';
+
+  @override
+  String get voiceSummaryConsentTitle => 'Summarize findings with Cloud AI';
+
+  @override
+  String get voiceSummaryConsentDisclosure =>
+      'To rewrite these verified policy findings in plain language in the cloud, Enprive will send only the redacted excerpts shown above to Firebase AI Logic once. Your installed apps and Android permissions are never sent.';
+
+  @override
+  String get voiceFallbackDeviceNotice =>
+      'Expressive cloud voice was unavailable — using this phone’s offline voice instead.';
+
+  @override
+  String get voiceUnavailableNotice =>
+      'Voice playback is unavailable for this language on this phone. You can read Deni’s summary above.';
+
+  @override
+  String get voiceTooltipReadSummary =>
+      'Listen to Deni’s plain-language summary';
+
+  @override
+  String get voiceTooltipStopReading => 'Stop reading aloud';
 }

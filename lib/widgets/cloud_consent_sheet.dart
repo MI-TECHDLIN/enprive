@@ -26,6 +26,11 @@ class CloudConsentSheet extends StatelessWidget {
   final String policyText;
   final String? canonicalRedactedPreview;
   final String? deviceReason;
+  final String? titleOverride;
+  final String? disclosureOverride;
+  final String? primaryActionLabelOverride;
+  final String? secondaryActionLabelOverride;
+  final String? payloadCategoryLabelOverride;
 
   const CloudConsentSheet({
     super.key,
@@ -33,6 +38,11 @@ class CloudConsentSheet extends StatelessWidget {
     required this.policyText,
     this.canonicalRedactedPreview,
     this.deviceReason,
+    this.titleOverride,
+    this.disclosureOverride,
+    this.primaryActionLabelOverride,
+    this.secondaryActionLabelOverride,
+    this.payloadCategoryLabelOverride,
   });
 
   static Future<CloudConsentDecision> show(
@@ -41,6 +51,11 @@ class CloudConsentSheet extends StatelessWidget {
     required String policyText,
     String? canonicalRedactedPreview,
     String? deviceReason,
+    String? titleOverride,
+    String? disclosureOverride,
+    String? primaryActionLabelOverride,
+    String? secondaryActionLabelOverride,
+    String? payloadCategoryLabelOverride,
   }) async {
     final decision = await showModalBottomSheet<CloudConsentDecision>(
       context: context,
@@ -52,6 +67,11 @@ class CloudConsentSheet extends StatelessWidget {
         policyText: policyText,
         canonicalRedactedPreview: canonicalRedactedPreview,
         deviceReason: deviceReason,
+        titleOverride: titleOverride,
+        disclosureOverride: disclosureOverride,
+        primaryActionLabelOverride: primaryActionLabelOverride,
+        secondaryActionLabelOverride: secondaryActionLabelOverride,
+        payloadCategoryLabelOverride: payloadCategoryLabelOverride,
       ),
     );
     return decision ?? CloudConsentDecision.cancelled;
@@ -132,7 +152,7 @@ class CloudConsentSheet extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      l10n.chooseReviewModeTitle,
+                                      titleOverride ?? l10n.chooseReviewModeTitle,
                                       style: m3e.typography.emphasized.titleMedium
                                           .copyWith(
                                             fontWeight: FontWeight.w800,
@@ -262,12 +282,14 @@ class CloudConsentSheet extends StatelessWidget {
                               statusLabel: detectedTokens.isEmpty
                                   ? 'No PII found'
                                   : 'Masked (${redaction.replacementCount > 0 ? redaction.replacementCount : detectedTokens.length})',
-                              categoryLabel: 'Exact cloud payload',
+                              categoryLabel:
+                                  payloadCategoryLabelOverride ??
+                                  'Exact cloud payload',
                               spineColor: semantics.inCloud.foreground,
                             ),
                             const SizedBox(height: 14),
                             Text(
-                              l10n.cloudConsentDisclosure,
+                              disclosureOverride ?? l10n.cloudConsentDisclosure,
                               style: m3e.typeScale.bodySmall.copyWith(
                                 color: scheme.onSurfaceVariant,
                                 height: 1.45,
@@ -288,7 +310,9 @@ class CloudConsentSheet extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             EnpriveTactileButton(
-                              label: l10n.btnUseCloud,
+                              label:
+                                  primaryActionLabelOverride ??
+                                  l10n.btnUseCloud,
                               onPressed: () => Navigator.pop(
                                 context,
                                 CloudConsentDecision.useCloudOnce,
@@ -296,7 +320,9 @@ class CloudConsentSheet extends StatelessWidget {
                             ),
                             const SizedBox(height: 10),
                             EnpriveTactileButton(
-                              label: l10n.btnReviewOnPhone,
+                              label:
+                                  secondaryActionLabelOverride ??
+                                  l10n.btnReviewOnPhone,
                               isSecondary: true,
                               onPressed: () => Navigator.pop(
                                 context,
