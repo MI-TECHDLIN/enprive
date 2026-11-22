@@ -346,16 +346,16 @@ void main() {
         findsNothing,
       );
       expect(find.textContaining('Thought signature:'), findsOneWidget);
-      expect(find.text('View streamed thoughts'), findsOneWidget);
+      expect(find.text('How Enprive checked this'), findsOneWidget);
       expect(
         find.text('Matched clause about ad network telemetry.'),
         findsNothing,
       );
 
-      await tester.tap(find.text('View streamed thoughts'));
+      await tester.tap(find.text('How Enprive checked this'));
       await tester.pump();
 
-      expect(find.text('Hide streamed thoughts'), findsOneWidget);
+      expect(find.text('Hide how Enprive checked this'), findsOneWidget);
       expect(
         find.text('Matched clause about ad network telemetry.'),
         findsOneWidget,
@@ -1094,8 +1094,8 @@ void main() {
       // Opens Device Permission Inspection directly with 0 analyseText AI calls
       expect(find.byType(ReviewResultScreen), findsOneWidget);
       expect(find.text('Device Permission Inspection'), findsWidgets);
-      expect(find.text('Granted'), findsWidgets);
-      expect(find.text('Not granted'), findsWidgets);
+      expect(find.text('Allowed on this phone'), findsWidgets);
+      expect(find.text('Not allowed'), findsWidgets);
       expect(find.text('View reviewed policy snapshot'), findsNothing);
       expect(nativeCalls.where((c) => c.method == 'analyseText'), isEmpty);
 

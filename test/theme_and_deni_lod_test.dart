@@ -8,6 +8,7 @@ import 'package:enprive/domain/review/review_models.dart';
 import 'package:enprive/l10n/app_localizations.dart';
 import 'package:enprive/main.dart';
 import 'package:enprive/screens/design_system_preview_screen.dart';
+import 'package:enprive/screens/finding_detail_screen.dart';
 import 'package:enprive/screens/receipts_screen.dart';
 import 'package:enprive/screens/review_result_screen.dart';
 import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
@@ -823,20 +824,35 @@ void main() {
         expect(find.text('Microphone Recording Disclosed'), findsOneWidget);
         expect(find.byType(M3ECard), findsWidgets);
 
-        // Open WhyThisFindingSheet by tapping the finding card
+        // A finding row opens its detail page; Ask Deni there opens
+        // WhyThisFindingSheet.
         final findingCardFinder = find.text('Microphone Recording Disclosed');
         await tester.ensureVisible(findingCardFinder);
         await tester.tap(findingCardFinder);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 400));
+        expect(find.byType(FindingDetailScreen), findsOneWidget);
+        await tester.tap(find.byKey(const Key('finding_detail_ask_deni_btn')));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
 
         expect(find.byType(WhyThisFindingSheet), findsOneWidget);
-        await tester.drag(find.byType(ListView), const Offset(0, -250));
+        await tester.drag(
+          find.descendant(
+            of: find.byType(WhyThisFindingSheet),
+            matching: find.byType(ListView),
+          ),
+          const Offset(0, -250),
+        );
         await tester.pump();
         expect(find.text('What does this mean for my child?'), findsOneWidget);
 
-        // Close WhyThisFindingSheet modal route before pumping ReceiptsScreen
+        // Close WhyThisFindingSheet and the finding detail page before
+        // pumping ReceiptsScreen.
         Navigator.of(tester.element(find.byType(WhyThisFindingSheet))).pop();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        Navigator.of(tester.element(find.byType(FindingDetailScreen))).pop();
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 400));
 

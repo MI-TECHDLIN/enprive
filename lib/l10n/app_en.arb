@@ -486,5 +486,114 @@
   "voiceTooltipStopReading": "Stop reading aloud",
   "@voiceTooltipStopReading": {
     "description": "Accessibility tooltip for stopping voice playback"
+  },
+  "findingsCountUnit": "{count, plural, =1{finding} other{findings}}",
+  "@findingsCountUnit": {
+    "description": "Small label under the finding count in the center of the evidence ring; a count of evidence, never a score",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "findingsCountPhrase": "{count, plural, =0{No findings} =1{1 finding} other{{count} findings}}",
+  "@findingsCountPhrase": {
+    "description": "Start of the evidence ring TalkBack label, followed by the per-category breakdown",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quotesVerifiedCount": "{count, plural, =1{1 quote verified in policy} other{{count} quotes verified in policy}}",
+  "@quotesVerifiedCount": {
+    "description": "Evidence summary: how many findings are backed by an exact quote matched in the policy text",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "observedOnPhoneCount": "{count, plural, =1{1 observed on this phone} other{{count} observed on this phone}}",
+  "@observedOnPhoneCount": {
+    "description": "Evidence summary: how many findings come from Android observations on this phone",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "permissionAllowedOnPhone": "Allowed on this phone",
+  "@permissionAllowedOnPhone": {
+    "description": "Neutral factual chip for an Android permission that is currently allowed; not an approval"
+  },
+  "permissionNotAllowedOnPhone": "Not allowed",
+  "@permissionNotAllowedOnPhone": {
+    "description": "Neutral factual chip for an Android permission that is currently not allowed"
+  },
+  "permissionMismatchChip": "Not in policy",
+  "@permissionMismatchChip": {
+    "description": "Chip on a permission row whose permission is not mentioned in the reviewed policy"
+  },
+  "howEnpriveCheckedThis": "How Enprive checked this",
+  "@howEnpriveCheckedThis": {
+    "description": "Toggle that reveals the saved analysis steps of a review"
+  },
+  "hideHowEnpriveChecked": "Hide how Enprive checked this",
+  "@hideHowEnpriveChecked": {
+    "description": "Toggle that hides the saved analysis steps of a review"
+  },
+  "consentWhatWouldBeSent": "What would be sent",
+  "@consentWhatWouldBeSent": {
+    "description": "Heading of the summary at the top of the cloud consent sheet"
+  },
+  "consentSentScope": "Only the text in the preview leaves this phone, for this one request.",
+  "@consentSentScope": {
+    "description": "Consent summary line describing exactly what is sent and how often"
+  },
+  "consentMaskedCount": "{count, plural, =0{No personal details were found to mask.} =1{1 personal detail is masked first.} other{{count} personal details are masked first.}}",
+  "@consentMaskedCount": {
+    "description": "Consent summary line counting the personal details masked before anything is sent",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "consentStaysOnPhone": "Your app list and phone permissions stay on this phone.",
+  "@consentStaysOnPhone": {
+    "description": "Consent summary line naming what never leaves the phone"
+  },
+  "findingDetailTitle": "Finding {index} of {total}",
+  "@findingDetailTitle": {
+    "description": "App bar title of the finding detail page",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "findingReviewChip": "Review",
+  "@findingReviewChip": {
+    "description": "Short state chip on a finding row that deserves a human look"
+  },
+  "askDeniAboutThis": "Ask Deni about this",
+  "@askDeniAboutThis": {
+    "description": "Button on the finding detail page that opens Deni's explanation for this finding"
+  },
+  "labelWhatPolicySays": "What the policy says",
+  "@labelWhatPolicySays": {
+    "description": "Section heading on the finding detail page"
+  },
+  "labelWhatAndroidReports": "What Android reports",
+  "@labelWhatAndroidReports": {
+    "description": "Section heading on the finding detail page"
+  },
+  "sourceButtonTooltip": "Reviewed source",
+  "@sourceButtonTooltip": {
+    "description": "Tooltip for the icon button that opens the reviewed policy snapshot"
   }
 }

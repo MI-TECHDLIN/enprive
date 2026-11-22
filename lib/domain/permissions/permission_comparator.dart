@@ -327,7 +327,7 @@ class PermissionComparator {
 
       final state = PermissionAlignmentState.observedWithoutPolicy;
       final osSummary = isGranted
-          ? 'GRANTED on this phone (${spec.permission})'
+          ? 'Allowed on this phone (${spec.permission})'
           : 'Requested in manifest · Currently NOT granted (${spec.permission})';
       final statusNote = isGranted
           ? 'Currently allowed (granted) by Android on this device.'
@@ -359,7 +359,7 @@ class PermissionComparator {
       final isRequested = snapshot.isRequested(perm);
       final isGranted = snapshot.isGranted(perm);
       final osSummary = isGranted
-          ? 'GRANTED on this phone ($perm)'
+          ? 'Allowed on this phone ($perm)'
           : 'Requested in manifest · Currently NOT granted ($perm)';
       items.add(
         ComparedPermissionItem(
@@ -442,19 +442,19 @@ class PermissionComparator {
               : '${spec.friendlyName} is marked ${isGranted ? "granted" : "requested"} in this synthetic sample fixture, but the sample policy text makes no mention of ${spec.policyKeywords.first} use.';
         } else {
           explanation = isDisclaimed
-              ? 'Policy explicitly states this data is not collected, yet the Android app manifest requests ${spec.friendlyName} (${isGranted ? "GRANTED" : "not granted"}).'
-              : '${spec.friendlyName} is ${isGranted ? "GRANTED" : "requested"} on this phone, but the reviewed policy text makes no mention of ${spec.policyKeywords.first} use.';
+              ? 'Policy explicitly states this data is not collected, yet the Android app manifest requests ${spec.friendlyName} (${isGranted ? "allowed" : "not allowed"}).'
+              : '${spec.friendlyName} is ${isGranted ? "allowed" : "requested"} on this phone, but the reviewed policy text makes no mention of ${spec.policyKeywords.first} use.';
         }
       } else if (isRequested && isGranted) {
         state = PermissionAlignmentState.grantedAndDisclosed;
         explanation = isSampleFixture
             ? 'Disclosed in the sample policy and marked granted in this synthetic sample fixture. ${spec.capabilityDescription}'
-            : 'Disclosed in policy and currently GRANTED in Android Settings. ${spec.capabilityDescription}';
+            : 'Disclosed in policy and currently allowed in Android Settings. ${spec.capabilityDescription}';
       } else if (isRequested && !isGranted) {
         state = PermissionAlignmentState.disclosedNotGranted;
         explanation = isSampleFixture
             ? 'Disclosed in the sample policy and requested in this synthetic sample fixture (not granted).'
-            : 'Disclosed in policy and requested in manifest, but currently DENIED / NOT GRANTED on this phone.';
+            : 'Disclosed in policy and requested in manifest, but currently not allowed on this phone.';
       } else {
         state = PermissionAlignmentState.notRequested;
         explanation = isSampleFixture
@@ -471,7 +471,7 @@ class PermissionComparator {
                       ? 'Sample fixture · marked granted (${spec.permission})'
                       : 'Sample fixture · marked requested (${spec.permission})')
                 : (isGranted
-                      ? 'GRANTED on this phone (${spec.permission})'
+                      ? 'Allowed on this phone (${spec.permission})'
                       : 'Requested in manifest · Currently NOT granted (${spec.permission})'));
 
       items.add(
@@ -624,7 +624,7 @@ class PermissionComparator {
           severity: mismatch.severity,
           exactExcerpt: isSampleFixture
               ? 'Synthetic sample permission fixture: ${mismatch.androidPermission} (${mismatch.isGranted ? "sample granted" : "sample requested"}) — illustrative sample data, not observed on this phone.'
-              : 'Android Manifest Observation: ${mismatch.androidPermission} (${mismatch.isGranted ? "GRANTED" : "REQUESTED"}) — no matching disclosure found in policy snapshot.',
+              : 'Android Manifest Observation: ${mismatch.androidPermission} (${mismatch.isGranted ? "allowed" : "requested"}) — no matching disclosure found in policy snapshot.',
           explanation: mismatch.parentExplanation,
           whatPolicySays: mismatch.isExplicitlyDisclaimedInPolicy
               ? 'Policy disclaims collection of this capability, creating a contradiction with the ${isSampleFixture ? "sample fixture" : "APK manifest"}.'

@@ -848,4 +848,107 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get voiceTooltipStopReading => 'Stop reading aloud';
+
+  @override
+  String findingsCountUnit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'findings',
+      one: 'finding',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String findingsCountPhrase(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count findings',
+      one: '1 finding',
+      zero: 'No findings',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String quotesVerifiedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count quotes verified in policy',
+      one: '1 quote verified in policy',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String observedOnPhoneCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count observed on this phone',
+      one: '1 observed on this phone',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get permissionAllowedOnPhone => 'Allowed on this phone';
+
+  @override
+  String get permissionNotAllowedOnPhone => 'Not allowed';
+
+  @override
+  String get permissionMismatchChip => 'Not in policy';
+
+  @override
+  String get howEnpriveCheckedThis => 'How Enprive checked this';
+
+  @override
+  String get hideHowEnpriveChecked => 'Hide how Enprive checked this';
+
+  @override
+  String get consentWhatWouldBeSent => 'What would be sent';
+
+  @override
+  String get consentSentScope =>
+      'Only the text in the preview leaves this phone, for this one request.';
+
+  @override
+  String consentMaskedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count personal details are masked first.',
+      one: '1 personal detail is masked first.',
+      zero: 'No personal details were found to mask.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get consentStaysOnPhone =>
+      'Your app list and phone permissions stay on this phone.';
+
+  @override
+  String findingDetailTitle(int index, int total) {
+    return 'Finding $index of $total';
+  }
+
+  @override
+  String get findingReviewChip => 'Review';
+
+  @override
+  String get askDeniAboutThis => 'Ask Deni about this';
+
+  @override
+  String get labelWhatPolicySays => 'What the policy says';
+
+  @override
+  String get labelWhatAndroidReports => 'What Android reports';
+
+  @override
+  String get sourceButtonTooltip => 'Reviewed source';
 }

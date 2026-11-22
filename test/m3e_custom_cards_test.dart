@@ -5,6 +5,9 @@ import 'package:enprive/domain/review/review_coordinator.dart';
 import 'package:enprive/domain/review/review_models.dart';
 import 'package:enprive/l10n/app_localizations.dart';
 import 'package:enprive/screens/review_result_screen.dart';
+import 'package:enprive/screens/finding_detail_screen.dart';
+import 'package:enprive/widgets/enprive_tactile_pressable.dart';
+import 'package:enprive/widgets/review/enprive_evidence_ring.dart';
 import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/widgets/deni_animated_mascot.dart';
 import 'package:enprive/widgets/enprive_provenance_chip.dart';
@@ -518,7 +521,7 @@ void main() {
     );
 
     testWidgets(
-      'EnpriveReviewHeroCard renders Light/Dark editorial hero banner, borderless metrics, and interactive arrow CTA cleanly including 200% Arabic RTL',
+      'EnpriveReviewHeroCard leads with the state chip and evidence ring, keeps one filled pill with Deni, and renders in dark 200% Arabic RTL',
       (WidgetTester tester) async {
         var sourceTapped = false;
         var voiceTapped = false;
@@ -550,34 +553,71 @@ void main() {
               primaryCtaLabel: 'Ask Deni',
               onPrimaryCta: () => ctaTapped = true,
               onMascotTap: () => mascotTapped = true,
+              categoryCounts: const {
+                FindingCategory.sharing: 1,
+                FindingCategory.tracking: 1,
+              },
             ),
           ),
         );
         await tester.pump();
 
         expect(find.byType(EnpriveReviewHeroCard), findsOneWidget);
-        expect(find.byType(DeniAnimatedMascot), findsOneWidget);
+        expect(find.byType(EnpriveEvidenceRing), findsOneWidget);
+        // Compact Deni sits inside the single filled Ask Deni pill.
+        expect(
+          find.descendant(
+            of: find.byType(EnpriveTactilePressable),
+            matching: find.byType(DeniAnimatedMascot),
+          ),
+          findsOneWidget,
+        );
         expect(find.text('EduTrack Classroom'), findsOneWidget);
         expect(find.text('Review recommended'), findsOneWidget);
-        expect(find.text('Findings'), findsOneWidget);
         expect(find.text('Verified'), findsOneWidget);
         expect(find.text('OS Granted'), findsOneWidget);
+        // Category legend from the ring counts.
+        expect(find.text('Location & Tracking'), findsOneWidget);
+        expect(find.text('Third-Party Sharing'), findsOneWidget);
 
-        await tester.tap(find.text('Source'));
+        // The ring is one TalkBack node: count, breakdown and state.
+        final ringLabel = tester
+            .getSemantics(find.byType(EnpriveEvidenceRing))
+            .getSemanticsData()
+            .label;
+        expect(
+          ringLabel,
+          '2 findings: 1 Third-Party Sharing, 1 Location & Tracking. Review recommended.',
+        );
+
+        await tester.tap(find.byTooltip('View reviewed policy snapshot'));
         await tester.pump();
         expect(sourceTapped, isTrue);
 
         await tester.tap(find.byTooltip('Read summary aloud'));
         await tester.pump();
         expect(voiceTapped, isTrue);
-
-        await tester.tap(find.byType(DeniAnimatedMascot));
-        await tester.pump();
-        expect(mascotTapped, isTrue);
+        expect(mascotTapped, isFalse);
 
         await tester.tap(find.text('Ask Deni'));
         await tester.pump();
         expect(ctaTapped, isTrue);
+
+        // Source and Read aloud are tonal in both themes; only the pill is
+        // filled with primary.
+        final sourceStyle = tester
+            .widget<IconButton>(
+              find.ancestor(
+                of: find.byIcon(LucideIcons.fileText),
+                matching: find.byType(IconButton),
+              ),
+            )
+            .style!;
+        expect(
+          sourceStyle.backgroundColor!.resolve(<WidgetState>{}),
+          EnpriveM3ETheme.lightColorScheme.secondaryContainer,
+        );
+        await tester.pump(const Duration(seconds: 1));
         expect(tester.takeException(), isNull);
 
         // Dark mode + Arabic RTL + 200% text scaling + reduced motion
@@ -614,7 +654,7 @@ void main() {
         await tester.pump();
 
         expect(find.byType(EnpriveReviewHeroCard), findsOneWidget);
-        expect(find.byType(DeniAnimatedMascot), findsOneWidget);
+        expect(find.byType(EnpriveEvidenceRing), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );
@@ -934,9 +974,23 @@ void main() {
         expect(find.text('Quote verified in policy'), findsOneWidget);
         expect(find.text('Observed on this phone'), findsOneWidget);
         expect(
-          find.text('1 Quote verified in policy · 1 Observed on this phone'),
+          find.text('1 quote verified in policy · 1 observed on this phone'),
           findsOneWidget,
         );
+
+        // The device observation opens a detail page that shows it as a phone
+        // observation, never as a quoted policy passage.
+        await tester.ensureVisible(
+          find.text('Undisclosed Android Permission: Camera'),
+        );
+        await tester.tap(find.text('Undisclosed Android Permission: Camera'));
+        await tester.pumpAndSettle();
+        expect(find.byType(FindingDetailScreen), findsOneWidget);
+        expect(
+          find.byKey(const Key('finding_detail_observation')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('finding_detail_quote')), findsNothing);
       },
     );
   });

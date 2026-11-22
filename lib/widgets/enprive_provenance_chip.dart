@@ -48,7 +48,7 @@ class EnpriveProvenanceChip extends StatelessWidget {
         );
     final semantics = context.semanticColors;
 
-    final (
+    var (
       SemanticColorPair pair,
       String duotoneIcon,
       String defaultLabel,
@@ -81,6 +81,14 @@ class EnpriveProvenanceChip extends StatelessWidget {
     };
 
     final label = customLabel ?? defaultLabel;
+    // Provenance is a fact, not a judgement: every source shares one neutral
+    // chip and is told apart by its icon and words.
+    final scheme = Theme.of(context).colorScheme;
+    pair = SemanticColorPair(
+      background: scheme.surfaceContainerHigh,
+      foreground: scheme.onSurfaceVariant,
+      border: scheme.surfaceContainerHigh,
+    );
 
     return Semantics(
       label: 'Processing location: $label',
@@ -90,7 +98,6 @@ class EnpriveProvenanceChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: pair.background,
           borderRadius: BorderRadius.circular(EnpriveRadii.pill),
-          border: Border.all(color: pair.border, width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

@@ -455,8 +455,8 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                     const SizedBox(width: 4),
                     Text(
                       _showThoughts
-                          ? l10n.hideStreamedThoughts
-                          : l10n.viewStreamedThoughts,
+                          ? l10n.hideHowEnpriveChecked
+                          : l10n.howEnpriveCheckedThis,
                       style: m3e.typography.emphasized.labelMedium.copyWith(
                         color: scheme.primary,
                       ),

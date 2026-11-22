@@ -1629,6 +1629,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stop reading aloud'**
   String get voiceTooltipStopReading;
+
+  /// Small label under the finding count in the center of the evidence ring; a count of evidence, never a score
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{finding} other{findings}}'**
+  String findingsCountUnit(int count);
+
+  /// Start of the evidence ring TalkBack label, followed by the per-category breakdown
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No findings} =1{1 finding} other{{count} findings}}'**
+  String findingsCountPhrase(int count);
+
+  /// Evidence summary: how many findings are backed by an exact quote matched in the policy text
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 quote verified in policy} other{{count} quotes verified in policy}}'**
+  String quotesVerifiedCount(int count);
+
+  /// Evidence summary: how many findings come from Android observations on this phone
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 observed on this phone} other{{count} observed on this phone}}'**
+  String observedOnPhoneCount(int count);
+
+  /// Neutral factual chip for an Android permission that is currently allowed; not an approval
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed on this phone'**
+  String get permissionAllowedOnPhone;
+
+  /// Neutral factual chip for an Android permission that is currently not allowed
+  ///
+  /// In en, this message translates to:
+  /// **'Not allowed'**
+  String get permissionNotAllowedOnPhone;
+
+  /// Chip on a permission row whose permission is not mentioned in the reviewed policy
+  ///
+  /// In en, this message translates to:
+  /// **'Not in policy'**
+  String get permissionMismatchChip;
+
+  /// Toggle that reveals the saved analysis steps of a review
+  ///
+  /// In en, this message translates to:
+  /// **'How Enprive checked this'**
+  String get howEnpriveCheckedThis;
+
+  /// Toggle that hides the saved analysis steps of a review
+  ///
+  /// In en, this message translates to:
+  /// **'Hide how Enprive checked this'**
+  String get hideHowEnpriveChecked;
+
+  /// Heading of the summary at the top of the cloud consent sheet
+  ///
+  /// In en, this message translates to:
+  /// **'What would be sent'**
+  String get consentWhatWouldBeSent;
+
+  /// Consent summary line describing exactly what is sent and how often
+  ///
+  /// In en, this message translates to:
+  /// **'Only the text in the preview leaves this phone, for this one request.'**
+  String get consentSentScope;
+
+  /// Consent summary line counting the personal details masked before anything is sent
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No personal details were found to mask.} =1{1 personal detail is masked first.} other{{count} personal details are masked first.}}'**
+  String consentMaskedCount(int count);
+
+  /// Consent summary line naming what never leaves the phone
+  ///
+  /// In en, this message translates to:
+  /// **'Your app list and phone permissions stay on this phone.'**
+  String get consentStaysOnPhone;
+
+  /// App bar title of the finding detail page
+  ///
+  /// In en, this message translates to:
+  /// **'Finding {index} of {total}'**
+  String findingDetailTitle(int index, int total);
+
+  /// Short state chip on a finding row that deserves a human look
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get findingReviewChip;
+
+  /// Button on the finding detail page that opens Deni's explanation for this finding
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Deni about this'**
+  String get askDeniAboutThis;
+
+  /// Section heading on the finding detail page
+  ///
+  /// In en, this message translates to:
+  /// **'What the policy says'**
+  String get labelWhatPolicySays;
+
+  /// Section heading on the finding detail page
+  ///
+  /// In en, this message translates to:
+  /// **'What Android reports'**
+  String get labelWhatAndroidReports;
+
+  /// Tooltip for the icon button that opens the reviewed policy snapshot
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewed source'**
+  String get sourceButtonTooltip;
 }
 
 class _AppLocalizationsDelegate
