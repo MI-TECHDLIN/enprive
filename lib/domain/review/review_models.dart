@@ -1,5 +1,6 @@
 import '../../widgets/enprive_provenance_chip.dart';
 import '../permissions/permission_comparator.dart';
+import 'app_policy_association.dart' show AppPolicyAssociationReport;
 
 /// Calibrated 3-state review outcome (never a binary "Safe" certification).
 enum ReviewOverallState {
@@ -127,6 +128,41 @@ class PolicySourceSnapshot {
       (requestedUrl != null &&
           canonicalUrl != null &&
           requestedUrl != canonicalUrl);
+
+  PolicySourceSnapshot copyWith({
+    String? snapshotId,
+    PolicySourceType? sourceType,
+    String? requestedUrl,
+    String? canonicalUrl,
+    List<String>? redirectChain,
+    DateTime? retrievedAt,
+    PolicyRetrievalStatus? retrievalStatus,
+    AppIdentityMatchStatus? appIdentityMatchStatus,
+    String? sourceSha256Hash,
+    String? originalFilename,
+    String? mimeType,
+    int? byteLength,
+    DocumentExtractionStatus? extractionStatus,
+    String? limitationNote,
+  }) {
+    return PolicySourceSnapshot(
+      snapshotId: snapshotId ?? this.snapshotId,
+      sourceType: sourceType ?? this.sourceType,
+      requestedUrl: requestedUrl ?? this.requestedUrl,
+      canonicalUrl: canonicalUrl ?? this.canonicalUrl,
+      redirectChain: redirectChain ?? this.redirectChain,
+      retrievedAt: retrievedAt ?? this.retrievedAt,
+      retrievalStatus: retrievalStatus ?? this.retrievalStatus,
+      appIdentityMatchStatus:
+          appIdentityMatchStatus ?? this.appIdentityMatchStatus,
+      sourceSha256Hash: sourceSha256Hash ?? this.sourceSha256Hash,
+      originalFilename: originalFilename ?? this.originalFilename,
+      mimeType: mimeType ?? this.mimeType,
+      byteLength: byteLength ?? this.byteLength,
+      extractionStatus: extractionStatus ?? this.extractionStatus,
+      limitationNote: limitationNote ?? this.limitationNote,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'snapshotId': snapshotId,
@@ -412,6 +448,7 @@ class PolicyReviewReceipt {
     String? calibratedDisclaimer,
     List<VerifiedFinding>? findings,
     AppPermissionComparisonReport? permissionReport,
+    bool clearPermissionReport = false,
     List<String>? processSteps,
     String? thoughtSummary,
     String? thoughtSignature,
@@ -432,7 +469,9 @@ class PolicyReviewReceipt {
       summary: summary ?? this.summary,
       calibratedDisclaimer: calibratedDisclaimer ?? this.calibratedDisclaimer,
       findings: findings ?? this.findings,
-      permissionReport: permissionReport ?? this.permissionReport,
+      permissionReport: clearPermissionReport
+          ? null
+          : (permissionReport ?? this.permissionReport),
       processSteps: processSteps ?? this.processSteps,
       thoughtSummary: thoughtSummary ?? this.thoughtSummary,
       thoughtSignature: thoughtSignature ?? this.thoughtSignature,
@@ -556,4 +595,18 @@ class PolicyReviewReceipt {
           : null,
     );
   }
+}
+
+/// Immutable result of linking, changing, or unlinking an installed Android app
+/// on an open [PolicyReviewReceipt]. Keeps the receipt and the in-memory
+/// [AppPolicyAssociationReport] strictly separate so persistence schemas do not
+/// change.
+class AppPolicyLinkResult {
+  final PolicyReviewReceipt receipt;
+  final AppPolicyAssociationReport associationReport;
+
+  const AppPolicyLinkResult({
+    required this.receipt,
+    required this.associationReport,
+  });
 }

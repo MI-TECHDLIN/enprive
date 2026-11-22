@@ -977,4 +977,166 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sourceButtonTooltip => 'Reviewed source';
+
+  @override
+  String get linkInstalledAppBtn => 'Link an installed app';
+
+  @override
+  String get linkInstalledAppCardTitle => 'Compare with an app on this phone';
+
+  @override
+  String get linkInstalledAppCardBody =>
+      'Pick an installed app to compare its Android permissions with this policy in the same review. Your app list stays on this phone.';
+
+  @override
+  String get linkAppPickerTitle => 'Link an installed app';
+
+  @override
+  String get changeLinkedAppPickerTitle => 'Change linked app';
+
+  @override
+  String get linkAppPickerSubtitle =>
+      'Pick an app on this phone to compare its permissions with this policy. Your app list never leaves this phone.';
+
+  @override
+  String get linkedAppCurrentlySelectedBadge => 'Linked';
+
+  @override
+  String get linkedAppSectionLabel => 'Linked app on this phone';
+
+  @override
+  String get btnChangeLinkedApp => 'Change app';
+
+  @override
+  String get btnUnlinkApp => 'Unlink app';
+
+  @override
+  String get btnUpdatePrivacyPolicy => 'Attach updated privacy policy';
+
+  @override
+  String linkedAppSnack(String appName) {
+    return 'Linked $appName. Permissions compared on this phone.';
+  }
+
+  @override
+  String linkedAppCheckMatchSnack(String appName) {
+    return 'Linked $appName. Check the app-policy match note below.';
+  }
+
+  @override
+  String linkedAppUnchangedSnack(String appName) {
+    return '$appName is already linked with the same permissions.';
+  }
+
+  @override
+  String unlinkedAppSnack(String appName) {
+    return 'Unlinked $appName. Showing the policy review only.';
+  }
+
+  @override
+  String get associationStatusPackageTitle => 'App ID found in this policy';
+
+  @override
+  String associationStatusPackageBody(String packageName, String appName) {
+    return 'This policy mentions $packageName. That suggests it may describe $appName, though text alone does not prove who owns this policy.';
+  }
+
+  @override
+  String get associationStatusNameTitle => 'App name found in this policy';
+
+  @override
+  String associationStatusNameBody(String appName) {
+    return 'This policy mentions $appName. That suggests it may describe this app, though a name match does not prove who owns this policy.';
+  }
+
+  @override
+  String get associationStatusUnverifiedTitle => 'Linked by you for comparison';
+
+  @override
+  String associationStatusUnverifiedBody(String appName) {
+    return 'This policy does not name $appName or its app ID. Double-check that it is the right policy — linking it here does not prove ownership.';
+  }
+
+  @override
+  String associationStatusUnverifiedUrlHostBody(String appName) {
+    return 'The web address includes words from $appName, but the policy text itself does not name this app. Double-check that it is the right policy — linking it here does not prove ownership.';
+  }
+
+  @override
+  String get associationStatusUnmatchedTitle =>
+      'This policy may be for a different app';
+
+  @override
+  String associationStatusUnmatchedBody(String appName, String otherApps) {
+    return 'This policy does not mention $appName. Instead, it names $otherApps. Check that you linked the right app or opened the right policy.';
+  }
+
+  @override
+  String get associationStatusAmbiguousConflictTitle =>
+      'This policy mentions more than one app';
+
+  @override
+  String associationStatusAmbiguousConflictBody(
+    String appName,
+    String otherApps,
+  ) {
+    return 'This policy mentions $appName alongside $otherApps. It may cover several apps or a shared company policy, so check that it applies here.';
+  }
+
+  @override
+  String get associationStatusAmbiguousPeerTitle =>
+      'More than one app on this phone has a similar name';
+
+  @override
+  String associationStatusAmbiguousPeerBody(String appName, String otherApps) {
+    return 'This policy mentions $appName without listing one exact app ID, and other apps on your phone ($otherApps) have a similar name. Make sure you linked the right one.';
+  }
+
+  @override
+  String associationStatusAmbiguousGenericBody(String appName) {
+    return 'This policy could refer to more than one app. Double-check that it applies to $appName.';
+  }
+
+  @override
+  String get associationOwnershipLimitation =>
+      'Text and web links never prove who published or owns a policy.';
+
+  @override
+  String permissionComparisonMismatchNote(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count permissions on this phone are not clearly mentioned in this policy. A mismatch is a prompt to look closer, not proof of wrongdoing.',
+      one: '1 permission on this phone is not clearly mentioned in this policy. A mismatch is a prompt to look closer, not proof of wrongdoing.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get permissionComparisonNoMismatchNote =>
+      'None of the checked permissions on this phone contradict this policy. Permissions alone cannot show what an app actually sends.';
+
+  @override
+  String get permissionComparisonLimitationNote =>
+      'Android shows permission settings on this phone only. This comparison is a prompt to look closer, never proof of wrongdoing or that data was sent.';
+
+  @override
+  String get permissionNotRequestedOnPhone => 'Not requested by app';
+
+  @override
+  String get permissionNotRequestedInSample => 'Not requested in sample';
+
+  @override
+  String get permissionsEmptyComparisonTitle =>
+      'No sensitive permissions matched in this check';
+
+  @override
+  String permissionsEmptyComparisonBody(
+    int requestedCount,
+    int grantedCount,
+    String appName,
+  ) {
+    return 'Android lists $requestedCount permissions ($grantedCount allowed) for $appName, with none in the sensitive categories checked here (location, camera, microphone, contacts, photos, or ad ID).';
+  }
 }

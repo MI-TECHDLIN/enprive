@@ -336,6 +336,55 @@ class DeniVoiceSummaryBuilder {
     );
   }
 
+  /// Updates strictly local Android permission and app-policy association
+  /// points on [current] after linking, changing, or unlinking an installed
+  /// app on the same policy review, without triggering any generative AI call.
+  static DeniVoiceSummary withUpdatedDeviceContext({
+    required DeniVoiceSummary current,
+    required PolicyReviewReceipt receipt,
+    AppPolicyAssociationReport? associationReport,
+  }) {
+    if (receipt.isPermissionOnlyInspection ||
+        current.summarySource == InferenceSource.offlineDeterministic) {
+      return buildDeterministic(
+        receipt: receipt,
+        associationReport: associationReport,
+        languageCode: current.languageCode,
+        fallbackNote: current.fallbackNote,
+        requiresCloudConsent: current.requiresCloudConsent,
+        consentReason: current.consentReason,
+        redactedCloudPayload: current.redactedCloudPayload,
+      );
+    }
+
+    final isSample = _isSampleReceipt(receipt);
+    final updatedPoints = <DeniSummaryPoint>[
+      ...current.policyPoints,
+      ..._buildLocalPermissionPoints(receipt, isSample: isSample),
+    ];
+    final associationPoint = _buildAssociationNotePoint(
+      receipt: receipt,
+      associationReport: associationReport,
+      isSample: isSample,
+    );
+    if (associationPoint != null) {
+      updatedPoints.add(associationPoint);
+    }
+
+    return DeniVoiceSummary(
+      headline: current.headline,
+      points: List<DeniSummaryPoint>.unmodifiable(updatedPoints),
+      unknownSummary: current.unknownSummary,
+      calibrationNotice: _calibrationNoticeFor(current.languageCode),
+      summarySource: current.summarySource,
+      languageCode: current.languageCode,
+      requiresCloudConsent: current.requiresCloudConsent,
+      consentReason: current.consentReason,
+      redactedCloudPayload: current.redactedCloudPayload,
+      fallbackNote: current.fallbackNote,
+    );
+  }
+
   /// Validates structured JSON returned by on-device or cloud Gemini against the
   /// current review's verified `sourceMatched` findings, attaching local verbatim
   /// excerpts and rejecting any invented finding IDs or certification claims.

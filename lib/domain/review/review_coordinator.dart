@@ -499,6 +499,180 @@ class ReviewCoordinator {
     );
   }
 
+  static final RegExp _permissionSummarySuffixPattern = RegExp(
+    r' (?:Local Android inspection also spotted|Synthetic sample comparison also includes) \d+ (?:illustrative )?undisclosed permission requests?\.$',
+  );
+
+  static const String _linkedComparisonProcessStep =
+      'Compared policy with permissions on this phone';
+
+  static String _stripPermissionSummarySuffix(String summary) =>
+      summary.replaceFirst(_permissionSummarySuffixPattern, '').trimRight();
+
+  /// Deterministically links an installed Android app to an open policy review
+  /// strictly on-device without invoking generative AI, cloud endpoints, or
+  /// receipt persistence.
+  ///
+  /// Reuses [AppPolicyAssociationEvaluator] (`provesDeveloperOwnership == false`)
+  /// and [PermissionComparator] so policy-first and app-first paths produce the
+  /// exact same calibrated comparison and evidence separation.
+  AppPolicyLinkResult linkInstalledAppToReceipt({
+    required PolicyReviewReceipt receipt,
+    required AppPermissionSnapshot appPermissions,
+    List<AppIdentityCandidate> peerCandidates = const <AppIdentityCandidate>[],
+    String? draftId,
+    DateTime? createdAt,
+    String? supersedesReceiptId,
+    DateTime? evaluatedAt,
+  }) {
+    final cleanPkg = appPermissions.packageName.trim();
+    if (cleanPkg.isEmpty) {
+      throw ArgumentError.value(
+        appPermissions.packageName,
+        'appPermissions',
+        'Linking an installed app requires a non-empty Android package name.',
+      );
+    }
+
+    final policyUrl =
+        receipt.sourceSnapshot?.canonicalUrl?.trim().isNotEmpty == true
+        ? receipt.sourceSnapshot!.canonicalUrl!.trim()
+        : (receipt.sourceSnapshot?.requestedUrl?.trim().isNotEmpty == true
+              ? receipt.sourceSnapshot!.requestedUrl!.trim()
+              : null);
+
+    final associationReport = AppPolicyAssociationEvaluator.evaluate(
+      AppPolicyAssociationInput(
+        packageName: cleanPkg,
+        appName: appPermissions.appName,
+        policyText: receipt.snapshotText,
+        policyUrl: policyUrl,
+        candidateApps: peerCandidates,
+        evaluatedAt: (evaluatedAt ?? DateTime.now()).toUtc(),
+      ),
+    );
+
+    // First strip any previous linked-app device observations so switching
+    // from App A -> App B is clean, deterministic, and idempotent.
+    final baseUnlinked = _stripLinkedAppFromReceipt(receipt);
+    final updatedSnapshot = baseUnlinked.sourceSnapshot?.copyWith(
+      appIdentityMatchStatus:
+          baseUnlinked.sourceSnapshot?.sourceType == PolicySourceType.sample
+          ? AppIdentityMatchStatus.sampleFixture
+          : AppIdentityMatchStatus.unverifiedUserSupplied,
+    );
+    final updatedSteps = <String>[
+      ...baseUnlinked.processSteps,
+      if (!baseUnlinked.processSteps.contains(_linkedComparisonProcessStep))
+        _linkedComparisonProcessStep,
+    ];
+    final cleanBase = baseUnlinked.copyWith(
+      id: draftId ?? baseUnlinked.id,
+      createdAt: createdAt ?? baseUnlinked.createdAt,
+      sourceSnapshot: updatedSnapshot,
+      processSteps: List<String>.unmodifiable(updatedSteps),
+      supersedesReceiptId: supersedesReceiptId,
+    );
+
+    final linked = _attachPermissionComparison(cleanBase, appPermissions);
+    return AppPolicyLinkResult(
+      receipt: linked,
+      associationReport: associationReport,
+    );
+  }
+
+  /// Deterministically unlinks an installed Android app from an open policy
+  /// review strictly on-device, removing device-observed permission findings
+  /// while preserving all captured policy quotes, provenance, and SHA-256 hash.
+  AppPolicyLinkResult unlinkInstalledAppFromReceipt({
+    required PolicyReviewReceipt receipt,
+    String? draftId,
+    DateTime? createdAt,
+    String? supersedesReceiptId,
+    DateTime? evaluatedAt,
+  }) {
+    final stripped = _stripLinkedAppFromReceipt(receipt);
+    final updatedSnapshot = stripped.sourceSnapshot?.copyWith(
+      appIdentityMatchStatus:
+          stripped.sourceSnapshot?.sourceType == PolicySourceType.sample
+          ? AppIdentityMatchStatus.sampleFixture
+          : AppIdentityMatchStatus.notApplicable,
+    );
+    final unlinkedReceipt = stripped.copyWith(
+      id: draftId ?? stripped.id,
+      createdAt: createdAt ?? stripped.createdAt,
+      sourceSnapshot: updatedSnapshot,
+      supersedesReceiptId: supersedesReceiptId,
+      clearPermissionReport: true,
+    );
+
+    final policyUrl =
+        unlinkedReceipt.sourceSnapshot?.canonicalUrl?.trim().isNotEmpty == true
+        ? unlinkedReceipt.sourceSnapshot!.canonicalUrl!.trim()
+        : (unlinkedReceipt.sourceSnapshot?.requestedUrl?.trim().isNotEmpty ==
+                  true
+              ? unlinkedReceipt.sourceSnapshot!.requestedUrl!.trim()
+              : null);
+    final associationReport = AppPolicyAssociationEvaluator.evaluate(
+      AppPolicyAssociationInput(
+        policyText: unlinkedReceipt.snapshotText,
+        policyUrl: policyUrl,
+        evaluatedAt: (evaluatedAt ?? DateTime.now()).toUtc(),
+      ),
+    );
+    return AppPolicyLinkResult(
+      receipt: unlinkedReceipt,
+      associationReport: associationReport,
+    );
+  }
+
+  PolicyReviewReceipt _stripLinkedAppFromReceipt(PolicyReviewReceipt receipt) {
+    final policyFindings = PermissionComparator.stripDeviceReportFromFindings(
+      receipt.findings,
+    );
+    final cleanSummary = _stripPermissionSummarySuffix(receipt.summary);
+    final cleanSteps = receipt.processSteps
+        .where((step) => step != _linkedComparisonProcessStep)
+        .toList(growable: false);
+
+    final ReviewOverallState recalculatedState;
+    if (receipt.overallState == ReviewOverallState.insufficientEvidence ||
+        receipt.diagnosticKind ==
+            ReviewDiagnosticKind.insufficientPolicyMaterial ||
+        receipt.diagnosticKind == ReviewDiagnosticKind.failedModelInference) {
+      recalculatedState = ReviewOverallState.insufficientEvidence;
+    } else if (policyFindings.any((f) => f.isSourceMatched)) {
+      recalculatedState = ReviewOverallState.reviewRecommended;
+    } else if (receipt.diagnosticKind ==
+        ReviewDiagnosticKind.cloudUnavailableLocalFallback) {
+      recalculatedState = ReviewOverallState.insufficientEvidence;
+    } else {
+      recalculatedState = ReviewOverallState.noConcern;
+    }
+
+    return PolicyReviewReceipt(
+      id: receipt.id,
+      subjectTitle: receipt.subjectTitle,
+      sourceLabel: receipt.sourceLabel,
+      snapshotText: receipt.snapshotText,
+      snapshotDigest: receipt.snapshotDigest,
+      createdAt: receipt.createdAt,
+      overallState: recalculatedState,
+      inferenceSource: receipt.inferenceSource,
+      summary: cleanSummary,
+      calibratedDisclaimer: receipt.calibratedDisclaimer,
+      findings: policyFindings,
+      permissionReport: null,
+      processSteps: cleanSteps,
+      thoughtSummary: receipt.thoughtSummary,
+      thoughtSignature: receipt.thoughtSignature,
+      diagnosticKind: receipt.diagnosticKind,
+      sourceSnapshot: receipt.sourceSnapshot,
+      languageCode: receipt.languageCode,
+      supersedesReceiptId: receipt.supersedesReceiptId,
+    );
+  }
+
   PolicyReviewReceipt _attachPermissionComparison(
     PolicyReviewReceipt baseReceipt,
     AppPermissionSnapshot? appPermissions,
@@ -568,6 +742,7 @@ class ReviewCoordinator {
       diagnosticKind: baseReceipt.diagnosticKind,
       sourceSnapshot: baseReceipt.sourceSnapshot,
       languageCode: baseReceipt.languageCode,
+      supersedesReceiptId: baseReceipt.supersedesReceiptId,
     );
   }
 
@@ -1255,7 +1430,7 @@ class ReviewCoordinator {
           whatPolicySays: isSourceMatched
               ? 'Verbatim match confirmed in captured snapshot (${EvidenceValidator.normalize(quote).length} chars).'
               : 'Model cited a passage that could not be matched verbatim in the captured snapshot.',
-          whatAndroidReports: 'Text-only policy review. Run "Check an app" to compare against live Android OS permissions.',
+          whatAndroidReports: PermissionComparator.standaloneAndroidReportText,
           unknowns: rawUnknowns,
           status: isSourceMatched
               ? EvidenceStatus.sourceMatched

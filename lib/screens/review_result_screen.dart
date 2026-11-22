@@ -6,7 +6,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/theme/enprive_theme.dart';
 import '../domain/intake/policy_intake_models.dart';
-import '../domain/permissions/permission_comparator.dart';
 import '../domain/review/app_policy_association.dart'
     show AppPolicyAssociationReport, AppPolicyAssociationState;
 import '../domain/review/review_coordinator.dart';
@@ -25,9 +24,11 @@ import '../widgets/deni_animated_mascot.dart';
 import '../widgets/deni_voice_summary_card.dart';
 import '../widgets/enprive_provenance_chip.dart';
 import '../widgets/enprive_tactile_button.dart';
+import '../widgets/installed_app_picker_sheet.dart';
 import '../widgets/intake/unified_policy_intake_sheet.dart';
 import '../widgets/m3e/enprive_m3e_components.dart';
 import '../widgets/review/enprive_finding_row.dart';
+import '../widgets/review/enprive_linked_app_section.dart';
 import '../widgets/review/evidence_category_style.dart';
 import '../widgets/review/unsaved_review_exit_sheet.dart';
 import '../widgets/review_progress_sheet.dart';
@@ -76,6 +77,7 @@ class ReviewResultScreen extends StatefulWidget {
   final ReviewCoordinator coordinator;
   final FutureOr<void> Function(PolicyReviewReceipt)? onSaveReceipt;
   final FutureOr<void> Function(String receiptId)? onDeleteReceipt;
+  final List<PolicyReviewReceipt> savedReceipts;
   final ReceiptRepository? receiptRepository;
   final bool Function(String receiptId)? isReceiptSaved;
   final bool isInitiallySaved;
@@ -92,6 +94,7 @@ class ReviewResultScreen extends StatefulWidget {
     required this.coordinator,
     this.onSaveReceipt,
     this.onDeleteReceipt,
+    this.savedReceipts = const [],
     this.receiptRepository,
     this.isReceiptSaved,
     this.isInitiallySaved = false,
@@ -132,10 +135,12 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
   bool _isSummaryCloudRequest = false;
   StreamSubscription<VoicePlaybackEvent>? _voiceEventsSub;
   bool _isOpeningAttachSheet = false;
+  bool _isOpeningLinkPicker = false;
   bool _isAttachingPolicy = false;
   bool _isAttachingCloud = false;
   bool _isCancellingAttach = false;
   int _attachSequence = 0;
+  int _linkSequence = 0;
   int _draftCounter = 0;
   String? _attachRequestId;
 
@@ -150,12 +155,53 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         hybridBridge: widget.coordinator.bridge,
       );
 
+  bool _isSampleReceipt(PolicyReviewReceipt receipt) =>
+      receipt.sourceSnapshot?.sourceType == PolicySourceType.sample ||
+      receipt.sourceSnapshot?.appIdentityMatchStatus ==
+          AppIdentityMatchStatus.sampleFixture;
+
+  /// Resolves the in-memory [AppPolicyAssociationReport] for [receipt].
+  ///
+  /// Association reports remain strictly in memory (never persisted to the
+  /// receipt database schema). When a previously saved linked receipt is
+  /// reopened without an [initialAssociationReport], recomputes the exact
+  /// deterministic textual/URL signals on-device.
+  AppPolicyAssociationReport? _resolveInitialAssociationReport(
+    PolicyReviewReceipt receipt,
+  ) {
+    if (widget.initialAssociationReport != null) {
+      return widget.initialAssociationReport;
+    }
+    if (receipt.isPermissionOnlyInspection ||
+        _isSampleReceipt(receipt) ||
+        receipt.snapshotText.trim().isEmpty) {
+      return null;
+    }
+    final snapshot = _validPermissionSnapshot(receipt);
+    if (snapshot == null) return null;
+    final policyUrl =
+        receipt.sourceSnapshot?.canonicalUrl?.trim().isNotEmpty == true
+            ? receipt.sourceSnapshot!.canonicalUrl!.trim()
+            : receipt.sourceSnapshot?.requestedUrl?.trim();
+    return _intakeCoordinator.evaluateAppPolicyAssociation(
+      selectedApp: SelectedAppReference(
+        packageName: snapshot.packageName.trim(),
+        appName: snapshot.appName.trim().isNotEmpty
+            ? snapshot.appName.trim()
+            : snapshot.packageName.trim(),
+        permissionSnapshot: snapshot,
+      ),
+      policyText: receipt.snapshotText,
+      policyUrl: policyUrl,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     _intakeCoordinator = _resolveIntakeCoordinator();
     _companionBridge = widget.companionBridge ?? CompanionBridge();
-    _activeAssociationReport = widget.initialAssociationReport;
+    _activeAssociationReport = _resolveInitialAssociationReport(_activeReceipt);
     _initLifecycleFromTruthSource();
     widget.exitGuardController?.attach(_requestExternalExit);
     _voiceSummary = DeniVoiceSummaryBuilder.buildDeterministic(
@@ -292,7 +338,9 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       _cancelInFlightAttachSilently();
       _cancelVoiceAndSummarySilently();
       _activeReceipt = widget.receipt;
-      _activeAssociationReport = widget.initialAssociationReport;
+      _activeAssociationReport = _resolveInitialAssociationReport(
+        _activeReceipt,
+      );
       _allowImmediatePop = false;
       _isExiting = false;
       _initLifecycleFromTruthSource();
@@ -316,6 +364,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     final reqId = _attachRequestId;
     final wasCloud = _isAttachingCloud;
     _attachSequence++;
+    _linkSequence++;
     _isAttachingPolicy = false;
     _isAttachingCloud = false;
     _isCancellingAttach = false;
@@ -792,6 +841,267 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     return snapshot;
   }
 
+  static bool _samePermissionSet(List<String> a, List<String> b) {
+    final setA = a.map((p) => p.trim()).where((p) => p.isNotEmpty).toSet();
+    final setB = b.map((p) => p.trim()).where((p) => p.isNotEmpty).toSet();
+    return setA.length == setB.length && setA.containsAll(setB);
+  }
+
+  ({String id, DateTime createdAt, String? supersedesReceiptId})
+  _nextSafeDraftIdentity({String? candidateId, DateTime? candidateCreatedAt}) {
+    final baseId = _persistedBaselineReceipt?.id;
+    final cleanCandidate = candidateId?.trim();
+    final needsDistinctDraftId =
+        cleanCandidate == null ||
+        cleanCandidate.isEmpty ||
+        cleanCandidate == baseId ||
+        cleanCandidate == _activeReceipt.id ||
+        _isPersistedInTruthSource(cleanCandidate);
+    final safeDraftId = needsDistinctDraftId
+        ? 'draft_${DateTime.now().microsecondsSinceEpoch}_${++_draftCounter}'
+        : cleanCandidate;
+    var createdAt = candidateCreatedAt ?? DateTime.now();
+    final baseline = _persistedBaselineReceipt;
+    if (baseline != null && !createdAt.isAfter(baseline.createdAt)) {
+      createdAt = baseline.createdAt.add(const Duration(milliseconds: 1));
+    }
+    if (!createdAt.isAfter(_activeReceipt.createdAt)) {
+      createdAt = _activeReceipt.createdAt.add(const Duration(milliseconds: 1));
+    }
+    return (
+      id: safeDraftId,
+      createdAt: createdAt,
+      supersedesReceiptId: baseId ?? _activeReceipt.supersedesReceiptId,
+    );
+  }
+
+  Future<void> _openLinkAppPicker(
+    BuildContext context,
+    AppLocalizations l10n, {
+    required bool isChanging,
+  }) async {
+    final receipt = _activeReceipt;
+    if (_isAttachingPolicy ||
+        _isOpeningAttachSheet ||
+        _isOpeningLinkPicker ||
+        receipt.isPermissionOnlyInspection ||
+        _isSampleReceipt(receipt) ||
+        receipt.snapshotText.trim().isEmpty) {
+      return;
+    }
+
+    final currentSnapshot = _validPermissionSnapshot(receipt);
+    final openSeq = ++_linkSequence;
+    final expectedReceiptId = receipt.id;
+    final messenger = ScaffoldMessenger.of(context);
+
+    _isOpeningLinkPicker = true;
+    SelectedAppInspectionChoice? choice;
+    try {
+      choice = await InstalledAppPickerSheet.show(
+        context,
+        bridge: widget.coordinator.bridge,
+        eduTrackPolicyText: '',
+        calmMathPolicyText: '',
+        savedReceipts: widget.savedReceipts,
+        receiptRepository: widget.receiptRepository,
+        titleOverride: isChanging
+            ? l10n.changeLinkedAppPickerTitle
+            : l10n.linkAppPickerTitle,
+        subtitleOverride: l10n.linkAppPickerSubtitle,
+        selectedPackageName: isChanging ? currentSnapshot?.packageName : null,
+      );
+    } finally {
+      _isOpeningLinkPicker = false;
+    }
+
+    if (choice == null ||
+        choice.isSyntheticSample ||
+        !mounted ||
+        openSeq != _linkSequence ||
+        _activeReceipt.id != expectedReceiptId) {
+      return;
+    }
+
+    final pickedSnapshot = choice.permissionSnapshot;
+    if (pickedSnapshot.packageName.trim().isEmpty) return;
+
+    final displayAppName = pickedSnapshot.appName.trim().isNotEmpty
+        ? pickedSnapshot.appName.trim()
+        : (choice.subjectTitle.trim().isNotEmpty
+              ? choice.subjectTitle.trim()
+              : pickedSnapshot.packageName.trim());
+
+    final isSamePackage =
+        currentSnapshot != null &&
+        currentSnapshot.packageName.trim().toLowerCase() ==
+            pickedSnapshot.packageName.trim().toLowerCase();
+    final isSamePermissions =
+        isSamePackage &&
+        _samePermissionSet(
+          currentSnapshot.requestedPermissions,
+          pickedSnapshot.requestedPermissions,
+        ) &&
+        _samePermissionSet(
+          currentSnapshot.grantedPermissions,
+          pickedSnapshot.grantedPermissions,
+        );
+
+    final policyUrl =
+        receipt.sourceSnapshot?.canonicalUrl?.trim().isNotEmpty == true
+        ? receipt.sourceSnapshot!.canonicalUrl!.trim()
+        : receipt.sourceSnapshot?.requestedUrl?.trim();
+
+    if (isSamePermissions) {
+      // Refresh in-memory association (including peer installed app candidates)
+      // without mutating the receipt or creating a redundant draft.
+      final refreshedAssociation = _intakeCoordinator
+          .evaluateAppPolicyAssociation(
+            selectedApp: SelectedAppReference(
+              packageName: pickedSnapshot.packageName.trim(),
+              appName: displayAppName,
+              permissionSnapshot: pickedSnapshot,
+              peerCandidates: choice.peerCandidates,
+            ),
+            policyText: receipt.snapshotText,
+            policyUrl: policyUrl,
+          );
+      final previousSummary = _effectiveVoiceSummary;
+      _cancelVoiceAndSummarySilently();
+      setState(() {
+        _activeAssociationReport = refreshedAssociation;
+        _voiceSummary = DeniVoiceSummaryBuilder.withUpdatedDeviceContext(
+          current: previousSummary,
+          receipt: _activeReceipt,
+          associationReport: refreshedAssociation,
+        );
+      });
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(l10n.linkedAppUnchangedSnack(displayAppName)),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      return;
+    }
+
+    final draftIdentity = _nextSafeDraftIdentity();
+    final linkResult = widget.coordinator.linkInstalledAppToReceipt(
+      receipt: receipt,
+      appPermissions: pickedSnapshot,
+      peerCandidates: choice.peerCandidates,
+      draftId: draftIdentity.id,
+      createdAt: draftIdentity.createdAt,
+      supersedesReceiptId: draftIdentity.supersedesReceiptId,
+    );
+
+    final previousSummary = _effectiveVoiceSummary;
+    _cancelVoiceAndSummarySilently();
+    setState(() {
+      _activeReceipt = linkResult.receipt;
+      _activeAssociationReport = linkResult.associationReport;
+      _lifecycleState = _persistedBaselineReceipt != null
+          ? ReceiptLifecycleState.modifiedSavedDraft
+          : ReceiptLifecycleState.draft;
+      _saveErrorMessage = null;
+      _voiceSummary = DeniVoiceSummaryBuilder.withUpdatedDeviceContext(
+        current: previousSummary,
+        receipt: linkResult.receipt,
+        associationReport: linkResult.associationReport,
+      );
+    });
+
+    final hasAssociationWarning =
+        linkResult.associationReport.state ==
+            AppPolicyAssociationState.unmatched ||
+        linkResult.associationReport.state ==
+            AppPolicyAssociationState.ambiguousIdentity;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            hasAssociationWarning
+                ? l10n.linkedAppCheckMatchSnack(displayAppName)
+                : l10n.linkedAppSnack(displayAppName),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
+
+  void _unlinkInstalledApp(BuildContext context, AppLocalizations l10n) {
+    final receipt = _activeReceipt;
+    final currentSnapshot = _validPermissionSnapshot(receipt);
+    if (currentSnapshot == null ||
+        _isAttachingPolicy ||
+        _isOpeningAttachSheet ||
+        _isOpeningLinkPicker ||
+        receipt.isPermissionOnlyInspection ||
+        _isSampleReceipt(receipt)) {
+      return;
+    }
+
+    final unlinkedAppName = currentSnapshot.appName.trim().isNotEmpty
+        ? currentSnapshot.appName.trim()
+        : currentSnapshot.packageName.trim();
+    final previousSummary = _effectiveVoiceSummary;
+    _cancelVoiceAndSummarySilently();
+
+    final baseline = _persistedBaselineReceipt;
+    final restoresSavedStandalone =
+        baseline != null &&
+        baseline.permissionReport == null &&
+        baseline.snapshotDigest == receipt.snapshotDigest &&
+        baseline.snapshotText == receipt.snapshotText;
+
+    if (restoresSavedStandalone) {
+      setState(() {
+        _activeReceipt = baseline;
+        _activeAssociationReport = null;
+        _lifecycleState = ReceiptLifecycleState.saved;
+        _saveErrorMessage = null;
+        _voiceSummary = DeniVoiceSummaryBuilder.withUpdatedDeviceContext(
+          current: previousSummary,
+          receipt: baseline,
+          associationReport: null,
+        );
+      });
+    } else {
+      final draftIdentity = _nextSafeDraftIdentity();
+      final unlinkResult = widget.coordinator.unlinkInstalledAppFromReceipt(
+        receipt: receipt,
+        draftId: draftIdentity.id,
+        createdAt: draftIdentity.createdAt,
+        supersedesReceiptId: draftIdentity.supersedesReceiptId,
+      );
+      setState(() {
+        _activeReceipt = unlinkResult.receipt;
+        _activeAssociationReport = unlinkResult.associationReport;
+        _lifecycleState = _persistedBaselineReceipt != null
+            ? ReceiptLifecycleState.modifiedSavedDraft
+            : ReceiptLifecycleState.draft;
+        _saveErrorMessage = null;
+        _voiceSummary = DeniVoiceSummaryBuilder.withUpdatedDeviceContext(
+          current: previousSummary,
+          receipt: unlinkResult.receipt,
+          associationReport: unlinkResult.associationReport,
+        );
+      });
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(l10n.unlinkedAppSnack(unlinkedAppName)),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
+
   void _cancelAttachPolicy(AppLocalizations l10n) {
     if (!_isAttachingPolicy) return;
     final reqId = _attachRequestId;
@@ -959,29 +1269,14 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
 
       if (!mounted || seq != _attachSequence || outcome.receipt == null) return;
       final rawUpdated = outcome.receipt!;
-      final baseId = _persistedBaselineReceipt?.id;
-      final needsDistinctDraftId =
-          rawUpdated.id.trim().isEmpty ||
-          rawUpdated.id == baseId ||
-          rawUpdated.id == _activeReceipt.id ||
-          _isPersistedInTruthSource(rawUpdated.id);
-      final safeDraftId = needsDistinctDraftId
-          ? 'draft_${DateTime.now().microsecondsSinceEpoch}_${++_draftCounter}'
-          : rawUpdated.id;
-      var createdAt = rawUpdated.createdAt;
-      final baseline = _persistedBaselineReceipt;
-      if (baseline != null && !createdAt.isAfter(baseline.createdAt)) {
-        createdAt = baseline.createdAt.add(const Duration(milliseconds: 1));
-      }
-      if (!createdAt.isAfter(_activeReceipt.createdAt)) {
-        createdAt = _activeReceipt.createdAt.add(
-          const Duration(milliseconds: 1),
-        );
-      }
+      final draftIdentity = _nextSafeDraftIdentity(
+        candidateId: rawUpdated.id,
+        candidateCreatedAt: rawUpdated.createdAt,
+      );
       final updated = rawUpdated.copyWith(
-        id: safeDraftId,
-        createdAt: createdAt,
-        supersedesReceiptId: baseId ?? _activeReceipt.supersedesReceiptId,
+        id: draftIdentity.id,
+        createdAt: draftIdentity.createdAt,
+        supersedesReceiptId: draftIdentity.supersedesReceiptId,
       );
       // Do NOT auto-save when attaching or updating a policy: keep historical
       // receipts untouched and require an explicit Save action.
@@ -1427,10 +1722,11 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
           final l10n = AppLocalizations.of(context)!;
           final receipt = _activeReceipt;
           final validSnapshot = _validPermissionSnapshot(receipt);
-          final isSampleReceipt =
-              receipt.sourceSnapshot?.sourceType == PolicySourceType.sample ||
-              receipt.sourceSnapshot?.appIdentityMatchStatus ==
-                  AppIdentityMatchStatus.sampleFixture;
+          final isSampleReceipt = _isSampleReceipt(receipt);
+          final canTwoWayLink =
+              !receipt.isPermissionOnlyInspection &&
+              !isSampleReceipt &&
+              receipt.snapshotText.trim().isNotEmpty;
           final m3e = EnpriveM3ETheme.of(context);
           final scheme = m3e.colorScheme;
           final surfaces = context.enpriveSurfaces;
@@ -2036,104 +2332,164 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               ),
                             ),
 
-                          // Optional Permission Check Section
-                          if (receipt.permissionReport != null &&
-                              receipt.permissionReport!.items.isNotEmpty) ...[
+                          // Two-Way App Linking & On-Device Permission Comparison Section
+                          if (canTwoWayLink) ...[
                             const SizedBox(height: 24),
-                            Text(
-                              isSampleReceipt
-                                  ? 'Sample permissions (${l10n.sampleSyntheticBadge})'
-                                  : l10n.permissionsOnPhoneTitle,
-                              style: m3e.typeScale.titleLarge.copyWith(
-                                color: scheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _M3EPermissionListCard(
-                              report: receipt.permissionReport!,
+                            EnpriveLinkedAppSection(
+                              permissionReport: validSnapshot != null
+                                  ? receipt.permissionReport
+                                  : null,
+                              associationReport: _activeAssociationReport,
+                              bridge: widget.coordinator.bridge,
                               l10n: l10n,
-                              isSampleReceipt: isSampleReceipt,
-                            ),
-                          ],
-                          if (validSnapshot != null &&
-                              !receipt.isPermissionOnlyInspection &&
-                              !isSampleReceipt) ...[
-                            const SizedBox(height: 16),
-                            EnpriveTactileButton(
-                              key: const Key(
-                                'review_result_attach_new_policy_btn',
+                              isBusy:
+                                  _isAttachingPolicy ||
+                                  _isOpeningAttachSheet ||
+                                  _isOpeningLinkPicker,
+                              onLinkApp: () => unawaited(
+                                _openLinkAppPicker(
+                                  context,
+                                  l10n,
+                                  isChanging: false,
+                                ),
                               ),
-                              label: 'Attach updated privacy policy',
-                              isSecondary: true,
-                              onPressed:
-                                  (_isAttachingPolicy || _isOpeningAttachSheet)
-                                  ? null
-                                  : () => _openAttachPolicySheet(
-                                      context,
-                                      l10n,
-                                      receipt,
+                              onChangeApp: () => unawaited(
+                                _openLinkAppPicker(
+                                  context,
+                                  l10n,
+                                  isChanging: true,
+                                ),
+                              ),
+                              onUnlinkApp: () =>
+                                  _unlinkInstalledApp(context, l10n),
+                            ),
+                            if (validSnapshot != null) ...[
+                              const SizedBox(height: 16),
+                              EnpriveTactileButton(
+                                key: const Key(
+                                  'review_result_attach_new_policy_btn',
+                                ),
+                                label: l10n.btnUpdatePrivacyPolicy,
+                                isSecondary: true,
+                                onPressed:
+                                    (_isAttachingPolicy ||
+                                        _isOpeningAttachSheet ||
+                                        _isOpeningLinkPicker)
+                                    ? null
+                                    : () => _openAttachPolicySheet(
+                                        context,
+                                        l10n,
+                                        receipt,
+                                      ),
+                              ),
+                            ],
+                          ] else ...[
+                            // Permission-Only Inspection or Synthetic Sample Permissions
+                            if (receipt.permissionReport != null &&
+                                receipt.permissionReport!.items.isNotEmpty) ...[
+                              const SizedBox(height: 24),
+                              Text(
+                                isSampleReceipt
+                                    ? 'Sample permissions (${l10n.sampleSyntheticBadge})'
+                                    : l10n.permissionsOnPhoneTitle,
+                                style: m3e.typeScale.titleLarge.copyWith(
+                                  color: scheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              EnprivePermissionComparisonList(
+                                report: receipt.permissionReport!,
+                                l10n: l10n,
+                                isSampleReceipt: isSampleReceipt,
+                              ),
+                            ],
+                            if (validSnapshot != null &&
+                                !receipt.isPermissionOnlyInspection &&
+                                !isSampleReceipt) ...[
+                              const SizedBox(height: 16),
+                              EnpriveTactileButton(
+                                key: const Key(
+                                  'review_result_attach_new_policy_btn',
+                                ),
+                                label: l10n.btnUpdatePrivacyPolicy,
+                                isSecondary: true,
+                                onPressed:
+                                    (_isAttachingPolicy ||
+                                        _isOpeningAttachSheet ||
+                                        _isOpeningLinkPicker)
+                                    ? null
+                                    : () => _openAttachPolicySheet(
+                                        context,
+                                        l10n,
+                                        receipt,
+                                      ),
+                              ),
+                            ],
+                            if (_activeAssociationReport != null &&
+                                (_activeAssociationReport!.state ==
+                                        AppPolicyAssociationState.unmatched ||
+                                    _activeAssociationReport!.state ==
+                                        AppPolicyAssociationState
+                                            .ambiguousIdentity)) ...[
+                              const SizedBox(height: 16),
+                              EnpriveMaterialCardSurface(
+                                key: const Key(
+                                  'review_result_association_notice',
+                                ),
+                                variant: EnpriveCardVariant.outlined,
+                                backgroundColor: semantics
+                                    .reviewRecommended
+                                    .background
+                                    .withValues(alpha: 0.55),
+                                borderColor: semantics.reviewRecommended.border,
+                                borderRadius: BorderRadius.circular(
+                                  EnpriveRadii.lg,
+                                ),
+                                padding: const EdgeInsets.all(14),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      LucideIcons.triangleAlert,
+                                      size: 18,
+                                      color: semantics
+                                          .reviewRecommended
+                                          .foreground,
                                     ),
-                            ),
-                          ],
-                          if (_activeAssociationReport != null &&
-                              (_activeAssociationReport!.state ==
-                                      AppPolicyAssociationState.unmatched ||
-                                  _activeAssociationReport!.state ==
-                                      AppPolicyAssociationState
-                                          .ambiguousIdentity)) ...[
-                            const SizedBox(height: 16),
-                            EnpriveMaterialCardSurface(
-                              key: const Key('review_result_association_notice'),
-                              variant: EnpriveCardVariant.outlined,
-                              backgroundColor: semantics
-                                  .reviewRecommended
-                                  .background
-                                  .withValues(alpha: 0.55),
-                              borderColor: semantics.reviewRecommended.border,
-                              borderRadius: BorderRadius.circular(
-                                EnpriveRadii.lg,
-                              ),
-                              padding: const EdgeInsets.all(14),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    LucideIcons.triangleAlert,
-                                    size: 18,
-                                    color:
-                                        semantics.reviewRecommended.foreground,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _activeAssociationReport!.explanation,
-                                          style: m3e.typeScale.bodySmall
-                                              .copyWith(
-                                                color: scheme.onSurface,
-                                                fontWeight: FontWeight.w600,
-                                                height: 1.38,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          _activeAssociationReport!
-                                              .ownershipLimitationNotice,
-                                          style: m3e.typeScale.bodySmall
-                                              .copyWith(
-                                                color: scheme.onSurfaceVariant,
-                                                height: 1.38,
-                                              ),
-                                        ),
-                                      ],
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _activeAssociationReport!
+                                                .explanation,
+                                            style: m3e.typeScale.bodySmall
+                                                .copyWith(
+                                                  color: scheme.onSurface,
+                                                  fontWeight: FontWeight.w600,
+                                                  height: 1.38,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            _activeAssociationReport!
+                                                .ownershipLimitationNotice,
+                                            style: m3e.typeScale.bodySmall
+                                                .copyWith(
+                                                  color:
+                                                      scheme.onSurfaceVariant,
+                                                  height: 1.38,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
+                            ],
                           ],
                           if (receipt.sourceSnapshot != null &&
                               (receipt.sourceSnapshot!.canonicalUrl != null ||
@@ -2224,146 +2580,6 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
           );
         },
       ),
-    );
-  }
-}
-
-class _M3EPermissionListCard extends StatelessWidget {
-  final AppPermissionComparisonReport report;
-  final AppLocalizations l10n;
-
-  /// Synthetic sample permissions describe the fixture, not this phone.
-  final bool isSampleReceipt;
-
-  const _M3EPermissionListCard({
-    required this.report,
-    required this.l10n,
-    this.isSampleReceipt = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final semantics = context.enpriveSemantics;
-
-    // Facts stay neutral: an allowed permission is not an approval. Only a
-    // permission the policy never mentions is marked, in the review amber.
-    Widget chip(String label, {required bool mismatch}) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: mismatch
-              ? semantics.reviewRecommended.background
-              : scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(EnpriveRadii.chip),
-        ),
-        child: Text(
-          label,
-          style: m3e.typeScale.labelMedium.copyWith(
-            color: mismatch
-                ? semantics.reviewRecommended.foreground
-                : scheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        for (var idx = 0; idx < report.items.length; idx++) ...[
-          if (idx > 0) const SizedBox(height: 2),
-          Builder(
-            builder: (context) {
-              final item = report.items[idx];
-              final isMismatch =
-                  item.alignmentState ==
-                  PermissionAlignmentState.undisclosedInPolicy;
-
-              return Container(
-                padding: const EdgeInsetsDirectional.fromSTEB(12, 14, 16, 14),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainer,
-                  borderRadius: EnpriveRadii.groupedCardRadius(
-                    index: idx,
-                    count: report.items.length,
-                  ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: isMismatch
-                            ? semantics.reviewRecommended.background
-                            : scheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        isMismatch
-                            ? LucideIcons.triangleAlert
-                            : LucideIcons.smartphone,
-                        size: 18,
-                        color: isMismatch
-                            ? semantics.reviewRecommended.icon
-                            : scheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.friendlyName,
-                            style: m3e.typeScale.titleMedium.copyWith(
-                              color: scheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: [
-                              chip(
-                                isSampleReceipt
-                                    ? (item.isGranted
-                                          ? l10n.permissionAllowedInSample
-                                          : l10n.permissionNotAllowedInSample)
-                                    : (item.isGranted
-                                          ? l10n.permissionAllowedOnPhone
-                                          : l10n.permissionNotAllowedOnPhone),
-                                mismatch: false,
-                              ),
-                              if (isMismatch)
-                                chip(
-                                  l10n.permissionMismatchChip,
-                                  mismatch: true,
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            item.parentExplanation,
-                            style: m3e.typeScale.bodyMedium.copyWith(
-                              height: 1.4,
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
-      ],
     );
   }
 }

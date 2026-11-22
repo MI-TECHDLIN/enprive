@@ -214,6 +214,9 @@ class InstalledAppPickerSheet extends StatefulWidget {
   final List<PolicyReviewReceipt> savedReceipts;
   final ReceiptRepository? receiptRepository;
   final ScrollController? scrollController;
+  final String? titleOverride;
+  final String? subtitleOverride;
+  final String? selectedPackageName;
 
   const InstalledAppPickerSheet({
     super.key,
@@ -223,6 +226,9 @@ class InstalledAppPickerSheet extends StatefulWidget {
     this.savedReceipts = const [],
     this.receiptRepository,
     this.scrollController,
+    this.titleOverride,
+    this.subtitleOverride,
+    this.selectedPackageName,
   });
 
   static Future<SelectedAppInspectionChoice?> show(
@@ -232,6 +238,9 @@ class InstalledAppPickerSheet extends StatefulWidget {
     required String calmMathPolicyText,
     List<PolicyReviewReceipt> savedReceipts = const [],
     ReceiptRepository? receiptRepository,
+    String? titleOverride,
+    String? subtitleOverride,
+    String? selectedPackageName,
   }) {
     return showModalBottomSheet<SelectedAppInspectionChoice>(
       context: context,
@@ -251,6 +260,9 @@ class InstalledAppPickerSheet extends StatefulWidget {
           savedReceipts: savedReceipts,
           receiptRepository: receiptRepository,
           scrollController: scrollController,
+          titleOverride: titleOverride,
+          subtitleOverride: subtitleOverride,
+          selectedPackageName: selectedPackageName,
         ),
       ),
     );
@@ -451,7 +463,8 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        l10n.btnCheckApp,
+                                        widget.titleOverride ??
+                                            l10n.btnCheckApp,
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                         style: m3e
@@ -479,7 +492,8 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
                                   ],
                                 ),
                                 Text(
-                                  l10n.checkAppSheetSubtitle,
+                                  widget.subtitleOverride ??
+                                      l10n.checkAppSheetSubtitle,
                                   maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
                                   style: m3e.typeScale.bodyMedium.copyWith(
@@ -689,6 +703,12 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
       );
     }
 
+    final selectedPkgLower = widget.selectedPackageName?.trim().toLowerCase();
+    bool isSelectedPackage(String packageName) =>
+        selectedPkgLower != null &&
+        selectedPkgLower.isNotEmpty &&
+        packageName.trim().toLowerCase() == selectedPkgLower;
+
     return CustomScrollView(
       controller: widget.scrollController,
       slivers: [
@@ -726,6 +746,9 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
                       reviewStatus: InstalledAppPickerModel.statusForPackage(
                         _recentApps[idx].packageName,
                         _latestByPackage,
+                      ),
+                      isCurrentlyLinked: isSelectedPackage(
+                        _recentApps[idx].packageName,
                       ),
                       index: idx,
                       totalCount: _recentApps.length,
@@ -776,6 +799,7 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
                     app.packageName,
                     _latestByPackage,
                   ),
+                  isCurrentlyLinked: isSelectedPackage(app.packageName),
                   index: idx,
                   totalCount: filteredApps.length,
                   onTap: () => _inspectRealInstalledApp(app),
@@ -794,6 +818,7 @@ class _InstalledAppRowTile extends StatelessWidget {
   final InstalledAppEntry app;
   final HybridAiBridge bridge;
   final InstalledAppReviewStatus reviewStatus;
+  final bool isCurrentlyLinked;
   final int index;
   final int totalCount;
   final VoidCallback onTap;
@@ -804,6 +829,7 @@ class _InstalledAppRowTile extends StatelessWidget {
     required this.app,
     required this.bridge,
     required this.reviewStatus,
+    this.isCurrentlyLinked = false,
     required this.index,
     required this.totalCount,
     required this.onTap,
@@ -828,11 +854,15 @@ class _InstalledAppRowTile extends StatelessWidget {
       InstalledAppReviewStatus.notReviewed => l10n.appPickerStatusNotReviewed,
     };
 
+    final curatedSemantics = isCurrentlyLinked
+        ? '${app.appName}, ${app.packageName}, $statusLabel, ${l10n.linkedAppCurrentlySelectedBadge}'
+        : '${app.appName}, ${app.packageName}, $statusLabel';
+
     return EnpriveSegmentedCardTile(
       index: index,
       totalCount: totalCount,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      semanticLabel: '${app.appName}, ${app.packageName}, $statusLabel',
+      semanticLabel: curatedSemantics,
       onTap: onTap,
       // The curated parent label already announces name, package and status;
       // exclude the visual children so TalkBack reads them exactly once.
@@ -877,13 +907,51 @@ class _InstalledAppRowTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    _NeutralStatusIndicator(
-                      reviewStatus: reviewStatus,
-                      label: statusLabel,
-                      isDark: isDark,
-                      surfaces: surfaces,
-                      scheme: scheme,
-                      typeScale: m3e.typeScale,
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        if (isCurrentlyLinked)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: scheme.secondaryContainer,
+                              borderRadius: BorderRadius.circular(
+                                EnpriveRadii.chip,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  LucideIcons.link,
+                                  size: 12,
+                                  color: scheme.onSecondaryContainer,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  l10n.linkedAppCurrentlySelectedBadge,
+                                  style: m3e.typeScale.labelSmall.copyWith(
+                                    color: scheme.onSecondaryContainer,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        _NeutralStatusIndicator(
+                          reviewStatus: reviewStatus,
+                          label: statusLabel,
+                          isDark: isDark,
+                          surfaces: surfaces,
+                          scheme: scheme,
+                          typeScale: m3e.typeScale,
+                        ),
+                      ],
                     ),
                   ],
                 ),
