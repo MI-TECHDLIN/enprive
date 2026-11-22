@@ -3,9 +3,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
-/// Contrast-verified WCAG 2.1 AA/AAA tokens and HCT harmonization utilities
-/// for Enprive's Warm Archival Paper (Light) and Obsidian Ceramic Slate (Dark)
-/// Material 3 Expressive design system.
+/// Fixed brand reference colors plus WCAG and HCT utilities.
+///
+/// Theme roles no longer come from this class: every scheme role is generated
+/// from Deni's teal in `EnpriveM3ETheme.colorSchemeFor`. The constants below
+/// remain for the Deni painter (`teal`, `tealStrong`, `tealDarkAccent`,
+/// `apricot`, `ink`), which draws Concept C in its own fixed colors, and as a
+/// record of the previous palette.
 abstract final class EnpriveColors {
   // ===========================================================================
   // 1. Light Mode Surfaces ("Warm Archival Paper")
@@ -34,14 +38,26 @@ abstract final class EnpriveColors {
   // ===========================================================================
   // 3. Light & Dark Typography Ink (WCAG AAA/AA Verified)
   // ===========================================================================
-  static const Color ink = Color(0xFF1C2333); // 14.9:1 on paper, 15.8:1 on white
-  static const Color inkSecondary = Color(0xFF4E5666); // 6.9:1 on paper, 7.3:1 on white
-  static const Color inkMuted = Color(0xFF636B7A); // 4.9:1 on paper (AA), 5.2:1 on white
+  static const Color ink = Color(
+    0xFF1C2333,
+  ); // 14.9:1 on paper, 15.8:1 on white
+  static const Color inkSecondary = Color(
+    0xFF4E5666,
+  ); // 6.9:1 on paper, 7.3:1 on white
+  static const Color inkMuted = Color(
+    0xFF636B7A,
+  ); // 4.9:1 on paper (AA), 5.2:1 on white
   static const Color inkDisabled = Color(0xFF727A8A); // 4.0:1 on white
 
-  static const Color darkInk = Color(0xFFF4F1EA); // 16.2:1 on darkCanvas, 13.7:1 on darkSurface
-  static const Color darkInkSecondary = Color(0xFFB5C0C6); // 9.2:1 on darkCanvas, 7.8:1 on darkSurface
-  static const Color darkInkMuted = Color(0xFF8E9CA4); // 5.7:1 on darkCanvas, 4.8:1 on darkSurface
+  static const Color darkInk = Color(
+    0xFFF4F1EA,
+  ); // 16.2:1 on darkCanvas, 13.7:1 on darkSurface
+  static const Color darkInkSecondary = Color(
+    0xFFB5C0C6,
+  ); // 9.2:1 on darkCanvas, 7.8:1 on darkSurface
+  static const Color darkInkMuted = Color(
+    0xFF8E9CA4,
+  ); // 5.7:1 on darkCanvas, 4.8:1 on darkSurface
   static const Color darkInkDisabled = Color(0xFF6E7C85);
 
   // ===========================================================================
@@ -50,83 +66,121 @@ abstract final class EnpriveColors {
   static const Color ctaInk = Color(0xFF1F2A44);
   static const Color ctaLip = Color(0xFF10172A);
 
-  static const Color darkCtaFill = Color(0xFF2DD4BF); // Accessible Ceramic Teal on dark
-  static const Color darkCtaInk = Color(0xFF072724); // 10.6:1 contrast on darkCtaFill
+  static const Color darkCtaFill = Color(
+    0xFF2DD4BF,
+  ); // Accessible Ceramic Teal on dark
+  static const Color darkCtaInk = Color(
+    0xFF072724,
+  ); // 10.6:1 contrast on darkCtaFill
   static const Color darkCtaLip = Color(0xFF138779);
 
   static const Color teal = Color(0xFF1E9E8F);
-  static const Color tealStrong = Color(0xFF0F6B61); // 6.2:1 on white, 5.8:1 on paper
+  static const Color tealStrong = Color(
+    0xFF0F6B61,
+  ); // 6.2:1 on white, 5.8:1 on paper
   static const Color tealDarkAccent = Color(0xFF4FD1C5); // 9.5:1 on darkSurface
   static const Color apricot = Color(0xFFF4A261);
 
   // ===========================================================================
   // 5. Light Mode Semantic & Provenance Tokens (Backwards-Compatible)
   // ===========================================================================
-  static const Color stateNoConcernFg = Color(0xFF165B38); // 7.4:1 on stateNoConcernBg
+  static const Color stateNoConcernFg = Color(
+    0xFF165B38,
+  ); // 7.4:1 on stateNoConcernBg
   static const Color stateNoConcernBg = Color(0xFFE7F3EC);
   static const Color stateNoConcernBorder = Color(0xFFA7D7BC);
 
-  static const Color stateReviewRecommendedFg = Color(0xFF783F00); // 7.6:1 on stateReviewRecommendedBg
+  static const Color stateReviewRecommendedFg = Color(
+    0xFF783F00,
+  ); // 7.6:1 on stateReviewRecommendedBg
   static const Color stateReviewRecommendedBg = Color(0xFFFFF1DB);
   static const Color stateReviewRecommendedBorder = Color(0xFFF5C982);
 
-  static const Color stateHighConcernFg = Color(0xFF8C1D24); // 7.5:1 on stateHighConcernBg
+  static const Color stateHighConcernFg = Color(
+    0xFF8C1D24,
+  ); // 7.5:1 on stateHighConcernBg
   static const Color stateHighConcernBg = Color(0xFFFDE8E9);
   static const Color stateHighConcernBorder = Color(0xFFF5B2B6);
 
-  static const Color stateInsufficientEvidenceFg = Color(0xFF3E4656); // 8.1:1 on stateInsufficientEvidenceBg
+  static const Color stateInsufficientEvidenceFg = Color(
+    0xFF3E4656,
+  ); // 8.1:1 on stateInsufficientEvidenceBg
   static const Color stateInsufficientEvidenceBg = Color(0xFFEEF0F4);
   static const Color stateInsufficientEvidenceBorder = Color(0xFFCBD1DC);
 
   // Provenance Chips (Light)
-  static const Color chipOnDeviceFg = Color(0xFF0C5950); // 7.3:1 on chipOnDeviceBg
+  static const Color chipOnDeviceFg = Color(
+    0xFF0C5950,
+  ); // 7.3:1 on chipOnDeviceBg
   static const Color chipOnDeviceBg = Color(0xFFE3F4F1);
   static const Color chipOnDeviceBorder = Color(0xFF9AD6CC);
 
-  static const Color chipInCloudFg = Color(0xFF24427B); // 7.8:1 on chipInCloudBg
+  static const Color chipInCloudFg = Color(
+    0xFF24427B,
+  ); // 7.8:1 on chipInCloudBg
   static const Color chipInCloudBg = Color(0xFFE6EEFB);
   static const Color chipInCloudBorder = Color(0xFFB3C9F2);
 
-  static const Color chipOfflineFg = Color(0xFF593E0E); // 7.9:1 on chipOfflineBg
+  static const Color chipOfflineFg = Color(
+    0xFF593E0E,
+  ); // 7.9:1 on chipOfflineBg
   static const Color chipOfflineBg = Color(0xFFF5EDE0);
   static const Color chipOfflineBorder = Color(0xFFDCC6A4);
 
-  static const Color chipUnknownFg = Color(0xFF3E4656); // 8.1:1 on chipUnknownBg
+  static const Color chipUnknownFg = Color(
+    0xFF3E4656,
+  ); // 8.1:1 on chipUnknownBg
   static const Color chipUnknownBg = Color(0xFFEEF0F4);
   static const Color chipUnknownBorder = Color(0xFFCBD1DC);
 
   // ===========================================================================
   // 6. Dark Mode Semantic & Provenance Tokens (HCT Harmonized & Contrast-Verified)
   // ===========================================================================
-  static const Color darkStateNoConcernFg = Color(0xFF8CE6B4); // 8.6:1 on darkStateNoConcernBg
+  static const Color darkStateNoConcernFg = Color(
+    0xFF8CE6B4,
+  ); // 8.6:1 on darkStateNoConcernBg
   static const Color darkStateNoConcernBg = Color(0xFF122B20);
   static const Color darkStateNoConcernBorder = Color(0xFF255942);
 
-  static const Color darkStateReviewRecommendedFg = Color(0xFFFCD283); // 9.2:1 on darkStateReviewRecommendedBg
+  static const Color darkStateReviewRecommendedFg = Color(
+    0xFFFCD283,
+  ); // 9.2:1 on darkStateReviewRecommendedBg
   static const Color darkStateReviewRecommendedBg = Color(0xFF2D2210);
   static const Color darkStateReviewRecommendedBorder = Color(0xFF61471D);
 
-  static const Color darkStateHighConcernFg = Color(0xFFFEB4B8); // 8.1:1 on darkStateHighConcernBg
+  static const Color darkStateHighConcernFg = Color(
+    0xFFFEB4B8,
+  ); // 8.1:1 on darkStateHighConcernBg
   static const Color darkStateHighConcernBg = Color(0xFF321619);
   static const Color darkStateHighConcernBorder = Color(0xFF692B31);
 
-  static const Color darkStateInsufficientEvidenceFg = Color(0xFFCAD3DD); // 8.4:1 on darkStateInsufficientEvidenceBg
+  static const Color darkStateInsufficientEvidenceFg = Color(
+    0xFFCAD3DD,
+  ); // 8.4:1 on darkStateInsufficientEvidenceBg
   static const Color darkStateInsufficientEvidenceBg = Color(0xFF1F2830);
   static const Color darkStateInsufficientEvidenceBorder = Color(0xFF3B4A57);
 
-  static const Color darkChipOnDeviceFg = Color(0xFF7CE8DB); // 9.0:1 on darkChipOnDeviceBg
+  static const Color darkChipOnDeviceFg = Color(
+    0xFF7CE8DB,
+  ); // 9.0:1 on darkChipOnDeviceBg
   static const Color darkChipOnDeviceBg = Color(0xFF102C29);
   static const Color darkChipOnDeviceBorder = Color(0xFF225C55);
 
-  static const Color darkChipInCloudFg = Color(0xFFB4CBFF); // 8.3:1 on darkChipInCloudBg
+  static const Color darkChipInCloudFg = Color(
+    0xFFB4CBFF,
+  ); // 8.3:1 on darkChipInCloudBg
   static const Color darkChipInCloudBg = Color(0xFF18243E);
   static const Color darkChipInCloudBorder = Color(0xFF334C82);
 
-  static const Color darkChipOfflineFg = Color(0xFFEAD0A8); // 8.5:1 on darkChipOfflineBg
+  static const Color darkChipOfflineFg = Color(
+    0xFFEAD0A8,
+  ); // 8.5:1 on darkChipOfflineBg
   static const Color darkChipOfflineBg = Color(0xFF282218);
   static const Color darkChipOfflineBorder = Color(0xFF544732);
 
-  static const Color darkChipUnknownFg = Color(0xFFCAD3DD); // 8.4:1 on darkChipUnknownBg
+  static const Color darkChipUnknownFg = Color(
+    0xFFCAD3DD,
+  ); // 8.4:1 on darkChipUnknownBg
   static const Color darkChipUnknownBg = Color(0xFF1F2830);
   static const Color darkChipUnknownBorder = Color(0xFF3B4A57);
 }

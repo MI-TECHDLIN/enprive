@@ -30,22 +30,19 @@ class EnpriveFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final m3e = EnpriveM3ETheme.of(context);
-    final surfaces = context.enpriveSurfaces;
 
-    // Derive selected/unselected roles from Enprive's semantic surface tokens
-    // so active filters read clearly in both Warm Archival Paper & Obsidian Slate
-    // without hardcoding colors or mutating global NavigationBar indicator roles.
+    // Standard M3 filter chip: the selected chip takes the secondary
+    // container with a check, unselected chips keep an outline, so the
+    // screen's one strong fill stays with its primary action.
     final scopedScheme = m3e.colorScheme.copyWith(
-      secondaryContainer: surfaces.tactilePrimaryBg,
-      onSecondaryContainer: surfaces.tactilePrimaryFg,
-      outlineVariant: surfaces.strongBorder,
+      outlineVariant: m3e.colorScheme.outline,
     );
     final scopedTheme = m3e.copyWith(
       colorScheme: scopedScheme,
       chipTheme: m3e.chipTheme.copyWith(
         height: 36,
-        cornerRadius: 12,
-        outlineWidth: 1.2,
+        cornerRadius: EnpriveRadii.chip,
+        outlineWidth: 1,
       ),
     );
 

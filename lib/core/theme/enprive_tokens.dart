@@ -1,8 +1,14 @@
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart' show SpringSimulation;
+import 'package:material_3_expressive/material_3_expressive.dart'
+    show M3EMotion, M3ESpring;
+import 'package:material_color_utilities/material_color_utilities.dart'
+    show TonalPalette;
 
 import 'enprive_colors.dart';
+import 'enprive_theme.dart' show EnpriveTheme;
 
 /// Immutable semantic color bundle (`background`, `foreground`, `border`, `icon`)
 /// with built-in WCAG 2.1 contrast calculation.
@@ -80,95 +86,58 @@ class EnpriveSemanticColors extends ThemeExtension<EnpriveSemanticColors> {
     required this.deniSecondaryGlow,
   });
 
-  static const EnpriveSemanticColors light = EnpriveSemanticColors(
-    noConcern: SemanticColorPair(
-      background: EnpriveColors.stateNoConcernBg,
-      foreground: EnpriveColors.stateNoConcernFg,
-      border: EnpriveColors.stateNoConcernBorder,
-    ),
-    reviewRecommended: SemanticColorPair(
-      background: EnpriveColors.stateReviewRecommendedBg,
-      foreground: EnpriveColors.stateReviewRecommendedFg,
-      border: EnpriveColors.stateReviewRecommendedBorder,
-    ),
-    highConcern: SemanticColorPair(
-      background: EnpriveColors.stateHighConcernBg,
-      foreground: EnpriveColors.stateHighConcernFg,
-      border: EnpriveColors.stateHighConcernBorder,
-    ),
-    insufficientEvidence: SemanticColorPair(
-      background: EnpriveColors.stateInsufficientEvidenceBg,
-      foreground: EnpriveColors.stateInsufficientEvidenceFg,
-      border: EnpriveColors.stateInsufficientEvidenceBorder,
-    ),
-    onDevice: SemanticColorPair(
-      background: EnpriveColors.chipOnDeviceBg,
-      foreground: EnpriveColors.chipOnDeviceFg,
-      border: EnpriveColors.chipOnDeviceBorder,
-    ),
-    inCloud: SemanticColorPair(
-      background: EnpriveColors.chipInCloudBg,
-      foreground: EnpriveColors.chipInCloudFg,
-      border: EnpriveColors.chipInCloudBorder,
-    ),
-    offlineFallback: SemanticColorPair(
-      background: EnpriveColors.chipOfflineBg,
-      foreground: EnpriveColors.chipOfflineFg,
-      border: EnpriveColors.chipOfflineBorder,
-    ),
-    unknown: SemanticColorPair(
-      background: EnpriveColors.chipUnknownBg,
-      foreground: EnpriveColors.chipUnknownFg,
-      border: EnpriveColors.chipUnknownBorder,
-    ),
-    deniPrimaryGlow: Color(0x291E9E8F),
-    deniSecondaryGlow: Color(0x12F4A261),
-  );
+  /// Evidence-state and provenance roles derived from the generated
+  /// [ColorScheme] plus the review amber static color.
+  ///
+  /// One meaning per color: review recommended is amber; "no concern" uses
+  /// the quiet secondary container with a check icon, never a success green;
+  /// insufficient evidence and offline/unknown provenance stay neutral; red
+  /// (error) is reserved for failures.
+  factory EnpriveSemanticColors.fromColorScheme(
+    ColorScheme scheme, {
+    double contrastLevel = 0.0,
+  }) {
+    final amber = EnpriveStaticColors.reviewAmber(
+      scheme.brightness,
+      contrastLevel: contrastLevel,
+    );
+    SemanticColorPair pair(Color background, Color foreground) =>
+        SemanticColorPair(
+          background: background,
+          foreground: foreground,
+          border: background,
+        );
+    final neutral = pair(scheme.surfaceContainerHighest, scheme.onSurface);
+    final isDark = scheme.brightness == Brightness.dark;
+    return EnpriveSemanticColors(
+      noConcern: pair(scheme.secondaryContainer, scheme.onSecondaryContainer),
+      reviewRecommended: SemanticColorPair(
+        background: amber.container,
+        foreground: amber.onContainer,
+        border: amber.container,
+        icon: amber.onContainer,
+      ),
+      highConcern: pair(scheme.errorContainer, scheme.onErrorContainer),
+      insufficientEvidence: neutral,
+      onDevice: pair(scheme.primaryContainer, scheme.onPrimaryContainer),
+      inCloud: pair(scheme.tertiaryContainer, scheme.onTertiaryContainer),
+      offlineFallback: neutral,
+      unknown: neutral,
+      // Deni's stage glow keeps the mascot's own teal and apricot light.
+      deniPrimaryGlow: isDark
+          ? const Color(0x472DD4BF)
+          : const Color(0x291E9E8F),
+      deniSecondaryGlow: isDark
+          ? const Color(0x1FF4A261)
+          : const Color(0x12F4A261),
+    );
+  }
 
-  static const EnpriveSemanticColors dark = EnpriveSemanticColors(
-    noConcern: SemanticColorPair(
-      background: EnpriveColors.darkStateNoConcernBg,
-      foreground: EnpriveColors.darkStateNoConcernFg,
-      border: EnpriveColors.darkStateNoConcernBorder,
-    ),
-    reviewRecommended: SemanticColorPair(
-      background: EnpriveColors.darkStateReviewRecommendedBg,
-      foreground: EnpriveColors.darkStateReviewRecommendedFg,
-      border: EnpriveColors.darkStateReviewRecommendedBorder,
-    ),
-    highConcern: SemanticColorPair(
-      background: EnpriveColors.darkStateHighConcernBg,
-      foreground: EnpriveColors.darkStateHighConcernFg,
-      border: EnpriveColors.darkStateHighConcernBorder,
-    ),
-    insufficientEvidence: SemanticColorPair(
-      background: EnpriveColors.darkStateInsufficientEvidenceBg,
-      foreground: EnpriveColors.darkStateInsufficientEvidenceFg,
-      border: EnpriveColors.darkStateInsufficientEvidenceBorder,
-    ),
-    onDevice: SemanticColorPair(
-      background: EnpriveColors.darkChipOnDeviceBg,
-      foreground: EnpriveColors.darkChipOnDeviceFg,
-      border: EnpriveColors.darkChipOnDeviceBorder,
-    ),
-    inCloud: SemanticColorPair(
-      background: EnpriveColors.darkChipInCloudBg,
-      foreground: EnpriveColors.darkChipInCloudFg,
-      border: EnpriveColors.darkChipInCloudBorder,
-    ),
-    offlineFallback: SemanticColorPair(
-      background: EnpriveColors.darkChipOfflineBg,
-      foreground: EnpriveColors.darkChipOfflineFg,
-      border: EnpriveColors.darkChipOfflineBorder,
-    ),
-    unknown: SemanticColorPair(
-      background: EnpriveColors.darkChipUnknownBg,
-      foreground: EnpriveColors.darkChipUnknownFg,
-      border: EnpriveColors.darkChipUnknownBorder,
-    ),
-    deniPrimaryGlow: Color(0x472DD4BF),
-    deniSecondaryGlow: Color(0x1FF4A261),
-  );
+  static final EnpriveSemanticColors light =
+      EnpriveSemanticColors.fromColorScheme(EnpriveTheme.lightColorScheme);
+
+  static final EnpriveSemanticColors dark =
+      EnpriveSemanticColors.fromColorScheme(EnpriveTheme.darkColorScheme);
 
   @override
   EnpriveSemanticColors copyWith({
@@ -224,11 +193,7 @@ class EnpriveSemanticColors extends ThemeExtension<EnpriveSemanticColors> {
         t,
       ),
       unknown: SemanticColorPair.lerp(unknown, other.unknown, t),
-      deniPrimaryGlow: Color.lerp(
-        deniPrimaryGlow,
-        other.deniPrimaryGlow,
-        t,
-      )!,
+      deniPrimaryGlow: Color.lerp(deniPrimaryGlow, other.deniPrimaryGlow, t)!,
       deniSecondaryGlow: Color.lerp(
         deniSecondaryGlow,
         other.deniSecondaryGlow,
@@ -282,53 +247,53 @@ class EnpriveSurfaceTokens extends ThemeExtension<EnpriveSurfaceTokens> {
     required this.disabledBg,
     required this.disabledFg,
     required this.ambientShadowColor,
-    this.groupedOuterRadius = 20.0,
-    this.groupedInnerRadius = 6.0,
+    this.groupedOuterRadius = EnpriveRadii.segmentedOuter,
+    this.groupedInnerRadius = EnpriveRadii.segmentedInner,
   });
 
   Color get container => cardMuted;
   Color get quoteCallout => quoteSurface;
 
-  static const EnpriveSurfaceTokens light = EnpriveSurfaceTokens(
-    canvas: EnpriveColors.paper,
-    card: EnpriveColors.surface,
-    cardMuted: EnpriveColors.surfaceMuted,
-    cardElevated: EnpriveColors.surface,
-    sheetSurface: EnpriveColors.paper,
-    quoteSurface: EnpriveColors.quoteSurface,
-    hairlineBorder: EnpriveColors.lightHairline,
-    strongBorder: EnpriveColors.lightStrongBorder,
-    tactilePrimaryBg: EnpriveColors.ctaInk,
-    tactilePrimaryFg: Colors.white,
-    tactilePrimaryLip: EnpriveColors.ctaLip,
-    tactileSecondaryBg: EnpriveColors.surface,
-    tactileSecondaryFg: EnpriveColors.ink,
-    tactileSecondaryLip: Color(0xFFDAD5CB),
-    tactileSecondaryBorder: Color(0xFFE0DBD1),
-    disabledBg: Color(0xFFE5E2DC),
-    disabledFg: Color(0xFF565E6D), // 5.1:1 contrast on disabledBg
-    ambientShadowColor: Color(0x0D1C2333),
-  );
+  /// Maps Enprive's surface vocabulary onto tonal `surfaceContainer*` roles.
+  ///
+  /// Cards are told apart by tone, not by outlines or shadows: the canvas is
+  /// `surface`, everyday cards `surfaceContainer`, tonal wells
+  /// `surfaceContainerHigh`. The tactile "lip" fields are kept for API
+  /// compatibility and now equal their faces, so nothing paints a lip.
+  factory EnpriveSurfaceTokens.fromColorScheme(ColorScheme scheme) {
+    final disabledBg = Color.alphaBlend(
+      scheme.onSurface.withValues(alpha: 0.10),
+      scheme.surface,
+    );
+    return EnpriveSurfaceTokens(
+      canvas: scheme.surface,
+      card: scheme.surfaceContainer,
+      cardMuted: scheme.surfaceContainerHigh,
+      cardElevated: scheme.surfaceContainerLow,
+      sheetSurface: scheme.surfaceContainerLow,
+      quoteSurface: scheme.surfaceContainerHigh,
+      hairlineBorder: scheme.outlineVariant,
+      strongBorder: scheme.outline,
+      tactilePrimaryBg: scheme.primary,
+      tactilePrimaryFg: scheme.onPrimary,
+      tactilePrimaryLip: scheme.primary,
+      tactileSecondaryBg: scheme.secondaryContainer,
+      tactileSecondaryFg: scheme.onSecondaryContainer,
+      tactileSecondaryLip: scheme.secondaryContainer,
+      tactileSecondaryBorder: scheme.secondaryContainer,
+      disabledBg: disabledBg,
+      disabledFg: scheme.onSurfaceVariant,
+      ambientShadowColor: const Color(0x00000000),
+      groupedOuterRadius: EnpriveRadii.segmentedOuter,
+      groupedInnerRadius: EnpriveRadii.segmentedInner,
+    );
+  }
 
-  static const EnpriveSurfaceTokens dark = EnpriveSurfaceTokens(
-    canvas: EnpriveColors.darkCanvas,
-    card: EnpriveColors.darkSurface,
-    cardMuted: EnpriveColors.darkSurfaceMuted,
-    cardElevated: EnpriveColors.darkSurfaceElevated,
-    sheetSurface: EnpriveColors.darkSurface,
-    quoteSurface: EnpriveColors.darkQuoteSurface,
-    hairlineBorder: EnpriveColors.darkHairline,
-    strongBorder: EnpriveColors.darkStrongBorder,
-    tactilePrimaryBg: EnpriveColors.darkCtaFill,
-    tactilePrimaryFg: EnpriveColors.darkCtaInk,
-    tactilePrimaryLip: EnpriveColors.darkCtaLip,
-    tactileSecondaryBg: EnpriveColors.darkSurfaceElevated,
-    tactileSecondaryFg: EnpriveColors.darkInk,
-    tactileSecondaryLip: Color(0xFF0A0F12),
-    tactileSecondaryBorder: EnpriveColors.darkHairline,
-    disabledBg: Color(0xFF1B2429),
-    disabledFg: Color(0xFF8B99A1), // 5.0:1 contrast on disabledBg
-    ambientShadowColor: Color(0x42000000),
+  static final EnpriveSurfaceTokens light =
+      EnpriveSurfaceTokens.fromColorScheme(EnpriveTheme.lightColorScheme);
+
+  static final EnpriveSurfaceTokens dark = EnpriveSurfaceTokens.fromColorScheme(
+    EnpriveTheme.darkColorScheme,
   );
 
   @override
@@ -541,6 +506,36 @@ class EnpriveMotionTokens extends ThemeExtension<EnpriveMotionTokens> {
   }
 }
 
+/// A [Curve] that follows a Material 3 Expressive spring from 0 to 1 over
+/// [seconds], so implicit animations (`AnimatedContainer`, `TweenAnimationBuilder`)
+/// can use the same overshoot-and-settle feel as M3E components.
+class EnpriveSpringCurve extends Curve {
+  final M3ESpring spring;
+  final double seconds;
+
+  const EnpriveSpringCurve(this.spring, {this.seconds = 0.4});
+
+  /// Fast spatial spring (damping 0.6, stiffness 800) for small components.
+  static const EnpriveSpringCurve fastSpatial = EnpriveSpringCurve(
+    M3EMotion.expressiveSpatialFast,
+    seconds: 0.35,
+  );
+
+  /// Default spatial spring (damping 0.8, stiffness 380) for larger surfaces.
+  static const EnpriveSpringCurve defaultSpatial = EnpriveSpringCurve(
+    M3EMotion.expressiveSpatialDefault,
+    seconds: 0.5,
+  );
+
+  /// Duration that lets the spring settle.
+  Duration get duration => Duration(milliseconds: (seconds * 1000).round());
+
+  @override
+  double transformInternal(double t) {
+    return SpringSimulation(spring.toDescription(), 0, 1, 0).x(t * seconds);
+  }
+}
+
 /// Dedicated typography extension for verbatim policy quotations, SHA-256
 /// receipt digests, tabular numerals, and evidence badges.
 @immutable
@@ -669,11 +664,21 @@ abstract final class EnpriveSpacing {
   static const double xxl = 32.0;
   static const double section = 40.0;
   static const double minTouchTarget = 48.0;
+
+  /// Side margin on compact windows (under 600dp).
+  static const double compactMargin = 16.0;
+
+  /// Side margin on medium windows and wider.
+  static const double mediumMargin = 24.0;
+
+  /// The Material side margin for a window [width].
+  static double marginFor(double width) =>
+      width < 600 ? compactMargin : mediumMargin;
 }
 
-/// Centralized shape radii and Material 3 Expressive grouped-list containment helpers.
+/// Centralized Material 3 Expressive shape scale.
 abstract final class EnpriveRadii {
-  static const double xs = 6.0;
+  static const double xs = 4.0;
   static const double sm = 12.0;
   static const double md = 16.0;
   static const double lg = 20.0;
@@ -681,13 +686,31 @@ abstract final class EnpriveRadii {
   static const double sheet = 28.0;
   static const double pill = 999.0;
 
-  /// Computes Material 3 Expressive grouped card corner radii (`20dp` outer caps,
-  /// `6dp` shared inner edges) for an item at [index] in a list of [count] items.
+  /// Text fields (M3 extra-small).
+  static const double field = 4.0;
+
+  /// Chips (M3 small).
+  static const double chip = 8.0;
+
+  /// Content cards (M3 large-increased).
+  static const double card = 20.0;
+
+  /// Hero containers (M3 extra-large-increased).
+  static const double hero = 32.0;
+
+  /// Inner corners shared by neighbours in a segmented list or group.
+  static const double segmentedInner = 4.0;
+
+  /// Outer corners of a segmented list or group.
+  static const double segmentedOuter = 20.0;
+
+  /// Computes Material 3 Expressive segmented corner radii (`20dp` outer caps,
+  /// `4dp` shared inner edges) for an item at [index] in a list of [count] items.
   static BorderRadius groupedCardRadius({
     required int index,
     required int count,
-    double outer = lg,
-    double inner = xs,
+    double outer = segmentedOuter,
+    double inner = segmentedInner,
   }) {
     if (count <= 1) {
       return BorderRadius.circular(outer);
@@ -705,6 +728,175 @@ abstract final class EnpriveRadii {
       );
     }
     return BorderRadius.circular(inner);
+  }
+}
+
+/// A Material static color: one hue producing four roles that follow light
+/// and dark themes, used for meanings the generated scheme does not carry.
+@immutable
+class EnpriveStaticColor {
+  /// Solid mark (icons, chart arcs): tone 40 in light, 80 in dark, so it keeps
+  /// 3:1 against every surface.
+  final Color color;
+
+  /// Content on [color].
+  final Color onColor;
+
+  /// Container fill: tone 90 in light, 30 in dark.
+  final Color container;
+
+  /// Content on [container] (at least 7:1).
+  final Color onContainer;
+
+  const EnpriveStaticColor({
+    required this.color,
+    required this.onColor,
+    required this.container,
+    required this.onContainer,
+  });
+
+  static EnpriveStaticColor lerp(
+    EnpriveStaticColor a,
+    EnpriveStaticColor b,
+    double t,
+  ) {
+    return EnpriveStaticColor(
+      color: Color.lerp(a.color, b.color, t)!,
+      onColor: Color.lerp(a.onColor, b.onColor, t)!,
+      container: Color.lerp(a.container, b.container, t)!,
+      onContainer: Color.lerp(a.onContainer, b.onContainer, t)!,
+    );
+  }
+}
+
+/// HCT static colors that sit outside the generated scheme.
+abstract final class EnpriveStaticColors {
+  /// Hue of the single "Review recommended" amber.
+  static const double reviewAmberHue = 70;
+
+  /// Builds the four roles of a static color from an HCT [hue].
+  static EnpriveStaticColor fromHue(
+    double hue,
+    Brightness brightness, {
+    double chroma = 40,
+    double contrastLevel = 0.0,
+  }) {
+    final palette = TonalPalette.of(hue, chroma);
+    final isDark = brightness == Brightness.dark;
+    final high = contrastLevel >= 0.5;
+    Color tone(int t) => Color(palette.get(t));
+    return isDark
+        ? EnpriveStaticColor(
+            color: tone(80),
+            onColor: tone(20),
+            container: tone(30),
+            onContainer: tone(high ? 100 : 90),
+          )
+        : EnpriveStaticColor(
+            color: tone(40),
+            onColor: tone(100),
+            container: tone(90),
+            onContainer: tone(high ? 10 : 30),
+          );
+  }
+
+  /// The one amber used for "Review recommended" everywhere.
+  static EnpriveStaticColor reviewAmber(
+    Brightness brightness, {
+    double contrastLevel = 0.0,
+  }) {
+    return fromHue(reviewAmberHue, brightness, contrastLevel: contrastLevel);
+  }
+}
+
+/// One static hue per evidence category, used for the category icon well,
+/// the evidence ring arc and the Learn tile, and nowhere else. Color marks the
+/// category, never severity.
+@immutable
+class EnpriveCategoryColors extends ThemeExtension<EnpriveCategoryColors> {
+  final EnpriveStaticColor dataCollection;
+  final EnpriveStaticColor sharing;
+  final EnpriveStaticColor tracking;
+  final EnpriveStaticColor retention;
+  final EnpriveStaticColor parentalConsent;
+
+  const EnpriveCategoryColors({
+    required this.dataCollection,
+    required this.sharing,
+    required this.tracking,
+    required this.retention,
+    required this.parentalConsent,
+  });
+
+  static const double dataCollectionHue = 241;
+  static const double sharingHue = 29;
+  static const double trackingHue = 355;
+  static const double retentionHue = 119;
+  static const double parentalConsentHue = 300;
+
+  factory EnpriveCategoryColors.forBrightness(
+    Brightness brightness, {
+    double contrastLevel = 0.0,
+  }) {
+    EnpriveStaticColor hue(double h) => EnpriveStaticColors.fromHue(
+      h,
+      brightness,
+      contrastLevel: contrastLevel,
+    );
+    return EnpriveCategoryColors(
+      dataCollection: hue(dataCollectionHue),
+      sharing: hue(sharingHue),
+      tracking: hue(trackingHue),
+      retention: hue(retentionHue),
+      parentalConsent: hue(parentalConsentHue),
+    );
+  }
+
+  static final EnpriveCategoryColors light =
+      EnpriveCategoryColors.forBrightness(Brightness.light);
+
+  static final EnpriveCategoryColors dark = EnpriveCategoryColors.forBrightness(
+    Brightness.dark,
+  );
+
+  @override
+  EnpriveCategoryColors copyWith({
+    EnpriveStaticColor? dataCollection,
+    EnpriveStaticColor? sharing,
+    EnpriveStaticColor? tracking,
+    EnpriveStaticColor? retention,
+    EnpriveStaticColor? parentalConsent,
+  }) {
+    return EnpriveCategoryColors(
+      dataCollection: dataCollection ?? this.dataCollection,
+      sharing: sharing ?? this.sharing,
+      tracking: tracking ?? this.tracking,
+      retention: retention ?? this.retention,
+      parentalConsent: parentalConsent ?? this.parentalConsent,
+    );
+  }
+
+  @override
+  EnpriveCategoryColors lerp(
+    covariant ThemeExtension<EnpriveCategoryColors>? other,
+    double t,
+  ) {
+    if (other is! EnpriveCategoryColors) return this;
+    return EnpriveCategoryColors(
+      dataCollection: EnpriveStaticColor.lerp(
+        dataCollection,
+        other.dataCollection,
+        t,
+      ),
+      sharing: EnpriveStaticColor.lerp(sharing, other.sharing, t),
+      tracking: EnpriveStaticColor.lerp(tracking, other.tracking, t),
+      retention: EnpriveStaticColor.lerp(retention, other.retention, t),
+      parentalConsent: EnpriveStaticColor.lerp(
+        parentalConsent,
+        other.parentalConsent,
+        t,
+      ),
+    );
   }
 }
 
@@ -727,6 +919,10 @@ extension EnpriveThemeContext on BuildContext {
 
   EnpriveSurfaceTokens get enpriveSurfaces => surfaceTokens;
 
+  EnpriveCategoryColors get categoryColors =>
+      Theme.of(this).extension<EnpriveCategoryColors>() ??
+      (isDarkMode ? EnpriveCategoryColors.dark : EnpriveCategoryColors.light);
+
   EnpriveMotionTokens get motionTokens =>
       Theme.of(this).extension<EnpriveMotionTokens>() ??
       EnpriveMotionTokens.standard;
@@ -736,9 +932,7 @@ extension EnpriveThemeContext on BuildContext {
   EnpriveTypographyExtension get enpriveType =>
       Theme.of(this).extension<EnpriveTypographyExtension>() ??
       EnpriveTypographyExtension.forBrightness(
-        primaryInk: isDarkMode ? EnpriveColors.darkInk : EnpriveColors.ink,
-        secondaryInk: isDarkMode
-            ? EnpriveColors.darkInkSecondary
-            : EnpriveColors.inkSecondary,
+        primaryInk: colorScheme.onSurface,
+        secondaryInk: colorScheme.onSurfaceVariant,
       );
 }

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:material_ui/material_ui.dart' as modern;
 
 import 'core/theme/enprive_theme.dart';
 import 'domain/intake/policy_intake_models.dart';
@@ -29,6 +29,7 @@ import 'services/storage/receipt_repository.dart';
 import 'widgets/cloud_consent_sheet.dart';
 import 'widgets/deni_animated_mascot.dart';
 import 'widgets/enprive_tactile_button.dart';
+import 'widgets/home/enprive_home_hero.dart';
 import 'widgets/installed_app_picker_sheet.dart';
 import 'widgets/intake/unified_policy_intake_sheet.dart';
 import 'widgets/m3e/enprive_m3e_components.dart';
@@ -99,25 +100,27 @@ class _EnpriveAppState extends State<EnpriveApp> with WidgetsBindingObserver {
         MediaQuery.maybePlatformBrightnessOf(context) ??
         View.maybeOf(context)?.platformDispatcher.platformBrightness ??
         WidgetsBinding.instance.platformDispatcher.platformBrightness;
-    final activeM3EData = EnpriveM3ETheme.resolve(
+    final activeBrightness = EnpriveM3ETheme.brightnessFor(
       mode: _themeMode,
       platformBrightness: platformBrightness,
     );
 
-    return M3EMaterialApp(
+    // A plain material_ui MaterialApp (the one M3EMaterialApp wraps) with
+    // EnpriveM3EBridgeScope as its builder. M3EMaterialApp's adaptive scope
+    // re-derives the dark scheme from a generic seed beneath the builder, so
+    // the generated Enprive dark palette never reached the screens.
+    return modern.MaterialApp(
       title: 'Enprive',
       debugShowCheckedModeBanner: false,
-      data: activeM3EData,
-      typeface: EnpriveM3ETheme.typefaceConfig,
-      autoTheming: false,
-      dynamicColoring: false,
-      initialTheme: activeM3EData.brightness,
       theme: EnpriveM3ETheme.lightThemeData.toThemeData(),
       darkTheme: EnpriveM3ETheme.darkThemeData.toThemeData(),
+      themeMode: activeBrightness == Brightness.dark
+          ? modern.ThemeMode.dark
+          : modern.ThemeMode.light,
       locale: _locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: EnpriveM3ETheme.localizationsDelegates,
-      appBuilder: (context, child) {
+      builder: (context, child) {
         return EnpriveM3EBridgeScope(
           themeMode: _themeMode,
           child: child ?? const SizedBox.shrink(),
@@ -500,7 +503,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
     await _handleCompanionInvocation(invocation);
   }
 
-  Future<void> _handleCompanionInvocation(CompanionInvocation invocation) async {
+  Future<void> _handleCompanionInvocation(
+    CompanionInvocation invocation,
+  ) async {
     if (!mounted) return;
     final id = invocation.invocationId.trim();
     if (id.isNotEmpty && _handledCompanionIds.contains(id)) {
@@ -602,7 +607,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
             coordinator: _coordinator,
             urlRetriever: _urlRetriever,
             intakeCoordinator: _intakeCoordinator,
-            savedReceipts: List<PolicyReviewReceipt>.unmodifiable(_savedReceipts),
+            savedReceipts: List<PolicyReviewReceipt>.unmodifiable(
+              _savedReceipts,
+            ),
             onSaveReceipt: _saveReceipt,
             receiptRepository: _receiptRepo,
             languageCode: widget.currentLocale.languageCode,
@@ -1078,7 +1085,11 @@ We do not collect personal identifiers, precise location data, microphone audio,
         return IndexedStack(
           index: _selectedTabIndex,
           children: [
-            _buildCheckTab(shellContext, l10n, isCompactLayout),
+            // Only the visible tab runs its tickers (hero drift, Deni idle).
+            TickerMode(
+              enabled: _selectedTabIndex == 0,
+              child: _buildCheckTab(shellContext, l10n, isCompactLayout),
+            ),
             ReceiptsScreen(
               receipts: _savedReceipts,
               coordinator: _coordinator,
@@ -1114,10 +1125,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
       children: [
         ExcludeSemantics(
           excluding: _isSplashVisible,
-          child: IgnorePointer(
-            ignoring: _isSplashVisible,
-            child: mainShell,
-          ),
+          child: IgnorePointer(ignoring: _isSplashVisible, child: mainShell),
         ),
         AnimatedSwitcher(
           duration: disableAnimations
@@ -1144,49 +1152,33 @@ We do not collect personal identifiers, precise location data, microphone audio,
     final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
     final semantics = context.enpriveSemantics;
-    final surfaces = context.enpriveSurfaces;
 
     return Scaffold(
       backgroundColor: scheme.surface,
       appBar: AppBar(
-        backgroundColor: scheme.surface,
-        surfaceTintColor: Colors.transparent,
-        titleSpacing: 20,
         title: Row(
           children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: surfaces.hairlineBorder,
-                  width: 1,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(9),
-                child: Image.asset(
-                  'assets/images/enprive_logo.png',
-                  fit: BoxFit.cover,
-                  excludeFromSemantics: true,
-                ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                'assets/images/enprive_logo.png',
+                width: 32,
+                height: 32,
+                fit: BoxFit.cover,
+                excludeFromSemantics: true,
               ),
             ),
             const SizedBox(width: 10),
             Text(
               l10n.appTitle,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: scheme.onSurface,
-                fontWeight: FontWeight.w800,
-              ),
+              style: m3e.typeScale.titleLarge.copyWith(color: scheme.onSurface),
             ),
           ],
         ),
         actions: [
           if (isCompactLayout)
             Padding(
-              padding: const EdgeInsetsDirectional.only(end: 16.0),
+              padding: const EdgeInsetsDirectional.only(end: 4.0),
               child: EnpriveSettingsAppBarButton(
                 key: _selectedTabIndex == 0
                     ? const Key('nav_settings_btn')
@@ -1206,299 +1198,264 @@ We do not collect personal identifiers, precise location data, microphone audio,
             constraints: const BoxConstraints(maxWidth: 760),
             child: SingleChildScrollView(
               controller: _checkScrollController,
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+              padding: EdgeInsets.fromLTRB(
+                EnpriveSpacing.marginFor(MediaQuery.sizeOf(context).width),
+                8,
+                EnpriveSpacing.marginFor(MediaQuery.sizeOf(context).width),
+                32,
+              ),
               child: Column(
                 children: [
-            // 1. Editorial Hero Stage with Deni (LOD 2 · 88dp)
-            Center(
-              child: DeniAnimatedMascot(
-                size: 88,
-                pose: _isRunningReview ? DeniPose.thinking : _activePose,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 2. Centered Editorial Headline & Subtitle
-            Text(
-              l10n.homeHeroHeadline,
-              textAlign: TextAlign.center,
-              style: m3e.typography.emphasized.displaySmall.copyWith(
-                fontSize: 30,
-                height: 1.15,
-                color: scheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Text(
-                l10n.homePrivacySubtitle,
-                textAlign: TextAlign.center,
-                style: m3e.typeScale.bodyLarge.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  height: 1.45,
-                ),
-              ),
-            ),
-            const SizedBox(height: 28),
-
-            // 3. Two Tactile Pill CTAs (or Live 4-Stage M3E ReviewProgressCard)
-            if (_isRunningReview)
-              ReviewProgressCard(
-                subjectTitle: _activeReviewTitle,
-                isCloudCheck: _isCloudReviewInFlight,
-                processStream: _coordinator.analysisEvents,
-                onCancel: _cancelActiveReview,
-                isCancelling: _isCancellingReview,
-              )
-            else ...[
-              EnpriveTactileButton(
-                label: l10n.btnCheckApp,
-                onPressed: () {
-                  setState(() => _activePose = DeniPose.explaining);
-                  _showCheckAppModal(context, l10n);
-                },
-              ),
-              const SizedBox(height: 12),
-              EnpriveTactileButton(
-                label: l10n.btnPasteTerms,
-                isSecondary: true,
-                onPressed: () {
-                  setState(() => _activePose = DeniPose.thinking);
-                  unawaited(_openPolicyIntakeSheet());
-                },
-              ),
-              const SizedBox(height: 14),
-              EnpriveMaterialCardSurface(
-                key: const Key('check_quick_settings_card'),
-                variant: EnpriveCardVariant.outlined,
-                backgroundColor: surfaces.card,
-                borderRadius: BorderRadius.circular(20),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                onPressed: () => _openCompanionScreen(null),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: semantics.onDevice.background,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: semantics.onDevice.border),
-                      ),
-                      child: Icon(
-                        LucideIcons.panelTopOpen,
-                        size: 19,
-                        color: semantics.onDevice.foreground,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Quick Settings Companion',
-                            style: m3e.typography.emphasized.titleSmall
-                                .copyWith(color: scheme.onSurface),
+                  // 1. The one lead block: gradient hero with Deni, the
+                  // headline and the only filled action on the screen.
+                  EnpriveHomeHero(
+                    deniPose: _isRunningReview
+                        ? DeniPose.thinking
+                        : _activePose,
+                    headline: l10n.homeHeroHeadline,
+                    subtitle: l10n.homePrivacySubtitle,
+                    actions: _isRunningReview
+                        ? ReviewProgressCard(
+                            subjectTitle: _activeReviewTitle,
+                            isCloudCheck: _isCloudReviewInFlight,
+                            processStream: _coordinator.analysisEvents,
+                            onCancel: _cancelActiveReview,
+                            isCancelling: _isCancellingReview,
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              EnpriveTactileButton(
+                                label: l10n.btnCheckApp,
+                                onPressed: () {
+                                  setState(
+                                    () => _activePose = DeniPose.explaining,
+                                  );
+                                  _showCheckAppModal(context, l10n);
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              EnpriveTactileButton(
+                                label: l10n.btnPasteTerms,
+                                variant: EnpriveButtonVariant.tonal,
+                                onPressed: () {
+                                  setState(
+                                    () => _activePose = DeniPose.thinking,
+                                  );
+                                  unawaited(_openPolicyIntakeSheet());
+                                },
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Ask Deni about the app you\'re using anytime',
-                            style: m3e.typeScale.bodySmall.copyWith(
-                              color: scheme.onSurfaceVariant,
+                  ),
+                  if (!_isRunningReview) ...[
+                    const SizedBox(height: 12),
+                    EnpriveMaterialCardSurface(
+                      key: const Key('check_quick_settings_card'),
+                      borderRadius: BorderRadius.circular(EnpriveRadii.card),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      onPressed: () => _openCompanionScreen(null),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: scheme.tertiaryContainer,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              LucideIcons.panelTopOpen,
+                              size: 20,
+                              color: scheme.onTertiaryContainer,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Quick Settings Companion',
+                                  style: m3e.typeScale.titleMedium.copyWith(
+                                    color: scheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Ask Deni about the app you\'re using anytime',
+                                  style: m3e.typeScale.bodyMedium.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Icon(
-                      LucideIcons.chevronRight,
-                      size: 18,
-                      color: scheme.onSurfaceVariant,
-                    ),
                   ],
-                ),
-              ),
-            ],
 
-            const SizedBox(height: 28),
+                  const SizedBox(height: 28),
 
-            // 4. Quick Sample App Checks (Sculpted Archival Folder Cards)
-            SizedBox(
-              width: double.infinity,
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text(
-                    l10n.trySampleCheck,
-                    style: m3e.typography.emphasized.titleMedium.copyWith(
-                      fontSize: 17,
-                      color: scheme.onSurface,
+                  // 4. Quick Sample App Checks (Sculpted Archival Folder Cards)
+                  SizedBox(
+                    width: double.infinity,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          l10n.trySampleCheck,
+                          style: m3e.typeScale.titleLarge.copyWith(
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: scheme.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            l10n.sampleSyntheticBadge,
+                            style: m3e.typography.emphasized.labelSmall
+                                .copyWith(color: scheme.onSurfaceVariant),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: scheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
+                  const SizedBox(height: 12),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final textScale = MediaQuery.textScalerOf(context)
+                          .scale(1.0);
+                      final stackVertically =
+                          constraints.maxWidth < 340 || textScale > 1.35;
+
+                      final eduCard = _SampleAppM3EBentoCard(
+                        title: 'EduTrack Classroom',
+                        value: l10n.eduTrackValue,
+                        subtitle: l10n.eduTrackSubtitle,
+                        trendBadge: l10n.eduTrackTrend,
+                        icon: LucideIcons.graduationCap,
+                        semanticPair: semantics.reviewRecommended,
+                        onTap: _isRunningReview
+                            ? null
+                            : () => _runQuickSampleReview(isEduTrack: true),
+                      );
+
+                      final calmCard = _SampleAppM3EBentoCard(
+                        title: 'CalmMath Kids',
+                        value: l10n.calmMathValue,
+                        subtitle: l10n.calmMathSubtitle,
+                        trendBadge: l10n.calmMathTrend,
+                        icon: LucideIcons.calculator,
+                        semanticPair: semantics.noConcern,
+                        onTap: _isRunningReview
+                            ? null
+                            : () => _runQuickSampleReview(isEduTrack: false),
+                      );
+
+                      if (stackVertically) {
+                        return Column(
+                          children: [
+                            eduCard,
+                            const SizedBox(height: 12),
+                            calmCard,
+                          ],
+                        );
+                      }
+
+                      return IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(child: eduCard),
+                            const SizedBox(width: 12),
+                            Expanded(child: calmCard),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 5. What We Check For (M3E Expressive Segmented Containment)
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
                     child: Text(
-                      l10n.sampleSyntheticBadge,
-                      style: m3e.typography.emphasized.labelSmall.copyWith(
-                        color: scheme.onSurfaceVariant,
+                      l10n.whatWeCheckTitle,
+                      style: m3e.typeScale.titleLarge.copyWith(
+                        color: scheme.onSurface,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-                final stackVertically =
-                    constraints.maxWidth < 340 || textScale > 1.35;
+                  const SizedBox(height: 12),
+                  _WhatWeCheckSegmentedGroup(l10n: l10n),
 
-                final eduCard = _SampleAppM3EBentoCard(
-                  title: 'EduTrack Classroom',
-                  value: l10n.eduTrackValue,
-                  subtitle: l10n.eduTrackSubtitle,
-                  trendBadge: l10n.eduTrackTrend,
-                  icon: LucideIcons.graduationCap,
-                  semanticPair: semantics.reviewRecommended,
-                  onTap: _isRunningReview
-                      ? null
-                      : () => _runQuickSampleReview(isEduTrack: true),
-                );
-
-                final calmCard = _SampleAppM3EBentoCard(
-                  title: 'CalmMath Kids',
-                  value: l10n.calmMathValue,
-                  subtitle: l10n.calmMathSubtitle,
-                  trendBadge: l10n.calmMathTrend,
-                  icon: LucideIcons.calculator,
-                  semanticPair: semantics.noConcern,
-                  onTap: _isRunningReview
-                      ? null
-                      : () => _runQuickSampleReview(isEduTrack: false),
-                );
-
-                if (stackVertically) {
-                  return Column(
-                    children: [
-                      eduCard,
-                      const SizedBox(height: 12),
-                      calmCard,
-                    ],
-                  );
-                }
-
-                return IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(child: eduCard),
-                      const SizedBox(width: 12),
-                      Expanded(child: calmCard),
-                    ],
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 24),
-
-            // 5. What We Check For (M3E Expressive Segmented Containment)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                l10n.whatWeCheckTitle,
-                style: m3e.typography.emphasized.titleMedium.copyWith(
-                  fontSize: 17,
-                  color: scheme.onSurface,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _WhatWeCheckSegmentedGroup(l10n: l10n),
-
-            // 6. Recently Reviewed (Layered Archival Folder Deck)
-            if (_savedReceipts.isNotEmpty) ...[
-              const SizedBox(height: 28),
-              EnpriveStackedFolderDeck(
-                frontColor: surfaces.card,
-                frontBorderColor: surfaces.hairlineBorder,
-                middleLayerColor: semantics.onDevice.background,
-                backLayerColor: semantics.reviewRecommended.background,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  // 6. Recently reviewed: heading plus the same rich cards
+                  // as Receipts, each opening its receipt.
+                  if (_savedReceipts.isNotEmpty) ...[
+                    const SizedBox(height: 28),
                     Row(
                       children: [
                         Expanded(
                           child: Text(
                             l10n.recentlyReviewed,
-                            style: m3e.typography.emphasized.titleMedium
-                                .copyWith(
-                                  fontSize: 17,
-                                  color: scheme.onSurface,
-                                ),
-                          ),
-                        ),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(999),
-                          onTap: () => setState(() => _selectedTabIndex = 1),
-                          child: Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: scheme.surfaceContainerHigh,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              LucideIcons.arrowRight,
-                              size: 16,
+                            style: m3e.typeScale.titleLarge.copyWith(
                               color: scheme.onSurface,
                             ),
                           ),
                         ),
+                        TextButton(
+                          onPressed: () =>
+                              setState(() => _selectedTabIndex = 1),
+                          child: Text(l10n.navReceipts),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    ..._savedReceipts.take(2).toList().asMap().entries.map((e) {
+                    const SizedBox(height: 8),
+                    ..._savedReceipts.take(2).toList().asMap().entries.map((
+                      e,
+                    ) {
                       final idx = e.key;
                       final receipt = e.value;
-                      final isConcern =
-                          receipt.overallState ==
-                          ReviewOverallState.reviewRecommended;
-                      final badgePair = isConcern
-                          ? semantics.reviewRecommended
-                          : semantics.noConcern;
                       final count = _savedReceipts.take(2).length;
-
                       return Padding(
-                        padding: EdgeInsets.only(top: idx > 0 ? 4 : 0),
-                        child: EnpriveSegmentedCardTile(
-                          index: idx,
-                          totalCount: count,
-                          backgroundColor: scheme.surfaceContainerLow,
-                          lipHeight: 2.0,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
+                        padding: EdgeInsets.only(top: idx > 0 ? 2 : 0),
+                        child: EnpriveReceiptCard(
+                          receipt: receipt,
+                          stateBadgeLabel: switch (receipt.overallState) {
+                            ReviewOverallState.reviewRecommended =>
+                              l10n.stateReviewRecommended,
+                            ReviewOverallState.noConcern =>
+                              l10n.stateNoConcern,
+                            ReviewOverallState.insufficientEvidence =>
+                              l10n.stateInsufficientEvidence,
+                          },
+                          metaLine: receipt.sourceLabel,
+                          openLabel: l10n.btnOpenReceipt,
+                          deleteTooltip: l10n.btnDelete,
+                          onDelete: null,
+                          borderRadius: EnpriveRadii.groupedCardRadius(
+                            index: idx,
+                            count: count,
+                            outer: 24,
+                            inner: 8,
                           ),
-                          onTap: () {
+                          onOpen: () {
                             Navigator.of(context).push(
                               MaterialPageRoute<void>(
                                 builder: (_) => ReviewResultScreen(
@@ -1519,65 +1476,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
                               ),
                             );
                           },
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: badgePair.background,
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Icon(
-                                  isConcern
-                                      ? LucideIcons.triangleAlert
-                                      : LucideIcons.circleCheck,
-                                  color: badgePair.foreground,
-                                  size: 21,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      receipt.subjectTitle,
-                                      style: m3e.typography.emphasized.titleSmall
-                                          .copyWith(
-                                            fontSize: 15,
-                                            color: scheme.onSurface,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      receipt.deviceObservedCount > 0
-                                          ? '${l10n.verifiedClausesCount(receipt.sourceMatchedCount)} · ${receipt.deviceObservedCount} ${l10n.statusDeviceObserved}'
-                                          : l10n.verifiedClausesCount(
-                                              receipt.sourceMatchedCount,
-                                            ),
-                                      style: m3e.typeScale.bodySmall.copyWith(
-                                        color: scheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(
-                                LucideIcons.chevronRight,
-                                size: 18,
-                                color: scheme.onSurfaceVariant,
-                              ),
-                            ],
-                          ),
                         ),
                       );
                     }),
                   ],
-                ),
-              ),
-            ],
                 ],
               ),
             ),
@@ -1692,54 +1594,67 @@ class _SampleAppM3EBentoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return EnpriveFolderTabCard(
-      backgroundColor: semanticPair.background,
-      borderColor: semanticPair.border.withValues(alpha: 0.7),
-      leadingIcon: icon,
-      iconBadgeColor: isDark ? scheme.surfaceContainerLowest : scheme.onSurface,
-      iconColor: isDark ? semanticPair.foreground : scheme.surface,
-      trailingHeader: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-        decoration: BoxDecoration(
-          color: scheme.surface.withValues(alpha: isDark ? 0.25 : 0.72),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: semanticPair.border.withValues(alpha: 0.5)),
-        ),
-        child: Text(
-          trendBadge,
-          style: m3e.typography.emphasized.labelSmall.copyWith(
-            color: semanticPair.foreground,
-            fontSize: 10.5,
-          ),
-        ),
-      ),
+    return EnpriveMaterialCardSurface(
+      borderRadius: BorderRadius.circular(EnpriveRadii.card),
+      padding: const EdgeInsets.all(16),
       semanticLabel: '$title. $value. $subtitle. $trendBadge.',
-      onTap: onTap,
+      onPressed: onTap,
+      enabled: onTap != null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: scheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: scheme.onSecondaryContainer,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: semanticPair.background,
+                  borderRadius: BorderRadius.circular(EnpriveRadii.chip),
+                ),
+                child: Text(
+                  trendBadge,
+                  style: m3e.typeScale.labelMedium.copyWith(
+                    color: semanticPair.foreground,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
           Text(
             value,
             style: m3e.typography.emphasized.titleLarge.copyWith(
-              color: semanticPair.foreground,
+              color: scheme.onSurface,
               height: 1.15,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: m3e.typography.emphasized.titleSmall.copyWith(
-              color: scheme.onSurface,
-            ),
+            style: m3e.typeScale.titleMedium.copyWith(color: scheme.onSurface),
           ),
           const SizedBox(height: 2),
           Text(
             subtitle,
-            style: m3e.typeScale.bodySmall.copyWith(
+            style: m3e.typeScale.bodyMedium.copyWith(
               color: scheme.onSurfaceVariant,
-              height: 1.35,
             ),
           ),
         ],
@@ -1835,9 +1750,7 @@ class _WhatWeCheckSegmentedGroup extends StatelessWidget {
                             child: Text(
                               checks[i].title,
                               style: m3e.typography.emphasized.titleSmall
-                                  .copyWith(
-                                    color: scheme.onSurface,
-                                  ),
+                                  .copyWith(color: scheme.onSurface),
                             ),
                           ),
                         ],

@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../../core/theme/enprive_theme.dart';
 import '../../domain/review/review_models.dart';
+import '../../l10n/app_localizations.dart';
+import '../review/enprive_state_chip.dart';
 import 'enprive_material_card_surface.dart';
 
-/// Editorial Material 3 Expressive stacked-receipt card for saved
-/// [PolicyReviewReceipt]s.
+/// Rich card for a saved [PolicyReviewReceipt] on Receipts and the Check
+/// tab's "Recently reviewed" list.
 ///
-/// Follows a monochrome archival cardstock silhouette inspired by stacked paper
-/// receipts — free of internal pastel color blocks or technical hash clutter:
-/// - 3-sheet stepped paper deck using neutral surface & hairline tokens
-/// - Quiet top-left tabular findings/verified readout + ghost delete control
-/// - Wide editorial title & 2-line insight paired with a minimalist 3-step
-///   vertical posture indicator (`| · ·`)
-/// - Inset hairline divider anchoring a bare semantic shield emblem, verdict/date
-///   origin, and a high-contrast dark-ink / ceramic-teal `M3EButton` CTA pill
+/// The whole card opens the receipt. It shows the app initial, title, source
+/// and date, the shared review-state chip, and the finding count as a large
+/// numeral (a count of evidence, never a score). Delete lives in the overflow
+/// menu (and the swipe gesture on Receipts), not on the card face.
+///
+/// [openLabel] is the TalkBack hint for opening the receipt. [findingsLabel],
+/// [verifiedLabel] and [deviceObservedLabel] are kept for source
+/// compatibility; the card shows the localized finding count instead.
 class EnpriveReceiptCard extends StatelessWidget {
   final PolicyReviewReceipt receipt;
   final String stateBadgeLabel;
@@ -24,10 +26,11 @@ class EnpriveReceiptCard extends StatelessWidget {
   final String openLabel;
   final String deleteTooltip;
   final VoidCallback onOpen;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
   final String? findingsLabel;
   final String? verifiedLabel;
   final String? deviceObservedLabel;
+  final BorderRadius borderRadius;
 
   const EnpriveReceiptCard({
     super.key,
@@ -41,356 +44,151 @@ class EnpriveReceiptCard extends StatelessWidget {
     this.findingsLabel,
     this.verifiedLabel,
     this.deviceObservedLabel,
+    this.borderRadius = const BorderRadius.all(Radius.circular(24)),
   });
+
+  /// Key of the overflow menu button.
+  static const Key overflowKey = Key('receipt_card_overflow');
 
   @override
   Widget build(BuildContext context) {
     final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
-    final semantics = context.enpriveSemantics;
-    final surfaces = context.enpriveSurfaces;
+    final l10n =
+        AppLocalizations.of(context) ??
+        lookupAppLocalizations(const Locale('en'));
+    final findingsCount = receipt.findings.length;
+    // Proof layers stay separate: quotes matched in the policy versus
+    // observations made on this phone.
+    final evidenceLine = [
+      if (receipt.sourceMatchedCount > 0)
+        l10n.quotesVerifiedCount(receipt.sourceMatchedCount),
+      if (receipt.deviceObservedCount > 0)
+        l10n.observedOnPhoneCount(receipt.deviceObservedCount),
+    ].join(' · ');
+    final title = receipt.subjectTitle.trim();
+    final initial = title.isEmpty ? '?' : title.characters.first.toUpperCase();
 
-    final (SemanticColorPair statePair, IconData stateIcon) =
-        switch (receipt.overallState) {
-          ReviewOverallState.reviewRecommended => (
-            semantics.reviewRecommended,
-            LucideIcons.shieldAlert,
-          ),
-          ReviewOverallState.noConcern => (
-            semantics.noConcern,
-            LucideIcons.fileText,
-          ),
-          ReviewOverallState.insufficientEvidence => (
-            semantics.insufficientEvidence,
-            LucideIcons.circleHelp,
-          ),
-        };
-
-    final double textScale = MediaQuery.textScalerOf(context).scale(1.0);
-    final bool isLargeScale = textScale > 1.25;
-
-    final int findingsCount = receipt.findings.length;
-    final int verifiedCount = receipt.sourceMatchedCount;
-    final int deviceCount = receipt.deviceObservedCount;
-    final String resolvedFindings = findingsLabel ?? 'Findings';
-    final String resolvedVerified = verifiedLabel ?? 'Verified';
-    final String resolvedObserved = deviceObservedLabel ?? 'Device';
-    final String baseMetrics =
-        '$findingsCount $resolvedFindings · $verifiedCount $resolvedVerified';
-    final String metricsSummary = deviceCount > 0
-        ? '$baseMetrics · $deviceCount $resolvedObserved'
-        : baseMetrics;
-
-    return Semantics(
-      container: true,
-      label:
-          '${receipt.subjectTitle}, $stateBadgeLabel, $metricsSummary, $metaLine',
-      child: Stack(
-        clipBehavior: Clip.none,
+    final card = EnpriveMaterialCardSurface(
+      backgroundColor: scheme.surfaceContainer,
+      borderRadius: borderRadius,
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 4, 16),
+      onPressed: onOpen,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Bottommost receipt deck sheet edge
-          Positioned(
-            left: 14,
-            right: 14,
-            bottom: 0,
-            height: 30,
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: surfaces.cardMuted,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: surfaces.strongBorder.withValues(alpha: 0.45),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: surfaces.ambientShadowColor,
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+          ExcludeSemantics(
+            child: Container(
+              width: 48,
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: scheme.secondaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                initial,
+                style: m3e.typeScale.titleLarge.copyWith(
+                  color: scheme.onSecondaryContainer,
                 ),
               ),
             ),
           ),
-          // Middle receipt deck sheet edge
-          Positioned(
-            left: 7,
-            right: 7,
-            bottom: 4.5,
-            height: 30,
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: surfaces.card,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: surfaces.strongBorder.withValues(alpha: 0.40),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: m3e.typeScale.titleMedium.copyWith(
+                    color: scheme.onSurface,
                   ),
                 ),
-              ),
-            ),
-          ),
-          // Primary crisp cardstock face
-          Padding(
-            padding: const EdgeInsets.only(bottom: 9),
-            child: EnpriveMaterialCardSurface(
-              variant: EnpriveCardVariant.elevated,
-              backgroundColor: surfaces.card,
-              borderRadius: BorderRadius.circular(22),
-              lipHeight: 0,
-              borderWidth: 1.2,
-              padding: const EdgeInsets.fromLTRB(18, 12, 14, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Top Row: Full-width source/timestamp meta + ghost delete action
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          metaLine,
-                          maxLines: isLargeScale ? 2 : 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: m3e.typeScale.labelMedium.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      IconButton(
-                        tooltip: deleteTooltip,
-                        onPressed: onDelete,
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          foregroundColor: scheme.onSurfaceVariant,
-                          minimumSize: const Size(40, 40),
-                          tapTargetSize: MaterialTapTargetSize.padded,
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        icon: const Icon(LucideIcons.trash2, size: 17),
-                      ),
-                    ],
+                const SizedBox(height: 2),
+                Text(
+                  metaLine,
+                  style: m3e.typeScale.bodyMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
-
+                ),
+                if (evidenceLine.isNotEmpty) ...[
                   const SizedBox(height: 2),
-
-                  // Middle Editorial Zone: Wide title & insight + vertical 3-step meter
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 6),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                receipt.subjectTitle,
-                                maxLines: isLargeScale ? 2 : 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: m3e.typography.emphasized.titleLarge
-                                    .copyWith(
-                                      color: scheme.onSurface,
-                                      fontWeight: FontWeight.w800,
-                                      height: 1.18,
-                                    ),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                receipt.summary,
-                                maxLines: isLargeScale ? 3 : 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: m3e.typeScale.bodyMedium.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                  height: 1.38,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        ExcludeSemantics(
-                          child: _VerticalPostureMeter(
-                            overallState: receipt.overallState,
-                            activeColor: scheme.onSurface,
-                            inactiveColor: surfaces.strongBorder.withValues(
-                              alpha: 0.48,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Subtle inset hairline divider
-                  Container(
-                    height: 1,
-                    margin: const EdgeInsetsDirectional.only(end: 4),
-                    color: surfaces.hairlineBorder.withValues(alpha: 0.72),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Bottom Footer: Bare status emblem + verdict/date + decisive CTA pill
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 4),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final bool stackVertically =
-                            isLargeScale || constraints.maxWidth < 300;
-
-                        final Widget originCluster = Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            ExcludeSemantics(
-                              child: Icon(
-                                stateIcon,
-                                size: 22,
-                                color: statePair.icon,
-                              ),
-                            ),
-                            const SizedBox(width: 11),
-                            Flexible(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    stateBadgeLabel,
-                                    maxLines: isLargeScale ? 2 : 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: m3e.typography.emphasized.labelLarge
-                                        .copyWith(
-                                          color: scheme.onSurface,
-                                          fontWeight: FontWeight.w700,
-                                          height: 1.18,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    metricsSummary,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: m3e.typeScale.labelSmall.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                      fontWeight: FontWeight.w600,
-                                      fontFeatures: const [
-                                        FontFeature.tabularFigures(),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-
-                        final Widget openButton = M3EButton(
-                          onPressed: onOpen,
-                          style: M3EButtonStyle.filled,
-                          size: M3EButtonSize.sm.copyWith(
-                            height: 40,
-                            hPadding: 16,
-                          ),
-                          shape: M3EButtonShape.round,
-                          decoration: M3EButtonDecoration(
-                            backgroundColor: WidgetStatePropertyAll<Color?>(
-                              surfaces.tactilePrimaryBg,
-                            ),
-                            foregroundColor: WidgetStatePropertyAll<Color?>(
-                              surfaces.tactilePrimaryFg,
-                            ),
-                            textStyle: m3e.typography.emphasized.labelLarge,
-                            motion: M3EButtonMotion.expressiveSpatialPress,
-                            haptic: M3EHapticFeedback.light,
-                            borderRadius: 999,
-                            pressedRadius: 14,
-                          ),
-                          label: Text(openLabel),
-                        );
-
-                        if (stackVertically) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              originCluster,
-                              const SizedBox(height: 12),
-                              openButton,
-                            ],
-                          );
-                        }
-
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(child: originCluster),
-                            const SizedBox(width: 12),
-                            openButton,
-                          ],
-                        );
-                      },
+                  Text(
+                    evidenceLine,
+                    style: m3e.typeScale.bodyMedium.copyWith(
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
                 ],
-              ),
+                const SizedBox(height: 10),
+                EnpriveStateChip(
+                  state: receipt.overallState,
+                  label: stateBadgeLabel,
+                  dense: true,
+                ),
+              ],
             ),
           ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '$findingsCount',
+                style: m3e.typography.emphasized.headlineMedium.copyWith(
+                  color: scheme.onSurface,
+                  height: 1.1,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+              Text(
+                l10n.findingsCountUnit(findingsCount),
+                style: m3e.typeScale.labelMedium.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          if (onDelete != null)
+            PopupMenuButton<String>(
+              key: overflowKey,
+              tooltip: MaterialLocalizations.of(context).moreButtonTooltip,
+              icon: Icon(
+                LucideIcons.ellipsisVertical,
+                size: 20,
+                color: scheme.onSurfaceVariant,
+              ),
+              onSelected: (_) => onDelete!(),
+              itemBuilder: (context) => [
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(
+                        LucideIcons.trash2,
+                        size: 18,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 12),
+                      Flexible(child: Text(deleteTooltip)),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          else
+            const SizedBox(width: 12),
         ],
       ),
     );
-  }
-}
 
-/// Minimalist 3-step vertical posture indicator (`┃ • •`) encoding review state
-/// without heavy color fills.
-class _VerticalPostureMeter extends StatelessWidget {
-  final ReviewOverallState overallState;
-  final Color activeColor;
-  final Color inactiveColor;
-
-  const _VerticalPostureMeter({
-    required this.overallState,
-    required this.activeColor,
-    required this.inactiveColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final int activeIndex = switch (overallState) {
-      ReviewOverallState.reviewRecommended => 0,
-      ReviewOverallState.insufficientEvidence => 1,
-      ReviewOverallState.noConcern => 2,
-    };
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: List<Widget>.generate(3, (index) {
-        final bool isActive = index == activeIndex;
-        return Padding(
-          padding: EdgeInsets.only(bottom: index == 2 ? 0 : 4.5),
-          child: Container(
-            width: 4.5,
-            height: isActive ? 22 : 4.5,
-            decoration: BoxDecoration(
-              color: isActive ? activeColor : inactiveColor,
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
-        );
-      }),
+    return Semantics(
+      onTapHint: openLabel,
+      customSemanticsActions: onDelete == null
+          ? null
+          : {CustomSemanticsAction(label: deleteTooltip): onDelete!},
+      child: card,
     );
   }
 }
