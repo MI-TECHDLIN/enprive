@@ -1824,6 +1824,24 @@
 
 ---
 
+## Iteration 55: Learn Folder Card Label Fix — "3 guides" -> "3 tips" (2026-11-22)
+
+- **Branch / Commit State**: `fm/enprive-learn-label` atop `origin/main` HEAD; code commit `710c7c7`; direct PR into `main`. Model: **Devin CLI (SWE-2 Flash)**.
+- **Source**: Learn audit `/Users/mi-tech/firstmate/data/enprive-learn-audit/report.md` section 1 + owner decision 1A (Learn stays untouched before the 28 Nov 2026 feature freeze except for this misleading-label fix).
+- **What Was Built & Modified**:
+  - `lib/screens/learn_home_screen.dart`: changed `shortStat: '3 guides'` to `'3 tips'` on all four `_LearnPillarGuide` entries (`permissions_consent`, `reading_policies`, `scams_safety`, `manipulative_consent`). Each card opens one sheet containing 3 `keyTakeaways` plus a `quickCheckQuestion` — "3 tips" is accurate; "3 guides" implied three separate guides.
+  - `test/d5_navigation_shell_test.dart`: updated the D5.2 folder-card semantic label assertion to `'Permissions & Consent. 3 tips. Camera, mic, location & ad IDs'`.
+  - No other Learn content, design, strings, or logic touched.
+- **Challenges & Root-Cause Fixes**: None — one-line label correction plus its single asserting test.
+- **Verification Status**:
+  - `flutter analyze`: **0 issues**
+  - Full `flutter test`: **323 / 323 passed**
+  - `flutter build apk --debug --target-platform android-arm64`: succeeded (`app-debug.apk`)
+- **Next Immediate Action & Recommended Model**:
+  - Review and merge the PR into `main`; keep Learn frozen per owner decision 1A until after 28 Nov 2026. Recommended Model: **Devin CLI (SWE-2 Flash)** for any further freeze-window fixes.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **D5.3 Core Flow Streamlining (D5.3-B+) & D5.4 Offline Learn MVP**

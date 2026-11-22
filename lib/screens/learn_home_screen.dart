@@ -69,7 +69,7 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
       id: 'permissions_consent',
       category: _LearnTopicCategory.permissions,
       title: 'Permissions & Consent',
-      shortStat: '3 guides',
+      shortStat: '3 tips',
       subtitle: 'Camera, mic, location & ad IDs',
       icon: LucideIcons.shieldCheck,
       keyTakeaways: [
@@ -84,7 +84,7 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
       id: 'reading_policies',
       category: _LearnTopicCategory.policies,
       title: 'Reading Policies',
-      shortStat: '3 guides',
+      shortStat: '3 tips',
       subtitle: 'Vague sharing & storage rules',
       icon: LucideIcons.fileText,
       keyTakeaways: [
@@ -99,7 +99,7 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
       id: 'scams_safety',
       category: _LearnTopicCategory.scams,
       title: 'Scams & Safety',
-      shortStat: '3 guides',
+      shortStat: '3 tips',
       subtitle: 'Fake links, login codes & scams',
       icon: LucideIcons.triangleAlert,
       keyTakeaways: [
@@ -114,7 +114,7 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
       id: 'manipulative_consent',
       category: _LearnTopicCategory.darkPatterns,
       title: 'Tricky Design',
-      shortStat: '3 guides',
+      shortStat: '3 tips',
       subtitle: 'Spotting buttons that pressure you to say yes',
       icon: LucideIcons.eye,
       keyTakeaways: [
