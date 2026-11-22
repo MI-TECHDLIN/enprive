@@ -15,7 +15,7 @@ import org.junit.Test
 
 class CompanionTileAndResolverTest {
 
-    private val ownPkg = "com.example.enprive"
+    private val ownPkg = "com.mitechdlin.enprive"
 
     @Test
     fun `1 selects most recent visible foreground app from recent UsageEvents`() {
@@ -340,8 +340,13 @@ class CompanionTileAndResolverTest {
             invocationId = "qs-tap-123",
         )
 
+        assertEquals("com.mitechdlin.enprive.action.OPEN_COMPANION", CompanionContract.ACTION_OPEN_COMPANION)
+        assertEquals("com.mitechdlin.enprive.extra.INVOCATION_SOURCE", CompanionContract.EXTRA_INVOCATION_SOURCE)
+        assertEquals("com.mitechdlin.enprive.extra.INVOCATION_TIMESTAMP_MS", CompanionContract.EXTRA_INVOCATION_TIMESTAMP_MS)
+        assertEquals("com.mitechdlin.enprive.extra.INVOCATION_ID", CompanionContract.EXTRA_INVOCATION_ID)
         assertEquals(CompanionContract.ACTION_OPEN_COMPANION, spec.action)
-        assertEquals(ownPkg, spec.targetPackage)
+        assertEquals("com.mitechdlin.enprive", spec.targetPackage)
+        assertEquals("com.example.enprive.MainActivity", spec.targetClassName)
         assertEquals(MainActivity::class.java.name, spec.targetClassName)
         assertTrue((spec.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP) != 0)
         assertTrue((spec.flags and Intent.FLAG_ACTIVITY_NEW_TASK) != 0)

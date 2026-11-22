@@ -14,7 +14,7 @@
 ---
 
 ## Current Project Snapshot
-- **Project**: **Enprive** (`com.example.enprive`) — Evidence-First Hybrid AI Privacy Assistant for Parents & Teachers (**Google #BuildHybridAI 2026**)
+- **Project**: **Enprive** (`com.mitechdlin.enprive`, Kotlin namespace `com.example.enprive`) — Evidence-First Hybrid AI Privacy Assistant for Parents & Teachers (**Google #BuildHybridAI 2026**)
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
 - **Current `main` HEAD**: `a5c69d1`
@@ -1647,6 +1647,37 @@
   - **Pending Physical Device Verification**: Live audio auditioning and TalkBack verification on physical hardware (**Realme RMX5303**) remain pending.
 - **Next Immediate Action & Recommended Model**:
   - Review PR into `feature/m3-expressive-rebrand`, audition Deni's `Puck` voice and TalkBack on physical **Realme RMX5303**, and translate the tracked `voice*` keys during D5.3-F localization review. Recommended Model: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+## Iteration 50: Android Application ID Migration (`com.mitechdlin.enprive`) & Signed Release Verification (2026-11-22)
+
+- **Branch / Commit State**: `fm/enprive-app-id` atop `origin/feature/m3-expressive-rebrand` HEAD `293f806` (includes merged PR #17 Deni Voice); committed and pushed for direct PR into `feature/m3-expressive-rebrand`. Model: **Gemini 4 Neon**.
+- **What Was Built & Modified** (zero UI/widget edits, zero keystore/secret files committed, Kotlin `namespace = "com.example.enprive"` intentionally retained independent of `applicationId`):
+  1. **Android Application ID & Firebase Config (`android/app/build.gradle.kts`, `android/app/google-services.json`)**:
+     - Updated `defaultConfig.applicationId` from `"com.example.enprive"` to `"com.mitechdlin.enprive"` while keeping `namespace = "com.example.enprive"` unchanged (relative manifest class names `.EnpriveApplication`, `.MainActivity`, `.EnpriveCheckTileService` continue resolving cleanly to `com.example.enprive.*` inside the `com.mitechdlin.enprive` APK, and `${applicationId}`-derived provider authorities `firebaseinitprovider`, `mlkitinitprovider`, `androidx-startup`, and `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` automatically switch to `com.mitechdlin.enprive`).
+     - Replaced `android/app/google-services.json` with the updated `enprive-hybrid-ai` Firebase Android SDK configuration registering `com.mitechdlin.enprive` (`mobilesdk_app_id`: `1:71373777460:android:b8983622f3315d6d3d7861`, with release and debug keystore SHA-1/SHA-256 fingerprints).
+  2. **Runtime Companion Intent Contract (`android/app/src/main/kotlin/com/example/enprive/CompanionContract.kt`)**:
+     - Updated `ACTION_OPEN_COMPANION`, `EXTRA_INVOCATION_SOURCE`, `EXTRA_INVOCATION_TIMESTAMP_MS`, and `EXTRA_INVOCATION_ID` from `com.example.enprive.*` to `com.mitechdlin.enprive.*`.
+     - Verified all self-package exclusions (`AppPackageInspector.listLaunchableApps`, `ForegroundAppResolver.checkUsageAccess` / `resolveCurrentForegroundApp`), Usage Access settings URI (`MainActivity.openUsageAccessSettingsScreen`), Quick Settings tile registration (`ComponentName(this, EnpriveCheckTileService::class.java)`), and tile launch intent (`CompanionContract.buildCompanionLaunchIntent`) dynamically resolve `context.packageName` (`com.mitechdlin.enprive`) while targeting `MainActivity::class.java.name` (`com.example.enprive.MainActivity`).
+  3. **Tests & Standing Documentation (`android/app/src/test/kotlin/com/example/enprive/CompanionTileAndResolverTest.kt`, `android/app/src/androidTest/kotlin/com/example/enprive/AppCheckInitializationInstrumentedTest.kt`, `docs/quick_settings_companion/architecture.md`, `docs/quick_settings_companion/native_permission_dialog_qa_strategy.md`, `journal.md`)**:
+     - Updated `CompanionTileAndResolverTest.ownPkg` to `"com.mitechdlin.enprive"` and explicitly asserted decoupled `targetPackage = "com.mitechdlin.enprive"` with `targetClassName = "com.example.enprive.MainActivity"` plus the updated `ACTION_OPEN_COMPANION` and `EXTRA_*` constants.
+     - Updated `AppCheckInitializationInstrumentedTest` to assert runtime `targetContext.packageName == "com.mitechdlin.enprive"` and `FirebaseApp.getInstance().options.applicationId == "1:71373777460:android:b8983622f3315d6d3d7861"`.
+     - Updated current project snapshot in `journal.md` and active architecture/QA docs (`docs/quick_settings_companion/architecture.md`, `native_permission_dialog_qa_strategy.md`), leaving historical dated test reports and non-Android Flutter templates (`ios/`, `macos/`, `linux/`) untouched.
+- **Skills Followed**:
+  - `.agents/skills/firebase-basics/SKILL.md`, `.agents/skills/firebase-ai-logic-basics/SKILL.md`, and `.agents/skills/dart-run-static-analysis/SKILL.md`.
+- **Challenges & Root-Cause Fixes**:
+  - Rebased mid-flight atop newly merged PR #17 (`293f806`, Deni Voice) and verified its 3 new Kotlin files (`DeniVoicePlayer.kt`, `DeniVoicePolicy.kt`, `DeniVoicePolicyTest.kt`) contained no hardcoded application IDs.
+  - Shared `emulator-5554` became active with another lane (`com.example.enprive`) immediately after `com.mitechdlin.enprive` installed, launched, registered its Quick Settings tile, and emitted its new App Check debug token (saved outside the repo with `0600` permissions and registered in App Check); deferred interactive QS tile click + local review check to a follow-up PR comment once `emulator-5554` is free.
+- **Verification Status**:
+  - `flutter analyze`: **0 issues**
+  - Full `flutter test`: **261 / 261 passed**
+  - `( cd android && ./gradlew :app:testDebugUnitTest :app:compileDebugAndroidTestKotlin --rerun-tasks --console=plain )`: **75 / 75 passed** (`AppCheckProviderInstallerDebugTest`: 5, `CompanionTileAndResolverTest`: 19, `DeniVoicePolicyTest`: 11, `DocumentTextExtractorTest`: 15, `HybridAiPolicyTest`: 17, `IncomingShareRouterTest`: 8)
+  - `flutter build apk --debug --target-platform android-arm64`: succeeded (`aapt2 dump badging`: `package: name='com.mitechdlin.enprive' versionCode='1' versionName='1.0.0'`)
+  - Signed release `zsh -lc 'flutter build apk --release --target-platform android-arm64'`: succeeded (`32.3 MB`; `aapt2 dump badging`: `package: name='com.mitechdlin.enprive' versionCode='1' versionName='1.0.0'`; `aapt2 dump resources`: `string/google_app_id = "1:71373777460:android:b8983622f3315d6d3d7861"`, `string/project_id = "enprive-hybrid-ai"`; `aapt2 dump xmltree`: `com.example.enprive.EnpriveApplication`, `com.example.enprive.MainActivity`, `com.example.enprive.EnpriveCheckTileService`, authorities `com.mitechdlin.enprive.{firebaseinitprovider,mlkitinitprovider,androidx-startup}`; `apksigner verify --verbose --print-certs`: **Verifies** via v2, Signer #1 DN `CN=Enprive Release, O=MI-TECHDLIN, C=NG`, SHA-256 `8a7819e0a79b74fa338e8abcd9b9828ecb5c4f1b0ca94836a49e827e27508f21`)
+  - **Emulator-5554 (`Pixel_9`, Android 16, partial — shared emulator busy)**: installed `com.mitechdlin.enprive` alongside untouched `com.example.enprive`, launched Home cleanly (`Fully drawn com.mitechdlin.enprive/com.example.enprive.MainActivity`), verified `FirebaseInitProvider` -> `EnpriveHybridAi: Firebase App Check initialized (debug=true)` -> `DebugAppCheckProvider` targeting `1:71373777460:android:b8983622f3315d6d3d7861` (new debug token saved outside VCS at `0600` and registered), and verified `pm query-services` + `sysui_qs_tiles` registration of `com.mitechdlin.enprive/com.example.enprive.EnpriveCheckTileService`. Interactive QS tile click + local review check on `emulator-5554` pending free emulator slot (to be posted as a PR comment).
+- **Next Immediate Action & Recommended Model**:
+  - Complete interactive `com.mitechdlin.enprive` Quick Settings tile click and local review verification on `emulator-5554` once free and post results on the PR; then verify signed release + Play Integrity on physical Android hardware. Recommended Model: **Gemini 4 Neon / Claude Opus 5.5**.
 
 ---
 

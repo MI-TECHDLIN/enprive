@@ -16,10 +16,10 @@ import java.util.UUID
 object CompanionContract {
     const val CHANNEL = "com.enprive/companion"
 
-    const val ACTION_OPEN_COMPANION = "com.example.enprive.action.OPEN_COMPANION"
-    const val EXTRA_INVOCATION_SOURCE = "com.example.enprive.extra.INVOCATION_SOURCE"
-    const val EXTRA_INVOCATION_TIMESTAMP_MS = "com.example.enprive.extra.INVOCATION_TIMESTAMP_MS"
-    const val EXTRA_INVOCATION_ID = "com.example.enprive.extra.INVOCATION_ID"
+    const val ACTION_OPEN_COMPANION = "com.mitechdlin.enprive.action.OPEN_COMPANION"
+    const val EXTRA_INVOCATION_SOURCE = "com.mitechdlin.enprive.extra.INVOCATION_SOURCE"
+    const val EXTRA_INVOCATION_TIMESTAMP_MS = "com.mitechdlin.enprive.extra.INVOCATION_TIMESTAMP_MS"
+    const val EXTRA_INVOCATION_ID = "com.mitechdlin.enprive.extra.INVOCATION_ID"
 
     const val SOURCE_QUICK_SETTINGS = "quick_settings"
 

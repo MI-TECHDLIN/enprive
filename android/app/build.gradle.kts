@@ -18,8 +18,8 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.enprive"
+        // Production Android application ID (independent of Kotlin namespace = "com.example.enprive").
+        applicationId = "com.mitechdlin.enprive"
         // Min SDK 26 is required for Firebase AI Logic on-device (Gemini Nano)
         minSdk = 26
         targetSdk = flutter.targetSdkVersion
