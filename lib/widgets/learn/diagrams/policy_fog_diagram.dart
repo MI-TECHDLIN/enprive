@@ -369,72 +369,168 @@ class _PolicyExampleCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Badge + icon + title
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10 * clampedTextScale,
-                    vertical: 4 * clampedTextScale,
-                  ),
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(EnpriveRadii.chip),
-                    border: Border.all(
-                      color: accentColor.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+            // Badge + icon + title - use LayoutBuilder to adapt to available width
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 200;
+                if (isNarrow) {
+                  // Column layout for very narrow cards
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        badgeIcon,
-                        size: 12 * clampedTextScale,
-                        color: accentColor,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 10 * clampedTextScale,
+                              vertical: 4 * clampedTextScale,
+                            ),
+                            decoration: BoxDecoration(
+                              color: accentColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(EnpriveRadii.chip),
+                              border: Border.all(
+                                color: accentColor.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  badgeIcon,
+                                  size: 12 * clampedTextScale,
+                                  color: accentColor,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    badgeLabel,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 11 * clampedTextScale,
+                                      fontWeight: FontWeight.w700,
+                                      color: accentColor,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 32 * clampedTextScale,
+                            height: 32 * clampedTextScale,
+                            decoration: BoxDecoration(
+                              color: accentColor.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: Icon(
+                              icon,
+                              size: 16 * clampedTextScale,
+                              color: accentColor,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(height: 8),
                       Text(
-                        badgeLabel,
+                        title,
+                        softWrap: true,
                         style: TextStyle(
-                          fontSize: 11 * clampedTextScale,
+                          fontSize: titleSize,
                           fontWeight: FontWeight.w700,
-                          color: accentColor,
-                          height: 1.2,
+                          color: scheme.onSurface,
+                          height: 1.25,
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  width: 36 * clampedTextScale,
-                  height: 36 * clampedTextScale,
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    icon,
-                    size: 18 * clampedTextScale,
-                    color: accentColor,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: titleSize,
-                      fontWeight: FontWeight.w700,
-                      color: scheme.onSurface,
-                      height: 1.25,
+                  );
+                }
+
+                // Normal row layout with flexible badge
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Flexible(
+                      fit: FlexFit.loose,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minWidth: 0),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10 * clampedTextScale,
+                            vertical: 4 * clampedTextScale,
+                          ),
+                          decoration: BoxDecoration(
+                            color: accentColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(EnpriveRadii.chip),
+                            border: Border.all(
+                              color: accentColor.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                badgeIcon,
+                                size: 12 * clampedTextScale,
+                                color: accentColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  badgeLabel,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11 * clampedTextScale,
+                                    fontWeight: FontWeight.w700,
+                                    color: accentColor,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ],
+                    const SizedBox(width: 12),
+                    Flexible(
+                      fit: FlexFit.loose,
+                      child: Container(
+                        width: 36 * clampedTextScale,
+                        height: 36 * clampedTextScale,
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          icon,
+                          size: 18 * clampedTextScale,
+                          color: accentColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        title,
+                        softWrap: true,
+                        style: TextStyle(
+                          fontSize: titleSize,
+                          fontWeight: FontWeight.w700,
+                          color: scheme.onSurface,
+                          height: 1.25,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 12),
             // Example text
