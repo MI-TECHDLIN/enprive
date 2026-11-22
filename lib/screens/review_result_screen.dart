@@ -368,7 +368,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         _isGeneratingSummary) {
       return DeniPose.thinking;
     }
-    if (_isSaved) return DeniPose.celebrating;
+    if (_isSaved) return DeniPose.carryReceipt;
     return switch (_activeReceipt.overallState) {
       ReviewOverallState.reviewRecommended => DeniPose.explaining,
       ReviewOverallState.noConcern => DeniPose.idle,

@@ -27,8 +27,8 @@ class OnboardingFlowResult {
 ///   editorial display typography.
 /// - **Step 1 (Explanation Depth)**: Deni at `LOD 1 · 56dp` (`DeniPose.explaining`)
 ///   with a 2x2 Bento grid of `M3ECard` choice squircles.
-/// - **Step 2 (Private Readiness)**: Deni at `LOD 2 · 92dp` (`DeniPose.celebrating`)
-///   peeking over a segmented M3E local-privacy guarantee card.
+/// - **Step 2 (Private Readiness)**: Deni at `LOD 2 · 88dp` (`DeniPose.holdShield`)
+///   seated on the promise card, holding the privacy promise shield.
 class OnboardingFlowScreen extends StatefulWidget {
   final ExplanationDepth initialDepth;
   final Locale initialLocale;
@@ -383,8 +383,8 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     );
   }
 
-  /// Step 2: Standard Deni (`LOD 2 · 92dp`, `celebrating`) peeking over the
-  /// Private On-Device Readiness Card.
+  /// Step 2: Standard Deni (`LOD 2 · 88dp`, `holdShield`) seated on the
+  /// promise card.
   Widget _buildStep2Readiness(BuildContext context, AppLocalizations l10n) {
     final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
@@ -509,7 +509,7 @@ class _PromiseCard extends StatelessWidget {
         const ExcludeSemantics(
           child: DeniAnimatedMascot(
             size: _deniSize,
-            pose: DeniPose.celebrating,
+            pose: DeniPose.holdShield,
           ),
         ),
       ],

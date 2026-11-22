@@ -1211,7 +1211,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
                   EnpriveHomeHero(
                     deniPose: _isRunningReview
                         ? DeniPose.thinking
-                        : _activePose,
+                        : (_activePose == DeniPose.idle
+                              // At rest Deni points toward the next step.
+                              ? DeniPose.pointing
+                              : _activePose),
                     headline: l10n.homeHeroHeadline,
                     subtitle: l10n.homePrivacySubtitle,
                     actions: _isRunningReview

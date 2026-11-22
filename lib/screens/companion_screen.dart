@@ -1159,7 +1159,7 @@ class _CompanionScreenState extends State<CompanionScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           EnpriveCompanionCard(
-            pose: DeniPose.support,
+            pose: DeniPose.peek,
             layout: EnpriveCompanionLayout.peeking,
             badgeText: 'LOCK SCREEN PROTECTED',
             badgeIcon: LucideIcons.lock,
