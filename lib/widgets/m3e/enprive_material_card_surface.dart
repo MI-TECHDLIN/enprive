@@ -164,7 +164,8 @@ class _EnpriveMaterialCardSurfaceState
       variant: M3ECardVariant.filled,
       color: faceColor,
       elevation: 0,
-      border: BorderSide.none,
+      // No border argument: M3ECard turns any BorderSide (even
+      // BorderSide.none) into Border.all, which paints a 1px hairline.
       borderRadius: activeRadius,
       padding: EdgeInsets.zero,
       enabled: widget.enabled,

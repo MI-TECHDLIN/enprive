@@ -893,6 +893,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get permissionNotAllowedOnPhone => 'Not allowed';
 
   @override
+  String get permissionAllowedInSample => 'Allowed in sample';
+
+  @override
+  String get permissionNotAllowedInSample => 'Not allowed in sample';
+
+  @override
   String get permissionMismatchChip => 'Not in policy';
 
   @override
@@ -923,6 +929,21 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get consentStaysOnPhone =>
       'Your app list and phone permissions stay on this phone.';
+
+  @override
+  String receiptDeletedSnack(String title) {
+    return 'Deleted $title';
+  }
+
+  @override
+  String get btnUndo => 'Undo';
+
+  @override
+  String get readinessPromiseMaskedTitle => 'Personal details hidden';
+
+  @override
+  String get readinessPromiseMaskedLine =>
+      'If you choose cloud, names, emails and numbers are masked first.';
 
   @override
   String findingDetailTitle(int index, int total) {

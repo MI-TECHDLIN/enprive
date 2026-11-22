@@ -152,7 +152,6 @@ class EnpriveNavigationShell extends StatelessWidget {
                           icon: const Icon(LucideIcons.receiptText),
                           selectedIcon: const Icon(LucideIcons.receiptText),
                           label: l10n.navReceipts,
-                          badgeCount: receiptsCount > 0 ? receiptsCount : null,
                           semanticLabel: receiptsCount > 0
                               ? '${l10n.navReceipts} ($receiptsCount)'
                               : l10n.navReceipts,
@@ -201,7 +200,6 @@ class EnpriveNavigationShell extends StatelessWidget {
                           icon: const Icon(LucideIcons.receiptText),
                           selectedIcon: const Icon(LucideIcons.receiptText),
                           label: l10n.navReceipts,
-                          badgeCount: receiptsCount > 0 ? receiptsCount : null,
                           semanticLabel: receiptsCount > 0
                               ? '${l10n.navReceipts} ($receiptsCount)'
                               : l10n.navReceipts,

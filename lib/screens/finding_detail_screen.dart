@@ -73,6 +73,7 @@ class FindingDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 0,
         leading: IconButton(
           key: const Key('finding_detail_back_btn'),
           tooltip: MaterialLocalizations.of(context).backButtonTooltip,

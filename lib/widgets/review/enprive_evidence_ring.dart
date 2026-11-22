@@ -131,7 +131,7 @@ class _EnpriveEvidenceRingState extends State<EnpriveEvidenceRing>
                 counterClockwise: isRtl,
               ),
               child: Padding(
-                padding: EdgeInsets.all(widget.strokeWidth + 10),
+                padding: EdgeInsets.all(widget.strokeWidth + 16),
                 child: Center(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,

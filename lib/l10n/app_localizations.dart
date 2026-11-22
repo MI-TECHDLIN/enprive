@@ -1666,6 +1666,18 @@ abstract class AppLocalizations {
   /// **'Not allowed'**
   String get permissionNotAllowedOnPhone;
 
+  /// Neutral chip for a synthetic sample permission marked allowed; never claims to describe this phone
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed in sample'**
+  String get permissionAllowedInSample;
+
+  /// Neutral chip for a synthetic sample permission marked not allowed
+  ///
+  /// In en, this message translates to:
+  /// **'Not allowed in sample'**
+  String get permissionNotAllowedInSample;
+
   /// Chip on a permission row whose permission is not mentioned in the reviewed policy
   ///
   /// In en, this message translates to:
@@ -1707,6 +1719,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your app list and phone permissions stay on this phone.'**
   String get consentStaysOnPhone;
+
+  /// Snackbar after a saved receipt is deleted; paired with an Undo action
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {title}'**
+  String receiptDeletedSnack(String title);
+
+  /// Snackbar action that restores a just-deleted receipt
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get btnUndo;
+
+  /// Last onboarding screen promise tile title about masking personal details
+  ///
+  /// In en, this message translates to:
+  /// **'Personal details hidden'**
+  String get readinessPromiseMaskedTitle;
+
+  /// Last onboarding screen promise tile line; plain words, no technical jargon
+  ///
+  /// In en, this message translates to:
+  /// **'If you choose cloud, names, emails and numbers are masked first.'**
+  String get readinessPromiseMaskedLine;
 
   /// App bar title of the finding detail page
   ///

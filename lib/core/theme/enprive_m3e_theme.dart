@@ -142,7 +142,13 @@ abstract final class EnpriveM3ETheme {
 
   /// Expressive typography pairing `Nunito` (brand: display, headline,
   /// title large) with `Inter` (plain: title medium/small, body, label).
-  static M3ETypography get typography {
+  static M3ETypography get typography => _typography;
+
+  static final M3ETypography _typography = _buildTypography();
+
+  static final Map<(Brightness, double), M3EThemeData> _themeDataCache = {};
+
+  static M3ETypography _buildTypography() {
     final base = M3ETypography.material3().apply(typeface: typefaceConfig);
     const plain = EnpriveTheme.secondaryFontBaseFamily;
     return M3ETypography(
@@ -174,34 +180,43 @@ abstract final class EnpriveM3ETheme {
         titleLarge: base.baseline.titleLarge.copyWith(
           fontWeight: FontWeight.w700,
         ),
+        // Inter is already open; Roboto-tuned M3 tracking (0.5) reads loose.
         titleMedium: base.baseline.titleMedium.copyWith(
           fontFamily: plain,
           fontWeight: FontWeight.w600,
+          letterSpacing: 0,
         ),
         titleSmall: base.baseline.titleSmall.copyWith(
           fontFamily: plain,
           fontWeight: FontWeight.w600,
+          letterSpacing: 0,
         ),
         bodyLarge: base.baseline.bodyLarge.copyWith(
           fontWeight: FontWeight.w400,
           height: 1.5,
+          letterSpacing: 0,
         ),
         bodyMedium: base.baseline.bodyMedium.copyWith(
           fontWeight: FontWeight.w400,
           height: 1.45,
+          letterSpacing: 0,
         ),
         bodySmall: base.baseline.bodySmall.copyWith(
           fontWeight: FontWeight.w400,
           height: 1.4,
+          letterSpacing: 0.1,
         ),
         labelLarge: base.baseline.labelLarge.copyWith(
           fontWeight: FontWeight.w500,
+          letterSpacing: 0,
         ),
         labelMedium: base.baseline.labelMedium.copyWith(
           fontWeight: FontWeight.w500,
+          letterSpacing: 0.1,
         ),
         labelSmall: base.baseline.labelSmall.copyWith(
           fontWeight: FontWeight.w500,
+          letterSpacing: 0.1,
         ),
       ),
       emphasized: base.emphasized.copyWithRoles(
@@ -224,10 +239,12 @@ abstract final class EnpriveM3ETheme {
     Brightness brightness, {
     double contrastLevel = standardContrast,
   }) {
-    final colorScheme = contrastLevel == standardContrast
-        ? (brightness == Brightness.dark ? darkColorScheme : lightColorScheme)
-        : colorSchemeFor(brightness, contrastLevel: contrastLevel);
-    return _buildM3EThemeData(colorScheme: colorScheme);
+    return _themeDataCache.putIfAbsent((brightness, contrastLevel), () {
+      final colorScheme = contrastLevel == standardContrast
+          ? (brightness == Brightness.dark ? darkColorScheme : lightColorScheme)
+          : colorSchemeFor(brightness, contrastLevel: contrastLevel);
+      return _buildM3EThemeData(colorScheme: colorScheme);
+    });
   }
 
   /// Resolves `M3EThemeData` for the given [mode] and [platformBrightness].
@@ -363,17 +380,28 @@ extension on M3ETypeScale {
       titleMedium: titleMedium.copyWith(
         fontFamily: plain,
         fontWeight: titleWeight,
+        letterSpacing: 0,
       ),
       titleSmall: titleSmall.copyWith(
         fontFamily: plain,
         fontWeight: titleWeight,
+        letterSpacing: 0,
       ),
-      bodyLarge: bodyLarge.copyWith(fontWeight: bodyWeight),
-      bodyMedium: bodyMedium.copyWith(fontWeight: bodyWeight),
-      bodySmall: bodySmall.copyWith(fontWeight: bodyWeight),
-      labelLarge: labelLarge.copyWith(fontWeight: labelWeight),
-      labelMedium: labelMedium.copyWith(fontWeight: labelWeight),
-      labelSmall: labelSmall.copyWith(fontWeight: labelWeight),
+      bodyLarge: bodyLarge.copyWith(fontWeight: bodyWeight, letterSpacing: 0),
+      bodyMedium: bodyMedium.copyWith(
+        fontWeight: bodyWeight,
+        letterSpacing: 0,
+      ),
+      bodySmall: bodySmall.copyWith(fontWeight: bodyWeight, letterSpacing: 0.1),
+      labelLarge: labelLarge.copyWith(fontWeight: labelWeight, letterSpacing: 0),
+      labelMedium: labelMedium.copyWith(
+        fontWeight: labelWeight,
+        letterSpacing: 0.1,
+      ),
+      labelSmall: labelSmall.copyWith(
+        fontWeight: labelWeight,
+        letterSpacing: 0.1,
+      ),
     );
   }
 }

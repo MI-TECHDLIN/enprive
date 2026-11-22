@@ -11,6 +11,10 @@ enum EnpriveButtonVariant {
   /// `secondaryContainer` fill: supporting actions next to a filled button.
   tonal,
 
+  /// `surfaceContainerLowest` face with primary ink: a supporting action
+  /// that must stand off a gradient or patterned hero.
+  elevated,
+
   /// `outlineVariant` border on the surface: a way to change your mind.
   outlined,
 
@@ -90,6 +94,11 @@ class EnpriveTactileButton extends StatelessWidget {
             EnpriveButtonVariant.tonal => (
               scheme.secondaryContainer,
               scheme.onSecondaryContainer,
+              null,
+            ),
+            EnpriveButtonVariant.elevated => (
+              scheme.surfaceContainerLowest,
+              scheme.primary,
               null,
             ),
             EnpriveButtonVariant.outlined => (

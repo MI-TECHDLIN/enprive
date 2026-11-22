@@ -359,14 +359,19 @@ void main() {
         expect(find.byType(SelectableText), findsOneWidget);
         expect(find.byType(DeniAnimatedMascot), findsOneWidget);
 
-        await tester.ensureVisible(find.text('Open receipt'));
-        await tester.tap(find.text('Open receipt'));
-        await tester.pump();
+        // The whole card opens the receipt; delete lives in the overflow menu.
+        await tester.ensureVisible(find.text('StudyBuddy Reader'));
+        await tester.tap(find.text('StudyBuddy Reader'));
+        await tester.pump(const Duration(milliseconds: 400));
         expect(opened, isTrue);
 
-        await tester.ensureVisible(find.byTooltip('Delete receipt'));
-        await tester.tap(find.byTooltip('Delete receipt'));
+        await tester.ensureVisible(find.byKey(EnpriveReceiptCard.overflowKey));
+        await tester.tap(find.byKey(EnpriveReceiptCard.overflowKey));
         await tester.pump();
+        await tester.pump(const Duration(milliseconds: 600));
+        await tester.tap(find.text('Delete receipt'));
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
         expect(deleted, isTrue);
 
         await tester.ensureVisible(find.text('Precision Location Collected'));
@@ -377,7 +382,7 @@ void main() {
     );
 
     testWidgets(
-      'EnpriveReceiptCard renders compact verdict/metrics dock without SHA-256 clutter in Dark Mode + 200% Scale + RTL',
+      'EnpriveReceiptCard opens as a whole card, keeps delete in its overflow and stays free of SHA-256 clutter in Dark Mode + 200% Scale + RTL',
       (WidgetTester tester) async {
         const unverifiedFinding = VerifiedFinding(
           id: 'finding_2',
@@ -431,18 +436,24 @@ void main() {
 
         expect(find.text('EduTrack Classroom'), findsOneWidget);
         expect(find.text('Review recommended'), findsOneWidget);
-        expect(find.text('2 Findings · 1 Verified'), findsOneWidget);
+        expect(find.text('1 quote verified in policy'), findsOneWidget);
+        expect(find.text('2'), findsOneWidget);
         expect(find.textContaining('SHA-256'), findsNothing);
         expect(tester.takeException(), isNull);
 
-        await tester.ensureVisible(find.text('Open receipt'));
-        await tester.tap(find.text('Open receipt'));
+        await tester.ensureVisible(find.text('EduTrack Classroom'));
         await tester.pump();
+        await tester.tap(find.text('EduTrack Classroom'));
+        await tester.pump(const Duration(milliseconds: 400));
         expect(opened, isTrue);
 
-        await tester.ensureVisible(find.byTooltip('Delete receipt'));
-        await tester.tap(find.byTooltip('Delete receipt'));
+        await tester.ensureVisible(find.byKey(EnpriveReceiptCard.overflowKey));
+        await tester.tap(find.byKey(EnpriveReceiptCard.overflowKey));
         await tester.pump();
+        await tester.pump(const Duration(milliseconds: 600));
+        await tester.tap(find.text('Delete receipt'));
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
         expect(deleted, isTrue);
       },
     );
@@ -916,7 +927,7 @@ void main() {
         );
         expect(find.textContaining('Snapshot digest'), findsNothing);
         expect(
-          find.text('2 Findings · 1 Verified · 1 Device observed'),
+          find.text('1 quote verified in policy · 1 observed on this phone'),
           findsOneWidget,
         );
 

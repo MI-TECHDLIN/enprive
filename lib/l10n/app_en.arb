@@ -531,6 +531,14 @@
   "@permissionNotAllowedOnPhone": {
     "description": "Neutral factual chip for an Android permission that is currently not allowed"
   },
+  "permissionAllowedInSample": "Allowed in sample",
+  "@permissionAllowedInSample": {
+    "description": "Neutral chip for a synthetic sample permission marked allowed; never claims to describe this phone"
+  },
+  "permissionNotAllowedInSample": "Not allowed in sample",
+  "@permissionNotAllowedInSample": {
+    "description": "Neutral chip for a synthetic sample permission marked not allowed"
+  },
   "permissionMismatchChip": "Not in policy",
   "@permissionMismatchChip": {
     "description": "Chip on a permission row whose permission is not mentioned in the reviewed policy"
@@ -563,6 +571,27 @@
   "consentStaysOnPhone": "Your app list and phone permissions stay on this phone.",
   "@consentStaysOnPhone": {
     "description": "Consent summary line naming what never leaves the phone"
+  },
+  "receiptDeletedSnack": "Deleted {title}",
+  "@receiptDeletedSnack": {
+    "description": "Snackbar after a saved receipt is deleted; paired with an Undo action",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "btnUndo": "Undo",
+  "@btnUndo": {
+    "description": "Snackbar action that restores a just-deleted receipt"
+  },
+  "readinessPromiseMaskedTitle": "Personal details hidden",
+  "@readinessPromiseMaskedTitle": {
+    "description": "Last onboarding screen promise tile title about masking personal details"
+  },
+  "readinessPromiseMaskedLine": "If you choose cloud, names, emails and numbers are masked first.",
+  "@readinessPromiseMaskedLine": {
+    "description": "Last onboarding screen promise tile line; plain words, no technical jargon"
   },
   "findingDetailTitle": "Finding {index} of {total}",
   "@findingDetailTitle": {

@@ -1594,7 +1594,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               secondaryMetricLabel:
                                   receipt.permissionReport != null
                                   ? (isSampleReceipt
-                                        ? l10n.sampleSyntheticBadge
+                                        ? l10n.permissionAllowedInSample
                                         : l10n.statOsGranted)
                                   : l10n.statUnverified,
                               hasPermissionReport:
@@ -2053,6 +2053,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                             _M3EPermissionListCard(
                               report: receipt.permissionReport!,
                               l10n: l10n,
+                              isSampleReceipt: isSampleReceipt,
                             ),
                           ],
                           if (validSnapshot != null &&
@@ -2232,7 +2233,14 @@ class _M3EPermissionListCard extends StatelessWidget {
   final AppPermissionComparisonReport report;
   final AppLocalizations l10n;
 
-  const _M3EPermissionListCard({required this.report, required this.l10n});
+  /// Synthetic sample permissions describe the fixture, not this phone.
+  final bool isSampleReceipt;
+
+  const _M3EPermissionListCard({
+    required this.report,
+    required this.l10n,
+    this.isSampleReceipt = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -2323,9 +2331,13 @@ class _M3EPermissionListCard extends StatelessWidget {
                             runSpacing: 4,
                             children: [
                               chip(
-                                item.isGranted
-                                    ? l10n.permissionAllowedOnPhone
-                                    : l10n.permissionNotAllowedOnPhone,
+                                isSampleReceipt
+                                    ? (item.isGranted
+                                          ? l10n.permissionAllowedInSample
+                                          : l10n.permissionNotAllowedInSample)
+                                    : (item.isGranted
+                                          ? l10n.permissionAllowedOnPhone
+                                          : l10n.permissionNotAllowedOnPhone),
                                 mismatch: false,
                               ),
                               if (isMismatch)

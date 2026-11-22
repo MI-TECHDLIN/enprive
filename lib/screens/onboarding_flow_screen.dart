@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:material_3_expressive/material_3_expressive.dart'
+    show M3EShapeContainer, M3EShapeKind;
 
 import '../core/theme/enprive_theme.dart';
 import '../l10n/app_localizations.dart';
@@ -215,10 +217,26 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
 
                       // Main Step Stage
                       Expanded(
+                        // Fade through: the old step fades out completely
+                        // before the new one fades in, so steps never overlap.
                         child: AnimatedSwitcher(
                           duration: disableAnimations
                               ? Duration.zero
                               : const Duration(milliseconds: 240),
+                          switchInCurve: const Interval(
+                            0.5,
+                            1,
+                            curve: Curves.easeOut,
+                          ),
+                          switchOutCurve: const Interval(
+                            0.5,
+                            1,
+                            curve: Curves.easeIn,
+                          ),
+                          layoutBuilder: (current, previous) => Stack(
+                            alignment: Alignment.center,
+                            children: [...previous, ?current],
+                          ),
                           child: switch (_stepIndex) {
                             0 => _buildStep0Intro(localizedContext, l10n),
                             1 =>
@@ -370,7 +388,6 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   Widget _buildStep2Readiness(BuildContext context, AppLocalizations l10n) {
     final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
-    final surfaces = context.enpriveSurfaces;
 
     return SingleChildScrollView(
       key: const ValueKey<int>(2),
@@ -394,38 +411,167 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
               color: scheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 12),
-          Transform.translate(
-            offset: const Offset(0, 10),
-            child: const DeniAnimatedMascot(
-              size: 92,
-              pose: DeniPose.celebrating,
+          const SizedBox(height: 20),
+          _PromiseCard(
+            rows: [
+              (
+                kind: M3EShapeKind.cookie9Sided,
+                icon: LucideIcons.cpu,
+                title: l10n.readinessRow1Title,
+                line: l10n.readinessRow1Desc,
+              ),
+              (
+                kind: M3EShapeKind.clover4Leaf,
+                icon: LucideIcons.smartphone,
+                title: l10n.readinessRow2Title,
+                line: l10n.readinessRow2Desc,
+              ),
+              (
+                kind: M3EShapeKind.sunny,
+                icon: LucideIcons.eyeOff,
+                title: l10n.readinessPromiseMaskedTitle,
+                line: l10n.readinessPromiseMaskedLine,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Last onboarding screen card (Option 1, "today's layout, richer card"): a
+/// teal-to-paper gradient with Deni seated on its top edge, three tonal
+/// promise tiles with distinct shape-library wells and one plain line each,
+/// and a faint oversized shield bleeding off the corner as quiet artwork.
+class _PromiseCard extends StatelessWidget {
+  final List<({M3EShapeKind kind, IconData icon, String title, String line})>
+  rows;
+
+  const _PromiseCard({required this.rows});
+
+  static const double _deniSize = 88;
+
+  @override
+  Widget build(BuildContext context) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+
+    final card = Container(
+      margin: const EdgeInsets.only(top: _deniSize * 0.78),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(EnpriveRadii.hero),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [scheme.primaryContainer, scheme.surfaceContainerLow],
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          PositionedDirectional(
+            end: -36,
+            bottom: -28,
+            child: ExcludeSemantics(
+              child: Icon(
+                LucideIcons.shield,
+                size: 180,
+                color: scheme.onPrimaryContainer.withValues(alpha: 0.06),
+              ),
             ),
           ),
-          EnpriveMaterialCardSurface(
-            variant: EnpriveCardVariant.elevated,
-            backgroundColor: surfaces.card,
-            borderRadius: BorderRadius.circular(28),
-            lipHeight: 3.0,
-            padding: const EdgeInsets.all(22),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, _deniSize * 0.42, 16, 16),
             child: Column(
               children: [
-                _ReadinessGuaranteeRow(
-                  icon: LucideIcons.cpu,
-                  title: l10n.readinessRow1Title,
-                  subtitle: l10n.readinessRow1Desc,
+                for (var i = 0; i < rows.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 8),
+                  _PromiseTile(
+                    kind: rows[i].kind,
+                    icon: rows[i].icon,
+                    title: rows[i].title,
+                    line: rows[i].line,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.topCenter,
+      children: [
+        card,
+        const ExcludeSemantics(
+          child: DeniAnimatedMascot(
+            size: _deniSize,
+            pose: DeniPose.celebrating,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PromiseTile extends StatelessWidget {
+  final M3EShapeKind kind;
+  final IconData icon;
+  final String title;
+  final String line;
+
+  const _PromiseTile({
+    required this.kind,
+    required this.icon,
+    required this.title,
+    required this.line,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(EnpriveRadii.card),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ExcludeSemantics(
+            child: M3EShapeContainer(
+              kind: kind,
+              width: 44,
+              height: 44,
+              color: scheme.primaryContainer,
+              child: Center(
+                child: Icon(icon, size: 20, color: scheme.onPrimaryContainer),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: m3e.typeScale.titleMedium.copyWith(
+                    color: scheme.onSurface,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                _ReadinessGuaranteeRow(
-                  icon: LucideIcons.smartphone,
-                  title: l10n.readinessRow2Title,
-                  subtitle: l10n.readinessRow2Desc,
-                ),
-                const SizedBox(height: 16),
-                _ReadinessGuaranteeRow(
-                  icon: LucideIcons.eraser,
-                  title: l10n.readinessRow3Title,
-                  subtitle: l10n.readinessRow3Desc,
+                const SizedBox(height: 2),
+                Text(
+                  line,
+                  style: m3e.typeScale.bodyMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -465,69 +611,6 @@ class _M3EGridChoiceCard extends StatelessWidget {
       accentBorder: badgePair.border.withValues(alpha: 0.45),
       selected: isSelected,
       onPressed: onTap,
-    );
-  }
-}
-
-class _ReadinessGuaranteeRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  const _ReadinessGuaranteeRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final semantics = context.enpriveSemantics;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: semantics.onDevice.background,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            size: 20,
-            color: semantics.onDevice.foreground,
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: m3e.typography.emphasized.titleSmall.copyWith(
-                  fontSize: 15,
-                  color: scheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle,
-                style: m3e.typeScale.bodySmall.copyWith(
-                  fontSize: 13,
-                  height: 1.38,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

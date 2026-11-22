@@ -87,6 +87,15 @@ abstract final class EnpriveTheme {
     Brightness brightness, {
     double contrastLevel = EnpriveM3ETheme.standardContrast,
   }) {
+    return _themeCache.putIfAbsent(
+      (brightness, contrastLevel),
+      () => _themeFor(brightness, contrastLevel),
+    );
+  }
+
+  static final Map<(Brightness, double), ThemeData> _themeCache = {};
+
+  static ThemeData _themeFor(Brightness brightness, double contrastLevel) {
     final colorScheme = colorSchemeFrom(
       EnpriveM3ETheme.colorSchemeFor(brightness, contrastLevel: contrastLevel),
     );
@@ -174,6 +183,7 @@ abstract final class EnpriveTheme {
       titleLarge: brand(baseTextTheme.titleLarge, 19, 1.32),
       titleMedium: baseTextTheme.titleMedium?.copyWith(
         fontFamily: secondaryFontBaseFamily,
+        letterSpacing: 0,
         color: primaryInk,
         fontWeight: FontWeight.w600,
         fontSize: 16,
@@ -181,6 +191,7 @@ abstract final class EnpriveTheme {
       ),
       titleSmall: baseTextTheme.titleSmall?.copyWith(
         fontFamily: secondaryFontBaseFamily,
+        letterSpacing: 0,
         color: primaryInk,
         fontWeight: FontWeight.w600,
         fontSize: 14,
@@ -188,6 +199,7 @@ abstract final class EnpriveTheme {
       ),
       bodyLarge: baseTextTheme.bodyLarge?.copyWith(
         fontFamily: secondaryFontBaseFamily,
+        letterSpacing: 0,
         color: primaryInk,
         fontWeight: FontWeight.w400,
         fontSize: 15,
@@ -195,6 +207,7 @@ abstract final class EnpriveTheme {
       ),
       bodyMedium: baseTextTheme.bodyMedium?.copyWith(
         fontFamily: secondaryFontBaseFamily,
+        letterSpacing: 0,
         color: secondaryInk,
         fontWeight: FontWeight.w400,
         fontSize: 14,
@@ -202,6 +215,7 @@ abstract final class EnpriveTheme {
       ),
       bodySmall: baseTextTheme.bodySmall?.copyWith(
         fontFamily: secondaryFontBaseFamily,
+        letterSpacing: 0.1,
         color: secondaryInk,
         fontWeight: FontWeight.w400,
         fontSize: 12.5,
@@ -209,6 +223,7 @@ abstract final class EnpriveTheme {
       ),
       labelLarge: baseTextTheme.labelLarge?.copyWith(
         fontFamily: secondaryFontBaseFamily,
+        letterSpacing: 0,
         color: primaryInk,
         fontWeight: FontWeight.w500,
         fontSize: 14,
