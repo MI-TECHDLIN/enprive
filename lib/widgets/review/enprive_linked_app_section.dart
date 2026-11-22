@@ -109,7 +109,7 @@ class EnpriveLinkedAppSection extends StatelessWidget {
                         Directionality(
                           textDirection: TextDirection.ltr,
                           child: Text(
-                            displayPackage,
+                            '${l10n.appIdPrefix}: $displayPackage',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             textAlign: isRtl ? TextAlign.right : TextAlign.left,

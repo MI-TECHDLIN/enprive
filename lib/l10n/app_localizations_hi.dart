@@ -30,14 +30,14 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get stateReviewRecommendedSubtitle =>
-      'एक या अधिक अंश या अनुमति असंगतियाँ मानवीय जांच की माँग करती हैं।';
+      'One or more policy parts or phone permissions need a closer look.';
 
   @override
   String get stateInsufficientEvidence => 'अपर्याप्त साक्ष्य';
 
   @override
   String get stateInsufficientEvidenceSubtitle =>
-      'साक्ष्य अनुपस्थित हैं, उपलब्ध नहीं हैं, या इस डिवाइस पर सत्यापित नहीं हो सके।';
+      'We need more privacy policy text before we can check what this app does.';
 
   @override
   String get chipOnDevice => 'इस डिवाइस पर';
@@ -46,28 +46,28 @@ class AppLocalizationsHi extends AppLocalizations {
   String get chipInCloud => 'क्लाउड में';
 
   @override
-  String get chipLocationUnavailable => 'प्रोसेसिंग स्थान उपलब्ध नहीं';
+  String get chipLocationUnavailable => 'Source not available';
 
   @override
-  String get chipOfflineDeterministic => 'ऑफ़लाइन स्थानीय स्कैन';
+  String get chipOfflineDeterministic => 'Checked offline on this phone';
 
   @override
-  String get chipUnknown => 'प्रोसेसिंग स्रोत अज्ञात';
+  String get chipUnknown => 'Source unknown';
 
   @override
-  String get statusSourceMatched => 'मूल पाठ से मेल';
+  String get statusSourceMatched => 'Matched in policy';
 
   @override
-  String get statusDeviceObserved => 'डिवाइस पर देखा गया';
+  String get statusDeviceObserved => 'Seen on this phone';
 
   @override
-  String get statusInterpretation => 'व्याख्या';
+  String get statusInterpretation => 'Deni\'s explanation';
 
   @override
-  String get statusUnverified => 'असत्यापित';
+  String get statusUnverified => 'Not found in policy';
 
   @override
-  String get statusStale => 'पुराना / अप्रचलित';
+  String get statusStale => 'Older check';
 
   @override
   String get btnCheckApp => 'ऐप जांचें';
@@ -105,11 +105,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get cloudConsentDisclosure =>
-      'क्लाउड में इस पाठ का विश्लेषण करने के लिए, Enprive केवल ऊपर दिखाया गया संपादित पाठ Firebase AI Logic को भेजेगा। आपके इंस्टॉल किए गए ऐप्स की सूची और Android अनुमतियाँ कभी नहीं भेजी जाएँगी।';
+      'To check this in the cloud, Enprive will send only the text shown above (with personal details hidden) for this one request. Your apps and phone permissions will never be sent.';
 
   @override
   String get permissionLimitationNotice =>
-      'Android इस फ़ोन पर यह अनुमति स्थिति दिखाता है। यह साबित नहीं करता कि ऐप ने वास्तव में डेटा एक्सेस या प्रेषित किया है।';
+      'Your phone shows whether this permission is allowed. It does not prove whether the app actually accessed or sent data.';
 
   @override
   String get navHome => 'होम';
@@ -169,7 +169,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get checkQuoteDesc =>
-      'डेटा साझा करने, वॉइस रिकॉर्डिंग और संग्रहण शर्तों को मूल शब्दों के साथ दिखाता है।';
+      'Highlights data sharing, voice recording, and how long data is kept using exact quotes.';
 
   @override
   String get checkPermissionTitle => 'फ़ोन अनुमति असंगतियाँ';
@@ -193,8 +193,8 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count सत्यापित धाराएँ',
-      one: '1 सत्यापित धारा',
+      other: '$count matched quotes',
+      one: '1 matched quote',
     );
     return '$_temp0';
   }
@@ -274,11 +274,11 @@ class AppLocalizationsHi extends AppLocalizations {
       'इस फ़ोन के ऐप्स और उनकी अनुमतियाँ कभी बाहर नहीं भेजी जातीं।';
 
   @override
-  String get readinessRow3Title => 'व्यक्तिगत विवरण स्वत: छिपाए जाते हैं';
+  String get readinessRow3Title => 'Personal details hidden';
 
   @override
   String get readinessRow3Desc =>
-      'यदि ऑन-डिवाइस AI उपलब्ध न हो या नीति लंबी हो, तो App Check सत्यापन से पहले नाम, ईमेल और फ़ोन नंबर हटा दिए जाते हैं।';
+      'If you choose cloud help, names, emails, and phone numbers are hidden before anything is sent.';
 
   @override
   String get settingsTitle => 'सेटिंग्स';
@@ -291,7 +291,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get localScannerProtectedMsg =>
-      'अंतर्निहित स्थानीय शर्त स्कैनर द्वारा सुरक्षित।';
+      'Ready to check policies offline on this phone.';
 
   @override
   String get statusChecking => 'जांच हो रही है…';
@@ -388,7 +388,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get geminiNanoReadyMsg =>
-      'इस फ़ोन पर Gemini Nano तैयार है। समीक्षाएँ पूरी तरह आपके डिवाइस पर रहती हैं।';
+      'On-device AI is ready on this phone. Reviews stay completely on your device.';
 
   @override
   String get modelDownloadingMsg =>
@@ -400,7 +400,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get localScannerDefaultMsg =>
-      'यह फ़ोन डिफ़ॉल्ट रूप से Enprive के अंतर्निहित स्थानीय स्कैनर का उपयोग करता है।';
+      'This phone checks policies offline on your device by default.';
 
   @override
   String get preparingPrivateAnalysis => 'निजी विश्लेषण तैयार किया जा रहा है…';
@@ -409,7 +409,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get onDeviceAiReadyTitle => 'ऑन-डिवाइस AI तैयार';
 
   @override
-  String get localScannerActiveTitle => 'स्थानीय स्कैनर सक्रिय';
+  String get localScannerActiveTitle => 'Offline check ready';
 
   @override
   String get privateAnalysisSheetSubtitle =>
@@ -425,7 +425,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get reviewingOnPhone => 'इसी फ़ोन पर समीक्षा जारी…';
 
   @override
-  String get readingClausesInitial => 'इस फ़ोन पर नीति शर्तें पढ़ी जा रही हैं…';
+  String get readingClausesInitial => 'Reading policy text on this phone…';
 
   @override
   String progressStepCounter(int current, int total) {
@@ -444,13 +444,13 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get thoughtSignaturePrefix => 'विचार हस्ताक्षर';
+  String get thoughtSignaturePrefix => 'Check ID';
 
   @override
-  String get viewStreamedThoughts => 'तर्क प्रक्रिया देखें';
+  String get viewStreamedThoughts => 'How Enprive checked this';
 
   @override
-  String get hideStreamedThoughts => 'तर्क प्रक्रिया छिपाएँ';
+  String get hideStreamedThoughts => 'Hide how Enprive checked this';
 
   @override
   String get analysisTraceDefaultTitle => 'इस समीक्षा की जांच कैसे हुई';
@@ -459,7 +459,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get savedToLocalReceiptsSnack => 'आपकी स्थानीय रसीदों में सहेजा गया।';
 
   @override
-  String get snapshotSheetTitle => 'समीक्षित नीति स्नैपशॉट';
+  String get snapshotSheetTitle => 'Reviewed policy text';
 
   @override
   String get snapshotSourcePrefix => 'स्रोत';
@@ -468,7 +468,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get snapshotReviewedPrefix => 'समीक्षित';
 
   @override
-  String get snapshotDigestPrefix => 'सारांश कोड';
+  String get snapshotDigestPrefix => 'Document fingerprint';
 
   @override
   String get statFindings => 'निष्कर्ष';
@@ -477,10 +477,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get statVerified => 'सत्यापित';
 
   @override
-  String get statOsGranted => 'OS द्वारा स्वीकृत';
+  String get statOsGranted => 'Allowed on phone';
 
   @override
-  String get statUnverified => 'असत्यापित';
+  String get statUnverified => 'Not found';
 
   @override
   String get keyFindingsTitle => 'मुख्य निष्कर्ष';
@@ -492,19 +492,19 @@ class AppLocalizationsHi extends AppLocalizations {
   String get permissionsOnPhoneTitle => 'इस फ़ोन पर अनुमतियाँ';
 
   @override
-  String get viewReviewedSnapshot => 'समीक्षित नीति स्नैपशॉट देखें';
+  String get viewReviewedSnapshot => 'View reviewed policy text';
 
   @override
   String get btnSavedToReceipts => 'रसीदों में सहेजा गया';
 
   @override
-  String get observedOnPhoneLabel => 'इस फ़ोन पर देखा गया';
+  String get observedOnPhoneLabel => 'Seen on this phone';
 
   @override
-  String get quoteVerifiedLabel => 'नीति में उद्धरण सत्यापित';
+  String get quoteVerifiedLabel => 'Exact quote from policy';
 
   @override
-  String get unverifiedClaimLabel => 'असत्यापित दावा';
+  String get unverifiedClaimLabel => 'Not found in policy';
 
   @override
   String get categoryDataCollection => 'डेटा संग्रहण';
@@ -528,7 +528,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get labelOnThisPhone => 'इस फ़ोन पर';
 
   @override
-  String get labelWhatRemainsUnknown => 'क्या अभी भी अज्ञात है';
+  String get labelWhatRemainsUnknown => 'What we still don\'t know';
 
   @override
   String get presetQuestionMeaning => 'मेरे बच्चे के लिए इसका क्या अर्थ है?';
@@ -540,13 +540,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get presetQuestionUnknown => 'यहाँ अभी भी क्या स्पष्ट नहीं है?';
 
   @override
-  String get readingCitedClause => 'उद्धृत नीति धारा पढ़ी जा रही है…';
+  String get readingCitedClause => 'Reading the policy quote…';
 
   @override
   String get deniAnswerTitle => 'Deni का उत्तर';
 
   @override
-  String get stepsAndReasoning => 'चरण और मॉडल तर्क';
+  String get stepsAndReasoning => 'How Deni checked this';
 
   @override
   String get chooseReviewModeTitle => 'इस टेक्स्ट की समीक्षा का तरीका चुनें';
@@ -581,32 +581,32 @@ class AppLocalizationsHi extends AppLocalizations {
   String get noMatchingApps => 'इस फ़ोन पर कोई मेल खाने वाला ऐप नहीं मिला।';
 
   @override
-  String get sampleSyntheticBadge => 'सिंथेटिक उदाहरण';
+  String get sampleSyntheticBadge => 'Sample app';
 
   @override
-  String get permissionInspectionTitle => 'डिवाइस अनुमति निरीक्षण';
+  String get permissionInspectionTitle => 'Phone permissions checked';
 
   @override
   String get addAppPrivacyPolicyBtn => 'इस ऐप की गोपनीयता नीति जोड़ें';
 
   @override
-  String get snapshotDigestLabel => 'स्नैपशॉट डाइजेस्ट · FNV-1a 64-बिट';
+  String get snapshotDigestLabel => 'Document fingerprint';
 
   @override
   String get snapshotDigestExplanation =>
-      'इस पाठ का तेज़ 64-बिट स्थानीय फिंगरप्रिंट (क्रिप्टोग्राफिक SHA-256 नहीं)। एक भी अक्षर बदलने पर यह बदल जाता है।';
+      'A unique code that helps verify this is the exact text Enprive checked. If even one letter changes, this code changes too.';
 
   @override
-  String get copyDigestBtn => 'डाइजेस्ट कॉपी करें';
+  String get copyDigestBtn => 'Copy fingerprint';
 
   @override
-  String get digestCopiedMsg => 'स्नैपशॉट डाइजेस्ट कॉपी किया गया';
+  String get digestCopiedMsg => 'Document fingerprint copied';
 
   @override
-  String get permissionGrantedBadge => 'अनुमति दी गई';
+  String get permissionGrantedBadge => 'Allowed on this phone';
 
   @override
-  String get permissionNotGrantedBadge => 'अनुमति नहीं दी गई';
+  String get permissionNotGrantedBadge => 'Not allowed';
 
   @override
   String get checkingPolicyWithCloudAi =>
@@ -614,7 +614,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get preparingCloudAiStream =>
-      'गोपनीय विवरण हटाकर क्लाउड जाँच तैयार हो रही है…';
+      'Hiding personal details before cloud check…';
 
   @override
   String get cancellingAnalysis => 'रद्द किया जा रहा है…';
@@ -628,11 +628,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get cloudFallbackBannerTitle =>
-      'क्लाउड AI अनुपलब्ध — स्थानीय स्कैन दिखाया गया';
+      'Cloud unavailable — checked on this phone';
 
   @override
   String get cloudFallbackBannerBody =>
-      'क्लाउड विश्लेषण उपलब्ध नहीं था, इसलिए यह परिणाम Enprive के स्थानीय निर्धारित स्कैनर से आया है।';
+      'Cloud analysis was unavailable, so Enprive checked this policy directly on your phone.';
 
   @override
   String get appPickerFilterAll => 'All apps';
@@ -650,29 +650,29 @@ class AppLocalizationsHi extends AppLocalizations {
   String get appPickerStatusPolicySaved => 'Policy review saved';
 
   @override
-  String get appPickerStatusPermissionsInspected => 'Permissions inspected';
+  String get appPickerStatusPermissionsInspected => 'Permissions checked';
 
   @override
   String get appPickerStatusNotReviewed => 'Not reviewed';
 
   @override
-  String get appPickerSearchHint => 'Search by app or package name…';
+  String get appPickerSearchHint => 'Search by app name or App ID…';
 
   @override
   String get appPickerEmptyInstalledTitle => 'No installed apps available';
 
   @override
   String get appPickerEmptyInstalledBody =>
-      'No launchable apps were reported on this device.';
+      'We couldn\'t find any apps to check on this phone.';
 
   @override
   String get intakeModeDocument => 'Document';
 
   @override
-  String get intakeActionInspectText => 'Inspect policy text';
+  String get intakeActionInspectText => 'Check policy text';
 
   @override
-  String get intakeActionFetchUrl => 'Fetch & inspect policy';
+  String get intakeActionFetchUrl => 'Open & check policy';
 
   @override
   String get intakeActionChooseDocument => 'Choose PDF, TXT, or DOCX';
@@ -691,7 +691,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get intakeUrlDisclosure =>
-      'Fetches the public web page directly. A user-supplied link does not prove app ownership.';
+      'Loads this public web page directly. Adding a link here does not prove app ownership.';
 
   @override
   String get intakePasteLocalNote =>
@@ -702,7 +702,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get intakeDocumentCardBody =>
-      'Text is extracted strictly on this phone (up to 10 MB) with a local SHA-256 snapshot hash. Files are never uploaded.';
+      'We read the text right on your phone (up to 10 MB). Your file is never uploaded.';
 
   @override
   String get intakeCompareWithAppPrompt =>
@@ -726,7 +726,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get intakePlayStoreHelperNote =>
-      'Opens the app\'s Play Store listing so you can copy its privacy policy link. Enprive never scrapes Play Store or assumes link ownership.';
+      'Opens the Play Store so you can copy the app\'s privacy policy link. Enprive never copies it automatically or assumes the link is official.';
 
   @override
   String get intakePlayStoreUnavailable =>
@@ -755,7 +755,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get intakeAssociationChangeApp => 'Change selected app';
 
   @override
-  String get intakeAssociationInspectWithoutApp => 'Inspect policy without app';
+  String get intakeAssociationInspectWithoutApp => 'Check policy without app';
 
   @override
   String get intakeModeSelectorSemanticLabel => 'Policy input method';
@@ -789,10 +789,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get voiceBtnSummarizeCloud => 'Summarize with Cloud AI';
 
   @override
-  String get voiceBadgeExpressive => 'Expressive voice · Puck';
+  String get voiceBadgeExpressive => 'Expressive cloud voice';
 
   @override
-  String get voiceBadgeDeviceOffline => 'Device voice · Offline';
+  String get voiceBadgeDeviceOffline => 'Phone voice · Offline';
 
   @override
   String get voiceViewSourceQuote => 'Source quote';
@@ -808,7 +808,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get voiceConsentDisclosure =>
-      'To speak this summary with Deni’s expressive Gemini voice (Puck), Enprive will send only the redacted summary text shown above to Firebase AI Logic for this single request. Your installed apps and Android permissions are never sent.';
+      'To read this summary aloud with Deni’s expressive cloud voice, Enprive will send only the summary text shown above (with personal details hidden) for this one request. Your apps and phone permissions are never sent.';
 
   @override
   String get voiceConsentPrimaryAction => 'Use expressive voice once';
@@ -824,7 +824,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get voiceSummaryConsentDisclosure =>
-      'To rewrite these verified policy findings in plain language in the cloud, Enprive will send only the redacted excerpts shown above to Firebase AI Logic once. Your installed apps and Android permissions are never sent.';
+      'To summarize these policy quotes in plain language in the cloud, Enprive will send only the text shown above (with personal details hidden) for this one request. Your apps and phone permissions are never sent.';
 
   @override
   String get voiceFallbackDeviceNotice =>
@@ -919,9 +919,9 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count personal details are masked first.',
-      one: '1 personal detail is masked first.',
-      zero: 'No personal details were found to mask.',
+      other: '$count personal details are hidden first.',
+      one: '1 personal detail is hidden first.',
+      zero: 'No personal details were found to hide.',
     );
     return '$_temp0';
   }
@@ -943,7 +943,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get readinessPromiseMaskedLine =>
-      'If you choose cloud, names, emails and numbers are masked first.';
+      'If you choose cloud, names, emails and numbers are hidden first.';
 
   @override
   String findingDetailTitle(int index, int total) {
@@ -960,7 +960,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get labelWhatPolicySays => 'What the policy says';
 
   @override
-  String get labelWhatAndroidReports => 'What Android reports';
+  String get labelWhatAndroidReports => 'What your phone shows';
 
   @override
   String get sourceButtonTooltip => 'Reviewed source';
@@ -973,7 +973,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get linkInstalledAppCardBody =>
-      'Pick an installed app to compare its Android permissions with this policy in the same review. Your app list stays on this phone.';
+      'Pick an installed app to compare its phone permissions with this policy in the same review. Your app list stays on this phone.';
 
   @override
   String get linkAppPickerTitle => 'Link an installed app';
@@ -1106,7 +1106,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get permissionComparisonLimitationNote =>
-      'Android shows permission settings on this phone only. This comparison is a prompt to look closer, never proof of wrongdoing or that data was sent.';
+      'Your phone shows permission settings on this phone only. This comparison is a prompt to look closer, never proof of wrongdoing or that data was sent.';
 
   @override
   String get permissionNotRequestedOnPhone => 'Not requested by app';
@@ -1124,6 +1124,51 @@ class AppLocalizationsHi extends AppLocalizations {
     int grantedCount,
     String appName,
   ) {
-    return 'Android lists $requestedCount permissions ($grantedCount allowed) for $appName, with none in the sensitive categories checked here (location, camera, microphone, contacts, photos, or ad ID).';
+    return 'Your phone lists $requestedCount permissions ($grantedCount allowed) for $appName, with none in the sensitive categories checked here (location, camera, microphone, contacts, photos, or ad ID).';
   }
+
+  @override
+  String get sourceDeviceInspection => 'Checked on this phone';
+
+  @override
+  String get appIdPrefix => 'App ID';
+
+  @override
+  String get advancedDetailsTitle => 'Advanced details';
+
+  @override
+  String get advancedDetailsSubtitle =>
+      'Technical details that verify when and where this policy text was checked.';
+
+  @override
+  String get sourceSectionTitle => 'Where this policy came from';
+
+  @override
+  String get cloudPayloadLabel => 'Exact text to be sent';
+
+  @override
+  String get cloudPayloadNoPiiLabel => 'No personal details found';
+
+  @override
+  String cloudPayloadHiddenCount(int count) {
+    return 'Hidden ($count)';
+  }
+
+  @override
+  String get summarySourceOnDevice => 'Summarized on this phone';
+
+  @override
+  String get summarySourceInCloud => 'Summarized in the cloud';
+
+  @override
+  String get summarySourceOffline => 'Summarized offline on this phone';
+
+  @override
+  String get summarySourceUnknown => 'Summary source unknown';
+
+  @override
+  String get notFromPolicySuffix => 'From your phone settings, not the policy';
+
+  @override
+  String get sampleNotFromPolicySuffix => 'Example only, not from the policy';
 }

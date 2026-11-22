@@ -28,7 +28,7 @@ class AnalysisLiveProcessView extends StatefulWidget {
   const AnalysisLiveProcessView({
     super.key,
     required this.stream,
-    this.initialLabel = 'Reading policy clauses on this phone…',
+    this.initialLabel = 'Reading policy text on this phone…',
     this.compact = false,
   });
 
@@ -45,7 +45,6 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
   String? _currentThoughtLine;
   Timer? _lineTicker;
   int _stepCount = 1;
-  String? _thoughtSignature;
 
   @override
   void initState() {
@@ -103,11 +102,6 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
             }
           }
         }
-
-        final rawSig = event.thoughtSignature?.trim();
-        if (rawSig != null && rawSig.isNotEmpty) {
-          _thoughtSignature = rawSig;
-        }
       });
     });
   }
@@ -139,19 +133,13 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context) ??
-        lookupAppLocalizations(
-          Localizations.maybeLocaleOf(context) ?? const Locale('en'),
-        );
     final m3e = M3ETheme.of(context);
     final scheme = m3e.colorScheme;
-    final semantics = context.enpriveSemantics;
     final surfaces = context.enpriveSurfaces;
     final disableAnimations = EnpriveMotionTokens.isReducedMotion(context);
 
     final activeLine = _currentThoughtLine ?? _activeLabel;
-    final showTopMeta =
-        _currentThoughtLine != null || _thoughtSignature != null;
+    final showTopMeta = _currentThoughtLine != null;
 
     final lineText = Text(
       activeLine,
@@ -196,37 +184,6 @@ class _AnalysisLiveProcessViewState extends State<AnalysisLiveProcessView> {
                     ),
                   ),
                 ),
-                if (_thoughtSignature != null) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: semantics.inCloud.background,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          LucideIcons.badgeCheck,
-                          size: 12,
-                          color: semantics.inCloud.foreground,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${l10n.thoughtSignaturePrefix} ${formatThoughtSignaturePreview(_thoughtSignature!)}',
-                          style: m3e.typography.emphasized.labelSmall.copyWith(
-                            fontSize: 11,
-                            color: semantics.inCloud.foreground,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ],
             ),
             const SizedBox(height: 6),
@@ -404,38 +361,7 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
               ],
             ),
           ],
-          if (hasSignature) ...[
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: semantics.inCloud.background,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    LucideIcons.badgeCheck,
-                    size: 13,
-                    color: semantics.inCloud.foreground,
-                  ),
-                  const SizedBox(width: 5),
-                  Flexible(
-                    child: Text(
-                      '${l10n.thoughtSignaturePrefix}: ${formatThoughtSignaturePreview(widget.thoughtSignature!)}',
-                      overflow: TextOverflow.ellipsis,
-                      style: m3e.typography.emphasized.labelSmall.copyWith(
-                        fontSize: 11.5,
-                        color: semantics.inCloud.foreground,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          if (hasThoughts || widget.processSteps.length > 1) ...[
+          if (hasThoughts || hasSignature || widget.processSteps.length > 1) ...[
             const SizedBox(height: 8),
             InkWell(
               onTap: () => setState(() => _showThoughts = !_showThoughts),
@@ -453,12 +379,14 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                       color: scheme.primary,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      _showThoughts
-                          ? l10n.hideHowEnpriveChecked
-                          : l10n.howEnpriveCheckedThis,
-                      style: m3e.typography.emphasized.labelMedium.copyWith(
-                        color: scheme.primary,
+                    Flexible(
+                      child: Text(
+                        _showThoughts
+                            ? l10n.hideHowEnpriveChecked
+                            : l10n.howEnpriveCheckedThis,
+                        style: m3e.typography.emphasized.labelMedium.copyWith(
+                          color: scheme.primary,
+                        ),
                       ),
                     ),
                   ],
@@ -541,6 +469,40 @@ class _AnalysisSavedTraceCardState extends State<AnalysisSavedTraceCard> {
                       height: 1.45,
                       color: scheme.onSurfaceVariant,
                     ),
+                  ),
+                ),
+              ],
+              if (hasSignature) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: semantics.inCloud.background,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        LucideIcons.badgeCheck,
+                        size: 13,
+                        color: semantics.inCloud.foreground,
+                      ),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          '${l10n.thoughtSignaturePrefix}: ${formatThoughtSignaturePreview(widget.thoughtSignature!)}',
+                          overflow: TextOverflow.ellipsis,
+                          style: m3e.typography.emphasized.labelSmall.copyWith(
+                            fontSize: 11.5,
+                            color: semantics.inCloud.foreground,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

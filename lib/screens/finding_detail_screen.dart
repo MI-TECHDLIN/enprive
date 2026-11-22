@@ -242,7 +242,6 @@ class FindingDetailScreen extends StatelessWidget {
                   statusLabel: proofLabel,
                   categoryLabel: category.label,
                   spineColor: category.color.color,
-                  sha256Digest: snapshotDigest.isEmpty ? null : snapshotDigest,
                   selectable: true,
                 ),
               if (finding.explanation.trim().isNotEmpty)

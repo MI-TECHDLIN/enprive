@@ -6,19 +6,19 @@
   "stateNoConcern": "No concern identified",
   "stateNoConcernSubtitle": "No concern identified in the reviewed evidence. This is not a safety certification.",
   "stateReviewRecommended": "Review recommended",
-  "stateReviewRecommendedSubtitle": "One or more passages or permission mismatches deserve a human look.",
+  "stateReviewRecommendedSubtitle": "One or more policy parts or phone permissions need a closer look.",
   "stateInsufficientEvidence": "Insufficient evidence",
-  "stateInsufficientEvidenceSubtitle": "Evidence is missing, unavailable, or could not be verified on this device.",
+  "stateInsufficientEvidenceSubtitle": "We need more privacy policy text before we can check what this app does.",
   "chipOnDevice": "On this device",
   "chipInCloud": "In the cloud",
-  "chipLocationUnavailable": "Processing location unavailable",
-  "chipOfflineDeterministic": "Offline local scan",
-  "chipUnknown": "Processing source unknown",
-  "statusSourceMatched": "Source matched",
-  "statusDeviceObserved": "Device observed",
-  "statusInterpretation": "Interpretation",
-  "statusUnverified": "Unverified",
-  "statusStale": "Outdated / Stale",
+  "chipLocationUnavailable": "Source not available",
+  "chipOfflineDeterministic": "Checked offline on this phone",
+  "chipUnknown": "Source unknown",
+  "statusSourceMatched": "Matched in policy",
+  "statusDeviceObserved": "Seen on this phone",
+  "statusInterpretation": "Deni's explanation",
+  "statusUnverified": "Not found in policy",
+  "statusStale": "Older check",
   "btnCheckApp": "Check an app",
   "btnPasteTerms": "Paste terms or URL",
   "btnWhyThisFinding": "Why this finding?",
@@ -30,8 +30,8 @@
   "btnGetStarted": "Get started",
   "btnContinue": "Continue",
   "deniIntro": "Hi, I'm Deni. I can help you understand what this policy says, show you the evidence behind a concern, and explain what Enprive could not verify.",
-  "cloudConsentDisclosure": "To analyse this text in the cloud, Enprive will send only the redacted text shown above to Firebase AI Logic. Your installed-app list and Android permission observations will never be sent.",
-  "permissionLimitationNotice": "Android reports this permission state on this phone. It does not prove whether the app actually accessed or transmitted data.",
+  "cloudConsentDisclosure": "To check this in the cloud, Enprive will send only the text shown above (with personal details hidden) for this one request. Your apps and phone permissions will never be sent.",
+  "permissionLimitationNotice": "Your phone shows whether this permission is allowed. It does not prove whether the app actually accessed or sent data.",
   "navHome": "Home",
   "navCheck": "Check",
   "navReceipts": "Receipts",
@@ -50,13 +50,13 @@
   "calmMathTrend": "Minimal",
   "whatWeCheckTitle": "What we check for",
   "checkQuoteTitle": "Exact policy quotes",
-  "checkQuoteDesc": "Flags sharing, voice recording, and retention with verbatim quotes.",
+  "checkQuoteDesc": "Highlights data sharing, voice recording, and how long data is kept using exact quotes.",
   "checkPermissionTitle": "Phone permission mismatches",
   "checkPermissionDesc": "Compares Camera, Mic, and Location access against what the policy claims.",
   "checkSelectTitle": "Select text anywhere",
   "checkSelectDesc": "Highlight terms in any app and tap Enprive Check from Android’s menu.",
   "recentlyReviewed": "Recently reviewed",
-  "verifiedClausesCount": "{count, plural, =1{1 verified clause} other{{count} verified clauses}}",
+  "verifiedClausesCount": "{count, plural, =1{1 matched quote} other{{count} matched quotes}}",
   "@verifiedClausesCount": {
     "description": "Count of verified policy clauses shown in recently reviewed cards",
     "placeholders": {
@@ -88,12 +88,12 @@
   "readinessRow1Desc": "Policies are read on your phone before anything else.",
   "readinessRow2Title": "Your apps stay yours",
   "readinessRow2Desc": "The apps on this phone and their permissions never leave it.",
-  "readinessRow3Title": "Personal details scrubbed",
-  "readinessRow3Desc": "If on-device AI isn’t available or a policy is long, names, emails, and phone numbers become placeholders before App Check verification.",
+  "readinessRow3Title": "Personal details hidden",
+  "readinessRow3Desc": "If you choose cloud help, names, emails, and phone numbers are hidden before anything is sent.",
   "settingsTitle": "Settings",
   "privateAnalysisTitle": "Private analysis on this phone",
   "onDeviceReadyMsg": "On-device AI is active and ready.",
-  "localScannerProtectedMsg": "Protected by built-in local clause scanning.",
+  "localScannerProtectedMsg": "Ready to check policies offline on this phone.",
   "statusChecking": "Checking…",
   "btnCheckReadiness": "Check readiness",
   "howShouldDeniExplain": "How should Deni explain things?",
@@ -137,18 +137,18 @@
   "btnOpenReceipt": "Open receipt",
   "btnDelete": "Delete",
   "checkingPhoneReadiness": "Checking private analysis readiness on this phone…",
-  "geminiNanoReadyMsg": "Gemini Nano is ready on this phone. Reviews stay completely on your device.",
+  "geminiNanoReadyMsg": "On-device AI is ready on this phone. Reviews stay completely on your device.",
   "modelDownloadingMsg": "Downloading private on-device model in the background.",
   "modelDownloadableMsg": "On-device model can be downloaded over Wi-Fi.",
-  "localScannerDefaultMsg": "This phone uses Enprive’s built-in local clause scanner by default.",
+  "localScannerDefaultMsg": "This phone checks policies offline on your device by default.",
   "preparingPrivateAnalysis": "Preparing private analysis…",
   "onDeviceAiReadyTitle": "On-device AI ready",
-  "localScannerActiveTitle": "Local scanner active",
+  "localScannerActiveTitle": "Offline check ready",
   "privateAnalysisSheetSubtitle": "Your installed apps and permission checks never leave your phone.",
   "btnDone": "Done",
   "btnCheckAgain": "Check again",
   "reviewingOnPhone": "Reviewing on this phone.",
-  "readingClausesInitial": "Reading policy clauses on this phone…",
+  "readingClausesInitial": "Reading policy text on this phone…",
   "progressStepCounter": "{current} of {total}",
   "@progressStepCounter": {
     "description": "Step counter inside the live review progress card",
@@ -170,27 +170,27 @@
       }
     }
   },
-  "thoughtSignaturePrefix": "Thought signature",
-  "viewStreamedThoughts": "View streamed thoughts",
-  "hideStreamedThoughts": "Hide streamed thoughts",
+  "thoughtSignaturePrefix": "Check ID",
+  "viewStreamedThoughts": "How Enprive checked this",
+  "hideStreamedThoughts": "Hide how Enprive checked this",
   "analysisTraceDefaultTitle": "How this review was checked",
   "savedToLocalReceiptsSnack": "Saved to your local receipts.",
-  "snapshotSheetTitle": "Reviewed policy snapshot",
+  "snapshotSheetTitle": "Reviewed policy text",
   "snapshotSourcePrefix": "Source",
   "snapshotReviewedPrefix": "Reviewed",
-  "snapshotDigestPrefix": "Digest",
+  "snapshotDigestPrefix": "Document fingerprint",
   "statFindings": "Findings",
   "statVerified": "Verified",
-  "statOsGranted": "OS Granted",
-  "statUnverified": "Unverified",
+  "statOsGranted": "Allowed on phone",
+  "statUnverified": "Not found",
   "keyFindingsTitle": "Key Findings",
   "reviewedExcerptTitle": "Reviewed Excerpt",
   "permissionsOnPhoneTitle": "Permissions on this phone",
-  "viewReviewedSnapshot": "View reviewed policy snapshot",
+  "viewReviewedSnapshot": "View reviewed policy text",
   "btnSavedToReceipts": "Saved to Receipts",
-  "observedOnPhoneLabel": "Observed on this phone",
-  "quoteVerifiedLabel": "Quote verified in policy",
-  "unverifiedClaimLabel": "Unverified claim",
+  "observedOnPhoneLabel": "Seen on this phone",
+  "quoteVerifiedLabel": "Exact quote from policy",
+  "unverifiedClaimLabel": "Not found in policy",
   "categoryDataCollection": "Data Collection",
   "categorySharing": "Third-Party Sharing",
   "categoryTracking": "Location & Tracking",
@@ -198,13 +198,13 @@
   "categoryParentalControls": "Parental Controls",
   "labelInPlainLanguage": "In plain language",
   "labelOnThisPhone": "On this phone",
-  "labelWhatRemainsUnknown": "What remains unknown",
+  "labelWhatRemainsUnknown": "What we still don't know",
   "presetQuestionMeaning": "What does this mean for my child?",
   "presetQuestionOptOut": "Can we turn this off or opt out?",
   "presetQuestionUnknown": "What is still unknown here?",
-  "readingCitedClause": "Reading cited policy clause…",
+  "readingCitedClause": "Reading the policy quote…",
   "deniAnswerTitle": "Deni’s Answer",
-  "stepsAndReasoning": "Steps & model reasoning",
+  "stepsAndReasoning": "How Deni checked this",
   "chooseReviewModeTitle": "Choose how to review this text",
   "cloudNeverSendsAppsNote": "Installed apps and phone permissions are never sent.",
   "tooltipClose": "Close",
@@ -215,22 +215,22 @@
   "appsOnThisPhone": "Apps on this phone",
   "hintSearchApps": "Search apps…",
   "noMatchingApps": "No matching apps found on this phone.",
-  "sampleSyntheticBadge": "Synthetic example",
-  "permissionInspectionTitle": "Device Permission Inspection",
+  "sampleSyntheticBadge": "Sample app",
+  "permissionInspectionTitle": "Phone permissions checked",
   "addAppPrivacyPolicyBtn": "Add this app's privacy policy",
-  "snapshotDigestLabel": "Snapshot digest · FNV-1a 64-bit",
-  "snapshotDigestExplanation": "A fast 64-bit local fingerprint of this text (not cryptographic SHA-256). Changing any character produces a different digest.",
-  "copyDigestBtn": "Copy digest",
-  "digestCopiedMsg": "Snapshot digest copied",
-  "permissionGrantedBadge": "Granted",
-  "permissionNotGrantedBadge": "Not granted",
+  "snapshotDigestLabel": "Document fingerprint",
+  "snapshotDigestExplanation": "A unique code that helps verify this is the exact text Enprive checked. If even one letter changes, this code changes too.",
+  "copyDigestBtn": "Copy fingerprint",
+  "digestCopiedMsg": "Document fingerprint copied",
+  "permissionGrantedBadge": "Allowed on this phone",
+  "permissionNotGrantedBadge": "Not allowed",
   "checkingPolicyWithCloudAi": "Checking policy with cloud AI.",
-  "preparingCloudAiStream": "Preparing redacted cloud verification…",
+  "preparingCloudAiStream": "Hiding personal details before cloud check…",
   "cancellingAnalysis": "Cancelling…",
   "analysisCancelledNotice": "Review cancelled.",
   "cloudTimedOutNotice": "Cloud AI timed out before responding. No automatic retry was sent.",
-  "cloudFallbackBannerTitle": "Cloud AI unavailable — local scan shown",
-  "cloudFallbackBannerBody": "Cloud analysis was unavailable, so this result came from Enprive’s local deterministic scanner.",
+  "cloudFallbackBannerTitle": "Cloud unavailable — checked on this phone",
+  "cloudFallbackBannerBody": "Cloud analysis was unavailable, so Enprive checked this policy directly on your phone.",
   "appPickerFilterAll": "All apps",
   "@appPickerFilterAll": {
     "description": "Filter chip showing all launchable installed apps"
@@ -251,7 +251,7 @@
   "@appPickerStatusPolicySaved": {
     "description": "Neutral status indicator when a policy review receipt is saved for this app"
   },
-  "appPickerStatusPermissionsInspected": "Permissions inspected",
+  "appPickerStatusPermissionsInspected": "Permissions checked",
   "@appPickerStatusPermissionsInspected": {
     "description": "Neutral status indicator when only device permissions were inspected and saved"
   },
@@ -259,7 +259,7 @@
   "@appPickerStatusNotReviewed": {
     "description": "Neutral status indicator when no saved receipt exists for this app"
   },
-  "appPickerSearchHint": "Search by app or package name…",
+  "appPickerSearchHint": "Search by app name or App ID…",
   "@appPickerSearchHint": {
     "description": "Search input placeholder in the installed app picker"
   },
@@ -267,7 +267,7 @@
   "@appPickerEmptyInstalledTitle": {
     "description": "Title shown when Android reports no launchable installed applications"
   },
-  "appPickerEmptyInstalledBody": "No launchable apps were reported on this device.",
+  "appPickerEmptyInstalledBody": "We couldn't find any apps to check on this phone.",
   "@appPickerEmptyInstalledBody": {
     "description": "Body shown when no launchable apps are available on the device"
   },
@@ -275,11 +275,11 @@
   "@intakeModeDocument": {
     "description": "Segmented mode label for local document import (PDF, TXT, DOCX)"
   },
-  "intakeActionInspectText": "Inspect policy text",
+  "intakeActionInspectText": "Check policy text",
   "@intakeActionInspectText": {
     "description": "Primary action button label in Paste text mode of the unified intake sheet"
   },
-  "intakeActionFetchUrl": "Fetch & inspect policy",
+  "intakeActionFetchUrl": "Open & check policy",
   "@intakeActionFetchUrl": {
     "description": "Primary action button label in Public URL mode of the unified intake sheet"
   },
@@ -303,7 +303,7 @@
   "@intakeUrlHint": {
     "description": "Placeholder hint for the public privacy policy URL input field"
   },
-  "intakeUrlDisclosure": "Fetches the public web page directly. A user-supplied link does not prove app ownership.",
+  "intakeUrlDisclosure": "Loads this public web page directly. Adding a link here does not prove app ownership.",
   "@intakeUrlDisclosure": {
     "description": "Disclosure clarifying direct public URL retrieval and non-ownership"
   },
@@ -315,7 +315,7 @@
   "@intakeDocumentCardTitle": {
     "description": "Title of the local document import information card"
   },
-  "intakeDocumentCardBody": "Text is extracted strictly on this phone (up to 10 MB) with a local SHA-256 snapshot hash. Files are never uploaded.",
+  "intakeDocumentCardBody": "We read the text right on your phone (up to 10 MB). Your file is never uploaded.",
   "@intakeDocumentCardBody": {
     "description": "Description of strictly local document extraction and size limit"
   },
@@ -343,7 +343,7 @@
   "@intakeFindPolicyOnPlayStore": {
     "description": "Optional action opening the selected app listing on Google Play Store to look up its policy link"
   },
-  "intakePlayStoreHelperNote": "Opens the app's Play Store listing so you can copy its privacy policy link. Enprive never scrapes Play Store or assumes link ownership.",
+  "intakePlayStoreHelperNote": "Opens the Play Store so you can copy the app's privacy policy link. Enprive never copies it automatically or assumes the link is official.",
   "@intakePlayStoreHelperNote": {
     "description": "Clarification beneath the Play Store convenience link button"
   },
@@ -379,7 +379,7 @@
   "@intakeAssociationChangeApp": {
     "description": "Action to pick a different installed app after an association mismatch or ambiguity"
   },
-  "intakeAssociationInspectWithoutApp": "Inspect policy without app",
+  "intakeAssociationInspectWithoutApp": "Check policy without app",
   "@intakeAssociationInspectWithoutApp": {
     "description": "Action to drop the optional app association and inspect only the supplied policy"
   },
@@ -423,11 +423,11 @@
   "@voiceBtnSummarizeCloud": {
     "description": "Optional action allowing the user to enhance the offline plain-language summary via CloudConsentSheet"
   },
-  "voiceBadgeExpressive": "Expressive voice · Puck",
+  "voiceBadgeExpressive": "Expressive cloud voice",
   "@voiceBadgeExpressive": {
-    "description": "Badge identifying playback via Firebase AI Logic Gemini TTS prebuilt voice Puck"
+    "description": "Badge identifying playback via Firebase AI Logic Gemini TTS prebuilt voice"
   },
-  "voiceBadgeDeviceOffline": "Device voice · Offline",
+  "voiceBadgeDeviceOffline": "Phone voice · Offline",
   "@voiceBadgeDeviceOffline": {
     "description": "Badge identifying playback via local Android TextToSpeech"
   },
@@ -447,7 +447,7 @@
   "@voiceConsentTitle": {
     "description": "CloudConsentSheet title when the user requests expressive Gemini TTS playback"
   },
-  "voiceConsentDisclosure": "To speak this summary with Deni’s expressive Gemini voice (Puck), Enprive will send only the redacted summary text shown above to Firebase AI Logic for this single request. Your installed apps and Android permissions are never sent.",
+  "voiceConsentDisclosure": "To read this summary aloud with Deni’s expressive cloud voice, Enprive will send only the summary text shown above (with personal details hidden) for this one request. Your apps and phone permissions are never sent.",
   "@voiceConsentDisclosure": {
     "description": "Disclosure text inside CloudConsentSheet before requesting Gemini TTS speech synthesis"
   },
@@ -467,7 +467,7 @@
   "@voiceSummaryConsentTitle": {
     "description": "CloudConsentSheet title when the user opts into cloud plain-language summarization"
   },
-  "voiceSummaryConsentDisclosure": "To rewrite these verified policy findings in plain language in the cloud, Enprive will send only the redacted excerpts shown above to Firebase AI Logic once. Your installed apps and Android permissions are never sent.",
+  "voiceSummaryConsentDisclosure": "To summarize these policy quotes in plain language in the cloud, Enprive will send only the text shown above (with personal details hidden) for this one request. Your apps and phone permissions are never sent.",
   "@voiceSummaryConsentDisclosure": {
     "description": "Disclosure text inside CloudConsentSheet before requesting cloud plain-language summarization"
   },
@@ -559,9 +559,9 @@
   "@consentSentScope": {
     "description": "Consent summary line describing exactly what is sent and how often"
   },
-  "consentMaskedCount": "{count, plural, =0{No personal details were found to mask.} =1{1 personal detail is masked first.} other{{count} personal details are masked first.}}",
+  "consentMaskedCount": "{count, plural, =0{No personal details were found to hide.} =1{1 personal detail is hidden first.} other{{count} personal details are hidden first.}}",
   "@consentMaskedCount": {
-    "description": "Consent summary line counting the personal details masked before anything is sent",
+    "description": "Consent summary line counting the personal details hidden before anything is sent",
     "placeholders": {
       "count": {
         "type": "int"
@@ -587,9 +587,9 @@
   },
   "readinessPromiseMaskedTitle": "Personal details hidden",
   "@readinessPromiseMaskedTitle": {
-    "description": "Last onboarding screen promise tile title about masking personal details"
+    "description": "Last onboarding screen promise tile title about hiding personal details"
   },
-  "readinessPromiseMaskedLine": "If you choose cloud, names, emails and numbers are masked first.",
+  "readinessPromiseMaskedLine": "If you choose cloud, names, emails and numbers are hidden first.",
   "@readinessPromiseMaskedLine": {
     "description": "Last onboarding screen promise tile line; plain words, no technical jargon"
   },
@@ -617,7 +617,7 @@
   "@labelWhatPolicySays": {
     "description": "Section heading on the finding detail page"
   },
-  "labelWhatAndroidReports": "What Android reports",
+  "labelWhatAndroidReports": "What your phone shows",
   "@labelWhatAndroidReports": {
     "description": "Section heading on the finding detail page"
   },
@@ -633,7 +633,7 @@
   "@linkInstalledAppCardTitle": {
     "description": "Heading of the card inviting the user to link an installed app to a policy-first review"
   },
-  "linkInstalledAppCardBody": "Pick an installed app to compare its Android permissions with this policy in the same review. Your app list stays on this phone.",
+  "linkInstalledAppCardBody": "Pick an installed app to compare its phone permissions with this policy in the same review. Your app list stays on this phone.",
   "@linkInstalledAppCardBody": {
     "description": "Plain-language explanation of linking an installed app after a policy-first review"
   },
@@ -830,7 +830,7 @@
   "@permissionComparisonNoMismatchNote": {
     "description": "Plain-language summary when no checked phone permissions contradict the policy"
   },
-  "permissionComparisonLimitationNote": "Android shows permission settings on this phone only. This comparison is a prompt to look closer, never proof of wrongdoing or that data was sent.",
+  "permissionComparisonLimitationNote": "Your phone shows permission settings on this phone only. This comparison is a prompt to look closer, never proof of wrongdoing or that data was sent.",
   "@permissionComparisonLimitationNote": {
     "description": "Calibrated limitation disclaimer below the permission comparison list"
   },
@@ -846,7 +846,7 @@
   "@permissionsEmptyComparisonTitle": {
     "description": "Heading when a linked installed app has no permissions in the checked sensitive categories"
   },
-  "permissionsEmptyComparisonBody": "Android lists {requestedCount} permissions ({grantedCount} allowed) for {appName}, with none in the sensitive categories checked here (location, camera, microphone, contacts, photos, or ad ID).",
+  "permissionsEmptyComparisonBody": "Your phone lists {requestedCount} permissions ({grantedCount} allowed) for {appName}, with none in the sensitive categories checked here (location, camera, microphone, contacts, photos, or ad ID).",
   "@permissionsEmptyComparisonBody": {
     "description": "Plain-language summary when a linked installed app declares zero sensitive catalog permissions",
     "placeholders": {
@@ -860,5 +860,66 @@
         "type": "String"
       }
     }
+  },
+  "sourceDeviceInspection": "Checked on this phone",
+  "@sourceDeviceInspection": {
+    "description": "Plain source label when inspecting an installed app on this phone"
+  },
+  "appIdPrefix": "App ID",
+  "@appIdPrefix": {
+    "description": "Plain-language label prefixing an Android package name (e.g. App ID: com.example.app)"
+  },
+  "advancedDetailsTitle": "Advanced details",
+  "@advancedDetailsTitle": {
+    "description": "Title of the collapsible expander hiding technical verification details"
+  },
+  "advancedDetailsSubtitle": "Technical details that verify when and where this policy text was checked.",
+  "@advancedDetailsSubtitle": {
+    "description": "Plain one-line explanation above the Advanced details expander"
+  },
+  "sourceSectionTitle": "Where this policy came from",
+  "@sourceSectionTitle": {
+    "description": "Plain heading for the policy source card on the review result screen"
+  },
+  "cloudPayloadLabel": "Exact text to be sent",
+  "@cloudPayloadLabel": {
+    "description": "Plain category label on the cloud consent preview card"
+  },
+  "cloudPayloadNoPiiLabel": "No personal details found",
+  "@cloudPayloadNoPiiLabel": {
+    "description": "Plain badge on the cloud consent preview card when no personal details were found"
+  },
+  "cloudPayloadHiddenCount": "Hidden ({count})",
+  "@cloudPayloadHiddenCount": {
+    "description": "Plain badge on the cloud consent preview card showing how many personal details were hidden",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "summarySourceOnDevice": "Summarized on this phone",
+  "@summarySourceOnDevice": {
+    "description": "Plain provenance pill for an on-device AI plain-language summary"
+  },
+  "summarySourceInCloud": "Summarized in the cloud",
+  "@summarySourceInCloud": {
+    "description": "Plain provenance pill for a consented cloud AI plain-language summary"
+  },
+  "summarySourceOffline": "Summarized offline on this phone",
+  "@summarySourceOffline": {
+    "description": "Plain provenance pill for a built-in offline plain-language summary"
+  },
+  "summarySourceUnknown": "Summary source unknown",
+  "@summarySourceUnknown": {
+    "description": "Plain provenance pill when the summary source is unknown"
+  },
+  "notFromPolicySuffix": "From your phone settings, not the policy",
+  "@notFromPolicySuffix": {
+    "description": "Plain suffix clarifying that an observation comes from phone permission settings rather than the privacy policy"
+  },
+  "sampleNotFromPolicySuffix": "Example only, not from the policy",
+  "@sampleNotFromPolicySuffix": {
+    "description": "Plain suffix clarifying that a sample permission comes from a built-in example rather than the privacy policy"
   }
 }

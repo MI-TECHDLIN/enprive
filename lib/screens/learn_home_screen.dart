@@ -70,12 +70,12 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
       category: _LearnTopicCategory.permissions,
       title: 'Permissions & Consent',
       shortStat: '3 guides',
-      subtitle: 'Camera, mic, location & AD_ID',
+      subtitle: 'Camera, mic, location & ad IDs',
       icon: LucideIcons.shieldCheck,
       keyTakeaways: [
         'Match the permission to the feature you tapped: a flashlight or math quiz rarely needs Contacts or Background Location.',
         'Prefer "Only this time" or "While using the app" instead of "Always" when trying a new app.',
-        'Declaring a permission in an Android manifest means the app can ask for it — check Android App Permissions anytime to revoke access.',
+        'When an app lists a permission, it means the app can ask for it — check your phone\'s App Permissions anytime to turn access off.',
       ],
       quickCheckQuestion:
           'Ask yourself: Does this feature still work if I tap "Don\'t allow"?',
@@ -85,11 +85,11 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
       category: _LearnTopicCategory.policies,
       title: 'Reading Policies',
       shortStat: '3 guides',
-      subtitle: 'Vague sharing & retention terms',
+      subtitle: 'Vague sharing & storage rules',
       icon: LucideIcons.fileText,
       keyTakeaways: [
-        'Watch for open-ended verbs like "may share with partners" or "retain as long as needed" without concrete deletion timelines.',
-        'Separate operational service providers (hosting, crash fixes) from third-party advertising networks and data brokers.',
+        'Watch for open-ended phrases like "may share with partners" or "keep as long as needed" without clear deletion dates.',
+        'Separate helper companies that keep the app running (hosting, crash fixes) from advertising networks and data brokers.',
         'Silence is not a promise: when a policy does not mention camera or location data, it does not guarantee the app avoids collecting it.',
       ],
       quickCheckQuestion:
@@ -100,12 +100,12 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
       category: _LearnTopicCategory.scams,
       title: 'Scams & Safety',
       shortStat: '3 guides',
-      subtitle: 'Fake links, OTPs & identity theft',
+      subtitle: 'Fake links, login codes & scams',
       icon: LucideIcons.triangleAlert,
       keyTakeaways: [
-        'Pause on artificial urgency ("Account closes in 10 minutes", "Verify your card now") — legitimate schools and banks rarely demand instant links.',
-        'Never share one-time passcodes (SMS/OTP), bank details, or government ID photos inside unfamiliar links or chat popups.',
-        'Inspect the exact domain name before signing in or sharing sensitive information; misspelled domains are a primary phishing signal.',
+        'Pause on fake urgency ("Account closes in 10 minutes", "Verify your card now") — real schools and banks rarely demand instant clicks.',
+        'Never share one-time login codes sent by text, bank details, or ID photos inside unfamiliar links or chat popups.',
+        'Check the exact website address before signing in or sharing personal details; misspelled web addresses are a common scam warning sign.',
       ],
       quickCheckQuestion:
           'Ask yourself: Can I verify this request independently inside the official app or website?',
@@ -113,14 +113,14 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
     _LearnPillarGuide(
       id: 'manipulative_consent',
       category: _LearnTopicCategory.darkPatterns,
-      title: 'Dark Patterns',
+      title: 'Tricky Design',
       shortStat: '3 guides',
-      subtitle: 'Spotting pressured consent UI',
+      subtitle: 'Spotting buttons that pressure you to say yes',
       icon: LucideIcons.eye,
       keyTakeaways: [
         'Bright oversized "Accept all" buttons paired with tiny muted "Manage preferences" links are designed to rush your choice.',
         'Pre-checked boxes for personalized ads or third-party marketing are optional — untick them before continuing.',
-        'Repeated nagging prompts after you tap "Deny" are a warning sign worth reviewing in Android Settings.',
+        'Repeated nagging popups after you tap "Deny" are a warning sign worth checking in your phone\'s Settings.',
       ],
       quickCheckQuestion:
           'Ask yourself: Is saying "No" just as clear and easy as saying "Yes"?',
@@ -146,7 +146,7 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
       _LearnTopicCategory.permissions => 'Permissions',
       _LearnTopicCategory.policies => 'Policies',
       _LearnTopicCategory.scams => 'Scams',
-      _LearnTopicCategory.darkPatterns => 'Dark patterns',
+      _LearnTopicCategory.darkPatterns => 'Tricky design',
     };
   }
 

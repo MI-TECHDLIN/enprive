@@ -176,7 +176,7 @@ class _EnpriveCollapsibleQuoteBoxState
                                     children: [
                                       Flexible(
                                         child: Text(
-                                          'Snapshot digest · FNV-1a 64-bit · ${widget.sha256Digest}',
+                                          'Document fingerprint · ${widget.sha256Digest}',
                                           style: typeExt.sha256Hash.copyWith(
                                             color: scheme.onSurfaceVariant,
                                             fontSize: 11.5,
@@ -197,7 +197,7 @@ class _EnpriveCollapsibleQuoteBoxState
                                             ..showSnackBar(
                                               const SnackBar(
                                                 content: Text(
-                                                  'Snapshot digest copied',
+                                                  'Document fingerprint copied',
                                                 ),
                                                 behavior:
                                                     SnackBarBehavior.floating,

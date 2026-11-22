@@ -518,12 +518,12 @@ class _SummaryPointRow extends StatelessWidget {
           DeniSummaryPointKind.devicePermissionNote => (
             LucideIcons.smartphone,
             semantics.inCloud.icon,
-            '${l10n.observedOnPhoneLabel} · Not a policy disclosure',
+            '${l10n.observedOnPhoneLabel} · ${l10n.notFromPolicySuffix}',
           ),
           DeniSummaryPointKind.samplePermissionNote => (
             LucideIcons.flaskConical,
             scheme.onSurfaceVariant,
-            '${l10n.sampleSyntheticBadge} · Not a policy disclosure',
+            '${l10n.sampleSyntheticBadge} · ${l10n.sampleNotFromPolicySuffix}',
           ),
           DeniSummaryPointKind.associationNote => (
             LucideIcons.link2,
@@ -760,6 +760,7 @@ class _SummarySourcePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final m3e = EnpriveM3ETheme.of(context);
     final semantics = context.enpriveSemantics;
 
@@ -769,22 +770,22 @@ class _SummarySourcePill extends StatelessWidget {
       InferenceSource.onDevice => (
         semantics.onDevice,
         LucideIcons.smartphone,
-        'On-device AI summary',
+        l10n.summarySourceOnDevice,
       ),
       InferenceSource.inCloud => (
         semantics.inCloud,
         LucideIcons.cloud,
-        'Cloud AI summary',
+        l10n.summarySourceInCloud,
       ),
       InferenceSource.offlineDeterministic => (
         semantics.offlineFallback,
         LucideIcons.fileText,
-        'Offline plain summary',
+        l10n.summarySourceOffline,
       ),
       InferenceSource.unknown || InferenceSource.locationUnavailable => (
         semantics.unknown,
         LucideIcons.circleHelp,
-        'Summary source unknown',
+        l10n.summarySourceUnknown,
       ),
     };
 

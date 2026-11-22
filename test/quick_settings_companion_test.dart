@@ -734,9 +734,9 @@ void main() {
           findsOneWidget,
         );
         expect(find.text('Camera'), findsOneWidget);
-        expect(find.text('Declared · Currently denied'), findsOneWidget);
+        expect(find.text('Listed by app · Not allowed'), findsOneWidget);
         expect(find.text('Notifications'), findsOneWidget);
-        expect(find.text('Declared · Currently granted'), findsOneWidget);
+        expect(find.text('Listed by app · Allowed'), findsOneWidget);
 
         // Select Camera permission
         final cameraTile = find.byKey(
@@ -946,7 +946,9 @@ void main() {
         await _pumpFrames(tester);
 
         expect(
-          find.text('No sensitive runtime permissions declared by this app.'),
+          find.text(
+            'This app doesn\'t ask for any sensitive permissions on your phone.',
+          ),
           findsOneWidget,
         );
 
@@ -957,7 +959,7 @@ void main() {
         await tester.tap(unsureBtn);
         await _pumpFrames(tester);
         expect(
-          find.text('Match what the Android prompt asked for'),
+          find.text('Match what the popup on your screen asked for'),
           findsOneWidget,
         );
 
@@ -1559,6 +1561,15 @@ void main() {
           find.textContaining('scan classroom math worksheets'),
           findsOneWidget,
         );
+        expect(find.text('Exact quote from policy'), findsOneWidget);
+        expect(find.textContaining('SHA-256 · '), findsNothing);
+        final advToggle = find.byKey(
+          const Key('companion_advanced_details_toggle'),
+        );
+        await tester.ensureVisible(advToggle);
+        await tester.pump();
+        await tester.tap(advToggle);
+        await _pumpFrames(tester);
         expect(find.textContaining('SHA-256 · '), findsOneWidget);
         expect(
           find.byKey(const Key('companion_receipt_unsaved_label')),
@@ -1937,7 +1948,7 @@ void main() {
         expect(
           find.descendant(
             of: find.byType(CloudConsentSheet),
-            matching: find.text('Masked (2)'),
+            matching: find.text('Hidden (2)'),
           ),
           findsOneWidget,
         );
@@ -2128,7 +2139,7 @@ void main() {
         await _pumpFrames(tester);
         await tester.tap(find.byKey(const Key('companion_confirm_app_btn')));
         await _pumpFrames(tester);
-        expect(find.text('Permission metadata unavailable'), findsOneWidget);
+        expect(find.text("Couldn't read app permissions"), findsOneWidget);
         await tester.tap(find.text("I'm not sure which permission"));
         await _pumpFrames(tester);
         final guidedCam = find.byKey(const Key('companion_guided_camera'));

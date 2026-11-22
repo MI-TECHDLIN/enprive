@@ -215,15 +215,15 @@ class CompanionPolicyResolver {
     final String grantSummary;
     if (permission != null) {
       whatDeclared =
-          '$appDisplay declares ${permission.permission} in its Android manifest. Declaring a permission means the app may ask for or use it, not that it is actively requesting it right now.';
+          '$appDisplay asks for ${permission.title} (${permission.permission}) on your phone. Listing a permission means the app can ask for or use it, not that it is using it right now.';
       grantSummary = permission.statusNote;
     } else if (confirmedPackageName != null && confirmedPackageName.isNotEmpty) {
       whatDeclared =
-          '$appDisplay did not have this specific permission selected from its manifest yet, or you chose general Android permission guidance.';
+          '$appDisplay did not have this specific permission selected yet, or you chose general Android permission guidance.';
       grantSummary = 'General Android permission guide';
     } else {
       whatDeclared =
-          'No specific app is selected. Enprive is explaining Android\'s general permission behavior without reading any app inventory.';
+          'No specific app is selected. Enprive is explaining Android\'s general permission behavior without reading your apps.';
       grantSummary = 'Without app context';
     }
 
@@ -242,7 +242,7 @@ class CompanionPolicyResolver {
       disclosureStatus = CompanionDisclosureStatus.unverifiedPolicy;
       policyHeadline = unverifiedPolicyHeadline;
       whatPolicySays =
-          'No verified privacy policy is available for $appDisplay yet. The details above come from Android permission documentation and local package metadata only — this is not a privacy policy review.';
+          'No verified privacy policy is available for $appDisplay yet. The details above come from Android permission descriptions and your phone\'s app settings only — this is not a privacy policy review.';
     } else {
       final targetPerm = permission?.permission ?? '';
       final inspection = PermissionComparator.inspectPermissionMentionInPolicy(
@@ -277,23 +277,23 @@ class CompanionPolicyResolver {
 
       if (inspection.isDisclaimed) {
         disclosureStatus = CompanionDisclosureStatus.ambiguousDisclosure;
-        policyHeadline = 'Policy text disclaims this collection';
+        policyHeadline = 'Policy text says this is not collected';
         whatPolicySays =
-            'The verified privacy policy contains language stating this capability or data is not collected, which contrasts with the app manifest.';
+            'The verified privacy policy says this data is not collected, even though the app lists this permission on your phone.';
       } else if (excerpts.isNotEmpty) {
         documentedFeatureReason = _extractFeatureReason(excerpts);
         final isAmbiguous = _hasAmbiguousCondition(excerpts);
         if (isAmbiguous) {
           disclosureStatus = CompanionDisclosureStatus.ambiguousDisclosure;
           policyHeadline =
-              'Conditional or ambiguous mention in verified policy text';
+              'Unclear or conditional mention in verified policy text';
           whatPolicySays =
-              'The verified policy text mentions $title conditionally or without confirming specific feature scope (quoted below verbatim from the captured snapshot).';
+              'The verified policy text mentions $title with words like "may" or "if needed" without naming a specific feature (quoted below word-for-word from the policy).';
         } else {
           disclosureStatus = CompanionDisclosureStatus.verifiedDisclosure;
           policyHeadline = 'Mentioned in verified policy text';
           whatPolicySays =
-              'The verified policy text includes clauses addressing $title (quoted below verbatim from the captured snapshot).';
+              'The verified policy text includes lines about $title (quoted below word-for-word from the policy).';
         }
       } else {
         disclosureStatus = CompanionDisclosureStatus.missingDisclosure;

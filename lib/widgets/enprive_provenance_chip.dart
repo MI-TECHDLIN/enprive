@@ -104,10 +104,12 @@ class EnpriveProvenanceChip extends StatelessWidget {
           children: [
             EnpriveDuotoneIcon(duotoneIcon, size: 16, color: pair.icon),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: context.enpriveType.evidenceBadge.copyWith(
-                color: pair.foreground,
+            Flexible(
+              child: Text(
+                label,
+                style: context.enpriveType.evidenceBadge.copyWith(
+                  color: pair.foreground,
+                ),
               ),
             ),
           ],

@@ -288,11 +288,15 @@ class CloudConsentSheet extends StatelessWidget {
                               quote: scrubbedPreview,
                               selectable: true,
                               statusLabel: detectedTokens.isEmpty
-                                  ? 'No PII found'
-                                  : 'Masked (${redaction.replacementCount > 0 ? redaction.replacementCount : detectedTokens.length})',
+                                  ? l10n.cloudPayloadNoPiiLabel
+                                  : l10n.cloudPayloadHiddenCount(
+                                      redaction.replacementCount > 0
+                                          ? redaction.replacementCount
+                                          : detectedTokens.length,
+                                    ),
                               categoryLabel:
                                   payloadCategoryLabelOverride ??
-                                  'Exact cloud payload',
+                                  l10n.cloudPayloadLabel,
                               spineColor: semantics.inCloud.foreground,
                             ),
                             const SizedBox(height: 14),

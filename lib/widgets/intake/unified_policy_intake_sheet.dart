@@ -848,7 +848,7 @@ class _UnifiedPolicyIntakeSheetState extends State<UnifiedPolicyIntakeSheet> {
           Directionality(
             textDirection: TextDirection.ltr,
             child: Text(
-              app.packageName,
+              '${l10n.appIdPrefix}: ${app.packageName}',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textAlign: isRtl ? TextAlign.right : TextAlign.left,
@@ -1025,7 +1025,7 @@ class _UnifiedPolicyIntakeSheetState extends State<UnifiedPolicyIntakeSheet> {
                     Directionality(
                       textDirection: TextDirection.ltr,
                       child: Text(
-                        selected.packageName,
+                        '${l10n.appIdPrefix}: ${selected.packageName}',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: isRtl ? TextAlign.right : TextAlign.left,

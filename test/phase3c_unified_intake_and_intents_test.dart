@@ -383,7 +383,7 @@ void main() {
         await _pumpAndFlush(tester);
 
         expect(find.byKey(const Key('intake_selected_app_card')), findsOneWidget);
-        expect(find.text('com.alpha.notes'), findsOneWidget);
+        expect(find.text('App ID: com.alpha.notes'), findsOneWidget);
 
         // Change app -> com.beta.notes, then Remove app, then re-select com.alpha.notes
         await _tapVisible(
@@ -393,7 +393,7 @@ void main() {
         await _pumpAndFlush(tester);
         await _tapVisible(tester, find.byKey(const ValueKey('com.beta.notes')));
         await _pumpAndFlush(tester);
-        expect(find.text('com.beta.notes'), findsOneWidget);
+        expect(find.text('App ID: com.beta.notes'), findsOneWidget);
 
         await _tapVisible(
           tester,
@@ -521,9 +521,17 @@ void main() {
           findsOneWidget,
         );
         await tester.scrollUntilVisible(
-          find.textContaining('Redirected from: https://redirect.example.org/p'),
+          find.byKey(const Key('source_advanced_details_toggle')),
           300,
           scrollable: find.byType(Scrollable).first,
+        );
+        await tester.tap(
+          find.byKey(const Key('source_advanced_details_toggle')),
+        );
+        await tester.pump();
+        expect(
+          find.textContaining('Redirected from: https://redirect.example.org/p'),
+          findsOneWidget,
         );
         expect(
           find.textContaining('Canonical URL: https://canonical.example.org/privacy'),
@@ -603,15 +611,15 @@ void main() {
               .where((f) => f.status == EvidenceStatus.deviceObserved),
           isEmpty,
         );
-        expect(find.text('Observed on this phone'), findsNothing);
+        expect(find.text('Seen on this phone'), findsNothing);
         expect(find.text('Permissions on this phone'), findsNothing);
         await tester.scrollUntilVisible(
-          find.text('Sample permissions (Synthetic example)'),
+          find.text('Sample permissions (Sample app)'),
           300,
           scrollable: find.byType(Scrollable).first,
         );
         expect(
-          find.text('Sample permissions (Synthetic example)'),
+          find.text('Sample permissions (Sample app)'),
           findsOneWidget,
         );
         expect(await repo.loadReceipts(), isEmpty);

@@ -741,11 +741,11 @@ void main() {
 
         expect(find.textContaining('SHA-256'), findsNothing);
         expect(
-          find.text('Snapshot digest · FNV-1a 64-bit · 1234abcd5678ef90'),
+          find.text('Document fingerprint · 1234abcd5678ef90'),
           findsOneWidget,
         );
         expect(
-          find.text('Snapshot digest · FNV-1a 64-bit · fedcba9876543210'),
+          find.text('Document fingerprint · fedcba9876543210'),
           findsOneWidget,
         );
         expect(find.byIcon(LucideIcons.shieldCheck), findsNothing);
@@ -949,8 +949,8 @@ void main() {
         );
         await tester.pump();
 
-        expect(find.text('Device observed'), findsOneWidget);
-        expect(find.text('Source matched'), findsNothing);
+        expect(find.text('Seen on this phone'), findsOneWidget);
+        expect(find.text('Exact quote from policy'), findsNothing);
         expect(find.text('“$observationText”'), findsNothing);
         expect(find.text(observationText), findsOneWidget);
 
@@ -982,8 +982,8 @@ void main() {
         );
         await tester.pump();
 
-        expect(find.text('Quote verified in policy'), findsOneWidget);
-        expect(find.text('Observed on this phone'), findsOneWidget);
+        expect(find.text('Exact quote from policy'), findsOneWidget);
+        expect(find.text('Seen on this phone'), findsOneWidget);
         expect(
           find.text('1 quote verified in policy · 1 observed on this phone'),
           findsOneWidget,

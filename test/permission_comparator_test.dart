@@ -59,7 +59,7 @@ We do not integrate third-party advertising SDKs.
       expect(report.items, isEmpty);
       expect(
         report.limitationNotice,
-        contains('It does not prove whether the app actually accessed'),
+        contains('It does not prove whether the app actually used'),
       );
     });
 

@@ -181,10 +181,15 @@ void main() {
           findsOneWidget,
         );
         await tester.scrollUntilVisible(
-          find.textContaining('SHA-256 source hash'),
+          find.byKey(const Key('source_advanced_details_toggle')),
           300,
           scrollable: find.byType(Scrollable).first,
         );
+        expect(find.textContaining('SHA-256 source hash'), findsNothing);
+        await tester.tap(
+          find.byKey(const Key('source_advanced_details_toggle')),
+        );
+        await tester.pump();
         expect(
           find.textContaining('https://calmmath.example.org/privacy'),
           findsWidgets,
@@ -278,10 +283,14 @@ void main() {
           extractedPdfPolicy,
         );
         await tester.scrollUntilVisible(
-          find.textContaining('SHA-256 source hash'),
+          find.byKey(const Key('source_advanced_details_toggle')),
           300,
           scrollable: find.byType(Scrollable).first,
         );
+        await tester.tap(
+          find.byKey(const Key('source_advanced_details_toggle')),
+        );
+        await tester.pump();
         expect(find.textContaining('school_policy.pdf'), findsWidgets);
         expect(find.textContaining('application/pdf'), findsWidgets);
         expect(find.textContaining(expectedSha.substring(0, 12)), findsWidgets);
@@ -413,10 +422,14 @@ void main() {
 
         expect(find.byType(ReviewResultScreen), findsOneWidget);
         await tester.scrollUntilVisible(
-          find.textContaining('SHA-256 source hash'),
+          find.byKey(const Key('source_advanced_details_toggle')),
           300,
           scrollable: find.byType(Scrollable).first,
         );
+        await tester.tap(
+          find.byKey(const Key('source_advanced_details_toggle')),
+        );
+        await tester.pump();
         expect(find.textContaining('notice.docx'), findsWidgets);
         expect(
           find.textContaining(

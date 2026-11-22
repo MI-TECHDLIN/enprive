@@ -149,10 +149,10 @@ class PermissionComparator {
       'No app is linked yet. Link an installed app on this review to compare with phone permissions.';
 
   static const String calibratedLimitationNotice =
-      'Android reports this permission state on this phone. It does not prove whether the app actually accessed or transmitted data.';
+      'Android reports this permission setting on this phone. It does not prove whether the app actually used or sent data.';
 
   static const String permissionOnlyLimitationNotice =
-      'Device Permission Inspection only: these permissions are reported locally by Android PackageManager. Enprive has not inspected a privacy policy for this app and makes no claims about developer data collection or retention.';
+      'Phone permissions only: these permissions are read directly from your phone. Enprive has not checked a privacy policy for this app yet and cannot say what the developer collects or keeps.';
 
   static const AppPermissionSnapshot demoEduTrackSnapshot =
       AppPermissionSnapshot(
@@ -331,10 +331,10 @@ class PermissionComparator {
       final state = PermissionAlignmentState.observedWithoutPolicy;
       final osSummary = isGranted
           ? 'Allowed on this phone (${spec.permission})'
-          : 'Requested in manifest · Currently NOT granted (${spec.permission})';
+          : 'Asked for by app · Currently NOT allowed (${spec.permission})';
       final statusNote = isGranted
-          ? 'Currently allowed (granted) by Android on this device.'
-          : 'Declared in the APK manifest, not currently granted on this device.';
+          ? 'Currently allowed on this phone.'
+          : 'Listed by the app, not currently allowed on this phone.';
 
       items.add(
         ComparedPermissionItem(
@@ -363,7 +363,7 @@ class PermissionComparator {
       final isGranted = snapshot.isGranted(perm);
       final osSummary = isGranted
           ? 'Allowed on this phone ($perm)'
-          : 'Requested in manifest · Currently NOT granted ($perm)';
+          : 'Asked for by app · Currently NOT allowed ($perm)';
       items.add(
         ComparedPermissionItem(
           androidPermission: perm,
@@ -377,8 +377,8 @@ class PermissionComparator {
           alignmentState: PermissionAlignmentState.observedWithoutPolicy,
           osStatusSummary: osSummary,
           parentExplanation: isGranted
-              ? 'Reported by Android PackageManager as granted. Add this app\'s privacy policy to check why the developer requests it.'
-              : 'Declared in the Android APK manifest (not currently granted). Add this app\'s privacy policy to review developer explanations.',
+              ? 'Allowed on this phone. Add this app\'s privacy policy to check why the developer asks for it.'
+              : 'Listed by the app (not currently allowed). Add this app\'s privacy policy to review developer explanations.',
         ),
       );
     }
