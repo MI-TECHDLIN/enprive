@@ -1,53 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/theme/enprive_theme.dart';
+import '../domain/learn/learn_lesson.dart';
 import '../l10n/app_localizations.dart';
+import '../services/platform/hybrid_ai_bridge.dart';
 import '../widgets/deni_animated_mascot.dart';
 import '../widgets/enprive_tactile_button.dart';
 import '../widgets/m3e/enprive_m3e_components.dart';
 import '../widgets/navigation/enprive_navigation_shell.dart';
-
-enum _LearnTopicCategory {
-  all,
-  permissions,
-  policies,
-  scams,
-  darkPatterns,
-}
-
-class _LearnPillarGuide {
-  final String id;
-  final _LearnTopicCategory category;
-  final String title;
-  final String shortStat;
-  final String subtitle;
-  final IconData icon;
-  final List<String> keyTakeaways;
-  final String quickCheckQuestion;
-
-  const _LearnPillarGuide({
-    required this.id,
-    required this.category,
-    required this.title,
-    required this.shortStat,
-    required this.subtitle,
-    required this.icon,
-    required this.keyTakeaways,
-    required this.quickCheckQuestion,
-  });
-}
+import 'learn_lesson_screen.dart';
 
 /// Offline-first Privacy Literacy landing surface (Tab 2: `Learn`).
 ///
 /// Built strictly on `EnpriveM3ETheme` with sculpted [EnpriveFolderTabCard]
-/// topic folders and an [EnpriveStackedFolderDeck] of quick guides. Completely
-/// isolated from app inventories and [PolicyReviewReceipt] evidence state.
+/// topic folders that open dedicated full-screen [LearnLessonScreen] lessons
+/// with vector diagrams and offline voice playback, plus an
+/// [EnpriveStackedFolderDeck] Check bridge. Completely isolated from app
+/// inventories and [PolicyReviewReceipt] evidence state.
 class LearnHomeScreen extends StatefulWidget {
   final ScrollController? scrollController;
   final VoidCallback onCheckAppRequested;
   final VoidCallback? onOpenSettings;
   final bool isActiveTab;
+  final HybridAiBridge? hybridBridge;
 
   const LearnHomeScreen({
     super.key,
@@ -55,6 +30,7 @@ class LearnHomeScreen extends StatefulWidget {
     required this.onCheckAppRequested,
     this.onOpenSettings,
     this.isActiveTab = false,
+    this.hybridBridge,
   });
 
   @override
@@ -62,278 +38,23 @@ class LearnHomeScreen extends StatefulWidget {
 }
 
 class _LearnHomeScreenState extends State<LearnHomeScreen> {
-  _LearnTopicCategory _selectedCategory = _LearnTopicCategory.all;
+  LearnTopicCategory _selectedCategory = LearnTopicCategory.all;
+  HybridAiBridge? _fallbackBridge;
 
-  static const List<_LearnPillarGuide> _guides = [
-    _LearnPillarGuide(
-      id: 'permissions_consent',
-      category: _LearnTopicCategory.permissions,
-      title: 'Permissions & Consent',
-      shortStat: '3 tips',
-      subtitle: 'Camera, mic, location & ad IDs',
-      icon: LucideIcons.shieldCheck,
-      keyTakeaways: [
-        'Match the permission to the feature you tapped: a flashlight or math quiz rarely needs Contacts or Background Location.',
-        'Prefer "Only this time" or "While using the app" instead of "Always" when trying a new app.',
-        'When an app lists a permission, it means the app can ask for it — check your phone\'s App Permissions anytime to turn access off.',
-      ],
-      quickCheckQuestion:
-          'Ask yourself: Does this feature still work if I tap "Don\'t allow"?',
-    ),
-    _LearnPillarGuide(
-      id: 'reading_policies',
-      category: _LearnTopicCategory.policies,
-      title: 'Reading Policies',
-      shortStat: '3 tips',
-      subtitle: 'Vague sharing & storage rules',
-      icon: LucideIcons.fileText,
-      keyTakeaways: [
-        'Watch for open-ended phrases like "may share with partners" or "keep as long as needed" without clear deletion dates.',
-        'Separate helper companies that keep the app running (hosting, crash fixes) from advertising networks and data brokers.',
-        'Silence is not a promise: when a policy does not mention camera or location data, it does not guarantee the app avoids collecting it.',
-      ],
-      quickCheckQuestion:
-          'Ask yourself: Does the policy explain how to delete a child\'s or student\'s data?',
-    ),
-    _LearnPillarGuide(
-      id: 'scams_safety',
-      category: _LearnTopicCategory.scams,
-      title: 'Scams & Safety',
-      shortStat: '3 tips',
-      subtitle: 'Fake links, login codes & scams',
-      icon: LucideIcons.triangleAlert,
-      keyTakeaways: [
-        'Pause on fake urgency ("Account closes in 10 minutes", "Verify your card now") — real schools and banks rarely demand instant clicks.',
-        'Never share one-time login codes sent by text, bank details, or ID photos inside unfamiliar links or chat popups.',
-        'Check the exact website address before signing in or sharing personal details; misspelled web addresses are a common scam warning sign.',
-      ],
-      quickCheckQuestion:
-          'Ask yourself: Can I verify this request independently inside the official app or website?',
-    ),
-    _LearnPillarGuide(
-      id: 'manipulative_consent',
-      category: _LearnTopicCategory.darkPatterns,
-      title: 'Tricky Design',
-      shortStat: '3 tips',
-      subtitle: 'Spotting buttons that pressure you to say yes',
-      icon: LucideIcons.eye,
-      keyTakeaways: [
-        'Bright oversized "Accept all" buttons paired with tiny muted "Manage preferences" links are designed to rush your choice.',
-        'Pre-checked boxes for personalized ads or third-party marketing are optional — untick them before continuing.',
-        'Repeated nagging popups after you tap "Deny" are a warning sign worth checking in your phone\'s Settings.',
-      ],
-      quickCheckQuestion:
-          'Ask yourself: Is saying "No" just as clear and easy as saying "Yes"?',
-    ),
-  ];
+  HybridAiBridge get _effectiveBridge =>
+      widget.hybridBridge ?? (_fallbackBridge ??= HybridAiBridge());
 
-  SemanticColorPair _pairForCategory(
-    EnpriveSemanticColors semantics,
-    _LearnTopicCategory category,
+  String _categoryChipLabel(
+    AppLocalizations l10n,
+    LearnTopicCategory category,
   ) {
     return switch (category) {
-      _LearnTopicCategory.permissions => semantics.onDevice,
-      _LearnTopicCategory.policies => semantics.noConcern,
-      _LearnTopicCategory.scams => semantics.reviewRecommended,
-      _LearnTopicCategory.darkPatterns => semantics.inCloud,
-      _LearnTopicCategory.all => semantics.onDevice,
+      LearnTopicCategory.all => l10n.learnFilterAll,
+      LearnTopicCategory.policies => l10n.learnFilterPolicies,
+      LearnTopicCategory.permissions => l10n.learnFilterPermissions,
+      LearnTopicCategory.sharing => l10n.learnFilterSharing,
+      LearnTopicCategory.evidence => l10n.learnFilterEvidence,
     };
-  }
-
-  String _categoryChipLabel(_LearnTopicCategory category) {
-    return switch (category) {
-      _LearnTopicCategory.all => 'All topics',
-      _LearnTopicCategory.permissions => 'Permissions',
-      _LearnTopicCategory.policies => 'Policies',
-      _LearnTopicCategory.scams => 'Scams',
-      _LearnTopicCategory.darkPatterns => 'Tricky design',
-    };
-  }
-
-  void _openGuideSheet(
-    BuildContext context,
-    _LearnPillarGuide guide,
-    SemanticColorPair pair,
-  ) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return EnpriveM3EBridgeScope.ensure(
-          sheetContext,
-          child: Builder(
-            builder: (sheetContext) {
-              final m3e = EnpriveM3ETheme.of(sheetContext);
-              final scheme = m3e.colorScheme;
-              final surfaces = sheetContext.enpriveSurfaces;
-
-              return Material(
-                color: scheme.surface,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(32),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: SafeArea(
-                  top: false,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: scheme.outlineVariant,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Container(
-                              width: 42,
-                              height: 42,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: pair.background,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: pair.border),
-                              ),
-                              child: Icon(
-                                guide.icon,
-                                size: 20,
-                                color: pair.foreground,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    guide.title,
-                                    style: m3e.typography.emphasized.titleLarge
-                                        .copyWith(color: scheme.onSurface),
-                                  ),
-                                  Text(
-                                    guide.subtitle,
-                                    style: m3e.typeScale.bodySmall.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              tooltip: 'Close',
-                              onPressed: () => Navigator.of(sheetContext).pop(),
-                              icon: Icon(
-                                LucideIcons.x,
-                                size: 20,
-                                color: scheme.onSurface,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                        for (final (idx, tip) in guide.keyTakeaways.indexed)
-                          Padding(
-                            padding: EdgeInsets.only(
-                              bottom: idx < guide.keyTakeaways.length - 1
-                                  ? 6
-                                  : 0,
-                            ),
-                            child: EnpriveSegmentedCardTile(
-                              index: idx,
-                              totalCount: guide.keyTakeaways.length,
-                              backgroundColor: surfaces.card,
-                              lipHeight: 1.5,
-                              padding: const EdgeInsets.all(14),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: 24,
-                                    height: 24,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: pair.background,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      '${idx + 1}',
-                                      style: m3e.typography.emphasized.labelSmall
-                                          .copyWith(color: pair.foreground),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      tip,
-                                      style: m3e.typeScale.bodyMedium.copyWith(
-                                        color: scheme.onSurface,
-                                        height: 1.45,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        const SizedBox(height: 16),
-                        EnpriveMaterialCardSurface(
-                          variant: EnpriveCardVariant.outlined,
-                          backgroundColor: pair.background,
-                          borderColor: pair.border,
-                          borderRadius: BorderRadius.circular(18),
-                          padding: const EdgeInsets.all(14),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const DeniAnimatedMascot(
-                                size: 48,
-                                pose: DeniPose.explaining,
-                                showAmbientGlow: false,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  guide.quickCheckQuestion,
-                                  style: m3e.typeScale.bodyMedium.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: pair.foreground,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        EnpriveTactileButton(
-                          label: 'Check an app on this phone',
-                          isSecondary: true,
-                          onPressed: () {
-                            Navigator.of(sheetContext).pop();
-                            widget.onCheckAppRequested();
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -348,10 +69,11 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
           final surfaces = context.enpriveSurfaces;
           final semantics = context.enpriveSemantics;
 
-          final visibleGuides = _selectedCategory == _LearnTopicCategory.all
-              ? _guides
-              : _guides
-                    .where((g) => g.category == _selectedCategory)
+          final allLessons = buildLearnLessons(l10n);
+          final visibleLessons = _selectedCategory == LearnTopicCategory.all
+              ? allLessons
+              : allLessons
+                    .where((lesson) => lesson.category == _selectedCategory)
                     .toList(growable: false);
 
           return SafeArea(
@@ -380,7 +102,7 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Offline privacy & consent guides',
+                                  l10n.learnHeaderSubtitle,
                                   style: m3e.typeScale.bodySmall.copyWith(
                                     color: scheme.onSurfaceVariant,
                                   ),
@@ -404,10 +126,10 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
                       Wrap(
                         spacing: 8,
                         runSpacing: 2,
-                        children: _LearnTopicCategory.values.map((category) {
+                        children: LearnTopicCategory.values.map((category) {
                           return EnpriveFilterChip(
                             selected: _selectedCategory == category,
-                            label: _categoryChipLabel(category),
+                            label: _categoryChipLabel(l10n, category),
                             onPressed: () {
                               setState(() => _selectedCategory = category);
                             },
@@ -425,51 +147,65 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
                           final singleColumn =
                               constraints.maxWidth < 330 ||
                               textScale > 1.45 ||
-                              visibleGuides.length == 1;
+                              visibleLessons.length == 1;
 
-                          Widget buildFolderTile(_LearnPillarGuide guide) {
-                            final pair = _pairForCategory(
-                              semantics,
-                              guide.category,
+                          Widget buildFolderTile(LearnLesson lesson) {
+                            final palette = learnPaletteForCategory(
+                              context,
+                              lesson.category,
                             );
                             final isDark =
                                 Theme.of(context).brightness == Brightness.dark;
+                            final stat = lesson.shortStat(l10n);
+                            final lessonIndex = allLessons.indexWhere(
+                              (item) => item.id == lesson.id,
+                            );
                             return EnpriveFolderTabCard(
-                              key: Key('learn_folder_${guide.id}'),
-                              backgroundColor: pair.background,
-                              borderColor: pair.border,
-                              leadingIcon: guide.icon,
+                              key: Key('learn_folder_${lesson.id}'),
+                              backgroundColor: palette.container,
+                              borderColor: palette.accent.withValues(
+                                alpha: 0.28,
+                              ),
+                              leadingIcon: lesson.icon,
                               iconBadgeColor: isDark
                                   ? scheme.surfaceContainerLowest
                                   : scheme.onSurface,
                               iconColor: isDark
-                                  ? pair.foreground
+                                  ? palette.accent
                                   : scheme.surface,
                               semanticLabel:
-                                  '${guide.title}. ${guide.shortStat}. ${guide.subtitle}',
-                              onTap: () => _openGuideSheet(context, guide, pair),
+                                  '${lesson.folderTitle}. $stat. ${lesson.subtitle}',
+                              onTap: () => LearnLessonScreen.open(
+                                context,
+                                lessons: allLessons,
+                                initialIndex: lessonIndex < 0 ? 0 : lessonIndex,
+                                hybridBridge: _effectiveBridge,
+                                onCheckAppRequested: widget.onCheckAppRequested,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    guide.shortStat,
+                                    stat,
                                     style: m3e.typography.emphasized.titleLarge
                                         .copyWith(
-                                          color: pair.foreground,
+                                          color: palette.onContainer,
                                           height: 1.15,
                                         ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    guide.title,
+                                    lesson.folderTitle,
                                     style: m3e.typography.emphasized.titleSmall
-                                        .copyWith(color: scheme.onSurface),
+                                        .copyWith(color: palette.onContainer),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    guide.subtitle,
+                                    lesson.subtitle,
                                     style: m3e.typeScale.bodySmall.copyWith(
-                                      color: scheme.onSurfaceVariant,
+                                      color: palette.onContainer.withValues(
+                                        alpha: 0.85,
+                                      ),
                                       height: 1.35,
                                     ),
                                   ),
@@ -481,14 +217,15 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
                           if (singleColumn) {
                             return Column(
                               children: [
-                                for (final (idx, g) in visibleGuides.indexed)
+                                for (final (idx, lesson)
+                                    in visibleLessons.indexed)
                                   Padding(
                                     padding: EdgeInsets.only(
                                       top: idx > 0 ? 12 : 0,
                                     ),
                                     child: SizedBox(
                                       width: double.infinity,
-                                      child: buildFolderTile(g),
+                                      child: buildFolderTile(lesson),
                                     ),
                                   ),
                               ],
@@ -496,10 +233,10 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
                           }
 
                           final rows = <Widget>[];
-                          for (var i = 0; i < visibleGuides.length; i += 2) {
-                            final first = visibleGuides[i];
-                            final second = i + 1 < visibleGuides.length
-                                ? visibleGuides[i + 1]
+                          for (var i = 0; i < visibleLessons.length; i += 2) {
+                            final first = visibleLessons[i];
+                            final second = i + 1 < visibleLessons.length
+                                ? visibleLessons[i + 1]
                                 : null;
                             rows.add(
                               Padding(
@@ -551,7 +288,7 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Practice privacy habits locally',
+                                        l10n.learnDeckTitle,
                                         style: m3e
                                             .typography
                                             .emphasized
@@ -560,7 +297,7 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        '100% offline literacy guides. Your installed apps and receipts never enter Learn.',
+                                        l10n.learnDeckBody,
                                         style: m3e.typeScale.bodySmall.copyWith(
                                           color: scheme.onSurfaceVariant,
                                           height: 1.38,
@@ -574,7 +311,7 @@ class _LearnHomeScreenState extends State<LearnHomeScreen> {
                             const SizedBox(height: 16),
                             EnpriveTactileButton(
                               key: const Key('learn_check_app_bridge_btn'),
-                              label: 'Apply it · Check an app',
+                              label: l10n.learnDeckCheckBtn,
                               isSecondary: true,
                               onPressed: widget.onCheckAppRequested,
                             ),

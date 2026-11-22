@@ -2092,6 +2092,735 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Example only, not from the policy'**
   String get sampleNotFromPolicySuffix;
+
+  /// Subtitle under the Learn tab heading
+  ///
+  /// In en, this message translates to:
+  /// **'Offline privacy guides & diagrams'**
+  String get learnHeaderSubtitle;
+
+  /// Filter chip showing all Learn lessons
+  ///
+  /// In en, this message translates to:
+  /// **'All topics'**
+  String get learnFilterAll;
+
+  /// Filter chip for privacy policy lessons
+  ///
+  /// In en, this message translates to:
+  /// **'Policies'**
+  String get learnFilterPolicies;
+
+  /// Filter chip for Android permission lessons
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions'**
+  String get learnFilterPermissions;
+
+  /// Filter chip for ads, analytics, and third-party data sharing lessons
+  ///
+  /// In en, this message translates to:
+  /// **'Sharing'**
+  String get learnFilterSharing;
+
+  /// Filter chip for lessons explaining Enprive's evidence layers and categories
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence'**
+  String get learnFilterEvidence;
+
+  /// Short step count stat displayed on each Learn folder card
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 step} other{{count} steps}}'**
+  String learnLessonStepCount(int count);
+
+  /// Heading on the Learn bottom deck card
+  ///
+  /// In en, this message translates to:
+  /// **'Practice privacy habits locally'**
+  String get learnDeckTitle;
+
+  /// Privacy assurance body on the Learn bottom deck card
+  ///
+  /// In en, this message translates to:
+  /// **'100% offline lessons with diagrams. Your installed apps and receipts never enter Learn.'**
+  String get learnDeckBody;
+
+  /// Button label on the Learn bottom deck bridging to the Check tab
+  ///
+  /// In en, this message translates to:
+  /// **'Apply it · Check an app'**
+  String get learnDeckCheckBtn;
+
+  /// Primary bridge CTA at the bottom of each Learn lesson sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Check an app on this phone'**
+  String get learnCheckAppBridgeBtn;
+
+  /// Section heading above the vector diagram in a Learn lesson
+  ///
+  /// In en, this message translates to:
+  /// **'How it works'**
+  String get learnSectionDiagram;
+
+  /// Section heading above the numbered steps in a Learn lesson
+  ///
+  /// In en, this message translates to:
+  /// **'Key steps'**
+  String get learnSectionSteps;
+
+  /// Section heading above the one-question quick check in a Learn lesson
+  ///
+  /// In en, this message translates to:
+  /// **'Quick check'**
+  String get learnSectionQuickCheck;
+
+  /// Accessibility label for the offline Listen button inside a Learn lesson
+  ///
+  /// In en, this message translates to:
+  /// **'Read this lesson aloud offline'**
+  String get learnTooltipListenLesson;
+
+  /// Accessibility label for the Stop button while a Learn lesson is being read aloud
+  ///
+  /// In en, this message translates to:
+  /// **'Stop reading lesson aloud'**
+  String get learnTooltipStopLesson;
+
+  /// Calm inline notice when local Android TTS cannot speak the lesson in the current locale
+  ///
+  /// In en, this message translates to:
+  /// **'Offline voice playback is not available for this language on this phone. You can read the lesson below.'**
+  String get learnVoiceUnavailableNotice;
+
+  /// Status label shown alongside an icon when the user chooses the right quick-check option
+  ///
+  /// In en, this message translates to:
+  /// **'Right answer'**
+  String get learnQuickCheckCorrectBadge;
+
+  /// Gentle non-judgmental status label when the user chooses a distractor quick-check option
+  ///
+  /// In en, this message translates to:
+  /// **'Try another choice'**
+  String get learnQuickCheckTryAgainBadge;
+
+  /// Progress indicator showing which lesson is currently open out of the total lessons
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson {current} of {total}'**
+  String learnLessonProgress(int current, int total);
+
+  /// Tooltip and accessibility label for the back button on a full-screen Learn lesson
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Learn'**
+  String get learnBackTooltip;
+
+  /// Direction label on the previous-lesson navigation button at the end of a lesson
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get learnPreviousLesson;
+
+  /// Direction label on the next-lesson navigation button at the end of a lesson
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get learnNextLesson;
+
+  /// Accessibility label for navigating to the previous Learn lesson
+  ///
+  /// In en, this message translates to:
+  /// **'Previous lesson: {title}'**
+  String learnLessonNavPreviousSemantic(String title);
+
+  /// Accessibility label for navigating to the next Learn lesson
+  ///
+  /// In en, this message translates to:
+  /// **'Next lesson: {title}'**
+  String learnLessonNavNextSemantic(String title);
+
+  /// Short folder title for Lesson 1 on the Learn home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policies'**
+  String get learnPolicyFolderTitle;
+
+  /// Full lesson title for Lesson 1
+  ///
+  /// In en, this message translates to:
+  /// **'What a privacy policy is (and what it can\'t prove)'**
+  String get learnPolicyTitle;
+
+  /// Short subtitle for Lesson 1
+  ///
+  /// In en, this message translates to:
+  /// **'What developers promise vs. what stays unknown'**
+  String get learnPolicySubtitle;
+
+  /// Plain-language introduction for Lesson 1
+  ///
+  /// In en, this message translates to:
+  /// **'A privacy policy is a developer\'s public statement explaining what data an app says it collects, why it uses it, who may receive it, and what choices families have.'**
+  String get learnPolicyIntro;
+
+  /// Step 1 of Lesson 1
+  ///
+  /// In en, this message translates to:
+  /// **'Look for four basics: what data is collected, why the app needs it, who else may get it, and how you can ask for deletion.'**
+  String get learnPolicyStep1;
+
+  /// Step 2 of Lesson 1 referencing verified UNSW 2026 findings in plain words
+  ///
+  /// In en, this message translates to:
+  /// **'Confusing wording is common. A 2026 study of children\'s learning apps found that very few policies were easy to read, and most apps did not fully match what their policies stated.'**
+  String get learnPolicyStep2;
+
+  /// Step 3 of Lesson 1
+  ///
+  /// In en, this message translates to:
+  /// **'A privacy policy only shows what a developer says on paper. Reading it cannot prove what the app actually sends over the internet.'**
+  String get learnPolicyStep3;
+
+  /// Step 4 of Lesson 1
+  ///
+  /// In en, this message translates to:
+  /// **'Comparing a policy with your phone\'s permission settings gives a clearer view — while remembering that Enprive cannot see live internet traffic.'**
+  String get learnPolicyStep4;
+
+  /// Quick check question for Lesson 1
+  ///
+  /// In en, this message translates to:
+  /// **'What does reading an app\'s privacy policy prove?'**
+  String get learnPolicyQuickQuestion;
+
+  /// First quick check option for Lesson 1
+  ///
+  /// In en, this message translates to:
+  /// **'That the app never sends data to anyone'**
+  String get learnPolicyQuickOption1;
+
+  /// Correct second quick check option for Lesson 1
+  ///
+  /// In en, this message translates to:
+  /// **'What the developer says — not what the app actually sends'**
+  String get learnPolicyQuickOption2;
+
+  /// Third quick check option for Lesson 1
+  ///
+  /// In en, this message translates to:
+  /// **'That the phone\'s camera and mic are switched off'**
+  String get learnPolicyQuickOption3;
+
+  /// Feedback shown when the user selects the right answer in Lesson 1
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s right. A policy is the developer\'s public statement, not proof of what the app actually sends over the internet.'**
+  String get learnPolicyQuickCorrectFeedback;
+
+  /// Feedback shown when the user selects another option in Lesson 1
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite. Reading a policy only tells you what the developer says — it cannot prove internet activity or turn off phone permissions.'**
+  String get learnPolicyQuickTryAgainFeedback;
+
+  /// First node title in the Lesson 1 Policy Limit diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Policy says'**
+  String get learnDiagramPolicySaysTitle;
+
+  /// First node body in the Lesson 1 Policy Limit diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Developer\'s written promise'**
+  String get learnDiagramPolicySaysBody;
+
+  /// Illustrative sample quote snippet inside the Lesson 1 diagram
+  ///
+  /// In en, this message translates to:
+  /// **'\"We may share data with partners…\"'**
+  String get learnDiagramPolicyQuoteSample;
+
+  /// Second node title in the Lesson 1 Policy Limit diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Phone shows'**
+  String get learnDiagramPhoneShowsTitle;
+
+  /// Second node body in the Lesson 1 Policy Limit diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions allowed here'**
+  String get learnDiagramPhoneShowsBody;
+
+  /// Third node title in the Lesson 1 Policy Limit diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Still unknown'**
+  String get learnDiagramUnknownTitle;
+
+  /// Third node body in the Lesson 1 Policy Limit diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Live internet traffic Enprive can\'t see'**
+  String get learnDiagramUnknownBody;
+
+  /// Bottom takeaway caption in the Lesson 1 diagram
+  ///
+  /// In en, this message translates to:
+  /// **'A policy is a promise, not proof of behavior'**
+  String get learnDiagramPolicyCaption;
+
+  /// Full TalkBack description for the Lesson 1 Policy Limit diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Diagram comparing three parts of app privacy. First, Policy says: the developer\'s written promise. Second, Phone shows: the permissions allowed on this phone. Third, inside a dashed boundary, Still unknown: live internet traffic that Enprive cannot see. A privacy policy is a promise, not proof of behavior.'**
+  String get learnDiagramPolicySemantic;
+
+  /// Short folder title for Lesson 2 on the Learn home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Phone permissions'**
+  String get learnPermissionsFolderTitle;
+
+  /// Full lesson title for Lesson 2
+  ///
+  /// In en, this message translates to:
+  /// **'Android permissions explained'**
+  String get learnPermissionsTitle;
+
+  /// Short subtitle for Lesson 2
+  ///
+  /// In en, this message translates to:
+  /// **'The four Android choices & where to review them'**
+  String get learnPermissionsSubtitle;
+
+  /// Plain-language introduction for Lesson 2
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions are gates that control whether an app can reach sensors and data on your phone, such as the camera, microphone, location, photos, contacts, or notifications.'**
+  String get learnPermissionsIntro;
+
+  /// Step 1 of Lesson 2
+  ///
+  /// In en, this message translates to:
+  /// **'Ask whether the permission fits the feature: a math quiz or reading app rarely needs your location, contacts, or camera.'**
+  String get learnPermissionsStep1;
+
+  /// Step 2 of Lesson 2 explaining Android's four permission choices
+  ///
+  /// In en, this message translates to:
+  /// **'Android offers up to four choices: Don\'t allow, Ask every time, Allow only while using the app, and All the time (for background location).'**
+  String get learnPermissionsStep2;
+
+  /// Step 3 of Lesson 2
+  ///
+  /// In en, this message translates to:
+  /// **'Start with the narrowest choice that lets the feature work — such as Ask every time or While using the app.'**
+  String get learnPermissionsStep3;
+
+  /// Step 4 of Lesson 2 explaining where to review recent permission use
+  ///
+  /// In en, this message translates to:
+  /// **'Open Android Settings and check Privacy Dashboard to see which apps recently accessed Camera, Microphone, or Location.'**
+  String get learnPermissionsStep4;
+
+  /// Step 5 of Lesson 2
+  ///
+  /// In en, this message translates to:
+  /// **'Turn permissions off anytime in App Settings, or keep Pause app activity if unused on so Android removes old permissions automatically. An allowed permission shows capability, not proof that data was sent.'**
+  String get learnPermissionsStep5;
+
+  /// Quick check question for Lesson 2
+  ///
+  /// In en, this message translates to:
+  /// **'A math practice app asks for your camera and you aren\'t sure why. What is the best first step?'**
+  String get learnPermissionsQuickQuestion;
+
+  /// Correct first quick check option for Lesson 2
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Don\'t allow and see if the math exercises still work'**
+  String get learnPermissionsQuickOption1;
+
+  /// Second quick check option for Lesson 2
+  ///
+  /// In en, this message translates to:
+  /// **'Choose All the time so the popup doesn\'t come back'**
+  String get learnPermissionsQuickOption2;
+
+  /// Third quick check option for Lesson 2
+  ///
+  /// In en, this message translates to:
+  /// **'Assume the app has already uploaded photos'**
+  String get learnPermissionsQuickOption3;
+
+  /// Feedback shown when the user selects the right answer in Lesson 2
+  ///
+  /// In en, this message translates to:
+  /// **'Right. Tapping Don\'t allow lets you check if the app works without the camera — and you can change permissions anytime in Android Settings.'**
+  String get learnPermissionsQuickCorrectFeedback;
+
+  /// Feedback shown when the user selects another option in Lesson 2
+  ///
+  /// In en, this message translates to:
+  /// **'Try a narrower choice first. Tap Don\'t allow to test if the feature still works, and remember an allowed permission shows capability, not proof of an upload.'**
+  String get learnPermissionsQuickTryAgainFeedback;
+
+  /// Heading inside the Lesson 2 Android Permissions Ladder diagram
+  ///
+  /// In en, this message translates to:
+  /// **'From narrowest to broadest access'**
+  String get learnDiagramPermLadderTitle;
+
+  /// Step 1 label in the Permissions Ladder diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t allow'**
+  String get learnDiagramPermDenyTitle;
+
+  /// Step 1 detail in the Permissions Ladder diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked — app cannot use this sensor'**
+  String get learnDiagramPermDenyDetail;
+
+  /// Step 2 label in the Permissions Ladder diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Ask every time'**
+  String get learnDiagramPermAskTitle;
+
+  /// Step 2 detail in the Permissions Ladder diagram
+  ///
+  /// In en, this message translates to:
+  /// **'One-time access when you tap allow'**
+  String get learnDiagramPermAskDetail;
+
+  /// Step 3 label in the Permissions Ladder diagram
+  ///
+  /// In en, this message translates to:
+  /// **'While using the app'**
+  String get learnDiagramPermWhileUsingTitle;
+
+  /// Step 3 detail in the Permissions Ladder diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Only while the app is open on screen'**
+  String get learnDiagramPermWhileUsingDetail;
+
+  /// Step 4 label in the Permissions Ladder diagram
+  ///
+  /// In en, this message translates to:
+  /// **'All the time'**
+  String get learnDiagramPermAllTimeTitle;
+
+  /// Step 4 detail in the Permissions Ladder diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Background access even when closed'**
+  String get learnDiagramPermAllTimeDetail;
+
+  /// Feature-fit prompt caption at the bottom of the Permissions Ladder diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Does it fit? Math quiz + Camera = ask why'**
+  String get learnDiagramPermFitNote;
+
+  /// Full TalkBack description for the Lesson 2 Permissions Ladder diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Four-step Android permission ladder from narrowest to broadest access. Step 1, Don\'t allow: blocked, the app cannot use this sensor. Step 2, Ask every time: one-time access when you tap allow. Step 3, While using the app: access only while the app is open on screen. Step 4, All the time: background access even when closed, marked with a dashed border for extra caution. Bottom tip: Does it fit? A math quiz asking for the camera is a reason to ask why.'**
+  String get learnDiagramPermSemantic;
+
+  /// Short folder title for Lesson 3 on the Learn home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Ads & third parties'**
+  String get learnSharingFolderTitle;
+
+  /// Full lesson title for Lesson 3
+  ///
+  /// In en, this message translates to:
+  /// **'Who else gets data: ads, analytics & third parties'**
+  String get learnSharingTitle;
+
+  /// Short subtitle for Lesson 3
+  ///
+  /// In en, this message translates to:
+  /// **'App maker vs. helpers, analytics & ad networks'**
+  String get learnSharingSubtitle;
+
+  /// Plain-language introduction for Lesson 3
+  ///
+  /// In en, this message translates to:
+  /// **'Many free apps connect to other companies behind the scenes. Knowing who receives information helps families tell the difference between running the app and tracking kids across apps.'**
+  String get learnSharingIntro;
+
+  /// Step 1 of Lesson 3
+  ///
+  /// In en, this message translates to:
+  /// **'First party means the app maker itself — for example, saving homework progress or quiz scores so the app works.'**
+  String get learnSharingStep1;
+
+  /// Step 2 of Lesson 3
+  ///
+  /// In en, this message translates to:
+  /// **'Helper companies are third parties that handle behind-the-scenes jobs like cloud storage or crash reports so bugs get fixed.'**
+  String get learnSharingStep2;
+
+  /// Step 3 of Lesson 3
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics tools measure how screens are used, while ad networks and data brokers may use an advertising ID to show targeted ads or profile activity across apps.'**
+  String get learnSharingStep3;
+
+  /// Step 4 of Lesson 3
+  ///
+  /// In en, this message translates to:
+  /// **'Watch for broad phrases like \'trusted partners\' or \'business purposes,\' and check whether a policy explains how to opt out of personalized ads.'**
+  String get learnSharingStep4;
+
+  /// Quick check question for Lesson 3
+  ///
+  /// In en, this message translates to:
+  /// **'A policy says the app shares information with \'third-party partners.\' What is the best next question to ask?'**
+  String get learnSharingQuickQuestion;
+
+  /// First quick check option for Lesson 3
+  ///
+  /// In en, this message translates to:
+  /// **'Assume that means the app has no ads'**
+  String get learnSharingQuickOption1;
+
+  /// Second quick check option for Lesson 3
+  ///
+  /// In en, this message translates to:
+  /// **'Assume every partner does the exact same job'**
+  String get learnSharingQuickOption2;
+
+  /// Correct third quick check option for Lesson 3
+  ///
+  /// In en, this message translates to:
+  /// **'Check whether those partners are helpers (like hosting) or ad networks that track across apps'**
+  String get learnSharingQuickOption3;
+
+  /// Feedback shown when the user selects the right answer in Lesson 3
+  ///
+  /// In en, this message translates to:
+  /// **'Spot on. Helper services keep the app running, while ad networks and data brokers may track activity across apps.'**
+  String get learnSharingQuickCorrectFeedback;
+
+  /// Feedback shown when the user selects another option in Lesson 3
+  ///
+  /// In en, this message translates to:
+  /// **'Look closer at what each partner does. Not all third parties are the same — some host data or fix crashes, while others run ads or tracking.'**
+  String get learnSharingQuickTryAgainFeedback;
+
+  /// Node label for the family/child user in the Lesson 3 diagram
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get learnDiagramThirdPartyYou;
+
+  /// Node label for the learning app in the Lesson 3 diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Learning app'**
+  String get learnDiagramThirdPartyApp;
+
+  /// Node label for operational hosting and crash-fix services in the Lesson 3 diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Helpers & crashes'**
+  String get learnDiagramThirdPartyHosting;
+
+  /// Node label for analytics services in the Lesson 3 diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics'**
+  String get learnDiagramThirdPartyAnalytics;
+
+  /// Node label for advertising networks in the Lesson 3 diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Ad networks'**
+  String get learnDiagramThirdPartyAds;
+
+  /// Badge label distinguishing first-party data flow in the Lesson 3 diagram
+  ///
+  /// In en, this message translates to:
+  /// **'First party'**
+  String get learnDiagramThirdPartyFirstParty;
+
+  /// Badge label distinguishing third-party data flow in the Lesson 3 diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Third parties'**
+  String get learnDiagramThirdPartyThirdParty;
+
+  /// Full TalkBack description for the Lesson 3 ThirdPartyDiagram
+  ///
+  /// In en, this message translates to:
+  /// **'Flow diagram showing where data from a child\'s learning app can go. You connect to the learning app, which connects with a solid line to the app maker (first party) and with dashed lines to third parties: helper and crash tools, analytics tools, and ad networks marked for extra attention.'**
+  String get learnDiagramThirdPartySemantic;
+
+  /// Short folder title for Lesson 4 on the Learn home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Reading Enprive'**
+  String get learnEvidenceFolderTitle;
+
+  /// Full lesson title for Lesson 4
+  ///
+  /// In en, this message translates to:
+  /// **'How to read Enprive\'s evidence'**
+  String get learnEvidenceTitle;
+
+  /// Short subtitle for Lesson 4
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence layers, categories & honest limits'**
+  String get learnEvidenceSubtitle;
+
+  /// Plain-language introduction for Lesson 4
+  ///
+  /// In en, this message translates to:
+  /// **'Enprive separates what a privacy policy says, what your phone shows, and what stays unknown — and groups findings by topic, never as a safety grade.'**
+  String get learnEvidenceIntro;
+
+  /// Step 1 of Lesson 4
+  ///
+  /// In en, this message translates to:
+  /// **'Five topic categories group every finding with the same icon and color as the Review screen. Color marks the topic, never a safety score.'**
+  String get learnEvidenceStep1;
+
+  /// Step 2 of Lesson 4 referencing the exact Review screen source-matched badge
+  ///
+  /// In en, this message translates to:
+  /// **'{sourceMatched} means Enprive found an exact quote word for word in the policy text you checked.'**
+  String learnEvidenceStep2(String sourceMatched);
+
+  /// Step 3 of Lesson 4 referencing the exact Review screen device-observed badge
+  ///
+  /// In en, this message translates to:
+  /// **'{deviceObserved} means your phone reported a permission setting on this device — not proof that data was sent.'**
+  String learnEvidenceStep3(String deviceObserved);
+
+  /// Step 4 of Lesson 4 referencing exact Review screen interpretation and unverified badges
+  ///
+  /// In en, this message translates to:
+  /// **'{interpretation} is Deni\'s plain-language explanation, while {unverified} marks details Enprive could not find. Silence in a policy is never a promise.'**
+  String learnEvidenceStep4(String interpretation, String unverified);
+
+  /// Step 5 of Lesson 4 referencing the three exact calibrated Review outcomes
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews end with one of three calm outcomes: {reviewRecommended}, {noConcern} (which is never a safety certification), or {insufficientEvidence}.'**
+  String learnEvidenceStep5(
+    String reviewRecommended,
+    String noConcern,
+    String insufficientEvidence,
+  );
+
+  /// Quick check question for Lesson 4
+  ///
+  /// In en, this message translates to:
+  /// **'On a Review screen, what does \'{deviceObserved}\' mean?'**
+  String learnEvidenceQuickQuestion(String deviceObserved);
+
+  /// First quick check option for Lesson 4
+  ///
+  /// In en, this message translates to:
+  /// **'The app is certified safe for children'**
+  String get learnEvidenceQuickOption1;
+
+  /// Correct second quick check option for Lesson 4
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone shows this permission setting on this device — not proof that data was uploaded'**
+  String get learnEvidenceQuickOption2;
+
+  /// Third quick check option for Lesson 4
+  ///
+  /// In en, this message translates to:
+  /// **'The app has definitely uploaded your child\'s data'**
+  String get learnEvidenceQuickOption3;
+
+  /// Feedback shown when the user selects the right answer in Lesson 4
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s right. That label reflects Android\'s permission state on this device; it cannot prove uploads or certify safety.'**
+  String get learnEvidenceQuickCorrectFeedback;
+
+  /// Feedback shown when the user selects another option in Lesson 4
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite. That label only shows what your phone reports about a permission setting — it never proves uploads and is never a safety certification.'**
+  String get learnEvidenceQuickTryAgainFeedback;
+
+  /// Supporting caption for Layer 1 in the Lesson 4 EvidenceLayersDiagram
+  ///
+  /// In en, this message translates to:
+  /// **'Exact quote matched in the policy text'**
+  String get learnDiagramEvidencePolicyDetail;
+
+  /// Supporting caption for Layer 2 in the Lesson 4 EvidenceLayersDiagram
+  ///
+  /// In en, this message translates to:
+  /// **'Phone permissions on this device'**
+  String get learnDiagramEvidencePhoneDetail;
+
+  /// Supporting caption for Layer 3 in the Lesson 4 EvidenceLayersDiagram
+  ///
+  /// In en, this message translates to:
+  /// **'Plain-language explanation by Deni'**
+  String get learnDiagramEvidenceDeniDetail;
+
+  /// Supporting caption for Layer 4 and bottom note in the Lesson 4 EvidenceLayersDiagram
+  ///
+  /// In en, this message translates to:
+  /// **'Silence in a policy is not a promise'**
+  String get learnDiagramEvidenceUnknownDetail;
+
+  /// Full TalkBack description for the Lesson 4 EvidenceLayersDiagram
+  ///
+  /// In en, this message translates to:
+  /// **'Four evidence layers used on Enprive\'s Review screen: 1, {sourceMatched}, an exact quote matched in the privacy policy; 2, {deviceObserved}, phone permissions on this device; 3, {interpretation}, Deni\'s plain-language explanation; and 4, separated by a dashed line, {unverified}, because silence in a policy is not a promise.'**
+  String learnDiagramEvidenceSemantic(
+    String sourceMatched,
+    String deviceObserved,
+    String interpretation,
+    String unverified,
+  );
+
+  /// Heading for the five evidence categories legend in Lesson 4
+  ///
+  /// In en, this message translates to:
+  /// **'Five topic categories on the Review screen'**
+  String get learnDiagramCategoriesTitle;
+
+  /// Clarification under the five evidence categories legend in Lesson 4
+  ///
+  /// In en, this message translates to:
+  /// **'Color and icon mark the topic, never a safety score.'**
+  String get learnDiagramCategoriesNote;
+
+  /// Full TalkBack description for the five evidence categories legend in Lesson 4
+  ///
+  /// In en, this message translates to:
+  /// **'Five evidence categories shown on Enprive\'s Review screen, each with its own icon and color: {dataCollection}, {sharing}, {tracking}, {retention}, and {parentalControls}. Color and icon mark the topic, never a safety score.'**
+  String learnDiagramCategoriesSemantic(
+    String dataCollection,
+    String sharing,
+    String tracking,
+    String retention,
+    String parentalControls,
+  );
 }
 
 class _AppLocalizationsDelegate
