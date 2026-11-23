@@ -1026,7 +1026,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String associationStatusUnverifiedBody(String appName) {
-    return 'This policy does not name $appName or its app ID. Double-check that it is the right policy: linking it here does not prove ownership.';
+    return 'This policy does not name $appName or its App ID. Double-check that it is the right policy: linking it here does not prove ownership.';
   }
 
   @override
@@ -1061,7 +1061,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String associationStatusAmbiguousPeerBody(String appName, String otherApps) {
-    return 'This policy mentions $appName without listing one exact app ID, and other apps on your phone ($otherApps) have a similar name. Make sure you linked the right one.';
+    return 'This policy mentions $appName without listing one exact App ID, and other apps on your phone ($otherApps) have a similar name. Make sure you linked the right one.';
   }
 
   @override
@@ -1633,7 +1633,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get learnDataCollectionIntro1 =>
-      'Apps gather information in two ways. Some data comes from what you actively enter: your name, email, photos, voice recordings, or homework answers. Other data is collected automatically in the background, like your IP address (the address your phone uses on the internet), device identifiers, advertising ID (a code ads use to recognise your phone), crash logs, and when you open the app.';
+      'Apps gather information in two ways. Some data comes from what you actively enter: your name, email, photos, voice recordings, or homework answers. Other data is collected automatically in the background, like your IP address (the address your phone uses on the internet), device identifiers, advertising ID (a code ads use to recognize your phone), crash logs, and when you open the app.';
 
   @override
   String get learnDataCollectionStep1 =>
@@ -1999,4 +1999,646 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get translationDraftNotice =>
       'Some translations are AI-generated drafts and may contain mistakes. Native speakers are reviewing them.';
+
+  @override
+  String get homeQuickSettingsTitle => 'Quick Settings Companion';
+
+  @override
+  String get homeQuickSettingsSubtitle =>
+      'Ask Deni about the app you\'re using anytime';
+
+  @override
+  String get appearanceSectionTitle => 'Appearance';
+
+  @override
+  String get themeModeSystem => 'System';
+
+  @override
+  String get themeModeLight => 'Light';
+
+  @override
+  String get themeModeDark => 'Dark';
+
+  @override
+  String get quickSettingsSectionTitle => 'Connect Enprive to Quick Settings';
+
+  @override
+  String get quickSettingsSectionSubtitle =>
+      'Add Enprive Check to your Android Quick Settings panel so you can ask Deni about applications without leaving what you\'re doing.';
+
+  @override
+  String get quickSettingsTileTitle => 'Enprive Check tile';
+
+  @override
+  String get quickSettingsTileSubtitle =>
+      'Add Enprive Check to Quick Settings to ask Deni about the app you\'re using without searching for Enprive first.';
+
+  @override
+  String get quickSettingsStatusAdded => 'Added';
+
+  @override
+  String get quickSettingsStatusManual => 'Manual';
+
+  @override
+  String get quickSettingsStatusNotAdded => 'Not added';
+
+  @override
+  String get usageAccessStatusGranted => 'Granted';
+
+  @override
+  String get usageAccessStatusNotGranted => 'Not granted';
+
+  @override
+  String get usageAccessTitle => 'Allow Usage Access (optional)';
+
+  @override
+  String get usageAccessExplanation =>
+      'Enprive uses Usage Access only when you tap Enprive Check to identify the app you were just using. This helps Deni find the correct app and its privacy information. Enprive does not continuously monitor your screen.';
+
+  @override
+  String get usageAccessManageLink => 'How to manage / revoke';
+
+  @override
+  String get usageAccessManageTitle => 'Manage or revoke Usage Access';
+
+  @override
+  String get usageAccessManageBody =>
+      'Usage Access is a special Android Settings toggle (not an automatic popup). You can turn it off anytime under Android Settings -> Apps -> Special app access -> Usage access -> enprive. Deni remains usable without it via manual app selection.';
+
+  @override
+  String get openDeniCompanionTitle => 'Open Deni Companion';
+
+  @override
+  String get openDeniCompanionSubtitle =>
+      'Check a recent or selected app\'s permissions without Quick Settings.';
+
+  @override
+  String get btnGotIt => 'Got it';
+
+  @override
+  String get quickSettingsReadyDialogTitle =>
+      'Enprive Check is ready in Quick Settings';
+
+  @override
+  String get quickSettingsReadyDialogBody =>
+      'Swipe down twice from the top of your screen and tap \"Enprive Check\" anytime you want Deni to explain an app\'s permissions.';
+
+  @override
+  String get quickSettingsManualDialogTitle => 'Add Enprive Check manually';
+
+  @override
+  String get quickSettingsManualDialogBody =>
+      '1. Swipe down twice from the top of your Android screen to open Quick Settings.\n2. Tap the Edit (pencil) button.\n3. Find \"Enprive Check\" and drag it into your active Quick Settings tiles.';
+
+  @override
+  String get quickSettingsSnackAdded =>
+      'Enprive Check added to your Quick Settings tray.';
+
+  @override
+  String get quickSettingsSnackAlreadyAdded =>
+      'Enprive Check is already in your Quick Settings tray.';
+
+  @override
+  String get quickSettingsSnackDeclined =>
+      'Request dismissed. Enprive won\'t ask again unless you choose Edit in Quick Settings.';
+
+  @override
+  String get quickSettingsSnackManual =>
+      'Swipe down Quick Settings, tap Edit, and drag Enprive Check into your tiles.';
+
+  @override
+  String get quickSettingsSnackUnavailable =>
+      'System prompt unavailable here; you can drag Enprive Check manually from Quick Settings Edit.';
+
+  @override
+  String get usageAccessOpenFailedSnack =>
+      'Could not open Usage Access Settings on this device.';
+
+  @override
+  String get companionTitle => 'Deni: Enprive Companion';
+
+  @override
+  String get companionSubtitle =>
+      'Ask Deni about an app\'s permissions and what its privacy policy says.';
+
+  @override
+  String get companionTooltipReturnToPrev => 'Return to previous app';
+
+  @override
+  String get companionTooltipBack => 'Back';
+
+  @override
+  String get companionLockedBadge => 'LOCK SCREEN PROTECTED';
+
+  @override
+  String get companionLockedTitle => 'Unlock your phone to continue';
+
+  @override
+  String get companionLockedBody =>
+      'Enprive hides app names, declared permissions, and review evidence while the device is locked.';
+
+  @override
+  String get companionCheckUnlockBtn => 'Check unlock state';
+
+  @override
+  String get companionCheckingAppHeadline =>
+      'Checking which app you were using…';
+
+  @override
+  String get companionCheckingAppSubtitle =>
+      'Checking once on this phone without watching your screen.';
+
+  @override
+  String get companionGeneralGuideHeadline =>
+      'General Android permission guide';
+
+  @override
+  String get companionGeneralGuideSubtitle =>
+      'No app selected. Enprive explains Android permissions using local guidance only.';
+
+  @override
+  String companionLookingAtHeadline(String appName) {
+    return 'You\'re looking at $appName.';
+  }
+
+  @override
+  String get companionLookingAtSubtitle =>
+      'Permissions listed below come from the app on your phone: Android still controls whichever popup is on screen.';
+
+  @override
+  String get companionThisAppFallback => 'this app';
+
+  @override
+  String companionSawAppAgo(String appName, int seconds) {
+    return 'We saw $appName ${seconds}s ago. Is this correct?';
+  }
+
+  @override
+  String companionThinkUsingApp(String appName) {
+    return 'We think you\'re using $appName. Is this correct?';
+  }
+
+  @override
+  String companionAppIdLine(String packageName) {
+    return 'App ID: $packageName';
+  }
+
+  @override
+  String companionConfirmAppBtn(String appName) {
+    return 'Confirm · $appName';
+  }
+
+  @override
+  String get companionChooseAnotherAppBtn => 'Choose another app';
+
+  @override
+  String get companionWithoutAppContextBtn => 'Without app context';
+
+  @override
+  String get companionMultipleAppsTitle => 'Multiple apps were active just now';
+
+  @override
+  String get companionMultipleAppsPrompt =>
+      'Confirm which application you want to inspect:';
+
+  @override
+  String companionSecondsAgo(int seconds) {
+    return '${seconds}s ago';
+  }
+
+  @override
+  String get companionSelectAppTitle => 'Select the app you want to check';
+
+  @override
+  String get companionSelectAppBody =>
+      'Choose the application manually from installed apps, or continue without app context.';
+
+  @override
+  String get companionChooseAppManuallyBtn => 'Choose app manually';
+
+  @override
+  String get companionOpenUsageAccessBtn => 'Open Usage Access Settings';
+
+  @override
+  String get companionContinueWithoutAppBtn => 'Continue without app context';
+
+  @override
+  String get companionAddTileBtn => 'Add Enprive Check tile';
+
+  @override
+  String get companionContinuingWithoutApp => 'Continuing without app context';
+
+  @override
+  String get companionSwitchAppBtn => 'Switch app';
+
+  @override
+  String get companionPermissionsReadLocally =>
+      'Permissions shown below are read directly from your phone.';
+
+  @override
+  String get companionPickPermissionType => 'Pick a permission type to explore';
+
+  @override
+  String get companionPickAppBtn => 'Pick an app';
+
+  @override
+  String get companionCouldNotReadPermsTitle =>
+      'Couldn\'t read app permissions';
+
+  @override
+  String get companionCouldNotReadPermsBody =>
+      'Android prevented inspecting this app\'s permissions.';
+
+  @override
+  String get companionUnsurePermBtn => 'I\'m not sure which permission';
+
+  @override
+  String get companionWhichPermissionPrompt =>
+      'Which permission would you like to understand?';
+
+  @override
+  String get companionPermissionsListDisclaimer =>
+      'These are permissions the app lists on your phone, not necessarily the popup on your screen right now.';
+
+  @override
+  String get companionNoSensitivePermsMsg =>
+      'This app doesn\'t ask for any sensitive permissions on your phone.';
+
+  @override
+  String get companionGuidedMatchTitle =>
+      'Match what the popup on your screen asked for';
+
+  @override
+  String get companionGuidedMatchSubtitle =>
+      'Enprive cannot read your current Android prompt directly. Choose the wording closest to what appeared on screen:';
+
+  @override
+  String get companionSection1Title => '1. What this permission means';
+
+  @override
+  String get companionSection2Title => '2. What the app asks for on your phone';
+
+  @override
+  String get companionSection3Title => '3. What its privacy policy says';
+
+  @override
+  String get companionSection4Title => '4. Why this might relate to a feature';
+
+  @override
+  String get companionSection4Fallback =>
+      'No verified developer feature explanation found. Describe below what feature you were trying to use if you want Deni to check relevance.';
+
+  @override
+  String get companionSection5Title => '5. What remains unknown';
+
+  @override
+  String get companionSection6Title => '6. Questions you can ask Deni';
+
+  @override
+  String get companionAddPolicyBtn => 'Add privacy policy';
+
+  @override
+  String get companionCheckUpdatedPolicyBtn => 'Check updated privacy policy';
+
+  @override
+  String companionVerifyPolicyTitle(String appName) {
+    return 'Verify policy for $appName';
+  }
+
+  @override
+  String get companionFeatureFieldLabel => 'Feature you were using (optional)';
+
+  @override
+  String get companionFeatureFieldHint =>
+      'e.g., scanning a QR code, recording voice practice';
+
+  @override
+  String get companionQuestionFieldLabel => 'Ask Deni a question';
+
+  @override
+  String get companionQuestionFieldHint =>
+      'What happens if I deny this permission?';
+
+  @override
+  String get companionReceiptSavedTitle => 'Saved in Enprive Receipts';
+
+  @override
+  String get companionReceiptUnsavedTitle => 'Review not saved to Enprive yet';
+
+  @override
+  String get companionReceiptSavedBody =>
+      'Stored locally in your Enprive Receipts archive.';
+
+  @override
+  String get companionReceiptUpdatedUnsavedBody =>
+      'Updated policy review kept in this session only. Leaving Companion discards this draft and keeps your saved receipt unchanged.';
+
+  @override
+  String get companionReceiptUnsavedBody =>
+      'Kept in this session only. Leaving Companion will discard it unless you save it.';
+
+  @override
+  String get companionSaveReceiptBtn => 'Save receipt to Enprive';
+
+  @override
+  String get companionSaveReceiptFailed =>
+      'Could not save receipt. Kept in this session: try again.';
+
+  @override
+  String get companionSavedLocalReceiptsSnack => 'Saved to local Receipts.';
+
+  @override
+  String companionDoneReturnToApp(String appName) {
+    return 'Done · Return to $appName';
+  }
+
+  @override
+  String get companionDoneReturnToPrev => 'Done · Return to previous app';
+
+  @override
+  String get companionOpenFullAppBtn => 'Open full Enprive app';
+
+  @override
+  String get companionCloudTimeoutSnack =>
+      'Cloud analysis took too long and was stopped before completing.';
+
+  @override
+  String get companionAnalysisCancelledSnack => 'Analysis cancelled.';
+
+  @override
+  String get companionCloudAnswerTimeoutSnack =>
+      'Cloud answer timed out cleanly.';
+
+  @override
+  String get companionQuestionCancelledSnack => 'Question cancelled.';
+
+  @override
+  String get companionTileAddedSnack =>
+      'Enprive Check added to Android Quick Settings.';
+
+  @override
+  String get companionTileAlreadyAddedSnack =>
+      'Enprive Check is already in your Quick Settings.';
+
+  @override
+  String get companionTileDeclinedSnack =>
+      'Tile request dismissed. You can add it anytime from Settings or Quick Settings Edit.';
+
+  @override
+  String get companionTileManualSnack =>
+      'Swipe down Quick Settings twice, tap Edit, and drag Enprive Check into your tiles.';
+
+  @override
+  String get companionTileUnavailableSnack =>
+      'Android could not show the Quick Settings prompt on this device. You can drag Enprive Check manually from Quick Settings Edit.';
+
+  @override
+  String get companionUsageOptionalReason =>
+      'Usage Access is optional. You can choose an app manually or allow Usage Access for one-tap identification.';
+
+  @override
+  String get companionPermPreciseLocation => 'Precise location';
+
+  @override
+  String get companionPermBackgroundLocation => 'Background location';
+
+  @override
+  String get companionPermCamera => 'Camera';
+
+  @override
+  String get companionPermMicrophone => 'Microphone';
+
+  @override
+  String get companionPermAdId => 'Google Advertising ID';
+
+  @override
+  String companionPermDeclaredBy(String permission, String appName) {
+    return 'Android permission ($permission) declared by $appName.';
+  }
+
+  @override
+  String get companionPermStatusAdId => 'Listed by app · Ad ID';
+
+  @override
+  String get companionPermStatusAllowed => 'Listed by app · Allowed';
+
+  @override
+  String get companionPermStatusNotAllowed => 'Listed by app · Not allowed';
+
+  @override
+  String get guidedCatLocation => 'Location';
+
+  @override
+  String get guidedCatContacts => 'Contacts';
+
+  @override
+  String get guidedCatPhotosMedia => 'Photos and media';
+
+  @override
+  String get guidedCatNotifications => 'Notifications';
+
+  @override
+  String get guidedCatNearbyDevices => 'Nearby devices';
+
+  @override
+  String get guidedCatCalendar => 'Calendar';
+
+  @override
+  String get guidedCatPhone => 'Phone';
+
+  @override
+  String get guidedCatSms => 'SMS';
+
+  @override
+  String get companionFallbackUsageNotEnabled =>
+      'Usage Access has not been enabled in Android Settings.';
+
+  @override
+  String get companionFallbackUsageUnavailable =>
+      'Android UsageStatsManager is unavailable.';
+
+  @override
+  String get companionFallbackTransientUi =>
+      'Only Android system or permission prompt UI appeared in recent usage events; choose the app manually.';
+
+  @override
+  String get companionFallbackVisibilityRestricted =>
+      'The most recently active app cannot be inspected under Android package visibility restrictions. Please choose an app from the list or paste its policy.';
+
+  @override
+  String get companionFallbackUnlockRequired =>
+      'Unlock your device before viewing app context.';
+
+  @override
+  String get consentReasonPolicyTooDetailed =>
+      'This policy is too detailed for on-device AI processing.';
+
+  @override
+  String get consentReasonExcerptTooDetailed =>
+      'This finding excerpt is too detailed for on-device AI processing.';
+
+  @override
+  String get consentReasonOnDeviceUnavailable =>
+      'On-device AI is unavailable on this phone right now.';
+
+  @override
+  String get consentReasonOnDeviceCannotAnswer =>
+      'On-device AI could not answer from this device right now.';
+
+  @override
+  String get consentReasonVoiceTooLong =>
+      'These verified findings exceed on-device summary limits. You can use the offline summary now or send the redacted findings to Cloud AI once.';
+
+  @override
+  String get consentReasonVoiceUnavailable =>
+      'On-device AI is unavailable on this phone right now. Showing Enprive\'s offline plain-language summary.';
+
+  @override
+  String get consentReasonVoiceTimedOut =>
+      'On-device summary timed out. Showing Enprive\'s offline plain-language summary.';
+
+  @override
+  String get unsavedExitTitle => 'Save this privacy review?';
+
+  @override
+  String get unsavedExitModifiedBody =>
+      'Unsaved reviews are discarded when you close this screen, so nothing is stored on your phone without your choice. Your original saved receipt will remain unchanged.';
+
+  @override
+  String get unsavedExitDraftBody =>
+      'Unsaved reviews are discarded when you close this screen, so nothing is stored on your phone without your choice.';
+
+  @override
+  String get unsavedExitDiscardBtn => 'Discard without saving';
+
+  @override
+  String get unsavedExitContinueBtn => 'Continue reviewing';
+
+  @override
+  String updatePrivacyPolicyForTitle(String title) {
+    return 'Update privacy policy for $title';
+  }
+
+  @override
+  String get reviewSaveFailedError =>
+      'Could not save receipt. Your review draft is still open.';
+
+  @override
+  String get reviewRemovedFromReceiptsSnack => 'Removed from saved receipts.';
+
+  @override
+  String get reviewRemoveFailedSnack => 'Could not remove saved receipt.';
+
+  @override
+  String get reviewModifiedDraftTitle => 'New draft from saved receipt';
+
+  @override
+  String get reviewModifiedDraftBody =>
+      'Save to Receipts to keep this updated review: your original saved receipt remains unchanged.';
+
+  @override
+  String get btnRetrySave => 'Retry save';
+
+  @override
+  String samplePermissionsHeader(String badge) {
+    return 'Sample permissions ($badge)';
+  }
+
+  @override
+  String get sourceKindUrl => 'Public web link';
+
+  @override
+  String get sourceKindPdf => 'Local PDF file';
+
+  @override
+  String get sourceKindDocx => 'Local Word (DOCX) file';
+
+  @override
+  String get sourceKindTextFile => 'Local text file';
+
+  @override
+  String get sourceKindSharedText => 'Shared text';
+
+  @override
+  String get sourceKindSelectedText => 'Selected text';
+
+  @override
+  String get sourceKindSampleApp => 'Sample app';
+
+  @override
+  String get sourceKindPhonePermissions => 'Phone permissions';
+
+  @override
+  String get sourceKindPastedText => 'Pasted text';
+
+  @override
+  String get extractionStatusExtracted => 'Read on this phone';
+
+  @override
+  String get extractionStatusNone => 'Provided on this phone';
+
+  @override
+  String get extractionStatusUnsupported => 'Unsupported file type';
+
+  @override
+  String get extractionStatusTooLarge => 'File too large';
+
+  @override
+  String get extractionStatusEmpty => 'No readable text';
+
+  @override
+  String get extractionStatusReadError => 'Could not read file';
+
+  @override
+  String get extractionStatusPasswordProtected => 'Password-protected';
+
+  @override
+  String get extractionStatusPermissionDenied => 'Permission denied';
+
+  @override
+  String get extractionStatusCancelled => 'Cancelled';
+
+  @override
+  String advancedDetailsCheckedAt(String timestamp) {
+    return 'Checked at: $timestamp';
+  }
+
+  @override
+  String advancedDetailsCanonicalUrl(String url) {
+    return 'Canonical URL: $url';
+  }
+
+  @override
+  String advancedDetailsRedirectedFrom(String url) {
+    return 'Redirected from: $url';
+  }
+
+  @override
+  String advancedDetailsFileLine(String filename) {
+    return 'File: $filename';
+  }
+
+  @override
+  String advancedDetailsStatusSuffix(String status) {
+    return 'Status: $status';
+  }
+
+  @override
+  String advancedDetailsSha256Hash(String hash) {
+    return 'SHA-256 source hash: $hash';
+  }
+
+  @override
+  String get semanticsPrimaryNavigation => 'Primary navigation';
+
+  @override
+  String semanticsProcessingLocation(String label) {
+    return 'Processing location: $label';
+  }
+
+  @override
+  String get semanticsDeniMascot => 'Deni, your privacy guide';
+
+  @override
+  String get quoteCollapsibleDefaultHeader => 'Exact Policy Excerpt';
 }

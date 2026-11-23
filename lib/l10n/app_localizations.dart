@@ -1903,7 +1903,7 @@ abstract class AppLocalizations {
   /// Plain-language explanation when the user linked an app whose name and ID do not appear in the policy
   ///
   /// In en, this message translates to:
-  /// **'This policy does not name {appName} or its app ID. Double-check that it is the right policy: linking it here does not prove ownership.'**
+  /// **'This policy does not name {appName} or its App ID. Double-check that it is the right policy: linking it here does not prove ownership.'**
   String associationStatusUnverifiedBody(String appName);
 
   /// Plain-language explanation when only the URL domain matches the linked app name
@@ -1948,7 +1948,7 @@ abstract class AppLocalizations {
   /// Plain-language warning explaining peer display-name ambiguity on the user's phone
   ///
   /// In en, this message translates to:
-  /// **'This policy mentions {appName} without listing one exact app ID, and other apps on your phone ({otherApps}) have a similar name. Make sure you linked the right one.'**
+  /// **'This policy mentions {appName} without listing one exact App ID, and other apps on your phone ({otherApps}) have a similar name. Make sure you linked the right one.'**
   String associationStatusAmbiguousPeerBody(String appName, String otherApps);
 
   /// Fallback plain-language warning for an ambiguous app-policy match
@@ -2843,7 +2843,7 @@ abstract class AppLocalizations {
   /// Plain-language introduction for Lesson 5
   ///
   /// In en, this message translates to:
-  /// **'Apps gather information in two ways. Some data comes from what you actively enter: your name, email, photos, voice recordings, or homework answers. Other data is collected automatically in the background, like your IP address (the address your phone uses on the internet), device identifiers, advertising ID (a code ads use to recognise your phone), crash logs, and when you open the app.'**
+  /// **'Apps gather information in two ways. Some data comes from what you actively enter: your name, email, photos, voice recordings, or homework answers. Other data is collected automatically in the background, like your IP address (the address your phone uses on the internet), device identifiers, advertising ID (a code ads use to recognize your phone), crash logs, and when you open the app.'**
   String get learnDataCollectionIntro1;
 
   /// Step 1 of Lesson 5
@@ -3427,6 +3427,1092 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Some translations are AI-generated drafts and may contain mistakes. Native speakers are reviewing them.'**
   String get translationDraftNotice;
+
+  /// Title of the Quick Settings Companion card on Home
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Settings Companion'**
+  String get homeQuickSettingsTitle;
+
+  /// Subtitle of the Quick Settings Companion card on Home
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Deni about the app you\'re using anytime'**
+  String get homeQuickSettingsSubtitle;
+
+  /// Heading for the light/dark/system theme selector in Settings
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearanceSectionTitle;
+
+  /// System default theme option
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeModeSystem;
+
+  /// Light theme option
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeModeLight;
+
+  /// Dark theme option
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeModeDark;
+
+  /// Section title for Quick Settings tile and optional Usage Access in Settings
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Enprive to Quick Settings'**
+  String get quickSettingsSectionTitle;
+
+  /// Explanation of Quick Settings tile integration
+  ///
+  /// In en, this message translates to:
+  /// **'Add Enprive Check to your Android Quick Settings panel so you can ask Deni about applications without leaving what you\'re doing.'**
+  String get quickSettingsSectionSubtitle;
+
+  /// Row title for the Enprive Check Quick Settings tile
+  ///
+  /// In en, this message translates to:
+  /// **'Enprive Check tile'**
+  String get quickSettingsTileTitle;
+
+  /// Row subtitle for the Enprive Check Quick Settings tile
+  ///
+  /// In en, this message translates to:
+  /// **'Add Enprive Check to Quick Settings to ask Deni about the app you\'re using without searching for Enprive first.'**
+  String get quickSettingsTileSubtitle;
+
+  /// Status badge when Quick Settings tile is added
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get quickSettingsStatusAdded;
+
+  /// Status badge when Quick Settings tile must be added manually
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get quickSettingsStatusManual;
+
+  /// Status badge when Quick Settings tile is not yet added
+  ///
+  /// In en, this message translates to:
+  /// **'Not added'**
+  String get quickSettingsStatusNotAdded;
+
+  /// Status badge when Android Usage Access is granted
+  ///
+  /// In en, this message translates to:
+  /// **'Granted'**
+  String get usageAccessStatusGranted;
+
+  /// Status badge when Android Usage Access is not granted
+  ///
+  /// In en, this message translates to:
+  /// **'Not granted'**
+  String get usageAccessStatusNotGranted;
+
+  /// Row title for optional Android Usage Access
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Usage Access (optional)'**
+  String get usageAccessTitle;
+
+  /// Honest explanation of how Enprive uses Android Usage Access
+  ///
+  /// In en, this message translates to:
+  /// **'Enprive uses Usage Access only when you tap Enprive Check to identify the app you were just using. This helps Deni find the correct app and its privacy information. Enprive does not continuously monitor your screen.'**
+  String get usageAccessExplanation;
+
+  /// Link text to open instructions for managing or revoking Usage Access
+  ///
+  /// In en, this message translates to:
+  /// **'How to manage / revoke'**
+  String get usageAccessManageLink;
+
+  /// Dialog title for Usage Access revocation instructions
+  ///
+  /// In en, this message translates to:
+  /// **'Manage or revoke Usage Access'**
+  String get usageAccessManageTitle;
+
+  /// Dialog body explaining how to turn off Usage Access in Android Settings
+  ///
+  /// In en, this message translates to:
+  /// **'Usage Access is a special Android Settings toggle (not an automatic popup). You can turn it off anytime under Android Settings -> Apps -> Special app access -> Usage access -> enprive. Deni remains usable without it via manual app selection.'**
+  String get usageAccessManageBody;
+
+  /// Settings row title to launch Deni Companion directly
+  ///
+  /// In en, this message translates to:
+  /// **'Open Deni Companion'**
+  String get openDeniCompanionTitle;
+
+  /// Settings row subtitle for opening Deni Companion directly
+  ///
+  /// In en, this message translates to:
+  /// **'Check a recent or selected app\'s permissions without Quick Settings.'**
+  String get openDeniCompanionSubtitle;
+
+  /// Short confirmation button on informational dialogs
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get btnGotIt;
+
+  /// Dialog title when Quick Settings tile is already added
+  ///
+  /// In en, this message translates to:
+  /// **'Enprive Check is ready in Quick Settings'**
+  String get quickSettingsReadyDialogTitle;
+
+  /// Dialog body explaining how to use the Quick Settings tile
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe down twice from the top of your screen and tap \"Enprive Check\" anytime you want Deni to explain an app\'s permissions.'**
+  String get quickSettingsReadyDialogBody;
+
+  /// Dialog title for manual Quick Settings tile setup instructions
+  ///
+  /// In en, this message translates to:
+  /// **'Add Enprive Check manually'**
+  String get quickSettingsManualDialogTitle;
+
+  /// Numbered instructions to add the Quick Settings tile manually
+  ///
+  /// In en, this message translates to:
+  /// **'1. Swipe down twice from the top of your Android screen to open Quick Settings.\n2. Tap the Edit (pencil) button.\n3. Find \"Enprive Check\" and drag it into your active Quick Settings tiles.'**
+  String get quickSettingsManualDialogBody;
+
+  /// Snackbar after Quick Settings tile is added
+  ///
+  /// In en, this message translates to:
+  /// **'Enprive Check added to your Quick Settings tray.'**
+  String get quickSettingsSnackAdded;
+
+  /// Snackbar when Quick Settings tile is already present
+  ///
+  /// In en, this message translates to:
+  /// **'Enprive Check is already in your Quick Settings tray.'**
+  String get quickSettingsSnackAlreadyAdded;
+
+  /// Snackbar when user declines the Quick Settings tile prompt
+  ///
+  /// In en, this message translates to:
+  /// **'Request dismissed. Enprive won\'t ask again unless you choose Edit in Quick Settings.'**
+  String get quickSettingsSnackDeclined;
+
+  /// Snackbar prompting manual tile addition
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe down Quick Settings, tap Edit, and drag Enprive Check into your tiles.'**
+  String get quickSettingsSnackManual;
+
+  /// Snackbar when Android Quick Settings add prompt is unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'System prompt unavailable here; you can drag Enprive Check manually from Quick Settings Edit.'**
+  String get quickSettingsSnackUnavailable;
+
+  /// Snackbar when opening Android Usage Access settings fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open Usage Access Settings on this device.'**
+  String get usageAccessOpenFailedSnack;
+
+  /// Title of the Companion screen
+  ///
+  /// In en, this message translates to:
+  /// **'Deni: Enprive Companion'**
+  String get companionTitle;
+
+  /// Subtitle on the Companion header banner
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Deni about an app\'s permissions and what its privacy policy says.'**
+  String get companionSubtitle;
+
+  /// Tooltip for closing Companion and returning to the previous app
+  ///
+  /// In en, this message translates to:
+  /// **'Return to previous app'**
+  String get companionTooltipReturnToPrev;
+
+  /// Tooltip for navigating back from Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get companionTooltipBack;
+
+  /// Badge shown when device is locked
+  ///
+  /// In en, this message translates to:
+  /// **'LOCK SCREEN PROTECTED'**
+  String get companionLockedBadge;
+
+  /// Title of the lock-screen privacy guard
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock your phone to continue'**
+  String get companionLockedTitle;
+
+  /// Body of the lock-screen privacy guard
+  ///
+  /// In en, this message translates to:
+  /// **'Enprive hides app names, declared permissions, and review evidence while the device is locked.'**
+  String get companionLockedBody;
+
+  /// Button to re-check whether the phone is unlocked
+  ///
+  /// In en, this message translates to:
+  /// **'Check unlock state'**
+  String get companionCheckUnlockBtn;
+
+  /// Headline while Companion looks up the recent foreground app
+  ///
+  /// In en, this message translates to:
+  /// **'Checking which app you were using…'**
+  String get companionCheckingAppHeadline;
+
+  /// Subtitle explaining one-time foreground app lookup
+  ///
+  /// In en, this message translates to:
+  /// **'Checking once on this phone without watching your screen.'**
+  String get companionCheckingAppSubtitle;
+
+  /// Headline when browsing general Android permissions without an app selected
+  ///
+  /// In en, this message translates to:
+  /// **'General Android permission guide'**
+  String get companionGeneralGuideHeadline;
+
+  /// Subtitle when no app is selected in Companion
+  ///
+  /// In en, this message translates to:
+  /// **'No app selected. Enprive explains Android permissions using local guidance only.'**
+  String get companionGeneralGuideSubtitle;
+
+  /// Headline naming the confirmed app in Companion
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re looking at {appName}.'**
+  String companionLookingAtHeadline(String appName);
+
+  /// Clarification that listed permissions come from the installed app manifest, not live screen reading
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions listed below come from the app on your phone: Android still controls whichever popup is on screen.'**
+  String get companionLookingAtSubtitle;
+
+  /// Fallback phrase when an app label is unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'this app'**
+  String get companionThisAppFallback;
+
+  /// Prompt confirming a recently active app with age in seconds
+  ///
+  /// In en, this message translates to:
+  /// **'We saw {appName} {seconds}s ago. Is this correct?'**
+  String companionSawAppAgo(String appName, int seconds);
+
+  /// Prompt confirming the detected foreground app
+  ///
+  /// In en, this message translates to:
+  /// **'We think you\'re using {appName}. Is this correct?'**
+  String companionThinkUsingApp(String appName);
+
+  /// Line displaying the Android App ID (package name)
+  ///
+  /// In en, this message translates to:
+  /// **'App ID: {packageName}'**
+  String companionAppIdLine(String packageName);
+
+  /// Primary button confirming the detected app
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm · {appName}'**
+  String companionConfirmAppBtn(String appName);
+
+  /// Button to pick a different installed app
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another app'**
+  String get companionChooseAnotherAppBtn;
+
+  /// Short button to proceed without selecting an app
+  ///
+  /// In en, this message translates to:
+  /// **'Without app context'**
+  String get companionWithoutAppContextBtn;
+
+  /// Title when multiple recent foreground apps were found
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple apps were active just now'**
+  String get companionMultipleAppsTitle;
+
+  /// Prompt asking user to choose among recently active apps
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm which application you want to inspect:'**
+  String get companionMultipleAppsPrompt;
+
+  /// Relative time in seconds for recent app activity
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds}s ago'**
+  String companionSecondsAgo(int seconds);
+
+  /// Title prompting manual app selection
+  ///
+  /// In en, this message translates to:
+  /// **'Select the app you want to check'**
+  String get companionSelectAppTitle;
+
+  /// Body prompting manual app selection or general guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the application manually from installed apps, or continue without app context.'**
+  String get companionSelectAppBody;
+
+  /// Primary button to pick an app manually
+  ///
+  /// In en, this message translates to:
+  /// **'Choose app manually'**
+  String get companionChooseAppManuallyBtn;
+
+  /// Button to open Android Usage Access settings
+  ///
+  /// In en, this message translates to:
+  /// **'Open Usage Access Settings'**
+  String get companionOpenUsageAccessBtn;
+
+  /// Button to continue with general Android permission explanations
+  ///
+  /// In en, this message translates to:
+  /// **'Continue without app context'**
+  String get companionContinueWithoutAppBtn;
+
+  /// Button to request adding the Enprive Check Quick Settings tile
+  ///
+  /// In en, this message translates to:
+  /// **'Add Enprive Check tile'**
+  String get companionAddTileBtn;
+
+  /// Summary label when continuing without an app selected
+  ///
+  /// In en, this message translates to:
+  /// **'Continuing without app context'**
+  String get companionContinuingWithoutApp;
+
+  /// Button to change the selected app
+  ///
+  /// In en, this message translates to:
+  /// **'Switch app'**
+  String get companionSwitchAppBtn;
+
+  /// Note explaining permissions are inspected locally on-device
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions shown below are read directly from your phone.'**
+  String get companionPermissionsReadLocally;
+
+  /// Heading for general Android permission exploration
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a permission type to explore'**
+  String get companionPickPermissionType;
+
+  /// Button to select an installed app
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an app'**
+  String get companionPickAppBtn;
+
+  /// Error heading when app permissions could not be inspected
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read app permissions'**
+  String get companionCouldNotReadPermsTitle;
+
+  /// Fallback error body when Android restricts package inspection
+  ///
+  /// In en, this message translates to:
+  /// **'Android prevented inspecting this app\'s permissions.'**
+  String get companionCouldNotReadPermsBody;
+
+  /// Button opening the guided permission matcher
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m not sure which permission'**
+  String get companionUnsurePermBtn;
+
+  /// Heading above the selected app's declared permissions
+  ///
+  /// In en, this message translates to:
+  /// **'Which permission would you like to understand?'**
+  String get companionWhichPermissionPrompt;
+
+  /// Disclaimer separating manifest permissions from live Android dialogs
+  ///
+  /// In en, this message translates to:
+  /// **'These are permissions the app lists on your phone, not necessarily the popup on your screen right now.'**
+  String get companionPermissionsListDisclaimer;
+
+  /// Message when the selected app declares no sensitive permissions
+  ///
+  /// In en, this message translates to:
+  /// **'This app doesn\'t ask for any sensitive permissions on your phone.'**
+  String get companionNoSensitivePermsMsg;
+
+  /// Title of the guided permission picker
+  ///
+  /// In en, this message translates to:
+  /// **'Match what the popup on your screen asked for'**
+  String get companionGuidedMatchTitle;
+
+  /// Honest explanation that Enprive cannot read live system popups
+  ///
+  /// In en, this message translates to:
+  /// **'Enprive cannot read your current Android prompt directly. Choose the wording closest to what appeared on screen:'**
+  String get companionGuidedMatchSubtitle;
+
+  /// Section 1 heading in Companion permission explanation
+  ///
+  /// In en, this message translates to:
+  /// **'1. What this permission means'**
+  String get companionSection1Title;
+
+  /// Section 2 heading in Companion permission explanation
+  ///
+  /// In en, this message translates to:
+  /// **'2. What the app asks for on your phone'**
+  String get companionSection2Title;
+
+  /// Section 3 heading in Companion permission explanation
+  ///
+  /// In en, this message translates to:
+  /// **'3. What its privacy policy says'**
+  String get companionSection3Title;
+
+  /// Section 4 heading in Companion permission explanation
+  ///
+  /// In en, this message translates to:
+  /// **'4. Why this might relate to a feature'**
+  String get companionSection4Title;
+
+  /// Fallback text when no policy feature explanation was matched
+  ///
+  /// In en, this message translates to:
+  /// **'No verified developer feature explanation found. Describe below what feature you were trying to use if you want Deni to check relevance.'**
+  String get companionSection4Fallback;
+
+  /// Section 5 heading in Companion permission explanation
+  ///
+  /// In en, this message translates to:
+  /// **'5. What remains unknown'**
+  String get companionSection5Title;
+
+  /// Section 6 heading in Companion permission explanation
+  ///
+  /// In en, this message translates to:
+  /// **'6. Questions you can ask Deni'**
+  String get companionSection6Title;
+
+  /// Button to attach a privacy policy in Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Add privacy policy'**
+  String get companionAddPolicyBtn;
+
+  /// Button to check an updated privacy policy in Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Check updated privacy policy'**
+  String get companionCheckUpdatedPolicyBtn;
+
+  /// Title override for intake sheet launched from Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Verify policy for {appName}'**
+  String companionVerifyPolicyTitle(String appName);
+
+  /// Input label for optional feature context
+  ///
+  /// In en, this message translates to:
+  /// **'Feature you were using (optional)'**
+  String get companionFeatureFieldLabel;
+
+  /// Input hint for optional feature context
+  ///
+  /// In en, this message translates to:
+  /// **'e.g., scanning a QR code, recording voice practice'**
+  String get companionFeatureFieldHint;
+
+  /// Input label for asking Deni a question in Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Deni a question'**
+  String get companionQuestionFieldLabel;
+
+  /// Input hint for asking Deni a question in Companion
+  ///
+  /// In en, this message translates to:
+  /// **'What happens if I deny this permission?'**
+  String get companionQuestionFieldHint;
+
+  /// Badge title when Companion policy review is saved locally
+  ///
+  /// In en, this message translates to:
+  /// **'Saved in Enprive Receipts'**
+  String get companionReceiptSavedTitle;
+
+  /// Label when Companion policy review is only in the current session
+  ///
+  /// In en, this message translates to:
+  /// **'Review not saved to Enprive yet'**
+  String get companionReceiptUnsavedTitle;
+
+  /// Description when Companion review is saved locally
+  ///
+  /// In en, this message translates to:
+  /// **'Stored locally in your Enprive Receipts archive.'**
+  String get companionReceiptSavedBody;
+
+  /// Warning for an unsaved updated review draft in Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Updated policy review kept in this session only. Leaving Companion discards this draft and keeps your saved receipt unchanged.'**
+  String get companionReceiptUpdatedUnsavedBody;
+
+  /// Warning for an unsaved review draft in Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Kept in this session only. Leaving Companion will discard it unless you save it.'**
+  String get companionReceiptUnsavedBody;
+
+  /// Button to save Companion policy review to local Receipts
+  ///
+  /// In en, this message translates to:
+  /// **'Save receipt to Enprive'**
+  String get companionSaveReceiptBtn;
+
+  /// Error message when saving a Companion receipt fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save receipt. Kept in this session: try again.'**
+  String get companionSaveReceiptFailed;
+
+  /// Snackbar after saving a receipt from Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to local Receipts.'**
+  String get companionSavedLocalReceiptsSnack;
+
+  /// Primary bottom button returning to the caller app
+  ///
+  /// In en, this message translates to:
+  /// **'Done · Return to {appName}'**
+  String companionDoneReturnToApp(String appName);
+
+  /// Bottom button returning to the previous app
+  ///
+  /// In en, this message translates to:
+  /// **'Done · Return to previous app'**
+  String get companionDoneReturnToPrev;
+
+  /// Secondary button to open the full Enprive app from Quick Settings Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Open full Enprive app'**
+  String get companionOpenFullAppBtn;
+
+  /// Snackbar when Companion cloud policy analysis times out
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud analysis took too long and was stopped before completing.'**
+  String get companionCloudTimeoutSnack;
+
+  /// Snackbar when Companion policy analysis is cancelled
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis cancelled.'**
+  String get companionAnalysisCancelledSnack;
+
+  /// Snackbar when Companion cloud question times out
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud answer timed out cleanly.'**
+  String get companionCloudAnswerTimeoutSnack;
+
+  /// Snackbar when Companion question is cancelled
+  ///
+  /// In en, this message translates to:
+  /// **'Question cancelled.'**
+  String get companionQuestionCancelledSnack;
+
+  /// Snackbar after adding tile from Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Enprive Check added to Android Quick Settings.'**
+  String get companionTileAddedSnack;
+
+  /// Snackbar when tile is already added in Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Enprive Check is already in your Quick Settings.'**
+  String get companionTileAlreadyAddedSnack;
+
+  /// Snackbar when tile request is dismissed in Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Tile request dismissed. You can add it anytime from Settings or Quick Settings Edit.'**
+  String get companionTileDeclinedSnack;
+
+  /// Snackbar with manual Quick Settings instructions in Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe down Quick Settings twice, tap Edit, and drag Enprive Check into your tiles.'**
+  String get companionTileManualSnack;
+
+  /// Snackbar when system Quick Settings prompt is unavailable in Companion
+  ///
+  /// In en, this message translates to:
+  /// **'Android could not show the Quick Settings prompt on this device. You can drag Enprive Check manually from Quick Settings Edit.'**
+  String get companionTileUnavailableSnack;
+
+  /// Fallback note explaining Usage Access is optional
+  ///
+  /// In en, this message translates to:
+  /// **'Usage Access is optional. You can choose an app manually or allow Usage Access for one-tap identification.'**
+  String get companionUsageOptionalReason;
+
+  /// Permission title for ACCESS_FINE_LOCATION
+  ///
+  /// In en, this message translates to:
+  /// **'Precise location'**
+  String get companionPermPreciseLocation;
+
+  /// Permission title for ACCESS_BACKGROUND_LOCATION
+  ///
+  /// In en, this message translates to:
+  /// **'Background location'**
+  String get companionPermBackgroundLocation;
+
+  /// Permission title for CAMERA
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get companionPermCamera;
+
+  /// Permission title for RECORD_AUDIO
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone'**
+  String get companionPermMicrophone;
+
+  /// Permission title for AD_ID
+  ///
+  /// In en, this message translates to:
+  /// **'Google Advertising ID'**
+  String get companionPermAdId;
+
+  /// Fallback explanation for a declared Android permission
+  ///
+  /// In en, this message translates to:
+  /// **'Android permission ({permission}) declared by {appName}.'**
+  String companionPermDeclaredBy(String permission, String appName);
+
+  /// Grant status note for Advertising ID
+  ///
+  /// In en, this message translates to:
+  /// **'Listed by app · Ad ID'**
+  String get companionPermStatusAdId;
+
+  /// Grant status note when a permission is allowed
+  ///
+  /// In en, this message translates to:
+  /// **'Listed by app · Allowed'**
+  String get companionPermStatusAllowed;
+
+  /// Grant status note when a permission is not allowed
+  ///
+  /// In en, this message translates to:
+  /// **'Listed by app · Not allowed'**
+  String get companionPermStatusNotAllowed;
+
+  /// Guided permission category chip for Location
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get guidedCatLocation;
+
+  /// Guided permission category chip for Contacts
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get guidedCatContacts;
+
+  /// Guided permission category chip for Photos and media
+  ///
+  /// In en, this message translates to:
+  /// **'Photos and media'**
+  String get guidedCatPhotosMedia;
+
+  /// Guided permission category chip for Notifications
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get guidedCatNotifications;
+
+  /// Guided permission category chip for Nearby devices
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby devices'**
+  String get guidedCatNearbyDevices;
+
+  /// Guided permission category chip for Calendar
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get guidedCatCalendar;
+
+  /// Guided permission category chip for Phone
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get guidedCatPhone;
+
+  /// Guided permission category chip for SMS
+  ///
+  /// In en, this message translates to:
+  /// **'SMS'**
+  String get guidedCatSms;
+
+  /// Localized fallback reason when Usage Access is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Usage Access has not been enabled in Android Settings.'**
+  String get companionFallbackUsageNotEnabled;
+
+  /// Localized fallback reason when UsageStatsManager is unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Android UsageStatsManager is unavailable.'**
+  String get companionFallbackUsageUnavailable;
+
+  /// Localized fallback reason when only transient Android UI was seen
+  ///
+  /// In en, this message translates to:
+  /// **'Only Android system or permission prompt UI appeared in recent usage events; choose the app manually.'**
+  String get companionFallbackTransientUi;
+
+  /// Localized fallback reason when Android package visibility hides the app
+  ///
+  /// In en, this message translates to:
+  /// **'The most recently active app cannot be inspected under Android package visibility restrictions. Please choose an app from the list or paste its policy.'**
+  String get companionFallbackVisibilityRestricted;
+
+  /// Localized fallback reason when device is locked
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock your device before viewing app context.'**
+  String get companionFallbackUnlockRequired;
+
+  /// Reason shown in CloudConsentSheet when policy exceeds on-device limit
+  ///
+  /// In en, this message translates to:
+  /// **'This policy is too detailed for on-device AI processing.'**
+  String get consentReasonPolicyTooDetailed;
+
+  /// Reason shown in CloudConsentSheet when finding excerpt exceeds on-device limit
+  ///
+  /// In en, this message translates to:
+  /// **'This finding excerpt is too detailed for on-device AI processing.'**
+  String get consentReasonExcerptTooDetailed;
+
+  /// Reason shown in CloudConsentSheet when on-device AI is unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'On-device AI is unavailable on this phone right now.'**
+  String get consentReasonOnDeviceUnavailable;
+
+  /// Reason shown in CloudConsentSheet when on-device AI cannot answer
+  ///
+  /// In en, this message translates to:
+  /// **'On-device AI could not answer from this device right now.'**
+  String get consentReasonOnDeviceCannotAnswer;
+
+  /// Reason shown when voice summary findings exceed on-device limits
+  ///
+  /// In en, this message translates to:
+  /// **'These verified findings exceed on-device summary limits. You can use the offline summary now or send the redacted findings to Cloud AI once.'**
+  String get consentReasonVoiceTooLong;
+
+  /// Reason shown when voice summary falls back to offline summary
+  ///
+  /// In en, this message translates to:
+  /// **'On-device AI is unavailable on this phone right now. Showing Enprive\'s offline plain-language summary.'**
+  String get consentReasonVoiceUnavailable;
+
+  /// Reason shown when on-device voice summary times out
+  ///
+  /// In en, this message translates to:
+  /// **'On-device summary timed out. Showing Enprive\'s offline plain-language summary.'**
+  String get consentReasonVoiceTimedOut;
+
+  /// Title of exit confirmation sheet for an unsaved review
+  ///
+  /// In en, this message translates to:
+  /// **'Save this privacy review?'**
+  String get unsavedExitTitle;
+
+  /// Explanation when closing an unsaved update to a saved receipt
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved reviews are discarded when you close this screen, so nothing is stored on your phone without your choice. Your original saved receipt will remain unchanged.'**
+  String get unsavedExitModifiedBody;
+
+  /// Explanation when closing an unsaved new review draft
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved reviews are discarded when you close this screen, so nothing is stored on your phone without your choice.'**
+  String get unsavedExitDraftBody;
+
+  /// Button to discard unsaved review and exit
+  ///
+  /// In en, this message translates to:
+  /// **'Discard without saving'**
+  String get unsavedExitDiscardBtn;
+
+  /// Button to cancel exiting and keep reviewing
+  ///
+  /// In en, this message translates to:
+  /// **'Continue reviewing'**
+  String get unsavedExitContinueBtn;
+
+  /// Sheet title when updating a privacy policy for an existing subject
+  ///
+  /// In en, this message translates to:
+  /// **'Update privacy policy for {title}'**
+  String updatePrivacyPolicyForTitle(String title);
+
+  /// Error shown if saving a receipt fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save receipt. Your review draft is still open.'**
+  String get reviewSaveFailedError;
+
+  /// Snackbar after deleting a saved receipt
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from saved receipts.'**
+  String get reviewRemovedFromReceiptsSnack;
+
+  /// Snackbar when deleting a saved receipt fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not remove saved receipt.'**
+  String get reviewRemoveFailedSnack;
+
+  /// Banner title when viewing an unsaved updated draft of a saved receipt
+  ///
+  /// In en, this message translates to:
+  /// **'New draft from saved receipt'**
+  String get reviewModifiedDraftTitle;
+
+  /// Banner body when viewing an unsaved updated draft of a saved receipt
+  ///
+  /// In en, this message translates to:
+  /// **'Save to Receipts to keep this updated review: your original saved receipt remains unchanged.'**
+  String get reviewModifiedDraftBody;
+
+  /// Action button to retry saving a receipt
+  ///
+  /// In en, this message translates to:
+  /// **'Retry save'**
+  String get btnRetrySave;
+
+  /// Header for synthetic sample app permissions
+  ///
+  /// In en, this message translates to:
+  /// **'Sample permissions ({badge})'**
+  String samplePermissionsHeader(String badge);
+
+  /// Source kind label for a fetched URL
+  ///
+  /// In en, this message translates to:
+  /// **'Public web link'**
+  String get sourceKindUrl;
+
+  /// Source kind label for a local PDF file
+  ///
+  /// In en, this message translates to:
+  /// **'Local PDF file'**
+  String get sourceKindPdf;
+
+  /// Source kind label for a local DOCX file
+  ///
+  /// In en, this message translates to:
+  /// **'Local Word (DOCX) file'**
+  String get sourceKindDocx;
+
+  /// Source kind label for a local text file
+  ///
+  /// In en, this message translates to:
+  /// **'Local text file'**
+  String get sourceKindTextFile;
+
+  /// Source kind label for Android shared text
+  ///
+  /// In en, this message translates to:
+  /// **'Shared text'**
+  String get sourceKindSharedText;
+
+  /// Source kind label for selected text
+  ///
+  /// In en, this message translates to:
+  /// **'Selected text'**
+  String get sourceKindSelectedText;
+
+  /// Source kind label for a built-in sample app
+  ///
+  /// In en, this message translates to:
+  /// **'Sample app'**
+  String get sourceKindSampleApp;
+
+  /// Source kind label for phone permissions inspection
+  ///
+  /// In en, this message translates to:
+  /// **'Phone permissions'**
+  String get sourceKindPhonePermissions;
+
+  /// Source kind label for pasted policy text
+  ///
+  /// In en, this message translates to:
+  /// **'Pasted text'**
+  String get sourceKindPastedText;
+
+  /// Extraction status when text was extracted locally
+  ///
+  /// In en, this message translates to:
+  /// **'Read on this phone'**
+  String get extractionStatusExtracted;
+
+  /// Extraction status when text was provided directly
+  ///
+  /// In en, this message translates to:
+  /// **'Provided on this phone'**
+  String get extractionStatusNone;
+
+  /// Extraction status for unsupported file types
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported file type'**
+  String get extractionStatusUnsupported;
+
+  /// Extraction status when file exceeds size limit
+  ///
+  /// In en, this message translates to:
+  /// **'File too large'**
+  String get extractionStatusTooLarge;
+
+  /// Extraction status when file has no extractable text
+  ///
+  /// In en, this message translates to:
+  /// **'No readable text'**
+  String get extractionStatusEmpty;
+
+  /// Extraction status when reading file fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read file'**
+  String get extractionStatusReadError;
+
+  /// Extraction status for password-protected documents
+  ///
+  /// In en, this message translates to:
+  /// **'Password-protected'**
+  String get extractionStatusPasswordProtected;
+
+  /// Extraction status when file access is denied
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied'**
+  String get extractionStatusPermissionDenied;
+
+  /// Extraction status when extraction was cancelled
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get extractionStatusCancelled;
+
+  /// Timestamp row inside Advanced details
+  ///
+  /// In en, this message translates to:
+  /// **'Checked at: {timestamp}'**
+  String advancedDetailsCheckedAt(String timestamp);
+
+  /// Canonical URL row inside Advanced details
+  ///
+  /// In en, this message translates to:
+  /// **'Canonical URL: {url}'**
+  String advancedDetailsCanonicalUrl(String url);
+
+  /// Redirect origin row inside Advanced details
+  ///
+  /// In en, this message translates to:
+  /// **'Redirected from: {url}'**
+  String advancedDetailsRedirectedFrom(String url);
+
+  /// Filename label inside Advanced details
+  ///
+  /// In en, this message translates to:
+  /// **'File: {filename}'**
+  String advancedDetailsFileLine(String filename);
+
+  /// Extraction status suffix inside Advanced details
+  ///
+  /// In en, this message translates to:
+  /// **'Status: {status}'**
+  String advancedDetailsStatusSuffix(String status);
+
+  /// SHA-256 hash row inside Advanced details
+  ///
+  /// In en, this message translates to:
+  /// **'SHA-256 source hash: {hash}'**
+  String advancedDetailsSha256Hash(String hash);
+
+  /// Accessibility label for the bottom navigation bar
+  ///
+  /// In en, this message translates to:
+  /// **'Primary navigation'**
+  String get semanticsPrimaryNavigation;
+
+  /// Accessibility label for the inference provenance chip
+  ///
+  /// In en, this message translates to:
+  /// **'Processing location: {label}'**
+  String semanticsProcessingLocation(String label);
+
+  /// Default accessibility label for the interactive Deni mascot
+  ///
+  /// In en, this message translates to:
+  /// **'Deni, your privacy guide'**
+  String get semanticsDeniMascot;
+
+  /// Default header for collapsible policy quote box
+  ///
+  /// In en, this message translates to:
+  /// **'Exact Policy Excerpt'**
+  String get quoteCollapsibleDefaultHeader;
 }
 
 class _AppLocalizationsDelegate

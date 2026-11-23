@@ -131,7 +131,7 @@ class _PrivateReadinessSheetState extends State<PrivateReadinessSheet> {
                   ),
                   const Spacer(),
                   IconButton(
-                    tooltip: 'Close',
+                    tooltip: l10n.tooltipClose,
                     onPressed: () => Navigator.pop(context, _capability),
                     icon: Icon(
                       LucideIcons.x,

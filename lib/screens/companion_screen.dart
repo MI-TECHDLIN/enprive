@@ -10,6 +10,7 @@ import '../domain/intake/policy_intake_models.dart';
 import '../domain/review/app_policy_association.dart' show AppIdentityCandidate;
 import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
+import '../l10n/app_localizations.dart';
 import '../services/intake/policy_intake_coordinator.dart';
 import '../services/intake/policy_intake_helper.dart';
 import '../services/network/policy_url_retriever.dart';
@@ -338,7 +339,12 @@ class _CompanionScreenState extends State<CompanionScreen>
         _companionSaveError = null;
         _syntheticPermissions
           ..clear()
-          ..addAll(_mapSnapshotToDeclaredItems(choice.permissionSnapshot));
+          ..addAll(
+            _mapSnapshotToDeclaredItems(
+              choice.permissionSnapshot,
+              _l10n(context),
+            ),
+          );
       });
       return;
     }
@@ -349,8 +355,54 @@ class _CompanionScreenState extends State<CompanionScreen>
     );
   }
 
+  AppLocalizations _l10n(BuildContext context) {
+    return AppLocalizations.of(context) ??
+        lookupAppLocalizations(
+          Localizations.maybeLocaleOf(context) ?? Locale(widget.languageCode),
+        );
+  }
+
+  static String _localizeFallbackReason(String raw, AppLocalizations l10n) {
+    final trimmed = raw.trim();
+    return switch (trimmed) {
+      'Usage Access is optional. You can choose an app manually or allow Usage Access for one-tap identification.' =>
+        l10n.companionUsageOptionalReason,
+      'Usage Access has not been enabled in Android Settings.' =>
+        l10n.companionFallbackUsageNotEnabled,
+      'Android UsageStatsManager is unavailable.' =>
+        l10n.companionFallbackUsageUnavailable,
+      'Only Android system or permission prompt UI appeared in recent usage events; choose the app manually.' =>
+        l10n.companionFallbackTransientUi,
+      'The most recently active app cannot be inspected under Android package visibility restrictions. Please choose an app from the list or paste its policy.' =>
+        l10n.companionFallbackVisibilityRestricted,
+      'Unlock your device before viewing app context.' =>
+        l10n.companionFallbackUnlockRequired,
+      _ => raw,
+    };
+  }
+
+  static String _localizeGuidedTitle(
+    GuidedPermissionOption opt,
+    AppLocalizations l10n,
+  ) {
+    return switch (opt.categoryId) {
+      'location' => l10n.guidedCatLocation,
+      'camera' => l10n.companionPermCamera,
+      'microphone' => l10n.companionPermMicrophone,
+      'contacts' => l10n.guidedCatContacts,
+      'photos_media' => l10n.guidedCatPhotosMedia,
+      'notifications' => l10n.guidedCatNotifications,
+      'nearby_devices' => l10n.guidedCatNearbyDevices,
+      'calendar' => l10n.guidedCatCalendar,
+      'phone' => l10n.guidedCatPhone,
+      'sms' => l10n.guidedCatSms,
+      _ => opt.title,
+    };
+  }
+
   List<DeclaredSensitivePermission> _mapSnapshotToDeclaredItems(
     AppPermissionSnapshot snapshot,
+    AppLocalizations l10n,
   ) {
     return snapshot.requestedPermissions
         .where((p) => !p.endsWith('.INTERNET') && !p.endsWith('.VIBRATE'))
@@ -358,13 +410,14 @@ class _CompanionScreenState extends State<CompanionScreen>
           final isGranted = snapshot.isGranted(perm);
           final isAdId = perm == 'com.google.android.gms.permission.AD_ID';
           final title = switch (perm) {
-            'android.permission.ACCESS_FINE_LOCATION' => 'Precise location',
+            'android.permission.ACCESS_FINE_LOCATION' =>
+              l10n.companionPermPreciseLocation,
             'android.permission.ACCESS_BACKGROUND_LOCATION' =>
-              'Background location',
-            'android.permission.CAMERA' => 'Camera',
-            'android.permission.RECORD_AUDIO' => 'Microphone',
+              l10n.companionPermBackgroundLocation,
+            'android.permission.CAMERA' => l10n.companionPermCamera,
+            'android.permission.RECORD_AUDIO' => l10n.companionPermMicrophone,
             'com.google.android.gms.permission.AD_ID' =>
-              'Google Advertising ID',
+              l10n.companionPermAdId,
             _ => perm.split('.').last,
           };
           final categoryId = switch (perm) {
@@ -379,8 +432,10 @@ class _CompanionScreenState extends State<CompanionScreen>
             permission: perm,
             categoryId: categoryId,
             title: title,
-            whatPermissionMeans:
-                'Android permission ($perm) declared by ${snapshot.appName}.',
+            whatPermissionMeans: l10n.companionPermDeclaredBy(
+              perm,
+              snapshot.appName,
+            ),
             grantStatus: isAdId
                 ? DeclaredPermissionGrantStatus.manifestDeclaredOnly
                 : (isGranted
@@ -388,10 +443,10 @@ class _CompanionScreenState extends State<CompanionScreen>
                       : DeclaredPermissionGrantStatus.denied),
             isRuntimePermission: !isAdId,
             statusNote: isAdId
-                ? 'Listed by app · Ad ID'
+                ? l10n.companionPermStatusAdId
                 : (isGranted
-                      ? 'Listed by app · Allowed'
-                      : 'Listed by app · Not allowed'),
+                      ? l10n.companionPermStatusAllowed
+                      : l10n.companionPermStatusNotAllowed),
           );
         })
         .toList(growable: false);
@@ -422,10 +477,11 @@ class _CompanionScreenState extends State<CompanionScreen>
     final opened = await widget.companionBridge.openUsageAccessSettings();
     if (!mounted) return;
     if (!opened) {
+      final l10n = _l10n(context);
       _awaitingUsageAccessReturn = false;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not open Usage Access Settings on this device.'),
+        SnackBar(
+          content: Text(l10n.usageAccessOpenFailedSnack),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -436,16 +492,16 @@ class _CompanionScreenState extends State<CompanionScreen>
     final outcome = await widget.companionBridge.requestQuickSettingsTile();
     final updated = await widget.companionBridge.getQuickSettingsTileStatus();
     if (!mounted) return;
+    final l10n = _l10n(context);
     setState(() => _tileStatus = updated);
 
     final message = switch (outcome) {
-      TileAddOutcome.tileAdded =>
-        'Enprive Check added to Android Quick Settings.',
-      TileAddOutcome.alreadyAdded =>
-        'Enprive Check is already in your Quick Settings.',
-      TileAddOutcome.declined => 'Tile request dismissed. You can add it anytime from Settings or Quick Settings Edit.',
-      TileAddOutcome.manualRequired => 'Swipe down Quick Settings twice, tap Edit, and drag Enprive Check into your tiles.',
-      TileAddOutcome.failed || TileAddOutcome.unavailable => 'Android could not show the Quick Settings prompt on this device. You can drag Enprive Check manually from Quick Settings Edit.',
+      TileAddOutcome.tileAdded => l10n.companionTileAddedSnack,
+      TileAddOutcome.alreadyAdded => l10n.companionTileAlreadyAddedSnack,
+      TileAddOutcome.declined => l10n.companionTileDeclinedSnack,
+      TileAddOutcome.manualRequired => l10n.companionTileManualSnack,
+      TileAddOutcome.failed ||
+      TileAddOutcome.unavailable => l10n.companionTileUnavailableSnack,
     };
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
@@ -499,17 +555,18 @@ class _CompanionScreenState extends State<CompanionScreen>
         _persistedReceiptIds.add(receipt.id);
         _companionSaveError = null;
       });
+      final l10n = _l10n(context);
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(
-            content: Text('Saved to local Receipts.'),
+          SnackBar(
+            content: Text(l10n.companionSavedLocalReceiptsSnack),
             behavior: SnackBarBehavior.floating,
           ),
         );
     } catch (_) {
       if (!mounted) return;
-      const err = 'Could not save receipt. Kept in this session — try again.';
+      final err = _l10n(context).companionSaveReceiptFailed;
       setState(() {
         _isSavingSessionReceipt = false;
         _companionSaveError = err;
@@ -517,7 +574,7 @@ class _CompanionScreenState extends State<CompanionScreen>
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(err),
             behavior: SnackBarBehavior.floating,
           ),
@@ -613,7 +670,7 @@ class _CompanionScreenState extends State<CompanionScreen>
         context,
         config: PolicyIntakeSheetConfig(
           coordinator: _intakeCoordinator,
-          titleOverride: 'Verify policy for $appDisplay',
+          titleOverride: _l10n(context).companionVerifyPolicyTitle(appDisplay),
           initialMode: PolicyIntakeMode.url,
           initialSelectedApp: lockedApp,
           companionBridge: widget.companionBridge,
@@ -796,12 +853,13 @@ class _CompanionScreenState extends State<CompanionScreen>
       }
     } on HybridOperationCancelledException catch (e) {
       if (mounted && opSeq == _policyOpSequence) {
+        final l10n = _l10n(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               e.isTimeout
-                  ? 'Cloud analysis took too long and was stopped before completing.'
-                  : 'Analysis cancelled.',
+                  ? l10n.companionCloudTimeoutSnack
+                  : l10n.companionAnalysisCancelledSnack,
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -920,12 +978,13 @@ class _CompanionScreenState extends State<CompanionScreen>
       setState(() => _deniAnswer = answer);
     } on HybridOperationCancelledException catch (e) {
       if (mounted && seq == _askOpSequence) {
+        final l10n = _l10n(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               e.isTimeout
-                  ? 'Cloud answer timed out cleanly.'
-                  : 'Question cancelled.',
+                  ? l10n.companionCloudAnswerTimeoutSnack
+                  : l10n.companionQuestionCancelledSnack,
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -984,6 +1043,7 @@ class _CompanionScreenState extends State<CompanionScreen>
       context,
       child: Builder(
         builder: (context) {
+          final l10n = _l10n(context);
           final m3e = EnpriveM3ETheme.of(context);
           final scheme = m3e.colorScheme;
           final surfaces = context.enpriveSurfaces;
@@ -1010,14 +1070,14 @@ class _CompanionScreenState extends State<CompanionScreen>
                     color: scheme.onSurface,
                   ),
                   tooltip: launchedFromQuickSettings
-                      ? 'Return to previous app'
-                      : 'Back',
+                      ? l10n.companionTooltipReturnToPrev
+                      : l10n.companionTooltipBack,
                   onPressed: launchedFromQuickSettings
                       ? () => _finishCompanion(returnToCallerApp: true)
                       : () => Navigator.of(context).maybePop(),
                 ),
                 title: Text(
-                  'Deni — Enprive Companion',
+                  l10n.companionTitle,
                   style: m3e.typography.emphasized.titleMedium.copyWith(
                     color: scheme.onSurface,
                   ),
@@ -1110,10 +1170,12 @@ class _CompanionScreenState extends State<CompanionScreen>
                               label:
                                   widget.invocation != null &&
                                       _confirmedAppLabel != null
-                                  ? 'Done · Return to $_confirmedAppLabel'
+                                  ? l10n.companionDoneReturnToApp(
+                                      _confirmedAppLabel!,
+                                    )
                                   : (widget.invocation != null
-                                        ? 'Done · Return to previous app'
-                                        : 'Done'),
+                                        ? l10n.companionDoneReturnToPrev
+                                        : l10n.btnDone),
                               isSecondary: true,
                               onPressed: () =>
                                   _finishCompanion(returnToCallerApp: true),
@@ -1127,7 +1189,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                                     returnToCallerApp: false,
                                   ),
                                   child: Text(
-                                    'Open full Enprive app',
+                                    l10n.companionOpenFullAppBtn,
                                     style: m3e.typeScale.labelLarge.copyWith(
                                       color: scheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w700,
@@ -1154,6 +1216,7 @@ class _CompanionScreenState extends State<CompanionScreen>
     EnpriveSurfaceTokens surfaces,
     EnpriveSemanticColors semantics,
   ) {
+    final l10n = _l10n(context);
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -1162,15 +1225,15 @@ class _CompanionScreenState extends State<CompanionScreen>
           EnpriveCompanionCard(
             pose: DeniPose.peek,
             layout: EnpriveCompanionLayout.peeking,
-            badgeText: 'LOCK SCREEN PROTECTED',
+            badgeText: l10n.companionLockedBadge,
             badgeIcon: LucideIcons.lock,
-            title: 'Unlock your phone to continue',
-            message: 'Enprive hides app names, declared permissions, and review evidence while the device is locked.',
+            title: l10n.companionLockedTitle,
+            message: l10n.companionLockedBody,
             accentColor: semantics.onDevice.foreground,
             accentBackground: semantics.onDevice.background,
             backgroundColor: surfaces.card,
             action: EnpriveTactileButton(
-              label: 'Check unlock state',
+              label: l10n.companionCheckUnlockBtn,
               onPressed: _handleResumeLifecycle,
             ),
           ),
@@ -1186,21 +1249,24 @@ class _CompanionScreenState extends State<CompanionScreen>
     EnpriveSurfaceTokens surfaces,
     EnpriveSemanticColors semantics,
   ) {
+    final l10n = _l10n(context);
     final String headline;
     final String subtitle;
 
     if (_isResolvingForeground) {
-      headline = 'Checking which app you were using…';
-      subtitle = 'Checking once on this phone without watching your screen.';
+      headline = l10n.companionCheckingAppHeadline;
+      subtitle = l10n.companionCheckingAppSubtitle;
     } else if (_continuedWithoutAppContext) {
-      headline = 'General Android permission guide';
-      subtitle = 'No app selected. Enprive explains Android permissions using local guidance only.';
+      headline = l10n.companionGeneralGuideHeadline;
+      subtitle = l10n.companionGeneralGuideSubtitle;
     } else if (_isAppConfirmed) {
-      headline = 'You\'re looking at ${_confirmedAppLabel ?? 'this app'}.';
-      subtitle = 'Permissions listed below come from the app on your phone — Android still controls whichever popup is on screen.';
+      headline = l10n.companionLookingAtHeadline(
+        _confirmedAppLabel ?? l10n.companionThisAppFallback,
+      );
+      subtitle = l10n.companionLookingAtSubtitle;
     } else {
-      headline = 'Deni — Enprive Companion';
-      subtitle = 'Ask Deni about an app\'s permissions and what its privacy policy says.';
+      headline = l10n.companionTitle;
+      subtitle = l10n.companionSubtitle;
     }
 
     return EnpriveMaterialCardSurface(
@@ -1251,6 +1317,7 @@ class _CompanionScreenState extends State<CompanionScreen>
     EnpriveSurfaceTokens surfaces,
     EnpriveSemanticColors semantics,
   ) {
+    final l10n = _l10n(context);
     final res = _resolution;
     if (_isResolvingForeground || res == null) {
       return EnpriveMaterialCardSurface(
@@ -1296,14 +1363,17 @@ class _CompanionScreenState extends State<CompanionScreen>
                         children: [
                           Text(
                             status == ForegroundResolutionStatus.stale
-                                ? 'We saw ${res.displayLabel} ${((res.eventAgeMillis ?? 0) / 1000).round()}s ago. Is this correct?'
-                                : 'We think you\'re using ${res.displayLabel}. Is this correct?',
+                                ? l10n.companionSawAppAgo(
+                                    res.displayLabel,
+                                    ((res.eventAgeMillis ?? 0) / 1000).round(),
+                                  )
+                                : l10n.companionThinkUsingApp(res.displayLabel),
                             style: m3e.typography.emphasized.titleMedium
                                 .copyWith(color: scheme.onSurface),
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'App ID: ${res.packageName!}',
+                            l10n.companionAppIdLine(res.packageName!),
                             style: m3e.typeScale.labelSmall.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),
@@ -1316,7 +1386,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                 if (res.fallbackReason != null) ...[
                   const SizedBox(height: 10),
                   Text(
-                    res.fallbackReason!,
+                    _localizeFallbackReason(res.fallbackReason!, l10n),
                     style: m3e.typeScale.bodySmall.copyWith(
                       color: semantics.reviewRecommended.foreground,
                     ),
@@ -1325,7 +1395,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                 const SizedBox(height: 14),
                 EnpriveTactileButton(
                   key: const Key('companion_confirm_app_btn'),
-                  label: 'Confirm · ${res.displayLabel}',
+                  label: l10n.companionConfirmAppBtn(res.displayLabel),
                   onPressed: () => _confirmCandidateApp(
                     packageName: res.packageName!,
                     applicationLabel: res.displayLabel,
@@ -1345,7 +1415,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                         ),
                       ),
                       onPressed: _openManualAppPicker,
-                      child: const Text('Choose another app'),
+                      child: Text(l10n.companionChooseAnotherAppBtn),
                     ),
                     TextButton(
                       style: TextButton.styleFrom(
@@ -1355,7 +1425,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                         ),
                       ),
                       onPressed: _continueWithoutAppContext,
-                      child: const Text('Without app context'),
+                      child: Text(l10n.companionWithoutAppContextBtn),
                     ),
                   ],
                 ),
@@ -1374,15 +1444,16 @@ class _CompanionScreenState extends State<CompanionScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Multiple apps were active just now',
+                  l10n.companionMultipleAppsTitle,
                   style: m3e.typography.emphasized.titleMedium.copyWith(
                     color: scheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  res.fallbackReason ??
-                      'Confirm which application you want to inspect:',
+                  res.fallbackReason != null
+                      ? _localizeFallbackReason(res.fallbackReason!, l10n)
+                      : l10n.companionMultipleAppsPrompt,
                   style: m3e.typeScale.bodySmall.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -1423,7 +1494,9 @@ class _CompanionScreenState extends State<CompanionScreen>
                                   ),
                                 ),
                                 Text(
-                                  '${(candidate.eventAgeMillis / 1000).round()}s ago',
+                                  l10n.companionSecondsAgo(
+                                    (candidate.eventAgeMillis / 1000).round(),
+                                  ),
                                   style: m3e.typeScale.labelSmall.copyWith(
                                     color: scheme.onSurfaceVariant,
                                   ),
@@ -1455,7 +1528,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                         ),
                       ),
                       onPressed: _openManualAppPicker,
-                      child: const Text('Choose another app'),
+                      child: Text(l10n.companionChooseAnotherAppBtn),
                     ),
                     TextButton(
                       style: TextButton.styleFrom(
@@ -1465,7 +1538,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                         ),
                       ),
                       onPressed: _continueWithoutAppContext,
-                      child: const Text('Without app context'),
+                      child: Text(l10n.companionWithoutAppContextBtn),
                     ),
                   ],
                 ),
@@ -1484,8 +1557,8 @@ class _CompanionScreenState extends State<CompanionScreen>
               children: [
                 Text(
                   status == ForegroundResolutionStatus.usageAccessDenied
-                      ? 'Allow Usage Access (optional)'
-                      : 'Select the app you want to check',
+                      ? l10n.usageAccessTitle
+                      : l10n.companionSelectAppTitle,
                   style: m3e.typography.emphasized.titleMedium.copyWith(
                     color: scheme.onSurface,
                   ),
@@ -1493,9 +1566,10 @@ class _CompanionScreenState extends State<CompanionScreen>
                 const SizedBox(height: 6),
                 Text(
                   status == ForegroundResolutionStatus.usageAccessDenied
-                      ? 'Enprive uses Usage Access only when you tap Enprive Check to identify the app you were just using. This helps Deni find the correct app and its privacy information. Enprive does not continuously monitor your screen.'
-                      : (res.fallbackReason ??
-                            'Choose the application manually from installed apps, or continue without app context.'),
+                      ? l10n.usageAccessExplanation
+                      : (res.fallbackReason != null
+                            ? _localizeFallbackReason(res.fallbackReason!, l10n)
+                            : l10n.companionSelectAppBody),
                   style: m3e.typeScale.bodySmall.copyWith(
                     color: scheme.onSurfaceVariant,
                     height: 1.4,
@@ -1504,7 +1578,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                 const SizedBox(height: 14),
                 EnpriveTactileButton(
                   key: const Key('companion_choose_app_manual_btn'),
-                  label: 'Choose app manually',
+                  label: l10n.companionChooseAppManuallyBtn,
                   onPressed: _openManualAppPicker,
                 ),
                 const SizedBox(height: 10),
@@ -1515,7 +1589,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                       key: const Key('companion_usage_access_btn'),
                       onPressed: _openUsageAccessSettings,
                       icon: const Icon(LucideIcons.settings, size: 16),
-                      label: const Text('Open Usage Access Settings'),
+                      label: Text(l10n.companionOpenUsageAccessBtn),
                     ),
                   ),
                 Align(
@@ -1523,7 +1597,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                   child: TextButton(
                     key: const Key('companion_without_app_btn'),
                     onPressed: _continueWithoutAppContext,
-                    child: const Text('Continue without app context'),
+                    child: Text(l10n.companionContinueWithoutAppBtn),
                   ),
                 ),
               ],
@@ -1534,18 +1608,26 @@ class _CompanionScreenState extends State<CompanionScreen>
             !_tileStatus!.isTileAdded &&
             !_tileStatus!.hasDeclinedBefore) ...[
           const SizedBox(height: 14),
-          _buildQuickSettingsInstallCard(m3e, scheme, surfaces, semantics),
+          _buildQuickSettingsInstallCard(
+            context,
+            m3e,
+            scheme,
+            surfaces,
+            semantics,
+          ),
         ],
       ],
     );
   }
 
   Widget _buildQuickSettingsInstallCard(
+    BuildContext context,
     M3EThemeData m3e,
     M3EColorScheme scheme,
     EnpriveSurfaceTokens surfaces,
     EnpriveSemanticColors semantics,
   ) {
+    final l10n = _l10n(context);
     return EnpriveMaterialCardSurface(
       variant: EnpriveCardVariant.outlined,
       backgroundColor: surfaces.cardMuted,
@@ -1556,7 +1638,7 @@ class _CompanionScreenState extends State<CompanionScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Connect Enprive to Quick Settings',
+            l10n.quickSettingsSectionTitle,
             style: m3e.typeScale.titleSmall.copyWith(
               color: scheme.onSurface,
               fontWeight: FontWeight.w800,
@@ -1564,7 +1646,7 @@ class _CompanionScreenState extends State<CompanionScreen>
           ),
           const SizedBox(height: 4),
           Text(
-            'Add Enprive Check to Quick Settings to ask Deni about the app you\'re using without searching for Enprive first.',
+            l10n.quickSettingsTileSubtitle,
             style: m3e.typeScale.bodySmall.copyWith(
               color: scheme.onSurfaceVariant,
               height: 1.35,
@@ -1574,7 +1656,7 @@ class _CompanionScreenState extends State<CompanionScreen>
           OutlinedButton.icon(
             onPressed: _requestQuickSettingsTile,
             icon: const Icon(LucideIcons.layoutGrid, size: 16),
-            label: const Text('Add Enprive Check tile'),
+            label: Text(l10n.companionAddTileBtn),
           ),
         ],
       ),
@@ -1588,6 +1670,7 @@ class _CompanionScreenState extends State<CompanionScreen>
     EnpriveSurfaceTokens surfaces,
     EnpriveSemanticColors semantics,
   ) {
+    final l10n = _l10n(context);
     return EnpriveMaterialCardSurface(
       variant: EnpriveCardVariant.outlined,
       backgroundColor: surfaces.cardMuted,
@@ -1613,7 +1696,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                   children: [
                     Text(
                       _continuedWithoutAppContext
-                          ? 'Continuing without app context'
+                          ? l10n.companionContinuingWithoutApp
                           : '${_confirmedAppLabel ?? _confirmedPackageName}${_confirmedVersionLabel != null ? ' · $_confirmedVersionLabel' : ''}',
                       style: m3e.typeScale.titleSmall.copyWith(
                         color: scheme.onSurface,
@@ -1622,7 +1705,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                     ),
                     if (_confirmedPackageName != null)
                       Text(
-                        'App ID: ${_confirmedPackageName!}',
+                        l10n.companionAppIdLine(_confirmedPackageName!),
                         style: m3e.typeScale.labelSmall.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
@@ -1632,7 +1715,7 @@ class _CompanionScreenState extends State<CompanionScreen>
               ),
               TextButton(
                 onPressed: _openManualAppPicker,
-                child: const Text('Switch app'),
+                child: Text(l10n.companionSwitchAppBtn),
               ),
             ],
           ),
@@ -1641,7 +1724,7 @@ class _CompanionScreenState extends State<CompanionScreen>
               !_continuedWithoutAppContext) ...[
             const SizedBox(height: 6),
             Text(
-              'Permissions shown below are read directly from your phone.',
+              l10n.companionPermissionsReadLocally,
               style: m3e.typeScale.labelSmall.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
@@ -1659,12 +1742,13 @@ class _CompanionScreenState extends State<CompanionScreen>
     EnpriveSurfaceTokens surfaces,
     EnpriveSemanticColors semantics,
   ) {
+    final l10n = _l10n(context);
     if (_continuedWithoutAppContext) {
       return Row(
         children: [
           Expanded(
             child: Text(
-              'Pick a permission type to explore',
+              l10n.companionPickPermissionType,
               style: m3e.typography.emphasized.titleMedium.copyWith(
                 color: scheme.onSurface,
               ),
@@ -1672,7 +1756,7 @@ class _CompanionScreenState extends State<CompanionScreen>
           ),
           TextButton(
             onPressed: _openManualAppPicker,
-            child: const Text('Pick an app'),
+            child: Text(l10n.companionPickAppBtn),
           ),
         ],
       );
@@ -1696,7 +1780,7 @@ class _CompanionScreenState extends State<CompanionScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Couldn\'t read app permissions',
+              l10n.companionCouldNotReadPermsTitle,
               style: m3e.typeScale.titleSmall.copyWith(
                 color: scheme.onSurface,
                 fontWeight: FontWeight.w800,
@@ -1705,7 +1789,7 @@ class _CompanionScreenState extends State<CompanionScreen>
             const SizedBox(height: 4),
             Text(
               _permissionsResult!.errorMessage ??
-                  'Android prevented inspecting this app\'s permissions.',
+                  l10n.companionCouldNotReadPermsBody,
               style: m3e.typeScale.bodySmall.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
@@ -1714,7 +1798,7 @@ class _CompanionScreenState extends State<CompanionScreen>
             OutlinedButton(
               onPressed: () =>
                   setState(() => _showUnsureGuide = !_showUnsureGuide),
-              child: const Text("I'm not sure which permission"),
+              child: Text(l10n.companionUnsurePermBtn),
             ),
           ],
         ),
@@ -1726,14 +1810,14 @@ class _CompanionScreenState extends State<CompanionScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Which permission would you like to understand?',
+          l10n.companionWhichPermissionPrompt,
           style: m3e.typography.emphasized.titleMedium.copyWith(
             color: scheme.onSurface,
           ),
         ),
         const SizedBox(height: 4),
         Text(
-          'These are permissions the app lists on your phone, not necessarily the popup on your screen right now.',
+          l10n.companionPermissionsListDisclaimer,
           style: m3e.typeScale.bodySmall.copyWith(
             color: scheme.onSurfaceVariant,
           ),
@@ -1747,7 +1831,7 @@ class _CompanionScreenState extends State<CompanionScreen>
             lipHeight: 2.0,
             padding: const EdgeInsets.all(14),
             child: Text(
-              'This app doesn\'t ask for any sensitive permissions on your phone.',
+              l10n.companionNoSensitivePermsMsg,
               style: m3e.typeScale.bodyMedium.copyWith(color: scheme.onSurface),
             ),
           )
@@ -1836,7 +1920,7 @@ class _CompanionScreenState extends State<CompanionScreen>
           key: const Key('companion_unsure_perm_btn'),
           onPressed: () => setState(() => _showUnsureGuide = !_showUnsureGuide),
           icon: const Icon(LucideIcons.circleHelp, size: 16),
-          label: const Text("I'm not sure which permission"),
+          label: Text(l10n.companionUnsurePermBtn),
         ),
       ],
     );
@@ -1849,6 +1933,7 @@ class _CompanionScreenState extends State<CompanionScreen>
     EnpriveSurfaceTokens surfaces,
     EnpriveSemanticColors semantics,
   ) {
+    final l10n = _l10n(context);
     return EnpriveMaterialCardSurface(
       variant: EnpriveCardVariant.outlined,
       backgroundColor: surfaces.card,
@@ -1859,7 +1944,7 @@ class _CompanionScreenState extends State<CompanionScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Match what the popup on your screen asked for',
+            l10n.companionGuidedMatchTitle,
             style: m3e.typeScale.titleSmall.copyWith(
               color: scheme.onSurface,
               fontWeight: FontWeight.w800,
@@ -1867,7 +1952,7 @@ class _CompanionScreenState extends State<CompanionScreen>
           ),
           const SizedBox(height: 4),
           Text(
-            'Enprive cannot read your current Android prompt directly. Choose the wording closest to what appeared on screen:',
+            l10n.companionGuidedMatchSubtitle,
             style: m3e.typeScale.bodySmall.copyWith(
               color: scheme.onSurfaceVariant,
             ),
@@ -1881,7 +1966,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                   _selectedGuidedOption?.categoryId == opt.categoryId;
               return ChoiceChip(
                 key: Key('companion_guided_${opt.categoryId}'),
-                label: Text(opt.title),
+                label: Text(_localizeGuidedTitle(opt, l10n)),
                 selected: selected,
                 onSelected: (_) {
                   // Select matching declared app permission first if the confirmed app declares it.
@@ -1925,6 +2010,7 @@ class _CompanionScreenState extends State<CompanionScreen>
     EnpriveSurfaceTokens surfaces,
     EnpriveSemanticColors semantics,
   ) {
+    final l10n = _l10n(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1958,14 +2044,14 @@ class _CompanionScreenState extends State<CompanionScreen>
               _buildSectionBlock(
                 m3e,
                 scheme,
-                label: '1. What this permission means',
+                label: l10n.companionSection1Title,
                 body: explanation.whatPermissionMeans,
               ),
               const SizedBox(height: 10),
               _buildSectionBlock(
                 m3e,
                 scheme,
-                label: '2. What the app asks for on your phone',
+                label: l10n.companionSection2Title,
                 body:
                     '${explanation.whatAppDeclared}\n${explanation.grantStatusSummary}',
               ),
@@ -1973,7 +2059,7 @@ class _CompanionScreenState extends State<CompanionScreen>
               _buildSectionBlock(
                 m3e,
                 scheme,
-                label: '3. What its privacy policy says',
+                label: l10n.companionSection3Title,
                 headline: explanation.policyStatusHeadline,
                 body: explanation.whatPolicySays,
               ),
@@ -1982,7 +2068,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                 for (final quote in explanation.verbatimExcerpts) ...[
                   EnpriveQuoteCard(
                     quote: quote,
-                    statusLabel: 'Exact quote from policy',
+                    statusLabel: l10n.quoteVerifiedLabel,
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -2017,7 +2103,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
-                              'Advanced details',
+                              l10n.advancedDetailsTitle,
                               style: m3e.typography.emphasized.labelMedium
                                   .copyWith(color: scheme.primary),
                             ),
@@ -2031,7 +2117,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                     if (explanation.matchedReceipt?.snapshotDigest.isNotEmpty ??
                         false)
                       Text(
-                        'Document fingerprint · ${explanation.matchedReceipt!.snapshotDigest}',
+                        '${l10n.snapshotDigestLabel} · ${explanation.matchedReceipt!.snapshotDigest}',
                         style: m3e.typeScale.labelSmall.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
@@ -2084,26 +2170,28 @@ class _CompanionScreenState extends State<CompanionScreen>
                     key: const Key('companion_attach_policy_btn'),
                     onPressed: _openAttachPolicyModal,
                     icon: const Icon(LucideIcons.fileText, size: 16),
-                    label: const Text('Add privacy policy'),
+                    label: Text(l10n.companionAddPolicyBtn),
                   )
                 else
                   OutlinedButton.icon(
                     key: const Key('companion_update_policy_btn'),
                     onPressed: _openAttachPolicyModal,
                     icon: const Icon(LucideIcons.refreshCw, size: 16),
-                    label: const Text('Check updated privacy policy'),
+                    label: Text(l10n.companionCheckUpdatedPolicyBtn),
                   ),
               ],
               const SizedBox(height: 10),
               _buildSectionBlock(
                 m3e,
                 scheme,
-                label: '4. Why this might relate to a feature',
-                body: explanation.documentedFeatureReason ?? 'No verified developer feature explanation found. Describe below what feature you were trying to use if you want Deni to check relevance.',
+                label: l10n.companionSection4Title,
+                body:
+                    explanation.documentedFeatureReason ??
+                    l10n.companionSection4Fallback,
               ),
               const SizedBox(height: 10),
               Text(
-                '5. What remains unknown',
+                l10n.companionSection5Title,
                 style: m3e.typeScale.labelLarge.copyWith(
                   color: scheme.onSurface,
                   fontWeight: FontWeight.w800,
@@ -2135,7 +2223,7 @@ class _CompanionScreenState extends State<CompanionScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '6. Questions you can ask Deni',
+                l10n.companionSection6Title,
                 style: m3e.typography.emphasized.titleMedium.copyWith(
                   color: scheme.onSurface,
                 ),
@@ -2154,20 +2242,19 @@ class _CompanionScreenState extends State<CompanionScreen>
               const SizedBox(height: 12),
               TextField(
                 controller: _featureContextController,
-                decoration: const InputDecoration(
-                  labelText: 'Feature you were using (optional)',
-                  hintText:
-                      'e.g., scanning a QR code, recording voice practice',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.companionFeatureFieldLabel,
+                  hintText: l10n.companionFeatureFieldHint,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: _questionController,
-                decoration: const InputDecoration(
-                  labelText: 'Ask Deni a question',
-                  hintText: 'What happens if I deny this permission?',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.companionQuestionFieldLabel,
+                  hintText: l10n.companionQuestionFieldHint,
+                  border: const OutlineInputBorder(),
                 ),
                 onSubmitted: _isAskingDeni ? null : _askDeni,
               ),
@@ -2183,7 +2270,7 @@ class _CompanionScreenState extends State<CompanionScreen>
               else
                 EnpriveTactileButton(
                   key: const Key('companion_ask_deni_btn'),
-                  label: 'Ask Deni',
+                  label: l10n.btnAskDeni,
                   onPressed: () => _askDeni(_questionController.text),
                 ),
               if (_deniAnswer != null) ...[
@@ -2249,6 +2336,7 @@ class _CompanionScreenState extends State<CompanionScreen>
     EnpriveSurfaceTokens surfaces,
     EnpriveSemanticColors semantics,
   ) {
+    final l10n = _l10n(context);
     final isSaved = _isSessionReceiptPersisted(receipt.id);
 
     return Container(
@@ -2283,8 +2371,8 @@ class _CompanionScreenState extends State<CompanionScreen>
                   children: [
                     Text(
                       isSaved
-                          ? 'Saved in Enprive Receipts'
-                          : 'Review not saved to Enprive yet',
+                          ? l10n.companionReceiptSavedTitle
+                          : l10n.companionReceiptUnsavedTitle,
                       key: isSaved
                           ? const Key('companion_receipt_saved_badge')
                           : const Key('companion_receipt_unsaved_label'),
@@ -2298,10 +2386,10 @@ class _CompanionScreenState extends State<CompanionScreen>
                     const SizedBox(height: 2),
                     Text(
                       isSaved
-                          ? 'Stored locally in your Enprive Receipts archive.'
+                          ? l10n.companionReceiptSavedBody
                           : (receipt.supersedesReceiptId != null
-                                ? 'Updated policy review kept in this session only. Leaving Companion discards this draft and keeps your saved receipt unchanged.'
-                                : 'Kept in this session only. Leaving Companion will discard it unless you save it.'),
+                                ? l10n.companionReceiptUpdatedUnsavedBody
+                                : l10n.companionReceiptUnsavedBody),
                       style: m3e.typeScale.bodySmall.copyWith(
                         color: scheme.onSurfaceVariant,
                         height: 1.35,
@@ -2336,7 +2424,7 @@ class _CompanionScreenState extends State<CompanionScreen>
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(LucideIcons.bookmarkPlus, size: 16),
-              label: const Text('Save receipt to Enprive'),
+              label: Text(l10n.companionSaveReceiptBtn),
             ),
           ],
         ],

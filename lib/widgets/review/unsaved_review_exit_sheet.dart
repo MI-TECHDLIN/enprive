@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/enprive_theme.dart';
+import '../../l10n/app_localizations.dart';
 import '../enprive_tactile_button.dart';
 
 /// User choices when closing an unsaved or modified privacy review draft.
@@ -42,6 +43,10 @@ class UnsavedReviewExitSheet extends StatelessWidget {
       context,
       child: Builder(
         builder: (sheetContext) {
+          final l10n = AppLocalizations.of(sheetContext) ??
+              lookupAppLocalizations(
+                Localizations.maybeLocaleOf(sheetContext) ?? const Locale('en'),
+              );
           final m3e = EnpriveM3ETheme.of(sheetContext);
           final scheme = m3e.colorScheme;
           final surfaces = sheetContext.enpriveSurfaces;
@@ -102,7 +107,7 @@ class UnsavedReviewExitSheet extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Save this privacy review?',
+                                    l10n.unsavedExitTitle,
                                     style: m3e
                                         .typography
                                         .emphasized
@@ -112,8 +117,8 @@ class UnsavedReviewExitSheet extends StatelessWidget {
                                   const SizedBox(height: 6),
                                   Text(
                                     isModifiedSavedDraft
-                                        ? 'Unsaved reviews are discarded when you close this screen, so nothing is stored on your phone without your choice. Your original saved receipt will remain unchanged.'
-                                        : 'Unsaved reviews are discarded when you close this screen, so nothing is stored on your phone without your choice.',
+                                        ? l10n.unsavedExitModifiedBody
+                                        : l10n.unsavedExitDraftBody,
                                     style: m3e.typeScale.bodyMedium.copyWith(
                                       color: scheme.onSurfaceVariant,
                                       height: 1.45,
@@ -127,7 +132,7 @@ class UnsavedReviewExitSheet extends StatelessWidget {
                         const SizedBox(height: 22),
                         EnpriveTactileButton(
                           key: const Key('unsaved_exit_save_btn'),
-                          label: 'Save to Receipts',
+                          label: l10n.btnSaveToReceipts,
                           onPressed: () => Navigator.of(
                             sheetContext,
                           ).pop(UnsavedReviewExitDecision.save),
@@ -135,7 +140,7 @@ class UnsavedReviewExitSheet extends StatelessWidget {
                         const SizedBox(height: 10),
                         EnpriveTactileButton(
                           key: const Key('unsaved_exit_discard_btn'),
-                          label: 'Discard without saving',
+                          label: l10n.unsavedExitDiscardBtn,
                           isSecondary: true,
                           onPressed: () => Navigator.of(
                             sheetContext,
@@ -156,7 +161,7 @@ class UnsavedReviewExitSheet extends StatelessWidget {
                               sheetContext,
                             ).pop(UnsavedReviewExitDecision.continueReviewing),
                             child: Text(
-                              'Continue reviewing',
+                              l10n.unsavedExitContinueBtn,
                               style: m3e.typeScale.labelLarge.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: scheme.onSurfaceVariant,

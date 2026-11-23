@@ -100,25 +100,22 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _handleTileAction(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     final status = _tileStatus ?? await _companion.getQuickSettingsTileStatus();
     if (!context.mounted) return;
     if (status.isTileAdded) {
       _showQuickSettingsInstructionsDialog(
         context,
-        title: 'Enprive Check is ready in Quick Settings',
-        body:
-            'Swipe down twice from the top of your screen and tap "Enprive Check" anytime you want Deni to explain an app\'s permissions.',
+        title: l10n.quickSettingsReadyDialogTitle,
+        body: l10n.quickSettingsReadyDialogBody,
       );
       return;
     }
     if (!status.canRequestDirectAdd || status.hasDeclinedBefore) {
       _showQuickSettingsInstructionsDialog(
         context,
-        title: 'Add Enprive Check manually',
-        body:
-            '1. Swipe down twice from the top of your Android screen to open Quick Settings.\n'
-            '2. Tap the Edit (pencil) button.\n'
-            '3. Find "Enprive Check" and drag it into your active Quick Settings tiles.',
+        title: l10n.quickSettingsManualDialogTitle,
+        body: l10n.quickSettingsManualDialogBody,
       );
       return;
     }
@@ -128,16 +125,12 @@ class _SettingsScreenState extends State<SettingsScreen>
     if (!context.mounted) return;
 
     final note = switch (outcome) {
-      TileAddOutcome.tileAdded =>
-        'Enprive Check added to your Quick Settings tray.',
-      TileAddOutcome.alreadyAdded =>
-        'Enprive Check is already in your Quick Settings tray.',
-      TileAddOutcome.declined =>
-        'Request dismissed. Enprive won\'t ask again unless you choose Edit in Quick Settings.',
-      TileAddOutcome.manualRequired =>
-        'Swipe down Quick Settings, tap Edit, and drag Enprive Check into your tiles.',
-      TileAddOutcome.failed || TileAddOutcome.unavailable =>
-        'System prompt unavailable here; you can drag Enprive Check manually from Quick Settings Edit.',
+      TileAddOutcome.tileAdded => l10n.quickSettingsSnackAdded,
+      TileAddOutcome.alreadyAdded => l10n.quickSettingsSnackAlreadyAdded,
+      TileAddOutcome.declined => l10n.quickSettingsSnackDeclined,
+      TileAddOutcome.manualRequired => l10n.quickSettingsSnackManual,
+      TileAddOutcome.failed ||
+      TileAddOutcome.unavailable => l10n.quickSettingsSnackUnavailable,
     };
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(note), behavior: SnackBarBehavior.floating),
@@ -145,12 +138,13 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _openUsageAccessFlow(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     final opened = await _companion.openUsageAccessSettings();
     if (!context.mounted) return;
     if (!opened) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not open Usage Access Settings on this device.'),
+        SnackBar(
+          content: Text(l10n.usageAccessOpenFailedSnack),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -162,6 +156,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     required String title,
     required String body,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     final surfaces = context.enpriveSurfaces;
     showDialog<void>(
       context: context,
@@ -176,7 +171,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         actions: [
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Got it'),
+            child: Text(l10n.btnGotIt),
           ),
         ],
       ),
@@ -484,7 +479,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                   // 3. Appearance (System / Light / Dark — Brand-Locked HCT)
                   Text(
-                    'Appearance',
+                    l10n.appearanceSectionTitle,
                     style: m3e.typeScale.titleMedium.copyWith(
                       color: scheme.onSurface,
                     ),
@@ -493,23 +488,23 @@ class _SettingsScreenState extends State<SettingsScreen>
                   EnpriveConnectedButtonGroup<ThemeMode>(
                     selected: widget.currentThemeMode,
                     onSelected: (mode) => widget.onThemeModeChanged?.call(mode),
-                    options: const [
+                    options: [
                       EnpriveGroupOption(
-                        key: Key('theme_mode_option_system'),
+                        key: const Key('theme_mode_option_system'),
                         value: ThemeMode.system,
-                        label: 'System',
+                        label: l10n.themeModeSystem,
                         icon: LucideIcons.smartphone,
                       ),
                       EnpriveGroupOption(
-                        key: Key('theme_mode_option_light'),
+                        key: const Key('theme_mode_option_light'),
                         value: ThemeMode.light,
-                        label: 'Light',
+                        label: l10n.themeModeLight,
                         icon: LucideIcons.sun,
                       ),
                       EnpriveGroupOption(
-                        key: Key('theme_mode_option_dark'),
+                        key: const Key('theme_mode_option_dark'),
                         value: ThemeMode.dark,
-                        label: 'Dark',
+                        label: l10n.themeModeDark,
                         icon: LucideIcons.moon,
                       ),
                     ],
@@ -550,14 +545,14 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                   // 5. Connect Enprive to Quick Settings & Optional Usage Access
                   Text(
-                    'Connect Enprive to Quick Settings',
+                    l10n.quickSettingsSectionTitle,
                     style: m3e.typeScale.titleMedium.copyWith(
                       color: scheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Add Enprive Check to your Android Quick Settings panel so you can ask Deni about applications without leaving what you\'re doing.',
+                    l10n.quickSettingsSectionSubtitle,
                     style: m3e.typeScale.bodySmall.copyWith(
                       color: scheme.onSurfaceVariant,
                       height: 1.35,
@@ -566,6 +561,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   const SizedBox(height: 12),
                   ..._buildCompanionSetupCards(
                     context,
+                    l10n,
                     m3e,
                     scheme,
                     semantics,
@@ -607,18 +603,23 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   List<Widget> _buildCompanionSetupCards(
     BuildContext context,
+    AppLocalizations l10n,
     M3EThemeData m3e,
     M3EColorScheme scheme,
     EnpriveSemanticColors semantics,
   ) {
     final tile = _tileStatus;
     final tileLabel = (tile?.isTileAdded == true)
-        ? 'Added'
+        ? l10n.quickSettingsStatusAdded
         : (tile?.hasDeclinedBefore == true
-              ? 'Manual'
-              : (tile?.canRequestDirectAdd == false ? 'Manual' : 'Not added'));
+              ? l10n.quickSettingsStatusManual
+              : (tile?.canRequestDirectAdd == false
+                    ? l10n.quickSettingsStatusManual
+                    : l10n.quickSettingsStatusNotAdded));
     final usageGranted = _usageAccessState == UsageAccessState.granted;
-    final usageLabel = usageGranted ? 'Granted' : 'Not granted';
+    final usageLabel = usageGranted
+        ? l10n.usageAccessStatusGranted
+        : l10n.usageAccessStatusNotGranted;
 
     final rows = <Widget>[
       ListTile(
@@ -629,7 +630,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         ),
         onTap: () => _handleTileAction(context),
         title: Text(
-          'Enprive Check tile',
+          l10n.quickSettingsTileTitle,
           style: m3e.typeScale.titleSmall.copyWith(
             fontWeight: FontWeight.w700,
             color: scheme.onSurface,
@@ -638,7 +639,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Text(
-            'Add Enprive Check to Quick Settings to ask Deni about the app you\'re using without searching for Enprive first.',
+            l10n.quickSettingsTileSubtitle,
             style: m3e.typeScale.bodySmall.copyWith(
               color: scheme.onSurfaceVariant,
             ),
@@ -681,7 +682,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         ),
         onTap: () => _openUsageAccessFlow(context),
         title: Text(
-          'Allow Usage Access (optional)',
+          l10n.usageAccessTitle,
           style: m3e.typeScale.titleSmall.copyWith(
             fontWeight: FontWeight.w700,
             color: scheme.onSurface,
@@ -693,7 +694,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Enprive uses Usage Access only when you tap Enprive Check to identify the app you were just using. This helps Deni find the correct app and its privacy information. Enprive does not continuously monitor your screen.',
+                l10n.usageAccessExplanation,
                 style: m3e.typeScale.bodySmall.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -706,12 +707,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                   GestureDetector(
                     onTap: () => _showQuickSettingsInstructionsDialog(
                       context,
-                      title: 'Manage or revoke Usage Access',
-                      body:
-                          'Usage Access is a special Android Settings toggle (not an automatic popup). You can turn it off anytime under Android Settings → Apps → Special app access → Usage access → enprive. Deni remains usable without it via manual app selection.',
+                      title: l10n.usageAccessManageTitle,
+                      body: l10n.usageAccessManageBody,
                     ),
                     child: Text(
-                      'How to manage / revoke',
+                      l10n.usageAccessManageLink,
                       style: m3e.typeScale.labelMedium.copyWith(
                         color: scheme.primary,
                         fontWeight: FontWeight.w700,
@@ -756,14 +756,14 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           onTap: widget.onOpenCompanion,
           title: Text(
-            'Open Deni Companion',
+            l10n.openDeniCompanionTitle,
             style: m3e.typeScale.titleSmall.copyWith(
               fontWeight: FontWeight.w700,
               color: scheme.onSurface,
             ),
           ),
           subtitle: Text(
-            'Check a recent or selected app\'s permissions without Quick Settings.',
+            l10n.openDeniCompanionSubtitle,
             style: m3e.typeScale.bodySmall.copyWith(
               color: scheme.onSurfaceVariant,
             ),

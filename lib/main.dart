@@ -1285,14 +1285,14 @@ We do not collect personal identifiers, precise location data, microphone audio,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Quick Settings Companion',
+                                  l10n.homeQuickSettingsTitle,
                                   style: m3e.typeScale.titleMedium.copyWith(
                                     color: scheme.onSurface,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Ask Deni about the app you\'re using anytime',
+                                  l10n.homeQuickSettingsSubtitle,
                                   style: m3e.typeScale.bodyMedium.copyWith(
                                     color: scheme.onSurfaceVariant,
                                   ),

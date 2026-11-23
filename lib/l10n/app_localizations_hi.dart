@@ -2019,4 +2019,654 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get translationDraftNotice =>
       'कुछ अनुवाद AI द्वारा बनाए गए मसौदे हैं और इनमें गलतियाँ हो सकती हैं। मूल भाषी इनकी समीक्षा कर रहे हैं।';
+
+  @override
+  String get homeQuickSettingsTitle => 'त्वरित सेटिंग्स साथी';
+
+  @override
+  String get homeQuickSettingsSubtitle =>
+      'आप जो ऐप उपयोग कर रहे हैं उसके बारे में Deni से कभी भी पूछें';
+
+  @override
+  String get appearanceSectionTitle => 'दिखावट';
+
+  @override
+  String get themeModeSystem => 'सिस्टम';
+
+  @override
+  String get themeModeLight => 'लाइट';
+
+  @override
+  String get themeModeDark => 'डार्क';
+
+  @override
+  String get quickSettingsSectionTitle =>
+      'Enprive को त्वरित सेटिंग्स से जोड़ें';
+
+  @override
+  String get quickSettingsSectionSubtitle =>
+      'अपने Android त्वरित सेटिंग्स पैनल में Enprive Check जोड़ें ताकि आप अपना काम छोड़े बिना Deni से ऐप्स के बारे में पूछ सकें।';
+
+  @override
+  String get quickSettingsTileTitle => 'Enprive Check टाइल';
+
+  @override
+  String get quickSettingsTileSubtitle =>
+      'त्वरित सेटिंग्स में Enprive Check जोड़ें ताकि Enprive को पहले खोजे बिना मौजूदा ऐप के बारे में Deni से पूछ सकें।';
+
+  @override
+  String get quickSettingsStatusAdded => 'जोड़ा गया';
+
+  @override
+  String get quickSettingsStatusManual => 'मैनुअल';
+
+  @override
+  String get quickSettingsStatusNotAdded => 'नहीं जोड़ा गया';
+
+  @override
+  String get usageAccessStatusGranted => 'अनुमत';
+
+  @override
+  String get usageAccessStatusNotGranted => 'अनुमत नहीं';
+
+  @override
+  String get usageAccessTitle => 'उपयोग एक्सेस की अनुमति दें (वैकल्पिक)';
+
+  @override
+  String get usageAccessExplanation =>
+      'Enprive उपयोग एक्सेस का इस्तेमाल केवल तब करता है जब आप Enprive Check पर टैप करते हैं, ताकि पता चले कि आप अभी कौन-सा ऐप उपयोग कर रहे थे। इससे Deni को सही ऐप और उसकी गोपनीयता जानकारी खोजने में मदद मिलती है। Enprive लगातार आपकी स्क्रीन पर नज़र नहीं रखता।';
+
+  @override
+  String get usageAccessManageLink => 'प्रबंधित या बंद कैसे करें';
+
+  @override
+  String get usageAccessManageTitle => 'उपयोग एक्सेस प्रबंधित या बंद करें';
+
+  @override
+  String get usageAccessManageBody =>
+      'उपयोग एक्सेस Android सेटिंग्स का एक विशेष टॉगल है (कोई अपने-आप आने वाला पॉपअप नहीं)। आप इसे कभी भी Android सेटिंग्स -> ऐप्स -> विशेष ऐप एक्सेस -> उपयोग एक्सेस -> enprive में बंद कर सकते हैं। इसके बिना भी आप ऐप को मैनुअल चुनकर Deni का उपयोग कर सकते हैं।';
+
+  @override
+  String get openDeniCompanionTitle => 'Deni साथी खोलें';
+
+  @override
+  String get openDeniCompanionSubtitle =>
+      'त्वरित सेटिंग्स के बिना हाल के या चुने हुए ऐप की अनुमतियाँ जाँचें।';
+
+  @override
+  String get btnGotIt => 'समझ गया';
+
+  @override
+  String get quickSettingsReadyDialogTitle =>
+      'Enprive Check त्वरित सेटिंग्स में तैयार है';
+
+  @override
+  String get quickSettingsReadyDialogBody =>
+      'अपनी स्क्रीन के ऊपर से दो बार नीचे स्वाइप करें और जब भी आप चाहें कि Deni किसी ऐप की अनुमतियाँ समझाए, \"Enprive Check\" पर टैप करें।';
+
+  @override
+  String get quickSettingsManualDialogTitle =>
+      'Enprive Check मैनुअल रूप से जोड़ें';
+
+  @override
+  String get quickSettingsManualDialogBody =>
+      '1. त्वरित सेटिंग्स खोलने के लिए Android स्क्रीन के ऊपर से दो बार नीचे स्वाइप करें।\n2. संपादन (पेंसिल) बटन पर टैप करें।\n3. \"Enprive Check\" खोजें और इसे अपनी सक्रिय त्वरित सेटिंग्स टाइल्स में खींचकर रखें।';
+
+  @override
+  String get quickSettingsSnackAdded =>
+      'Enprive Check आपकी त्वरित सेटिंग्स ट्रे में जुड़ गया है।';
+
+  @override
+  String get quickSettingsSnackAlreadyAdded =>
+      'Enprive Check पहले से आपकी त्वरित सेटिंग्स ट्रे में है।';
+
+  @override
+  String get quickSettingsSnackDeclined =>
+      'अनुरोध खारिज किया गया। जब तक आप त्वरित सेटिंग्स में संपादन नहीं चुनते, Enprive दोबारा नहीं पूछेगा।';
+
+  @override
+  String get quickSettingsSnackManual =>
+      'त्वरित सेटिंग्स नीचे खींचें, संपादन पर टैप करें और Enprive Check को अपनी टाइल्स में जोड़ें।';
+
+  @override
+  String get quickSettingsSnackUnavailable =>
+      'सिस्टम संकेत यहाँ उपलब्ध नहीं है; आप त्वरित सेटिंग्स संपादन से Enprive Check को मैनुअल रूप से जोड़ सकते हैं।';
+
+  @override
+  String get usageAccessOpenFailedSnack =>
+      'इस डिवाइस पर उपयोग एक्सेस सेटिंग्स नहीं खोली जा सकीं।';
+
+  @override
+  String get companionTitle => 'Deni: Enprive साथी';
+
+  @override
+  String get companionSubtitle =>
+      'किसी ऐप की अनुमतियों और उसकी गोपनीयता नीति में क्या लिखा है, इस बारे में Deni से पूछें।';
+
+  @override
+  String get companionTooltipReturnToPrev => 'पिछले ऐप पर लौटें';
+
+  @override
+  String get companionTooltipBack => 'वापस';
+
+  @override
+  String get companionLockedBadge => 'लॉक स्क्रीन से सुरक्षित';
+
+  @override
+  String get companionLockedTitle => 'जारी रखने के लिए अपना फ़ोन अनलॉक करें';
+
+  @override
+  String get companionLockedBody =>
+      'डिवाइस लॉक रहने पर Enprive ऐप के नाम, घोषित अनुमतियाँ और समीक्षा प्रमाण छिपाकर रखता है।';
+
+  @override
+  String get companionCheckUnlockBtn => 'अनलॉक स्थिति जाँचें';
+
+  @override
+  String get companionCheckingAppHeadline =>
+      'जाँचा जा रहा है कि आप कौन-सा ऐप उपयोग कर रहे थे…';
+
+  @override
+  String get companionCheckingAppSubtitle =>
+      'आपकी स्क्रीन देखे बिना इस फ़ोन पर केवल एक बार जाँचा जा रहा है।';
+
+  @override
+  String get companionGeneralGuideHeadline =>
+      'सामान्य Android अनुमति मार्गदर्शिका';
+
+  @override
+  String get companionGeneralGuideSubtitle =>
+      'कोई ऐप नहीं चुना गया। Enprive केवल स्थानीय मार्गदर्शन से Android अनुमतियाँ समझाता है।';
+
+  @override
+  String companionLookingAtHeadline(String appName) {
+    return 'आप $appName देख रहे हैं।';
+  }
+
+  @override
+  String get companionLookingAtSubtitle =>
+      'नीचे दी गई अनुमतियाँ आपके फ़ोन के ऐप से आती हैं: स्क्रीन पर कौन-सा पॉपअप दिखता है, इसका नियंत्रण अभी भी Android के पास है।';
+
+  @override
+  String get companionThisAppFallback => 'यह ऐप';
+
+  @override
+  String companionSawAppAgo(String appName, int seconds) {
+    return 'हमने $seconds सेकंड पहले $appName देखा था। क्या यह सही है?';
+  }
+
+  @override
+  String companionThinkUsingApp(String appName) {
+    return 'हमें लगता है आप $appName उपयोग कर रहे हैं। क्या यह सही है?';
+  }
+
+  @override
+  String companionAppIdLine(String packageName) {
+    return 'App ID: $packageName';
+  }
+
+  @override
+  String companionConfirmAppBtn(String appName) {
+    return 'पुष्टि करें · $appName';
+  }
+
+  @override
+  String get companionChooseAnotherAppBtn => 'कोई अन्य ऐप चुनें';
+
+  @override
+  String get companionWithoutAppContextBtn => 'बिना ऐप चुने';
+
+  @override
+  String get companionMultipleAppsTitle => 'अभी कई ऐप सक्रिय थे';
+
+  @override
+  String get companionMultipleAppsPrompt =>
+      'पुष्टि करें कि आप किस ऐप की जाँच करना चाहते हैं:';
+
+  @override
+  String companionSecondsAgo(int seconds) {
+    return '$seconds सेकंड पहले';
+  }
+
+  @override
+  String get companionSelectAppTitle => 'वह ऐप चुनें जिसे आप जाँचना चाहते हैं';
+
+  @override
+  String get companionSelectAppBody =>
+      'इंस्टॉल किए गए ऐप्स में से मैनुअल रूप से ऐप चुनें, या बिना ऐप संदर्भ के जारी रखें।';
+
+  @override
+  String get companionChooseAppManuallyBtn => 'ऐप मैनुअल रूप से चुनें';
+
+  @override
+  String get companionOpenUsageAccessBtn => 'उपयोग एक्सेस सेटिंग्स खोलें';
+
+  @override
+  String get companionContinueWithoutAppBtn => 'बिना ऐप संदर्भ के जारी रखें';
+
+  @override
+  String get companionAddTileBtn => 'Enprive Check टाइल जोड़ें';
+
+  @override
+  String get companionContinuingWithoutApp => 'बिना ऐप संदर्भ के जारी';
+
+  @override
+  String get companionSwitchAppBtn => 'ऐप बदलें';
+
+  @override
+  String get companionPermissionsReadLocally =>
+      'नीचे दिखाई गई अनुमतियाँ सीधे आपके फ़ोन से पढ़ी गई हैं।';
+
+  @override
+  String get companionPickPermissionType =>
+      'समझने के लिए अनुमति का प्रकार चुनें';
+
+  @override
+  String get companionPickAppBtn => 'ऐप चुनें';
+
+  @override
+  String get companionCouldNotReadPermsTitle =>
+      'ऐप की अनुमतियाँ नहीं पढ़ी जा सकीं';
+
+  @override
+  String get companionCouldNotReadPermsBody =>
+      'Android ने इस ऐप की अनुमतियों की जाँच को रोक दिया।';
+
+  @override
+  String get companionUnsurePermBtn => 'मुझे पक्का नहीं है कौन-सी अनुमति';
+
+  @override
+  String get companionWhichPermissionPrompt =>
+      'आप किस अनुमति को समझना चाहते हैं?';
+
+  @override
+  String get companionPermissionsListDisclaimer =>
+      'ये वे अनुमतियाँ हैं जो ऐप आपके फ़ोन पर सूचीबद्ध करता है, ज़रूरी नहीं कि अभी आपकी स्क्रीन पर यही पॉपअप दिख रहा हो।';
+
+  @override
+  String get companionNoSensitivePermsMsg =>
+      'यह ऐप आपके फ़ोन पर कोई संवेदनशील अनुमति नहीं माँगता।';
+
+  @override
+  String get companionGuidedMatchTitle =>
+      'स्क्रीन के पॉपअप में जो पूछा गया उससे मिलान करें';
+
+  @override
+  String get companionGuidedMatchSubtitle =>
+      'Enprive आपके मौजूदा Android संकेत को सीधे नहीं पढ़ सकता। स्क्रीन पर जो दिखा उसके सबसे क़रीब वाला विकल्प चुनें:';
+
+  @override
+  String get companionSection1Title => '1. इस अनुमति का क्या अर्थ है';
+
+  @override
+  String get companionSection2Title => '2. ऐप आपके फ़ोन पर क्या माँगता है';
+
+  @override
+  String get companionSection3Title => '3. इसकी गोपनीयता नीति क्या कहती है';
+
+  @override
+  String get companionSection4Title =>
+      '4. यह किसी सुविधा से क्यों जुड़ा हो सकता है';
+
+  @override
+  String get companionSection4Fallback =>
+      'डेवलपर की ओर से सुविधा की कोई सत्यापित व्याख्या नहीं मिली। यदि आप चाहते हैं कि Deni प्रासंगिकता जाँचे, तो नीचे बताएँ कि आप कौन-सी सुविधा उपयोग कर रहे थे।';
+
+  @override
+  String get companionSection5Title => '5. क्या अभी अज्ञात है';
+
+  @override
+  String get companionSection6Title =>
+      '6. वे प्रश्न जो आप Deni से पूछ सकते हैं';
+
+  @override
+  String get companionAddPolicyBtn => 'गोपनीयता नीति जोड़ें';
+
+  @override
+  String get companionCheckUpdatedPolicyBtn => 'अपडेटेड गोपनीयता नीति जाँचें';
+
+  @override
+  String companionVerifyPolicyTitle(String appName) {
+    return '$appName की नीति सत्यापित करें';
+  }
+
+  @override
+  String get companionFeatureFieldLabel =>
+      'आप कौन-सी सुविधा उपयोग कर रहे थे (वैकल्पिक)';
+
+  @override
+  String get companionFeatureFieldHint =>
+      'जैसे: QR कोड स्कैन करना, वॉइस अभ्यास रिकॉर्ड करना';
+
+  @override
+  String get companionQuestionFieldLabel => 'Deni से प्रश्न पूछें';
+
+  @override
+  String get companionQuestionFieldHint =>
+      'यदि मैं यह अनुमति अस्वीकार कर दूँ तो क्या होगा?';
+
+  @override
+  String get companionReceiptSavedTitle => 'Enprive रसीदों में सहेजा गया';
+
+  @override
+  String get companionReceiptUnsavedTitle =>
+      'समीक्षा अभी Enprive में सहेजी नहीं गई';
+
+  @override
+  String get companionReceiptSavedBody =>
+      'आपके Enprive रसीद संग्रह में स्थानीय रूप से सहेजा गया।';
+
+  @override
+  String get companionReceiptUpdatedUnsavedBody =>
+      'अपडेट की गई नीति समीक्षा केवल इस सत्र में रखी गई है। साथी छोड़ने पर यह ड्राफ़्ट हट जाएगा और आपकी सहेजी गई रसीद वैसी ही रहेगी।';
+
+  @override
+  String get companionReceiptUnsavedBody =>
+      'केवल इस सत्र में रखी गई है। जब तक आप इसे सहेजते नहीं, साथी छोड़ने पर यह हट जाएगी।';
+
+  @override
+  String get companionSaveReceiptBtn => 'रसीद Enprive में सहेजें';
+
+  @override
+  String get companionSaveReceiptFailed =>
+      'रसीद सहेजी नहीं जा सकी। इस सत्र में रखी गई है: फिर प्रयास करें।';
+
+  @override
+  String get companionSavedLocalReceiptsSnack =>
+      'स्थानीय रसीदों में सहेजा गया।';
+
+  @override
+  String companionDoneReturnToApp(String appName) {
+    return 'पूर्ण · $appName पर लौटें';
+  }
+
+  @override
+  String get companionDoneReturnToPrev => 'पूर्ण · पिछले ऐप पर लौटें';
+
+  @override
+  String get companionOpenFullAppBtn => 'पूरा Enprive ऐप खोलें';
+
+  @override
+  String get companionCloudTimeoutSnack =>
+      'क्लाउड विश्लेषण में बहुत समय लगा और पूरा होने से पहले रोक दिया गया।';
+
+  @override
+  String get companionAnalysisCancelledSnack => 'विश्लेषण रद्द किया गया।';
+
+  @override
+  String get companionCloudAnswerTimeoutSnack =>
+      'क्लाउड उत्तर का समय सुरक्षित रूप से समाप्त हो गया।';
+
+  @override
+  String get companionQuestionCancelledSnack => 'प्रश्न रद्द किया गया।';
+
+  @override
+  String get companionTileAddedSnack =>
+      'Enprive Check Android त्वरित सेटिंग्स में जुड़ गया है।';
+
+  @override
+  String get companionTileAlreadyAddedSnack =>
+      'Enprive Check पहले से आपकी त्वरित सेटिंग्स में है।';
+
+  @override
+  String get companionTileDeclinedSnack =>
+      'टाइल अनुरोध खारिज किया गया। आप इसे कभी भी सेटिंग्स या त्वरित सेटिंग्स संपादन से जोड़ सकते हैं।';
+
+  @override
+  String get companionTileManualSnack =>
+      'त्वरित सेटिंग्स को दो बार नीचे स्वाइप करें, संपादन पर टैप करें और Enprive Check को अपनी टाइल्स में खींचें।';
+
+  @override
+  String get companionTileUnavailableSnack =>
+      'Android इस डिवाइस पर त्वरित सेटिंग्स संकेत नहीं दिखा सका। आप त्वरित सेटिंग्स संपादन से Enprive Check मैनुअल रूप से जोड़ सकते हैं।';
+
+  @override
+  String get companionUsageOptionalReason =>
+      'उपयोग एक्सेस वैकल्पिक है। आप ऐप को मैनुअल चुन सकते हैं या एक-टैप पहचान के लिए उपयोग एक्सेस की अनुमति दे सकते हैं।';
+
+  @override
+  String get companionPermPreciseLocation => 'सटीक स्थान';
+
+  @override
+  String get companionPermBackgroundLocation => 'बैकग्राउंड स्थान';
+
+  @override
+  String get companionPermCamera => 'कैमरा';
+
+  @override
+  String get companionPermMicrophone => 'माइक्रोफ़ोन';
+
+  @override
+  String get companionPermAdId => 'Google विज्ञापन ID';
+
+  @override
+  String companionPermDeclaredBy(String permission, String appName) {
+    return '$appName द्वारा घोषित Android अनुमति ($permission)।';
+  }
+
+  @override
+  String get companionPermStatusAdId => 'ऐप में सूचीबद्ध · विज्ञापन ID';
+
+  @override
+  String get companionPermStatusAllowed => 'ऐप में सूचीबद्ध · अनुमत';
+
+  @override
+  String get companionPermStatusNotAllowed => 'ऐप में सूचीबद्ध · अनुमत नहीं';
+
+  @override
+  String get guidedCatLocation => 'स्थान';
+
+  @override
+  String get guidedCatContacts => 'संपर्क';
+
+  @override
+  String get guidedCatPhotosMedia => 'फ़ोटो और मीडिया';
+
+  @override
+  String get guidedCatNotifications => 'सूचनाएँ';
+
+  @override
+  String get guidedCatNearbyDevices => 'आस-पास के डिवाइस';
+
+  @override
+  String get guidedCatCalendar => 'कैलेंडर';
+
+  @override
+  String get guidedCatPhone => 'फ़ोन';
+
+  @override
+  String get guidedCatSms => 'SMS';
+
+  @override
+  String get companionFallbackUsageNotEnabled =>
+      'Android सेटिंग्स में उपयोग एक्सेस चालू नहीं किया गया है।';
+
+  @override
+  String get companionFallbackUsageUnavailable =>
+      'Android UsageStatsManager उपलब्ध नहीं है।';
+
+  @override
+  String get companionFallbackTransientUi =>
+      'हाल की उपयोग गतिविधि में केवल Android सिस्टम या अनुमति पॉपअप दिखा; ऐप मैनुअल रूप से चुनें।';
+
+  @override
+  String get companionFallbackVisibilityRestricted =>
+      'Android पैकेज दृश्यता प्रतिबंधों के कारण हालिया सक्रिय ऐप की जाँच नहीं हो सकी। कृपया सूची से ऐप चुनें या उसकी नीति पेस्ट करें।';
+
+  @override
+  String get companionFallbackUnlockRequired =>
+      'ऐप संदर्भ देखने से पहले अपना डिवाइस अनलॉक करें।';
+
+  @override
+  String get consentReasonPolicyTooDetailed =>
+      'ऑन-डिवाइस AI प्रसंस्करण के लिए यह नीति बहुत लंबी है।';
+
+  @override
+  String get consentReasonExcerptTooDetailed =>
+      'ऑन-डिवाइस AI प्रसंस्करण के लिए यह अंश बहुत लंबा है।';
+
+  @override
+  String get consentReasonOnDeviceUnavailable =>
+      'इस फ़ोन पर अभी ऑन-डिवाइस AI उपलब्ध नहीं है।';
+
+  @override
+  String get consentReasonOnDeviceCannotAnswer =>
+      'ऑन-डिवाइस AI अभी इस डिवाइस से उत्तर नहीं दे सका।';
+
+  @override
+  String get consentReasonVoiceTooLong =>
+      'ये सत्यापित निष्कर्ष ऑन-डिवाइस सारांश की सीमा से अधिक हैं। आप अभी ऑफ़लाइन सारांश उपयोग कर सकते हैं या एक बार के लिए संपादित निष्कर्ष क्लाउड AI को भेज सकते हैं।';
+
+  @override
+  String get consentReasonVoiceUnavailable =>
+      'इस फ़ोन पर अभी ऑन-डिवाइस AI उपलब्ध नहीं है। Enprive का ऑफ़लाइन सरल सारांश दिखाया जा रहा है।';
+
+  @override
+  String get consentReasonVoiceTimedOut =>
+      'ऑन-डिवाइस सारांश का समय समाप्त हो गया। Enprive का ऑफ़लाइन सरल सारांश दिखाया जा रहा है।';
+
+  @override
+  String get unsavedExitTitle => 'क्या यह गोपनीयता समीक्षा सहेजें?';
+
+  @override
+  String get unsavedExitModifiedBody =>
+      'यह स्क्रीन बंद करने पर बिना सहेजी गई समीक्षाएँ हट जाती हैं, इसलिए आपकी मर्ज़ी के बिना फ़ोन पर कुछ नहीं सहेजा जाता। आपकी मूल सहेजी गई रसीद वैसी ही रहेगी।';
+
+  @override
+  String get unsavedExitDraftBody =>
+      'यह स्क्रीन बंद करने पर बिना सहेजी गई समीक्षाएँ हट जाती हैं, इसलिए आपकी मर्ज़ी के बिना फ़ोन पर कुछ नहीं सहेजा जाता।';
+
+  @override
+  String get unsavedExitDiscardBtn => 'बिना सहेजे हटाएँ';
+
+  @override
+  String get unsavedExitContinueBtn => 'समीक्षा जारी रखें';
+
+  @override
+  String updatePrivacyPolicyForTitle(String title) {
+    return '$title की गोपनीयता नीति अपडेट करें';
+  }
+
+  @override
+  String get reviewSaveFailedError =>
+      'रसीद सहेजी नहीं जा सकी। आपका समीक्षा ड्राफ़्ट अभी भी खुला है।';
+
+  @override
+  String get reviewRemovedFromReceiptsSnack => 'सहेजी गई रसीदों से हटाया गया।';
+
+  @override
+  String get reviewRemoveFailedSnack => 'सहेजी गई रसीद हटाई नहीं जा सकी।';
+
+  @override
+  String get reviewModifiedDraftTitle => 'सहेजी गई रसीद से नया ड्राफ़्ट';
+
+  @override
+  String get reviewModifiedDraftBody =>
+      'इस अपडेटेड समीक्षा को रखने के लिए रसीदों में सहेजें: आपकी मूल सहेजी गई रसीद वैसी ही रहेगी।';
+
+  @override
+  String get btnRetrySave => 'फिर से सहेजें';
+
+  @override
+  String samplePermissionsHeader(String badge) {
+    return 'नमूना अनुमतियाँ ($badge)';
+  }
+
+  @override
+  String get sourceKindUrl => 'सार्वजनिक वेब लिंक';
+
+  @override
+  String get sourceKindPdf => 'स्थानीय PDF फ़ाइल';
+
+  @override
+  String get sourceKindDocx => 'स्थानीय Word (DOCX) फ़ाइल';
+
+  @override
+  String get sourceKindTextFile => 'स्थानीय टेक्स्ट फ़ाइल';
+
+  @override
+  String get sourceKindSharedText => 'साझा किया गया टेक्स्ट';
+
+  @override
+  String get sourceKindSelectedText => 'चुना गया टेक्स्ट';
+
+  @override
+  String get sourceKindSampleApp => 'नमूना ऐप';
+
+  @override
+  String get sourceKindPhonePermissions => 'फ़ोन की अनुमतियाँ';
+
+  @override
+  String get sourceKindPastedText => 'पेस्ट किया गया टेक्स्ट';
+
+  @override
+  String get extractionStatusExtracted => 'इस फ़ोन पर पढ़ा गया';
+
+  @override
+  String get extractionStatusNone => 'इस फ़ोन पर दिया गया';
+
+  @override
+  String get extractionStatusUnsupported => 'असमर्थित फ़ाइल प्रकार';
+
+  @override
+  String get extractionStatusTooLarge => 'फ़ाइल बहुत बड़ी है';
+
+  @override
+  String get extractionStatusEmpty => 'पढ़ने योग्य टेक्स्ट नहीं मिला';
+
+  @override
+  String get extractionStatusReadError => 'फ़ाइल पढ़ी नहीं जा सकी';
+
+  @override
+  String get extractionStatusPasswordProtected => 'पासवर्ड से सुरक्षित';
+
+  @override
+  String get extractionStatusPermissionDenied => 'अनुमति अस्वीकृत';
+
+  @override
+  String get extractionStatusCancelled => 'रद्द किया गया';
+
+  @override
+  String advancedDetailsCheckedAt(String timestamp) {
+    return 'जाँच का समय: $timestamp';
+  }
+
+  @override
+  String advancedDetailsCanonicalUrl(String url) {
+    return 'मुख्य URL: $url';
+  }
+
+  @override
+  String advancedDetailsRedirectedFrom(String url) {
+    return 'यहाँ से रीडायरेक्ट हुआ: $url';
+  }
+
+  @override
+  String advancedDetailsFileLine(String filename) {
+    return 'फ़ाइल: $filename';
+  }
+
+  @override
+  String advancedDetailsStatusSuffix(String status) {
+    return 'स्थिति: $status';
+  }
+
+  @override
+  String advancedDetailsSha256Hash(String hash) {
+    return 'SHA-256 स्रोत हैश: $hash';
+  }
+
+  @override
+  String get semanticsPrimaryNavigation => 'मुख्य नेविगेशन';
+
+  @override
+  String semanticsProcessingLocation(String label) {
+    return 'प्रसंस्करण स्थान: $label';
+  }
+
+  @override
+  String get semanticsDeniMascot => 'Deni, आपका गोपनीयता मार्गदर्शक';
+
+  @override
+  String get quoteCollapsibleDefaultHeader => 'नीति का सटीक अंश';
 }

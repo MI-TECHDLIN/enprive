@@ -7,6 +7,7 @@ import 'package:enprive/screens/settings_screen.dart';
 import 'package:enprive/services/platform/companion_bridge.dart';
 import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 import 'package:enprive/services/storage/receipt_repository.dart';
+import 'package:enprive/widgets/cloud_consent_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -224,8 +225,46 @@ void main() {
           );
           expect(noteFinder, findsOneWidget);
           expect(find.text(expected), findsOneWidget);
+          expect(
+            find.text(lookupAppLocalizations(locale).appearanceSectionTitle),
+            findsOneWidget,
+          );
+          expect(
+            find.text(lookupAppLocalizations(locale).quickSettingsSectionTitle),
+            findsOneWidget,
+          );
           expect(tester.takeException(), isNull);
         }
+      },
+    );
+
+    testWidgets(
+      'CloudConsentSheet localizes known deviceReason strings in Arabic',
+      (WidgetTester tester) async {
+        final arL10n = lookupAppLocalizations(const Locale('ar'));
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: const Locale('ar'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const Scaffold(
+              body: CloudConsentSheet(
+                subjectTitle: 'Demo App',
+                policyText: 'We collect your device identifier for analytics.',
+                deviceReason:
+                    'This policy is too detailed for on-device AI processing.',
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(
+          find.text(arL10n.consentReasonPolicyTooDetailed),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
       },
     );
   });

@@ -91,7 +91,7 @@ class EnpriveProvenanceChip extends StatelessWidget {
     );
 
     return Semantics(
-      label: 'Processing location: $label',
+      label: l10n.semanticsProcessingLocation(label),
       container: true,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

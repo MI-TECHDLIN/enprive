@@ -81,6 +81,27 @@ class CloudConsentSheet extends StatelessWidget {
     r'\[(?:EMAIL|PHONE|IP_ADDRESS|ADDRESS|PERSON|ID|REDACTED_[A-Z0-9_]+)\]',
   );
 
+  static String _localizeDeviceReason(String raw, AppLocalizations l10n) {
+    final normalized = raw.trim().replaceAll('\u2019', "'");
+    return switch (normalized) {
+      'This policy is too detailed for on-device AI processing.' =>
+        l10n.consentReasonPolicyTooDetailed,
+      'This finding excerpt is too detailed for on-device AI processing.' =>
+        l10n.consentReasonExcerptTooDetailed,
+      'On-device AI is unavailable on this phone right now.' =>
+        l10n.consentReasonOnDeviceUnavailable,
+      'On-device AI could not answer from this device right now.' =>
+        l10n.consentReasonOnDeviceCannotAnswer,
+      'These verified findings exceed on-device summary limits. You can use the offline summary now or send the redacted findings to Cloud AI once.' =>
+        l10n.consentReasonVoiceTooLong,
+      "On-device AI is unavailable on this phone right now. Showing Enprive's offline plain-language summary." =>
+        l10n.consentReasonVoiceUnavailable,
+      "On-device summary timed out. Showing Enprive's offline plain-language summary." =>
+        l10n.consentReasonVoiceTimedOut,
+      _ => raw,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return EnpriveM3EBridgeScope.ensure(
@@ -235,7 +256,10 @@ class CloudConsentSheet extends StatelessWidget {
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
-                                        trimmedReason,
+                                        _localizeDeviceReason(
+                                          trimmedReason,
+                                          l10n,
+                                        ),
                                         style: m3e.typeScale.bodySmall.copyWith(
                                           color: semantics.unknown.foreground,
                                           height: 1.4,

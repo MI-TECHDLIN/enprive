@@ -140,7 +140,7 @@ class EnpriveNavigationShell extends StatelessWidget {
                       indicatorColor: scheme.secondaryContainer,
                       elevation: 0,
                       safeArea: true,
-                      semanticLabel: 'Primary navigation',
+                      semanticLabel: l10n.semanticsPrimaryNavigation,
                       destinations: [
                         M3ENavigationBarDestination(
                           icon: const Icon(LucideIcons.shield),

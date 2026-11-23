@@ -738,7 +738,7 @@
   "@associationStatusUnverifiedTitle": {
     "description": "Plain-language heading when the policy does not mention the linked app name or ID and has no conflicting IDs"
   },
-  "associationStatusUnverifiedBody": "This policy does not name {appName} or its app ID. Double-check that it is the right policy: linking it here does not prove ownership.",
+  "associationStatusUnverifiedBody": "This policy does not name {appName} or its App ID. Double-check that it is the right policy: linking it here does not prove ownership.",
   "@associationStatusUnverifiedBody": {
     "description": "Plain-language explanation when the user linked an app whose name and ID do not appear in the policy",
     "placeholders": {
@@ -792,7 +792,7 @@
   "@associationStatusAmbiguousPeerTitle": {
     "description": "Plain-language warning heading when multiple installed apps share the name mentioned in the policy"
   },
-  "associationStatusAmbiguousPeerBody": "This policy mentions {appName} without listing one exact app ID, and other apps on your phone ({otherApps}) have a similar name. Make sure you linked the right one.",
+  "associationStatusAmbiguousPeerBody": "This policy mentions {appName} without listing one exact App ID, and other apps on your phone ({otherApps}) have a similar name. Make sure you linked the right one.",
   "@associationStatusAmbiguousPeerBody": {
     "description": "Plain-language warning explaining peer display-name ambiguity on the user's phone",
     "placeholders": {
@@ -1498,7 +1498,7 @@
   "@learnDataCollectionSubtitle": {
     "description": "Short subtitle for Lesson 5"
   },
-  "learnDataCollectionIntro1": "Apps gather information in two ways. Some data comes from what you actively enter: your name, email, photos, voice recordings, or homework answers. Other data is collected automatically in the background, like your IP address (the address your phone uses on the internet), device identifiers, advertising ID (a code ads use to recognise your phone), crash logs, and when you open the app.",
+  "learnDataCollectionIntro1": "Apps gather information in two ways. Some data comes from what you actively enter: your name, email, photos, voice recordings, or homework answers. Other data is collected automatically in the background, like your IP address (the address your phone uses on the internet), device identifiers, advertising ID (a code ads use to recognize your phone), crash logs, and when you open the app.",
   "@learnDataCollectionIntro1": {
     "description": "Plain-language introduction for Lesson 5"
   },
@@ -1889,5 +1889,825 @@
   "translationDraftNotice": "Some translations are AI-generated drafts and may contain mistakes. Native speakers are reviewing them.",
   "@translationDraftNotice": {
     "description": "Short honest note in the language settings area explaining that non-English translations are AI-assisted drafts undergoing native-speaker review"
+  },
+  "homeQuickSettingsTitle": "Quick Settings Companion",
+  "@homeQuickSettingsTitle": {
+    "description": "Title of the Quick Settings Companion card on Home"
+  },
+  "homeQuickSettingsSubtitle": "Ask Deni about the app you're using anytime",
+  "@homeQuickSettingsSubtitle": {
+    "description": "Subtitle of the Quick Settings Companion card on Home"
+  },
+  "appearanceSectionTitle": "Appearance",
+  "@appearanceSectionTitle": {
+    "description": "Heading for the light/dark/system theme selector in Settings"
+  },
+  "themeModeSystem": "System",
+  "@themeModeSystem": {
+    "description": "System default theme option"
+  },
+  "themeModeLight": "Light",
+  "@themeModeLight": {
+    "description": "Light theme option"
+  },
+  "themeModeDark": "Dark",
+  "@themeModeDark": {
+    "description": "Dark theme option"
+  },
+  "quickSettingsSectionTitle": "Connect Enprive to Quick Settings",
+  "@quickSettingsSectionTitle": {
+    "description": "Section title for Quick Settings tile and optional Usage Access in Settings"
+  },
+  "quickSettingsSectionSubtitle": "Add Enprive Check to your Android Quick Settings panel so you can ask Deni about applications without leaving what you're doing.",
+  "@quickSettingsSectionSubtitle": {
+    "description": "Explanation of Quick Settings tile integration"
+  },
+  "quickSettingsTileTitle": "Enprive Check tile",
+  "@quickSettingsTileTitle": {
+    "description": "Row title for the Enprive Check Quick Settings tile"
+  },
+  "quickSettingsTileSubtitle": "Add Enprive Check to Quick Settings to ask Deni about the app you're using without searching for Enprive first.",
+  "@quickSettingsTileSubtitle": {
+    "description": "Row subtitle for the Enprive Check Quick Settings tile"
+  },
+  "quickSettingsStatusAdded": "Added",
+  "@quickSettingsStatusAdded": {
+    "description": "Status badge when Quick Settings tile is added"
+  },
+  "quickSettingsStatusManual": "Manual",
+  "@quickSettingsStatusManual": {
+    "description": "Status badge when Quick Settings tile must be added manually"
+  },
+  "quickSettingsStatusNotAdded": "Not added",
+  "@quickSettingsStatusNotAdded": {
+    "description": "Status badge when Quick Settings tile is not yet added"
+  },
+  "usageAccessStatusGranted": "Granted",
+  "@usageAccessStatusGranted": {
+    "description": "Status badge when Android Usage Access is granted"
+  },
+  "usageAccessStatusNotGranted": "Not granted",
+  "@usageAccessStatusNotGranted": {
+    "description": "Status badge when Android Usage Access is not granted"
+  },
+  "usageAccessTitle": "Allow Usage Access (optional)",
+  "@usageAccessTitle": {
+    "description": "Row title for optional Android Usage Access"
+  },
+  "usageAccessExplanation": "Enprive uses Usage Access only when you tap Enprive Check to identify the app you were just using. This helps Deni find the correct app and its privacy information. Enprive does not continuously monitor your screen.",
+  "@usageAccessExplanation": {
+    "description": "Honest explanation of how Enprive uses Android Usage Access"
+  },
+  "usageAccessManageLink": "How to manage / revoke",
+  "@usageAccessManageLink": {
+    "description": "Link text to open instructions for managing or revoking Usage Access"
+  },
+  "usageAccessManageTitle": "Manage or revoke Usage Access",
+  "@usageAccessManageTitle": {
+    "description": "Dialog title for Usage Access revocation instructions"
+  },
+  "usageAccessManageBody": "Usage Access is a special Android Settings toggle (not an automatic popup). You can turn it off anytime under Android Settings -> Apps -> Special app access -> Usage access -> enprive. Deni remains usable without it via manual app selection.",
+  "@usageAccessManageBody": {
+    "description": "Dialog body explaining how to turn off Usage Access in Android Settings"
+  },
+  "openDeniCompanionTitle": "Open Deni Companion",
+  "@openDeniCompanionTitle": {
+    "description": "Settings row title to launch Deni Companion directly"
+  },
+  "openDeniCompanionSubtitle": "Check a recent or selected app's permissions without Quick Settings.",
+  "@openDeniCompanionSubtitle": {
+    "description": "Settings row subtitle for opening Deni Companion directly"
+  },
+  "btnGotIt": "Got it",
+  "@btnGotIt": {
+    "description": "Short confirmation button on informational dialogs"
+  },
+  "quickSettingsReadyDialogTitle": "Enprive Check is ready in Quick Settings",
+  "@quickSettingsReadyDialogTitle": {
+    "description": "Dialog title when Quick Settings tile is already added"
+  },
+  "quickSettingsReadyDialogBody": "Swipe down twice from the top of your screen and tap \"Enprive Check\" anytime you want Deni to explain an app's permissions.",
+  "@quickSettingsReadyDialogBody": {
+    "description": "Dialog body explaining how to use the Quick Settings tile"
+  },
+  "quickSettingsManualDialogTitle": "Add Enprive Check manually",
+  "@quickSettingsManualDialogTitle": {
+    "description": "Dialog title for manual Quick Settings tile setup instructions"
+  },
+  "quickSettingsManualDialogBody": "1. Swipe down twice from the top of your Android screen to open Quick Settings.\n2. Tap the Edit (pencil) button.\n3. Find \"Enprive Check\" and drag it into your active Quick Settings tiles.",
+  "@quickSettingsManualDialogBody": {
+    "description": "Numbered instructions to add the Quick Settings tile manually"
+  },
+  "quickSettingsSnackAdded": "Enprive Check added to your Quick Settings tray.",
+  "@quickSettingsSnackAdded": {
+    "description": "Snackbar after Quick Settings tile is added"
+  },
+  "quickSettingsSnackAlreadyAdded": "Enprive Check is already in your Quick Settings tray.",
+  "@quickSettingsSnackAlreadyAdded": {
+    "description": "Snackbar when Quick Settings tile is already present"
+  },
+  "quickSettingsSnackDeclined": "Request dismissed. Enprive won't ask again unless you choose Edit in Quick Settings.",
+  "@quickSettingsSnackDeclined": {
+    "description": "Snackbar when user declines the Quick Settings tile prompt"
+  },
+  "quickSettingsSnackManual": "Swipe down Quick Settings, tap Edit, and drag Enprive Check into your tiles.",
+  "@quickSettingsSnackManual": {
+    "description": "Snackbar prompting manual tile addition"
+  },
+  "quickSettingsSnackUnavailable": "System prompt unavailable here; you can drag Enprive Check manually from Quick Settings Edit.",
+  "@quickSettingsSnackUnavailable": {
+    "description": "Snackbar when Android Quick Settings add prompt is unavailable"
+  },
+  "usageAccessOpenFailedSnack": "Could not open Usage Access Settings on this device.",
+  "@usageAccessOpenFailedSnack": {
+    "description": "Snackbar when opening Android Usage Access settings fails"
+  },
+  "companionTitle": "Deni: Enprive Companion",
+  "@companionTitle": {
+    "description": "Title of the Companion screen"
+  },
+  "companionSubtitle": "Ask Deni about an app's permissions and what its privacy policy says.",
+  "@companionSubtitle": {
+    "description": "Subtitle on the Companion header banner"
+  },
+  "companionTooltipReturnToPrev": "Return to previous app",
+  "@companionTooltipReturnToPrev": {
+    "description": "Tooltip for closing Companion and returning to the previous app"
+  },
+  "companionTooltipBack": "Back",
+  "@companionTooltipBack": {
+    "description": "Tooltip for navigating back from Companion"
+  },
+  "companionLockedBadge": "LOCK SCREEN PROTECTED",
+  "@companionLockedBadge": {
+    "description": "Badge shown when device is locked"
+  },
+  "companionLockedTitle": "Unlock your phone to continue",
+  "@companionLockedTitle": {
+    "description": "Title of the lock-screen privacy guard"
+  },
+  "companionLockedBody": "Enprive hides app names, declared permissions, and review evidence while the device is locked.",
+  "@companionLockedBody": {
+    "description": "Body of the lock-screen privacy guard"
+  },
+  "companionCheckUnlockBtn": "Check unlock state",
+  "@companionCheckUnlockBtn": {
+    "description": "Button to re-check whether the phone is unlocked"
+  },
+  "companionCheckingAppHeadline": "Checking which app you were using…",
+  "@companionCheckingAppHeadline": {
+    "description": "Headline while Companion looks up the recent foreground app"
+  },
+  "companionCheckingAppSubtitle": "Checking once on this phone without watching your screen.",
+  "@companionCheckingAppSubtitle": {
+    "description": "Subtitle explaining one-time foreground app lookup"
+  },
+  "companionGeneralGuideHeadline": "General Android permission guide",
+  "@companionGeneralGuideHeadline": {
+    "description": "Headline when browsing general Android permissions without an app selected"
+  },
+  "companionGeneralGuideSubtitle": "No app selected. Enprive explains Android permissions using local guidance only.",
+  "@companionGeneralGuideSubtitle": {
+    "description": "Subtitle when no app is selected in Companion"
+  },
+  "companionLookingAtHeadline": "You're looking at {appName}.",
+  "@companionLookingAtHeadline": {
+    "description": "Headline naming the confirmed app in Companion",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "companionLookingAtSubtitle": "Permissions listed below come from the app on your phone: Android still controls whichever popup is on screen.",
+  "@companionLookingAtSubtitle": {
+    "description": "Clarification that listed permissions come from the installed app manifest, not live screen reading"
+  },
+  "companionThisAppFallback": "this app",
+  "@companionThisAppFallback": {
+    "description": "Fallback phrase when an app label is unavailable"
+  },
+  "companionSawAppAgo": "We saw {appName} {seconds}s ago. Is this correct?",
+  "@companionSawAppAgo": {
+    "description": "Prompt confirming a recently active app with age in seconds",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "companionThinkUsingApp": "We think you're using {appName}. Is this correct?",
+  "@companionThinkUsingApp": {
+    "description": "Prompt confirming the detected foreground app",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "companionAppIdLine": "App ID: {packageName}",
+  "@companionAppIdLine": {
+    "description": "Line displaying the Android App ID (package name)",
+    "placeholders": {
+      "packageName": {
+        "type": "String"
+      }
+    }
+  },
+  "companionConfirmAppBtn": "Confirm · {appName}",
+  "@companionConfirmAppBtn": {
+    "description": "Primary button confirming the detected app",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "companionChooseAnotherAppBtn": "Choose another app",
+  "@companionChooseAnotherAppBtn": {
+    "description": "Button to pick a different installed app"
+  },
+  "companionWithoutAppContextBtn": "Without app context",
+  "@companionWithoutAppContextBtn": {
+    "description": "Short button to proceed without selecting an app"
+  },
+  "companionMultipleAppsTitle": "Multiple apps were active just now",
+  "@companionMultipleAppsTitle": {
+    "description": "Title when multiple recent foreground apps were found"
+  },
+  "companionMultipleAppsPrompt": "Confirm which application you want to inspect:",
+  "@companionMultipleAppsPrompt": {
+    "description": "Prompt asking user to choose among recently active apps"
+  },
+  "companionSecondsAgo": "{seconds}s ago",
+  "@companionSecondsAgo": {
+    "description": "Relative time in seconds for recent app activity",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "companionSelectAppTitle": "Select the app you want to check",
+  "@companionSelectAppTitle": {
+    "description": "Title prompting manual app selection"
+  },
+  "companionSelectAppBody": "Choose the application manually from installed apps, or continue without app context.",
+  "@companionSelectAppBody": {
+    "description": "Body prompting manual app selection or general guidance"
+  },
+  "companionChooseAppManuallyBtn": "Choose app manually",
+  "@companionChooseAppManuallyBtn": {
+    "description": "Primary button to pick an app manually"
+  },
+  "companionOpenUsageAccessBtn": "Open Usage Access Settings",
+  "@companionOpenUsageAccessBtn": {
+    "description": "Button to open Android Usage Access settings"
+  },
+  "companionContinueWithoutAppBtn": "Continue without app context",
+  "@companionContinueWithoutAppBtn": {
+    "description": "Button to continue with general Android permission explanations"
+  },
+  "companionAddTileBtn": "Add Enprive Check tile",
+  "@companionAddTileBtn": {
+    "description": "Button to request adding the Enprive Check Quick Settings tile"
+  },
+  "companionContinuingWithoutApp": "Continuing without app context",
+  "@companionContinuingWithoutApp": {
+    "description": "Summary label when continuing without an app selected"
+  },
+  "companionSwitchAppBtn": "Switch app",
+  "@companionSwitchAppBtn": {
+    "description": "Button to change the selected app"
+  },
+  "companionPermissionsReadLocally": "Permissions shown below are read directly from your phone.",
+  "@companionPermissionsReadLocally": {
+    "description": "Note explaining permissions are inspected locally on-device"
+  },
+  "companionPickPermissionType": "Pick a permission type to explore",
+  "@companionPickPermissionType": {
+    "description": "Heading for general Android permission exploration"
+  },
+  "companionPickAppBtn": "Pick an app",
+  "@companionPickAppBtn": {
+    "description": "Button to select an installed app"
+  },
+  "companionCouldNotReadPermsTitle": "Couldn't read app permissions",
+  "@companionCouldNotReadPermsTitle": {
+    "description": "Error heading when app permissions could not be inspected"
+  },
+  "companionCouldNotReadPermsBody": "Android prevented inspecting this app's permissions.",
+  "@companionCouldNotReadPermsBody": {
+    "description": "Fallback error body when Android restricts package inspection"
+  },
+  "companionUnsurePermBtn": "I'm not sure which permission",
+  "@companionUnsurePermBtn": {
+    "description": "Button opening the guided permission matcher"
+  },
+  "companionWhichPermissionPrompt": "Which permission would you like to understand?",
+  "@companionWhichPermissionPrompt": {
+    "description": "Heading above the selected app's declared permissions"
+  },
+  "companionPermissionsListDisclaimer": "These are permissions the app lists on your phone, not necessarily the popup on your screen right now.",
+  "@companionPermissionsListDisclaimer": {
+    "description": "Disclaimer separating manifest permissions from live Android dialogs"
+  },
+  "companionNoSensitivePermsMsg": "This app doesn't ask for any sensitive permissions on your phone.",
+  "@companionNoSensitivePermsMsg": {
+    "description": "Message when the selected app declares no sensitive permissions"
+  },
+  "companionGuidedMatchTitle": "Match what the popup on your screen asked for",
+  "@companionGuidedMatchTitle": {
+    "description": "Title of the guided permission picker"
+  },
+  "companionGuidedMatchSubtitle": "Enprive cannot read your current Android prompt directly. Choose the wording closest to what appeared on screen:",
+  "@companionGuidedMatchSubtitle": {
+    "description": "Honest explanation that Enprive cannot read live system popups"
+  },
+  "companionSection1Title": "1. What this permission means",
+  "@companionSection1Title": {
+    "description": "Section 1 heading in Companion permission explanation"
+  },
+  "companionSection2Title": "2. What the app asks for on your phone",
+  "@companionSection2Title": {
+    "description": "Section 2 heading in Companion permission explanation"
+  },
+  "companionSection3Title": "3. What its privacy policy says",
+  "@companionSection3Title": {
+    "description": "Section 3 heading in Companion permission explanation"
+  },
+  "companionSection4Title": "4. Why this might relate to a feature",
+  "@companionSection4Title": {
+    "description": "Section 4 heading in Companion permission explanation"
+  },
+  "companionSection4Fallback": "No verified developer feature explanation found. Describe below what feature you were trying to use if you want Deni to check relevance.",
+  "@companionSection4Fallback": {
+    "description": "Fallback text when no policy feature explanation was matched"
+  },
+  "companionSection5Title": "5. What remains unknown",
+  "@companionSection5Title": {
+    "description": "Section 5 heading in Companion permission explanation"
+  },
+  "companionSection6Title": "6. Questions you can ask Deni",
+  "@companionSection6Title": {
+    "description": "Section 6 heading in Companion permission explanation"
+  },
+  "companionAddPolicyBtn": "Add privacy policy",
+  "@companionAddPolicyBtn": {
+    "description": "Button to attach a privacy policy in Companion"
+  },
+  "companionCheckUpdatedPolicyBtn": "Check updated privacy policy",
+  "@companionCheckUpdatedPolicyBtn": {
+    "description": "Button to check an updated privacy policy in Companion"
+  },
+  "companionVerifyPolicyTitle": "Verify policy for {appName}",
+  "@companionVerifyPolicyTitle": {
+    "description": "Title override for intake sheet launched from Companion",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "companionFeatureFieldLabel": "Feature you were using (optional)",
+  "@companionFeatureFieldLabel": {
+    "description": "Input label for optional feature context"
+  },
+  "companionFeatureFieldHint": "e.g., scanning a QR code, recording voice practice",
+  "@companionFeatureFieldHint": {
+    "description": "Input hint for optional feature context"
+  },
+  "companionQuestionFieldLabel": "Ask Deni a question",
+  "@companionQuestionFieldLabel": {
+    "description": "Input label for asking Deni a question in Companion"
+  },
+  "companionQuestionFieldHint": "What happens if I deny this permission?",
+  "@companionQuestionFieldHint": {
+    "description": "Input hint for asking Deni a question in Companion"
+  },
+  "companionReceiptSavedTitle": "Saved in Enprive Receipts",
+  "@companionReceiptSavedTitle": {
+    "description": "Badge title when Companion policy review is saved locally"
+  },
+  "companionReceiptUnsavedTitle": "Review not saved to Enprive yet",
+  "@companionReceiptUnsavedTitle": {
+    "description": "Label when Companion policy review is only in the current session"
+  },
+  "companionReceiptSavedBody": "Stored locally in your Enprive Receipts archive.",
+  "@companionReceiptSavedBody": {
+    "description": "Description when Companion review is saved locally"
+  },
+  "companionReceiptUpdatedUnsavedBody": "Updated policy review kept in this session only. Leaving Companion discards this draft and keeps your saved receipt unchanged.",
+  "@companionReceiptUpdatedUnsavedBody": {
+    "description": "Warning for an unsaved updated review draft in Companion"
+  },
+  "companionReceiptUnsavedBody": "Kept in this session only. Leaving Companion will discard it unless you save it.",
+  "@companionReceiptUnsavedBody": {
+    "description": "Warning for an unsaved review draft in Companion"
+  },
+  "companionSaveReceiptBtn": "Save receipt to Enprive",
+  "@companionSaveReceiptBtn": {
+    "description": "Button to save Companion policy review to local Receipts"
+  },
+  "companionSaveReceiptFailed": "Could not save receipt. Kept in this session: try again.",
+  "@companionSaveReceiptFailed": {
+    "description": "Error message when saving a Companion receipt fails"
+  },
+  "companionSavedLocalReceiptsSnack": "Saved to local Receipts.",
+  "@companionSavedLocalReceiptsSnack": {
+    "description": "Snackbar after saving a receipt from Companion"
+  },
+  "companionDoneReturnToApp": "Done · Return to {appName}",
+  "@companionDoneReturnToApp": {
+    "description": "Primary bottom button returning to the caller app",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "companionDoneReturnToPrev": "Done · Return to previous app",
+  "@companionDoneReturnToPrev": {
+    "description": "Bottom button returning to the previous app"
+  },
+  "companionOpenFullAppBtn": "Open full Enprive app",
+  "@companionOpenFullAppBtn": {
+    "description": "Secondary button to open the full Enprive app from Quick Settings Companion"
+  },
+  "companionCloudTimeoutSnack": "Cloud analysis took too long and was stopped before completing.",
+  "@companionCloudTimeoutSnack": {
+    "description": "Snackbar when Companion cloud policy analysis times out"
+  },
+  "companionAnalysisCancelledSnack": "Analysis cancelled.",
+  "@companionAnalysisCancelledSnack": {
+    "description": "Snackbar when Companion policy analysis is cancelled"
+  },
+  "companionCloudAnswerTimeoutSnack": "Cloud answer timed out cleanly.",
+  "@companionCloudAnswerTimeoutSnack": {
+    "description": "Snackbar when Companion cloud question times out"
+  },
+  "companionQuestionCancelledSnack": "Question cancelled.",
+  "@companionQuestionCancelledSnack": {
+    "description": "Snackbar when Companion question is cancelled"
+  },
+  "companionTileAddedSnack": "Enprive Check added to Android Quick Settings.",
+  "@companionTileAddedSnack": {
+    "description": "Snackbar after adding tile from Companion"
+  },
+  "companionTileAlreadyAddedSnack": "Enprive Check is already in your Quick Settings.",
+  "@companionTileAlreadyAddedSnack": {
+    "description": "Snackbar when tile is already added in Companion"
+  },
+  "companionTileDeclinedSnack": "Tile request dismissed. You can add it anytime from Settings or Quick Settings Edit.",
+  "@companionTileDeclinedSnack": {
+    "description": "Snackbar when tile request is dismissed in Companion"
+  },
+  "companionTileManualSnack": "Swipe down Quick Settings twice, tap Edit, and drag Enprive Check into your tiles.",
+  "@companionTileManualSnack": {
+    "description": "Snackbar with manual Quick Settings instructions in Companion"
+  },
+  "companionTileUnavailableSnack": "Android could not show the Quick Settings prompt on this device. You can drag Enprive Check manually from Quick Settings Edit.",
+  "@companionTileUnavailableSnack": {
+    "description": "Snackbar when system Quick Settings prompt is unavailable in Companion"
+  },
+  "companionUsageOptionalReason": "Usage Access is optional. You can choose an app manually or allow Usage Access for one-tap identification.",
+  "@companionUsageOptionalReason": {
+    "description": "Fallback note explaining Usage Access is optional"
+  },
+  "companionPermPreciseLocation": "Precise location",
+  "@companionPermPreciseLocation": {
+    "description": "Permission title for ACCESS_FINE_LOCATION"
+  },
+  "companionPermBackgroundLocation": "Background location",
+  "@companionPermBackgroundLocation": {
+    "description": "Permission title for ACCESS_BACKGROUND_LOCATION"
+  },
+  "companionPermCamera": "Camera",
+  "@companionPermCamera": {
+    "description": "Permission title for CAMERA"
+  },
+  "companionPermMicrophone": "Microphone",
+  "@companionPermMicrophone": {
+    "description": "Permission title for RECORD_AUDIO"
+  },
+  "companionPermAdId": "Google Advertising ID",
+  "@companionPermAdId": {
+    "description": "Permission title for AD_ID"
+  },
+  "companionPermDeclaredBy": "Android permission ({permission}) declared by {appName}.",
+  "@companionPermDeclaredBy": {
+    "description": "Fallback explanation for a declared Android permission",
+    "placeholders": {
+      "permission": {
+        "type": "String"
+      },
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "companionPermStatusAdId": "Listed by app · Ad ID",
+  "@companionPermStatusAdId": {
+    "description": "Grant status note for Advertising ID"
+  },
+  "companionPermStatusAllowed": "Listed by app · Allowed",
+  "@companionPermStatusAllowed": {
+    "description": "Grant status note when a permission is allowed"
+  },
+  "companionPermStatusNotAllowed": "Listed by app · Not allowed",
+  "@companionPermStatusNotAllowed": {
+    "description": "Grant status note when a permission is not allowed"
+  },
+  "guidedCatLocation": "Location",
+  "@guidedCatLocation": {
+    "description": "Guided permission category chip for Location"
+  },
+  "guidedCatContacts": "Contacts",
+  "@guidedCatContacts": {
+    "description": "Guided permission category chip for Contacts"
+  },
+  "guidedCatPhotosMedia": "Photos and media",
+  "@guidedCatPhotosMedia": {
+    "description": "Guided permission category chip for Photos and media"
+  },
+  "guidedCatNotifications": "Notifications",
+  "@guidedCatNotifications": {
+    "description": "Guided permission category chip for Notifications"
+  },
+  "guidedCatNearbyDevices": "Nearby devices",
+  "@guidedCatNearbyDevices": {
+    "description": "Guided permission category chip for Nearby devices"
+  },
+  "guidedCatCalendar": "Calendar",
+  "@guidedCatCalendar": {
+    "description": "Guided permission category chip for Calendar"
+  },
+  "guidedCatPhone": "Phone",
+  "@guidedCatPhone": {
+    "description": "Guided permission category chip for Phone"
+  },
+  "guidedCatSms": "SMS",
+  "@guidedCatSms": {
+    "description": "Guided permission category chip for SMS"
+  },
+  "companionFallbackUsageNotEnabled": "Usage Access has not been enabled in Android Settings.",
+  "@companionFallbackUsageNotEnabled": {
+    "description": "Localized fallback reason when Usage Access is disabled"
+  },
+  "companionFallbackUsageUnavailable": "Android UsageStatsManager is unavailable.",
+  "@companionFallbackUsageUnavailable": {
+    "description": "Localized fallback reason when UsageStatsManager is unavailable"
+  },
+  "companionFallbackTransientUi": "Only Android system or permission prompt UI appeared in recent usage events; choose the app manually.",
+  "@companionFallbackTransientUi": {
+    "description": "Localized fallback reason when only transient Android UI was seen"
+  },
+  "companionFallbackVisibilityRestricted": "The most recently active app cannot be inspected under Android package visibility restrictions. Please choose an app from the list or paste its policy.",
+  "@companionFallbackVisibilityRestricted": {
+    "description": "Localized fallback reason when Android package visibility hides the app"
+  },
+  "companionFallbackUnlockRequired": "Unlock your device before viewing app context.",
+  "@companionFallbackUnlockRequired": {
+    "description": "Localized fallback reason when device is locked"
+  },
+  "consentReasonPolicyTooDetailed": "This policy is too detailed for on-device AI processing.",
+  "@consentReasonPolicyTooDetailed": {
+    "description": "Reason shown in CloudConsentSheet when policy exceeds on-device limit"
+  },
+  "consentReasonExcerptTooDetailed": "This finding excerpt is too detailed for on-device AI processing.",
+  "@consentReasonExcerptTooDetailed": {
+    "description": "Reason shown in CloudConsentSheet when finding excerpt exceeds on-device limit"
+  },
+  "consentReasonOnDeviceUnavailable": "On-device AI is unavailable on this phone right now.",
+  "@consentReasonOnDeviceUnavailable": {
+    "description": "Reason shown in CloudConsentSheet when on-device AI is unavailable"
+  },
+  "consentReasonOnDeviceCannotAnswer": "On-device AI could not answer from this device right now.",
+  "@consentReasonOnDeviceCannotAnswer": {
+    "description": "Reason shown in CloudConsentSheet when on-device AI cannot answer"
+  },
+  "consentReasonVoiceTooLong": "These verified findings exceed on-device summary limits. You can use the offline summary now or send the redacted findings to Cloud AI once.",
+  "@consentReasonVoiceTooLong": {
+    "description": "Reason shown when voice summary findings exceed on-device limits"
+  },
+  "consentReasonVoiceUnavailable": "On-device AI is unavailable on this phone right now. Showing Enprive's offline plain-language summary.",
+  "@consentReasonVoiceUnavailable": {
+    "description": "Reason shown when voice summary falls back to offline summary"
+  },
+  "consentReasonVoiceTimedOut": "On-device summary timed out. Showing Enprive's offline plain-language summary.",
+  "@consentReasonVoiceTimedOut": {
+    "description": "Reason shown when on-device voice summary times out"
+  },
+  "unsavedExitTitle": "Save this privacy review?",
+  "@unsavedExitTitle": {
+    "description": "Title of exit confirmation sheet for an unsaved review"
+  },
+  "unsavedExitModifiedBody": "Unsaved reviews are discarded when you close this screen, so nothing is stored on your phone without your choice. Your original saved receipt will remain unchanged.",
+  "@unsavedExitModifiedBody": {
+    "description": "Explanation when closing an unsaved update to a saved receipt"
+  },
+  "unsavedExitDraftBody": "Unsaved reviews are discarded when you close this screen, so nothing is stored on your phone without your choice.",
+  "@unsavedExitDraftBody": {
+    "description": "Explanation when closing an unsaved new review draft"
+  },
+  "unsavedExitDiscardBtn": "Discard without saving",
+  "@unsavedExitDiscardBtn": {
+    "description": "Button to discard unsaved review and exit"
+  },
+  "unsavedExitContinueBtn": "Continue reviewing",
+  "@unsavedExitContinueBtn": {
+    "description": "Button to cancel exiting and keep reviewing"
+  },
+  "updatePrivacyPolicyForTitle": "Update privacy policy for {title}",
+  "@updatePrivacyPolicyForTitle": {
+    "description": "Sheet title when updating a privacy policy for an existing subject",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewSaveFailedError": "Could not save receipt. Your review draft is still open.",
+  "@reviewSaveFailedError": {
+    "description": "Error shown if saving a receipt fails"
+  },
+  "reviewRemovedFromReceiptsSnack": "Removed from saved receipts.",
+  "@reviewRemovedFromReceiptsSnack": {
+    "description": "Snackbar after deleting a saved receipt"
+  },
+  "reviewRemoveFailedSnack": "Could not remove saved receipt.",
+  "@reviewRemoveFailedSnack": {
+    "description": "Snackbar when deleting a saved receipt fails"
+  },
+  "reviewModifiedDraftTitle": "New draft from saved receipt",
+  "@reviewModifiedDraftTitle": {
+    "description": "Banner title when viewing an unsaved updated draft of a saved receipt"
+  },
+  "reviewModifiedDraftBody": "Save to Receipts to keep this updated review: your original saved receipt remains unchanged.",
+  "@reviewModifiedDraftBody": {
+    "description": "Banner body when viewing an unsaved updated draft of a saved receipt"
+  },
+  "btnRetrySave": "Retry save",
+  "@btnRetrySave": {
+    "description": "Action button to retry saving a receipt"
+  },
+  "samplePermissionsHeader": "Sample permissions ({badge})",
+  "@samplePermissionsHeader": {
+    "description": "Header for synthetic sample app permissions",
+    "placeholders": {
+      "badge": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceKindUrl": "Public web link",
+  "@sourceKindUrl": {
+    "description": "Source kind label for a fetched URL"
+  },
+  "sourceKindPdf": "Local PDF file",
+  "@sourceKindPdf": {
+    "description": "Source kind label for a local PDF file"
+  },
+  "sourceKindDocx": "Local Word (DOCX) file",
+  "@sourceKindDocx": {
+    "description": "Source kind label for a local DOCX file"
+  },
+  "sourceKindTextFile": "Local text file",
+  "@sourceKindTextFile": {
+    "description": "Source kind label for a local text file"
+  },
+  "sourceKindSharedText": "Shared text",
+  "@sourceKindSharedText": {
+    "description": "Source kind label for Android shared text"
+  },
+  "sourceKindSelectedText": "Selected text",
+  "@sourceKindSelectedText": {
+    "description": "Source kind label for selected text"
+  },
+  "sourceKindSampleApp": "Sample app",
+  "@sourceKindSampleApp": {
+    "description": "Source kind label for a built-in sample app"
+  },
+  "sourceKindPhonePermissions": "Phone permissions",
+  "@sourceKindPhonePermissions": {
+    "description": "Source kind label for phone permissions inspection"
+  },
+  "sourceKindPastedText": "Pasted text",
+  "@sourceKindPastedText": {
+    "description": "Source kind label for pasted policy text"
+  },
+  "extractionStatusExtracted": "Read on this phone",
+  "@extractionStatusExtracted": {
+    "description": "Extraction status when text was extracted locally"
+  },
+  "extractionStatusNone": "Provided on this phone",
+  "@extractionStatusNone": {
+    "description": "Extraction status when text was provided directly"
+  },
+  "extractionStatusUnsupported": "Unsupported file type",
+  "@extractionStatusUnsupported": {
+    "description": "Extraction status for unsupported file types"
+  },
+  "extractionStatusTooLarge": "File too large",
+  "@extractionStatusTooLarge": {
+    "description": "Extraction status when file exceeds size limit"
+  },
+  "extractionStatusEmpty": "No readable text",
+  "@extractionStatusEmpty": {
+    "description": "Extraction status when file has no extractable text"
+  },
+  "extractionStatusReadError": "Could not read file",
+  "@extractionStatusReadError": {
+    "description": "Extraction status when reading file fails"
+  },
+  "extractionStatusPasswordProtected": "Password-protected",
+  "@extractionStatusPasswordProtected": {
+    "description": "Extraction status for password-protected documents"
+  },
+  "extractionStatusPermissionDenied": "Permission denied",
+  "@extractionStatusPermissionDenied": {
+    "description": "Extraction status when file access is denied"
+  },
+  "extractionStatusCancelled": "Cancelled",
+  "@extractionStatusCancelled": {
+    "description": "Extraction status when extraction was cancelled"
+  },
+  "advancedDetailsCheckedAt": "Checked at: {timestamp}",
+  "@advancedDetailsCheckedAt": {
+    "description": "Timestamp row inside Advanced details",
+    "placeholders": {
+      "timestamp": {
+        "type": "String"
+      }
+    }
+  },
+  "advancedDetailsCanonicalUrl": "Canonical URL: {url}",
+  "@advancedDetailsCanonicalUrl": {
+    "description": "Canonical URL row inside Advanced details",
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "advancedDetailsRedirectedFrom": "Redirected from: {url}",
+  "@advancedDetailsRedirectedFrom": {
+    "description": "Redirect origin row inside Advanced details",
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "advancedDetailsFileLine": "File: {filename}",
+  "@advancedDetailsFileLine": {
+    "description": "Filename label inside Advanced details",
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "advancedDetailsStatusSuffix": "Status: {status}",
+  "@advancedDetailsStatusSuffix": {
+    "description": "Extraction status suffix inside Advanced details",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "advancedDetailsSha256Hash": "SHA-256 source hash: {hash}",
+  "@advancedDetailsSha256Hash": {
+    "description": "SHA-256 hash row inside Advanced details",
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "semanticsPrimaryNavigation": "Primary navigation",
+  "@semanticsPrimaryNavigation": {
+    "description": "Accessibility label for the bottom navigation bar"
+  },
+  "semanticsProcessingLocation": "Processing location: {label}",
+  "@semanticsProcessingLocation": {
+    "description": "Accessibility label for the inference provenance chip",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "semanticsDeniMascot": "Deni, your privacy guide",
+  "@semanticsDeniMascot": {
+    "description": "Default accessibility label for the interactive Deni mascot"
+  },
+  "quoteCollapsibleDefaultHeader": "Exact Policy Excerpt",
+  "@quoteCollapsibleDefaultHeader": {
+    "description": "Default header for collapsible policy quote box"
   }
 }

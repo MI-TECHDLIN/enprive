@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/theme/enprive_theme.dart';
+import '../../l10n/app_localizations.dart';
 import 'enprive_material_card_surface.dart';
 
 /// Collapsible verbatim quotation & FNV-1a 64-bit snapshot digest container designed for
@@ -14,7 +15,7 @@ import 'enprive_material_card_surface.dart';
 class EnpriveCollapsibleQuoteBox extends StatefulWidget {
   final String quote;
   final String badgeLabel;
-  final String headerLabel;
+  final String? headerLabel;
   final String? sha256Digest;
   final bool initiallyExpanded;
   final bool autoCollapseTrigger;
@@ -23,7 +24,7 @@ class EnpriveCollapsibleQuoteBox extends StatefulWidget {
     super.key,
     required this.quote,
     this.badgeLabel = 'Q1',
-    this.headerLabel = 'Exact Policy Excerpt',
+    this.headerLabel,
     this.sha256Digest,
     this.initiallyExpanded = true,
     this.autoCollapseTrigger = false,
@@ -54,6 +55,10 @@ class _EnpriveCollapsibleQuoteBoxState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context) ??
+        lookupAppLocalizations(
+          Localizations.maybeLocaleOf(context) ?? const Locale('en'),
+        );
     final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
     final surfaces = context.enpriveSurfaces;
@@ -110,7 +115,8 @@ class _EnpriveCollapsibleQuoteBoxState
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            widget.headerLabel,
+                            widget.headerLabel ??
+                                l10n.quoteCollapsibleDefaultHeader,
                             style: m3e.typography.emphasized.titleSmall
                                 .copyWith(color: scheme.onSurface),
                           ),
@@ -176,7 +182,7 @@ class _EnpriveCollapsibleQuoteBoxState
                                     children: [
                                       Flexible(
                                         child: Text(
-                                          'Document fingerprint · ${widget.sha256Digest}',
+                                          '${l10n.snapshotDigestLabel} · ${widget.sha256Digest}',
                                           style: typeExt.sha256Hash.copyWith(
                                             color: scheme.onSurfaceVariant,
                                             fontSize: 11.5,
@@ -195,13 +201,15 @@ class _EnpriveCollapsibleQuoteBoxState
                                           ScaffoldMessenger.maybeOf(context)
                                             ?..hideCurrentSnackBar()
                                             ..showSnackBar(
-                                              const SnackBar(
+                                              SnackBar(
                                                 content: Text(
-                                                  'Document fingerprint copied',
+                                                  l10n.digestCopiedMsg,
                                                 ),
                                                 behavior:
                                                     SnackBarBehavior.floating,
-                                                duration: Duration(seconds: 2),
+                                                duration: const Duration(
+                                                  seconds: 2,
+                                                ),
                                               ),
                                             );
                                         },
