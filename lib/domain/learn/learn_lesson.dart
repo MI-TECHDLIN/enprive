@@ -3,10 +3,14 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../widgets/deni_animated_mascot.dart';
+import '../../widgets/learn/diagrams/data_collection_diagram.dart';
 import '../../widgets/learn/diagrams/evidence_categories_legend.dart';
 import '../../widgets/learn/diagrams/evidence_layers_diagram.dart';
 import '../../widgets/learn/diagrams/permissions_ladder_diagram.dart';
+import '../../widgets/learn/diagrams/policy_fog_diagram.dart';
 import '../../widgets/learn/diagrams/policy_limit_diagram.dart';
+import '../../widgets/learn/diagrams/retention_timeline_diagram.dart';
+import '../../widgets/learn/diagrams/safe_sharing_diagram.dart';
 import '../../widgets/learn/diagrams/third_party_diagram.dart';
 
 /// Filter categories on the Learn home screen.
@@ -22,6 +26,10 @@ abstract final class LearnLessonIds {
   static const String androidPermissions = 'android_permissions';
   static const String thirdParties = 'third_parties';
   static const String evidence = 'evidence';
+  static const String dataCollection = 'data_collection';
+  static const String retention = 'retention';
+  static const String unclearPolicies = 'unclear_policies';
+  static const String safeSharing = 'safe_sharing';
 }
 
 /// Builder that produces the localized Flutter-drawn vector illustration for a
@@ -283,6 +291,176 @@ List<LearnLesson> buildLearnLessons(AppLocalizations l10n) {
         correctIndex: 1,
         correctFeedback: l10n.learnEvidenceQuickCorrectFeedback,
         tryAgainFeedback: l10n.learnEvidenceQuickTryAgainFeedback,
+      ),
+    ),
+    // Lesson 5: Topic 2 — What Data Apps Collect
+    LearnLesson(
+      id: LearnLessonIds.dataCollection,
+      category: LearnTopicCategory.policies,
+      folderTitle: l10n.learnDataCollectionFolderTitle,
+      title: l10n.learnDataCollectionTitle,
+      subtitle: l10n.learnDataCollectionSubtitle,
+      intro: l10n.learnDataCollectionIntro1,
+      steps: [
+        l10n.learnDataCollectionStep1,
+        l10n.learnDataCollectionStep2,
+        l10n.learnDataCollectionStep3,
+        l10n.learnDataCollectionStep4,
+      ],
+      icon: LucideIcons.database,
+      headerPose: DeniPose.thinking,
+      diagramBuilder: (context, l10n) => DataCollectionDiagram(
+        labels: DataCollectionDiagramLabels(
+          youTypeTitle: l10n.learnDataCollectionDiagramYouTypeTitle,
+          youTypeItems: [
+            l10n.learnDataCollectionDiagramYouTypeItem1,
+            l10n.learnDataCollectionDiagramYouTypeItem2,
+            l10n.learnDataCollectionDiagramYouTypeItem3,
+            l10n.learnDataCollectionDiagramYouTypeItem4,
+          ],
+          runsQuietlyTitle: l10n.learnDataCollectionDiagramRunsQuietlyTitle,
+          runsQuietlyItems: [
+            l10n.learnDataCollectionDiagramRunsQuietlyItem1,
+            l10n.learnDataCollectionDiagramRunsQuietlyItem2,
+            l10n.learnDataCollectionDiagramRunsQuietlyItem3,
+            l10n.learnDataCollectionDiagramRunsQuietlyItem4,
+          ],
+          quietNote: l10n.learnDataCollectionDiagramQuietNote,
+          semanticDescription: l10n.learnDataCollectionDiagramSemanticDescription,
+        ),
+      ),
+      quickCheck: LearnQuickCheck(
+        question: l10n.learnDataCollectionQuizQuestion,
+        options: [
+          l10n.learnDataCollectionQuizChoiceA,
+          l10n.learnDataCollectionQuizChoiceB,
+          l10n.learnDataCollectionQuizChoiceC,
+        ],
+        correctIndex: 1,
+        correctFeedback: l10n.learnDataCollectionQuizFeedbackRight,
+        tryAgainFeedback: l10n.learnDataCollectionQuizFeedbackWrong,
+      ),
+    ),
+    // Lesson 6: Topic 5 — Retention and Deletion
+    LearnLesson(
+      id: LearnLessonIds.retention,
+      category: LearnTopicCategory.evidence,
+      folderTitle: l10n.learnRetentionFolderTitle,
+      title: l10n.learnRetentionTitle,
+      subtitle: l10n.learnRetentionSubtitle,
+      intro: l10n.learnRetentionIntro1,
+      steps: [
+        l10n.learnRetentionStep1,
+        l10n.learnRetentionStep2,
+        l10n.learnRetentionStep3,
+        l10n.learnRetentionStep4,
+        l10n.learnRetentionStep5,
+      ],
+      icon: LucideIcons.clock,
+      headerPose: DeniPose.explaining,
+      diagramBuilder: (context, l10n) => RetentionTimelineDiagram(
+        labels: RetentionTimelineDiagramLabels(
+          collected: l10n.learnRetentionDiagramCollected,
+          stored: l10n.learnRetentionDiagramStored,
+          uninstall: l10n.learnRetentionDiagramUninstall,
+          deleteRequest: l10n.learnRetentionDiagramDeleteRequest,
+          unknownTail: l10n.learnRetentionDiagramUnknownTail,
+          semanticDescription: l10n.learnRetentionDiagramSemanticDescription,
+        ),
+      ),
+      quickCheck: LearnQuickCheck(
+        question: l10n.learnRetentionQuizQuestion,
+        options: [
+          l10n.learnRetentionQuizChoiceA,
+          l10n.learnRetentionQuizChoiceB,
+          l10n.learnRetentionQuizChoiceC,
+        ],
+        correctIndex: 1,
+        correctFeedback: l10n.learnRetentionQuizFeedbackRight,
+        tryAgainFeedback: l10n.learnRetentionQuizFeedbackWrong,
+      ),
+    ),
+    // Lesson 7: Topic 7 — Spotting Unclear Policies & Dark Patterns
+    LearnLesson(
+      id: LearnLessonIds.unclearPolicies,
+      category: LearnTopicCategory.policies,
+      folderTitle: l10n.learnUnclearPoliciesFolderTitle,
+      title: l10n.learnUnclearPoliciesTitle,
+      subtitle: l10n.learnUnclearPoliciesSubtitle,
+      intro: l10n.learnUnclearPoliciesIntro1,
+      steps: [
+        l10n.learnUnclearPoliciesStep1,
+        l10n.learnUnclearPoliciesStep2,
+        l10n.learnUnclearPoliciesStep3,
+        l10n.learnUnclearPoliciesStep4,
+        l10n.learnUnclearPoliciesStep5,
+      ],
+      icon: LucideIcons.alertCircle,
+      headerPose: DeniPose.thinking,
+      diagramBuilder: (context, l10n) => PolicyFogDiagram(
+        labels: PolicyFogDiagramLabels(
+          clearTitle: l10n.learnUnclearPoliciesDiagramClearTitle,
+          clearExample: l10n.learnUnclearPoliciesDiagramClearExample,
+          foggyTitle: l10n.learnUnclearPoliciesDiagramFoggyTitle,
+          foggyExample: l10n.learnUnclearPoliciesDiagramFoggyExample,
+          tipsTitle: l10n.learnUnclearPoliciesDiagramTipsTitle,
+          tips: [
+            l10n.learnUnclearPoliciesDiagramTip1,
+            l10n.learnUnclearPoliciesDiagramTip2,
+            l10n.learnUnclearPoliciesDiagramTip3,
+          ],
+          silenceNote: l10n.learnUnclearPoliciesDiagramSilenceNote,
+          semanticDescription: l10n.learnUnclearPoliciesDiagramSemanticDescription,
+        ),
+      ),
+      quickCheck: LearnQuickCheck(
+        question: l10n.learnUnclearPoliciesQuizQuestion,
+        options: [
+          l10n.learnUnclearPoliciesQuizChoiceA,
+          l10n.learnUnclearPoliciesQuizChoiceB,
+          l10n.learnUnclearPoliciesQuizChoiceC,
+        ],
+        correctIndex: 1,
+        correctFeedback: l10n.learnUnclearPoliciesQuizFeedbackRight,
+        tryAgainFeedback: l10n.learnUnclearPoliciesQuizFeedbackWrong,
+      ),
+    ),
+    // Lesson 8: Topic 9 — Safe-Sharing Habits for Kids
+    LearnLesson(
+      id: LearnLessonIds.safeSharing,
+      category: LearnTopicCategory.sharing,
+      folderTitle: l10n.learnSafeSharingFolderTitle,
+      title: l10n.learnSafeSharingTitle,
+      subtitle: l10n.learnSafeSharingSubtitle,
+      intro: l10n.learnSafeSharingIntro1,
+      steps: [
+        l10n.learnSafeSharingStep1,
+        l10n.learnSafeSharingStep2,
+        l10n.learnSafeSharingStep3,
+        l10n.learnSafeSharingStep4,
+        l10n.learnSafeSharingStep5,
+      ],
+      icon: LucideIcons.shieldCheck,
+      headerPose: DeniPose.raiseHand,
+      diagramBuilder: (context, l10n) => SafeSharingDiagram(
+        labels: SafeSharingDiagramLabels(
+          stop: l10n.learnSafeSharingDiagramStop,
+          think: l10n.learnSafeSharingDiagramThink,
+          connect: l10n.learnSafeSharingDiagramConnect,
+          cafeteriaTest: l10n.learnSafeSharingDiagramCafeteriaTest,
+          semanticDescription: l10n.learnSafeSharingDiagramSemanticDescription,
+        ),
+      ),
+      quickCheck: LearnQuickCheck(
+        question: l10n.learnSafeSharingQuizQuestion,
+        options: [
+          l10n.learnSafeSharingQuizChoiceA,
+          l10n.learnSafeSharingQuizChoiceB,
+          l10n.learnSafeSharingQuizChoiceC,
+        ],
+        correctIndex: 1,
+        correctFeedback: l10n.learnSafeSharingQuizFeedbackRight,
+        tryAgainFeedback: l10n.learnSafeSharingQuizFeedbackWrong,
       ),
     ),
   ];

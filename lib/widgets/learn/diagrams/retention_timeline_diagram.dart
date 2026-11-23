@@ -27,61 +27,32 @@ class RetentionTimelineDiagramLabels {
   final String semanticDescription;
 }
 
-/// A diagram showing the data lifecycle and retention timeline:
+/// A clean vertical timeline diagram showing the data retention lifecycle:
 /// 1. Data collected during app use
 /// 2. Stored on company servers
-/// 3. You uninstall the app: phone files go but uploaded data stays
-/// 4. A deletion request
-/// 5. Dashed 'unknown retention' tail for policies that say 'as long as needed'
+/// 3. Uninstalling removes phone files while server copies may remain
+/// 4. Requesting account deletion
+/// 5. Dashed 'unknown retention' step for vague "as long as needed" policies
 ///
-/// Uses a 4-node timeline with distinct node shapes and a dashed unknown tail.
+/// Built with a start-aligned vertical rail of five circular icon nodes paired
+/// with full-wrapping step cards beside them (mirroring cleanly in RTL), and
+/// Deni in a reserved bottom row so labels and mascot never overlap at any
+/// width or text scale.
 class RetentionTimelineDiagram extends StatelessWidget {
   const RetentionTimelineDiagram({super.key, required this.labels});
 
-  final RetentionTimelineDiagramLabels labels;
+  static const Key mascotKey = Key('retention_timeline_diagram_mascot');
 
-  @override
-  Widget build(BuildContext context) {
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
-    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+  static Key stepNodeKey(int index) =>
+      Key('retention_timeline_step_node_$index');
 
-    return Semantics(
-      container: true,
-      excludeSemantics: true,
-      label: labels.semanticDescription,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-          final useVerticalLayout =
-              constraints.maxWidth < 480 || textScale > 1.35;
+  static Key stepBadgeKey(int index) =>
+      Key('retention_timeline_step_badge_$index');
 
-          return _RetentionTimelineContent(
-            labels: labels,
-            isRtl: isRtl,
-            useVerticalLayout: useVerticalLayout,
-            reduceMotion: reduceMotion,
-            maxWidth: constraints.maxWidth,
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _RetentionTimelineContent extends StatelessWidget {
-  const _RetentionTimelineContent({
-    required this.labels,
-    required this.isRtl,
-    required this.useVerticalLayout,
-    required this.reduceMotion,
-    required this.maxWidth,
-  });
+  static Key stepLabelKey(int index) =>
+      Key('retention_timeline_step_label_$index');
 
   final RetentionTimelineDiagramLabels labels;
-  final bool isRtl;
-  final bool useVerticalLayout;
-  final bool reduceMotion;
-  final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -89,359 +60,273 @@ class _RetentionTimelineContent extends StatelessWidget {
     final scheme = m3e.colorScheme;
     final categoryColors = context.categoryColors;
 
-    // Colors from evidence categories - compute once in build
-    final nodeColors = <Color>[
-      categoryColors.dataCollection.color,   // 0: collected
-      categoryColors.retention.color,        // 1: stored
-      categoryColors.tracking.color,         // 2: uninstall
-      categoryColors.parentalConsent.color,  // 3: deleteRequest
-      scheme.outline,                        // 4: unknownTail
+    final steps = <_TimelineStepData>[
+      _TimelineStepData(
+        index: 0,
+        label: labels.collected,
+        icon: LucideIcons.database,
+        accentColor: categoryColors.dataCollection.color,
+        containerColor: categoryColors.dataCollection.container,
+        onContainerColor: categoryColors.dataCollection.onContainer,
+        isUnknown: false,
+      ),
+      _TimelineStepData(
+        index: 1,
+        label: labels.stored,
+        icon: LucideIcons.server,
+        accentColor: categoryColors.retention.color,
+        containerColor: categoryColors.retention.container,
+        onContainerColor: categoryColors.retention.onContainer,
+        isUnknown: false,
+      ),
+      _TimelineStepData(
+        index: 2,
+        label: labels.uninstall,
+        icon: LucideIcons.smartphone,
+        accentColor: categoryColors.tracking.color,
+        containerColor: categoryColors.tracking.container,
+        onContainerColor: categoryColors.tracking.onContainer,
+        isUnknown: false,
+      ),
+      _TimelineStepData(
+        index: 3,
+        label: labels.deleteRequest,
+        icon: LucideIcons.trash2,
+        accentColor: categoryColors.parentalConsent.color,
+        containerColor: categoryColors.parentalConsent.container,
+        onContainerColor: categoryColors.parentalConsent.onContainer,
+        isUnknown: false,
+      ),
+      _TimelineStepData(
+        index: 4,
+        label: labels.unknownTail,
+        icon: LucideIcons.helpCircle,
+        accentColor: scheme.outline,
+        containerColor: scheme.surfaceContainerHighest,
+        onContainerColor: scheme.onSurfaceVariant,
+        isUnknown: true,
+      ),
     ];
-    final segmentColors = <Color>[
-      categoryColors.dataCollection.color,   // 0 -> 1
-      categoryColors.retention.color,        // 1 -> 2
-      categoryColors.tracking.color,         // 2 -> 3
-      scheme.outline,                        // 3 -> 4 (dashed)
-    ];
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = maxWidth;
-        final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-        final clampedTextScale = textScale.clamp(1.0, 1.5);
-        final nodeSize = 56.0 * clampedTextScale;
-        final spacing = 24.0 * clampedTextScale;
-        final deniSize = 56 * clampedTextScale;
-        final labelMaxWidth = useVerticalLayout
-            ? width - 32
-            : (width - spacing * 3) / 4;
-
-        // Calculate positions
-        late List<Offset> nodeCenters;
-        late double contentWidth;
-        late double contentHeight;
-
-        if (useVerticalLayout) {
-          // Vertical layout: nodes stacked top to bottom
-          final centerX = width / 2;
-          final startY = nodeSize / 2 + 16;
-          final verticalSpacing = nodeSize + spacing;
-
-          nodeCenters = List.generate(5, (i) {
-            return Offset(centerX, startY + i * verticalSpacing);
-          });
-
-          contentWidth = width;
-          contentHeight = nodeCenters.last.dy + nodeSize / 2 + 16 + deniSize + 16;
-        } else {
-          // Horizontal layout: nodes left to right (mirrored in RTL)
-          final centerY = 180 * clampedTextScale;
-          final availableWidth = width - 32;
-          final horizontalSpacing = (availableWidth - nodeSize * 4) / 3;
-          final startX = isRtl ? width - 16 - nodeSize / 2 : 16 + nodeSize / 2;
-
-          nodeCenters = List.generate(5, (i) {
-            final x = isRtl
-                ? startX - i * (nodeSize + horizontalSpacing)
-                : startX + i * (nodeSize + horizontalSpacing);
-            return Offset(x, centerY);
-          });
-
-          contentWidth = width;
-          contentHeight =
-              centerY + nodeSize / 2 + 16 + deniSize + 16 + 60; // Extra for labels
-        }
-
-        final painter = _TimelinePainter(
-          isRtl: isRtl,
-          useVerticalLayout: useVerticalLayout,
-          reduceMotion: reduceMotion,
-          nodeCenters: nodeCenters,
-          nodeSize: nodeSize,
-          segmentColors: segmentColors,
-          surfaceColor: scheme.surface,
-          onSurfaceColor: scheme.onSurface,
-        );
-
-        return SizedBox(
-          width: contentWidth,
-          height: contentHeight,
-          child: CustomPaint(
-            painter: painter,
-            child: Stack(
-              children: [
-                // Nodes and labels
-                for (int i = 0; i < 5; i++)
-                  Positioned(
-                    left: nodeCenters[i].dx - nodeSize / 2,
-                    top: nodeCenters[i].dy - nodeSize / 2,
-                    child: _TimelineNode(
-                      index: i,
-                      label: _nodeLabel(i),
-                      icon: _nodeIcon(i),
-                      nodeSize: nodeSize,
-                      textScale: clampedTextScale,
-                      labelMaxWidth: labelMaxWidth,
-                      isUnknown: i == 4,
-                      accentColor: nodeColors[i],
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: labels.semanticDescription,
+      child: ExcludeSemantics(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final diagramBody = Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(EnpriveRadii.card),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var i = 0; i < steps.length; i++)
+                    _TimelineStepRow(
+                      step: steps[i],
+                      isLast: i == steps.length - 1,
+                      connectorIsDashed: i == steps.length - 2,
+                      connectorColor: i == steps.length - 2
+                          ? scheme.outline
+                          : steps[i].accentColor,
+                    ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainer,
+                      borderRadius: BorderRadius.circular(EnpriveRadii.md),
+                    ),
+                    child: const Center(
+                      child: DeniAnimatedMascot(
+                        key: mascotKey,
+                        size: 48,
+                        pose: DeniPose.carryReceipt,
+                        holdStill: true,
+                        showAmbientGlow: false,
+                      ),
                     ),
                   ),
-                // Deni mascot
-                Positioned(
-                  bottom: 16,
-                  left: 16,
-                  right: 16,
-                  child: Center(
-                    child: DeniAnimatedMascot(
-                      size: deniSize,
-                      pose: DeniPose.carryReceipt,
-                      holdStill: true,
-                      showAmbientGlow: false,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+                ],
+              ),
+            );
+
+            return constraints.maxHeight.isFinite
+                ? SingleChildScrollView(primary: false, child: diagramBody)
+                : diagramBody;
+          },
+        ),
+      ),
     );
   }
-
-  String _nodeLabel(int index) {
-    switch (index) {
-      case 0:
-        return labels.collected;
-      case 1:
-        return labels.stored;
-      case 2:
-        return labels.uninstall;
-      case 3:
-        return labels.deleteRequest;
-      case 4:
-        return labels.unknownTail;
-      default:
-        return '';
-    }
-  }
-
-  IconData _nodeIcon(int index) {
-    switch (index) {
-      case 0:
-        return LucideIcons.database;
-      case 1:
-        return LucideIcons.server;
-      case 2:
-        return LucideIcons.smartphone;
-      case 3:
-        return LucideIcons.trash2;
-      case 4:
-        return LucideIcons.helpCircle;
-      default:
-        return LucideIcons.circle;
-    }
-  }
 }
 
-class _TimelinePainter extends CustomPainter {
-  const _TimelinePainter({
-    required this.isRtl,
-    required this.useVerticalLayout,
-    required this.reduceMotion,
-    required this.nodeCenters,
-    required this.nodeSize,
-    required this.segmentColors,
-    required this.surfaceColor,
-    required this.onSurfaceColor,
-  });
-
-  final bool isRtl;
-  final bool useVerticalLayout;
-  final bool reduceMotion;
-  final List<Offset> nodeCenters;
-  final double nodeSize;
-  final List<Color> segmentColors;
-  final Color surfaceColor;
-  final Color onSurfaceColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (nodeCenters.length < 2) return;
-
-    final strokeWidth = 3.0;
-    final dashWidth = 8.0;
-    final dashSpace = 6.0;
-    final nodeRadius = nodeSize / 2;
-
-    for (int i = 0; i < nodeCenters.length - 1; i++) {
-      final from = nodeCenters[i];
-      final to = nodeCenters[i + 1];
-      final direction = (to - from).normalize();
-      final start = from + direction * nodeRadius;
-      final end = to - direction * nodeRadius;
-
-      final isLastSegment = i == nodeCenters.length - 2;
-      final color = segmentColors[i];
-
-      final paint = Paint()
-        ..color = color.withValues(alpha: 0.6)
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke;
-
-      final path = Path();
-      path.moveTo(start.dx, start.dy);
-      path.lineTo(end.dx, end.dy);
-
-      if (isLastSegment) {
-        // Dashed line for unknown retention tail
-        final metric = path.computeMetrics().first;
-        double distance = 0;
-        final dashPath = Path();
-        while (distance < metric.length) {
-          final nextDistance = math.min(distance + dashWidth, metric.length);
-          final segment = metric.extractPath(distance, nextDistance);
-          dashPath.addPath(segment, Offset.zero);
-          distance = nextDistance + dashSpace;
-        }
-        canvas.drawPath(dashPath, paint);
-      } else {
-        canvas.drawPath(path, paint);
-      }
-
-      // Draw arrowhead
-      final arrowPaint = Paint()
-        ..color = color.withValues(alpha: 0.6)
-        ..style = PaintingStyle.fill;
-
-      final arrowHeadLength = 12.0;
-      final arrowHeadAngle = math.pi / 6;
-      final perpendicular = Offset(-direction.dy, direction.dx);
-      final arrowBase = end - direction * arrowHeadLength;
-      final left = arrowBase + perpendicular * arrowHeadLength * math.sin(arrowHeadAngle);
-      final right = arrowBase - perpendicular * arrowHeadLength * math.sin(arrowHeadAngle);
-
-      final arrowPath = Path();
-      arrowPath.moveTo(end.dx, end.dy);
-      arrowPath.lineTo(left.dx, left.dy);
-      arrowPath.lineTo(right.dx, right.dy);
-      arrowPath.close();
-      canvas.drawPath(arrowPath, arrowPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _TimelinePainter oldDelegate) =>
-      oldDelegate.isRtl != isRtl ||
-      oldDelegate.useVerticalLayout != useVerticalLayout ||
-      oldDelegate.reduceMotion != reduceMotion ||
-      oldDelegate.nodeCenters != nodeCenters ||
-      oldDelegate.nodeSize != nodeSize ||
-      oldDelegate.segmentColors != segmentColors ||
-      oldDelegate.surfaceColor != surfaceColor ||
-      oldDelegate.onSurfaceColor != onSurfaceColor;
-}
-
-class _TimelineNode extends StatelessWidget {
-  const _TimelineNode({
+class _TimelineStepData {
+  const _TimelineStepData({
     required this.index,
     required this.label,
     required this.icon,
-    required this.nodeSize,
-    required this.textScale,
-    required this.labelMaxWidth,
-    required this.isUnknown,
     required this.accentColor,
+    required this.containerColor,
+    required this.onContainerColor,
+    required this.isUnknown,
   });
 
   final int index;
   final String label;
   final IconData icon;
-  final double nodeSize;
-  final double textScale;
-  final double labelMaxWidth;
-  final bool isUnknown;
   final Color accentColor;
+  final Color containerColor;
+  final Color onContainerColor;
+  final bool isUnknown;
+}
+
+class _TimelineStepRow extends StatelessWidget {
+  const _TimelineStepRow({
+    required this.step,
+    required this.isLast,
+    required this.connectorIsDashed,
+    required this.connectorColor,
+  });
+
+  final _TimelineStepData step;
+  final bool isLast;
+  final bool connectorIsDashed;
+  final Color connectorColor;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
 
-    return ExcludeSemantics(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
+    final nodeCircle = Container(
+      key: RetentionTimelineDiagram.stepNodeKey(step.index),
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: step.containerColor,
+        shape: BoxShape.circle,
+        border: step.isUnknown
+            ? null
+            : Border.all(color: step.accentColor, width: 2),
+      ),
+      child: Icon(step.icon, size: 20, color: step.onContainerColor),
+    );
+
+    final railNode = step.isUnknown
+        ? CustomPaint(
+            foregroundPainter: _DashedCirclePainter(color: step.accentColor),
+            child: nodeCircle,
+          )
+        : nodeCircle;
+
+    final cardContent = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: step.isUnknown
+            ? scheme.surfaceContainerHighest
+            : scheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(EnpriveRadii.md),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Node circle
           Container(
-            width: nodeSize,
-            height: nodeSize,
+            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: isUnknown
-                  ? scheme.surfaceContainerHighest
-                  : accentColor.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isUnknown
-                    ? scheme.outlineVariant
-                    : accentColor,
-                width: isUnknown ? 2 : 2.5,
-                style: isUnknown ? BorderStyle.solid : BorderStyle.solid,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+              color: step.isUnknown ? scheme.surface : step.containerColor,
+              borderRadius: BorderRadius.circular(EnpriveRadii.pill),
+            ),
+            child: Center(
+              widthFactor: 1,
+              heightFactor: 1,
+              child: Text(
+                '${step.index + 1}',
+                key: RetentionTimelineDiagram.stepBadgeKey(step.index),
+                style: m3e.typography.emphasized.labelSmall.copyWith(
+                  color: step.onContainerColor,
+                  height: 1.15,
                 ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                step.label,
+                key: RetentionTimelineDiagram.stepLabelKey(step.index),
+                style: m3e.typeScale.bodySmall.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: step.isUnknown
+                      ? scheme.onSurfaceVariant
+                      : scheme.onSurface,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final stepCard = step.isUnknown
+        ? CustomPaint(
+            foregroundPainter: _DashedRRectPainter(
+              color: scheme.outline,
+              radius: EnpriveRadii.md,
+            ),
+            child: cardContent,
+          )
+        : cardContent;
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 44,
+            child: Column(
+              children: [
+                railNode,
+                if (!isLast)
+                  Expanded(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 18),
+                      child: SizedBox(
+                        width: 44,
+                        child: CustomPaint(
+                          painter: _VerticalRailConnectorPainter(
+                            color: connectorColor,
+                            isDashed: connectorIsDashed,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
-            child: Icon(
-              icon,
-              size: nodeSize * 0.45,
-              color: isUnknown ? scheme.onSurfaceVariant : accentColor,
-            ),
           ),
-          const SizedBox(height: 8),
-          // Step number badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: isUnknown
-                  ? scheme.surfaceContainerHighest
-                  : accentColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(
-                color: isUnknown
-                    ? scheme.outlineVariant
-                    : accentColor.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            child: Text(
-              'Step ${index + 1}',
-              style: TextStyle(
-                fontSize: 10 * textScale,
-                fontWeight: FontWeight.w700,
-                color: isUnknown ? scheme.onSurfaceVariant : accentColor,
-                height: 1.1,
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          // Label
-          ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: labelMaxWidth),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12 * textScale,
-                fontWeight: FontWeight.w600,
-                color: isUnknown ? scheme.onSurfaceVariant : scheme.onSurface,
-                height: 1.25,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+              child: Align(
+                alignment: AlignmentDirectional.topStart,
+                child: stepCard,
               ),
             ),
           ),
@@ -451,10 +336,138 @@ class _TimelineNode extends StatelessWidget {
   }
 }
 
-extension _OffsetNormalize on Offset {
-  Offset normalize() {
-    final len = distance;
-    if (len == 0) return Offset.zero;
-    return this / len;
+class _VerticalRailConnectorPainter extends CustomPainter {
+  const _VerticalRailConnectorPainter({
+    required this.color,
+    required this.isDashed,
+  });
+
+  final Color color;
+  final bool isDashed;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.height <= 4) return;
+
+    final centerX = size.width / 2;
+    const topGap = 3.0;
+    const bottomGap = 3.0;
+    const arrowHeight = 6.0;
+    const arrowHalfWidth = 4.0;
+
+    final startY = topGap;
+    final tipY = math.max(startY + 4.0, size.height - bottomGap);
+    final lineEndY = math.max(startY, tipY - arrowHeight);
+
+    final strokePaint = Paint()
+      ..color = color.withValues(alpha: 0.78)
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    if (lineEndY > startY) {
+      final path = Path()
+        ..moveTo(centerX, startY)
+        ..lineTo(centerX, lineEndY);
+
+      if (isDashed) {
+        final dashPath = Path();
+        for (final metric in path.computeMetrics()) {
+          double distance = 0;
+          while (distance < metric.length) {
+            final next = math.min(distance + 4.5, metric.length);
+            dashPath.addPath(metric.extractPath(distance, next), Offset.zero);
+            distance = next + 3.5;
+          }
+        }
+        canvas.drawPath(dashPath, strokePaint);
+      } else {
+        canvas.drawPath(path, strokePaint);
+      }
+    }
+
+    final arrowPath = Path()
+      ..moveTo(centerX, tipY)
+      ..lineTo(centerX - arrowHalfWidth, tipY - arrowHeight)
+      ..lineTo(centerX + arrowHalfWidth, tipY - arrowHeight)
+      ..close();
+    canvas.drawPath(
+      arrowPath,
+      Paint()
+        ..color = color.withValues(alpha: 0.78)
+        ..style = PaintingStyle.fill,
+    );
   }
+
+  @override
+  bool shouldRepaint(covariant _VerticalRailConnectorPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.isDashed != isDashed;
+}
+
+class _DashedCirclePainter extends CustomPainter {
+  const _DashedCirclePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = (Offset.zero & size).deflate(1.0);
+    final path = Path()..addOval(rect);
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.8
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final dashPath = Path();
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final next = math.min(distance + 5.0, metric.length);
+        dashPath.addPath(metric.extractPath(distance, next), Offset.zero);
+        distance = next + 4.0;
+      }
+    }
+    canvas.drawPath(dashPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedCirclePainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+class _DashedRRectPainter extends CustomPainter {
+  const _DashedRRectPainter({required this.color, required this.radius});
+
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rrect = RRect.fromRectAndRadius(
+      (Offset.zero & size).deflate(1.0),
+      Radius.circular(radius),
+    );
+    final path = Path()..addRRect(rrect);
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final dashPath = Path();
+    for (final metric in path.computeMetrics()) {
+      double dist = 0;
+      while (dist < metric.length) {
+        final next = math.min(dist + 6.0, metric.length);
+        dashPath.addPath(metric.extractPath(dist, next), Offset.zero);
+        dist = next + 4.5;
+      }
+    }
+    canvas.drawPath(dashPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRRectPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.radius != radius;
 }

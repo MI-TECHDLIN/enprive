@@ -1237,7 +1237,7 @@ abstract class AppLocalizations {
   /// No description provided for @cloudFallbackBannerTitle.
   ///
   /// In en, this message translates to:
-  /// **'Cloud unavailable — checked on this phone'**
+  /// **'Cloud unavailable: checked on this phone'**
   String get cloudFallbackBannerTitle;
 
   /// No description provided for @cloudFallbackBannerBody.
@@ -1609,7 +1609,7 @@ abstract class AppLocalizations {
   /// Honest notice shown when consented Gemini TTS fails or times out and falls back to local Android TTS
   ///
   /// In en, this message translates to:
-  /// **'Expressive cloud voice was unavailable — using this phone’s offline voice instead.'**
+  /// **'Expressive cloud voice was unavailable: using this phone\'s offline voice instead.'**
   String get voiceFallbackDeviceNotice;
 
   /// Honest notice shown when neither cloud TTS nor local Android TTS can speak the summary
@@ -1903,13 +1903,13 @@ abstract class AppLocalizations {
   /// Plain-language explanation when the user linked an app whose name and ID do not appear in the policy
   ///
   /// In en, this message translates to:
-  /// **'This policy does not name {appName} or its app ID. Double-check that it is the right policy — linking it here does not prove ownership.'**
+  /// **'This policy does not name {appName} or its app ID. Double-check that it is the right policy: linking it here does not prove ownership.'**
   String associationStatusUnverifiedBody(String appName);
 
   /// Plain-language explanation when only the URL domain matches the linked app name
   ///
   /// In en, this message translates to:
-  /// **'The web address includes words from {appName}, but the policy text itself does not name this app. Double-check that it is the right policy — linking it here does not prove ownership.'**
+  /// **'The web address includes words from {appName}, but the policy text itself does not name this app. Double-check that it is the right policy: linking it here does not prove ownership.'**
   String associationStatusUnverifiedUrlHostBody(String appName);
 
   /// Plain-language warning heading when the policy mentions a different app ID than the linked app
@@ -2288,7 +2288,7 @@ abstract class AppLocalizations {
   /// Step 4 of Lesson 1
   ///
   /// In en, this message translates to:
-  /// **'Comparing a policy with your phone\'s permission settings gives a clearer view — while remembering that Enprive cannot see live internet traffic.'**
+  /// **'Comparing a policy with your phone\'s permission settings gives a clearer view, while remembering that Enprive cannot see live internet traffic.'**
   String get learnPolicyStep4;
 
   /// Quick check question for Lesson 1
@@ -2306,7 +2306,7 @@ abstract class AppLocalizations {
   /// Correct second quick check option for Lesson 1
   ///
   /// In en, this message translates to:
-  /// **'What the developer says — not what the app actually sends'**
+  /// **'What the developer says: not what the app actually sends'**
   String get learnPolicyQuickOption2;
 
   /// Third quick check option for Lesson 1
@@ -2324,7 +2324,7 @@ abstract class AppLocalizations {
   /// Feedback shown when the user selects another option in Lesson 1
   ///
   /// In en, this message translates to:
-  /// **'Not quite. Reading a policy only tells you what the developer says — it cannot prove internet activity or turn off phone permissions.'**
+  /// **'Not quite. Reading a policy only tells you what the developer says: it cannot prove internet activity or turn off phone permissions.'**
   String get learnPolicyQuickTryAgainFeedback;
 
   /// First node title in the Lesson 1 Policy Limit diagram
@@ -2420,7 +2420,7 @@ abstract class AppLocalizations {
   /// Step 3 of Lesson 2
   ///
   /// In en, this message translates to:
-  /// **'Start with the narrowest choice that lets the feature work — such as Ask every time or While using the app.'**
+  /// **'Start with the narrowest choice that lets the feature work, such as Ask every time or While using the app.'**
   String get learnPermissionsStep3;
 
   /// Step 4 of Lesson 2 explaining where to review recent permission use
@@ -2462,7 +2462,7 @@ abstract class AppLocalizations {
   /// Feedback shown when the user selects the right answer in Lesson 2
   ///
   /// In en, this message translates to:
-  /// **'Right. Tapping Don\'t allow lets you check if the app works without the camera — and you can change permissions anytime in Android Settings.'**
+  /// **'Right. Tapping Don\'t allow lets you check if the app works without the camera, and you can change permissions anytime in Android Settings.'**
   String get learnPermissionsQuickCorrectFeedback;
 
   /// Feedback shown when the user selects another option in Lesson 2
@@ -2486,7 +2486,7 @@ abstract class AppLocalizations {
   /// Step 1 detail in the Permissions Ladder diagram
   ///
   /// In en, this message translates to:
-  /// **'Blocked — app cannot use this sensor'**
+  /// **'Blocked: app cannot use this sensor'**
   String get learnDiagramPermDenyDetail;
 
   /// Step 2 label in the Permissions Ladder diagram
@@ -2564,7 +2564,7 @@ abstract class AppLocalizations {
   /// Step 1 of Lesson 3
   ///
   /// In en, this message translates to:
-  /// **'First party means the app maker itself — for example, saving homework progress or quiz scores so the app works.'**
+  /// **'First party means the app maker itself: for example, saving homework progress or quiz scores so the app works.'**
   String get learnSharingStep1;
 
   /// Step 2 of Lesson 3
@@ -2618,7 +2618,7 @@ abstract class AppLocalizations {
   /// Feedback shown when the user selects another option in Lesson 3
   ///
   /// In en, this message translates to:
-  /// **'Look closer at what each partner does. Not all third parties are the same — some host data or fix crashes, while others run ads or tracking.'**
+  /// **'Look closer at what each partner does. Not all third parties are the same: some host data or fix crashes, while others run ads or tracking.'**
   String get learnSharingQuickTryAgainFeedback;
 
   /// Node label for the family/child user in the Lesson 3 diagram
@@ -2690,7 +2690,7 @@ abstract class AppLocalizations {
   /// Plain-language introduction for Lesson 4
   ///
   /// In en, this message translates to:
-  /// **'Enprive separates what a privacy policy says, what your phone shows, and what stays unknown — and groups findings by topic, never as a safety grade.'**
+  /// **'Enprive separates what a privacy policy says, what your phone shows, and what stays unknown, and groups findings by topic, never as a safety grade.'**
   String get learnEvidenceIntro;
 
   /// Step 1 of Lesson 4
@@ -2708,7 +2708,7 @@ abstract class AppLocalizations {
   /// Step 3 of Lesson 4 referencing the exact Review screen device-observed badge
   ///
   /// In en, this message translates to:
-  /// **'{deviceObserved} means your phone reported a permission setting on this device — not proof that data was sent.'**
+  /// **'{deviceObserved} means your phone reported a permission setting on this device: not proof that data was sent.'**
   String learnEvidenceStep3(String deviceObserved);
 
   /// Step 4 of Lesson 4 referencing exact Review screen interpretation and unverified badges
@@ -2742,7 +2742,7 @@ abstract class AppLocalizations {
   /// Correct second quick check option for Lesson 4
   ///
   /// In en, this message translates to:
-  /// **'Your phone shows this permission setting on this device — not proof that data was uploaded'**
+  /// **'Your phone shows this permission setting on this device: not proof that data was uploaded'**
   String get learnEvidenceQuickOption2;
 
   /// Third quick check option for Lesson 4
@@ -2760,7 +2760,7 @@ abstract class AppLocalizations {
   /// Feedback shown when the user selects another option in Lesson 4
   ///
   /// In en, this message translates to:
-  /// **'Not quite. That label only shows what your phone reports about a permission setting — it never proves uploads and is never a safety certification.'**
+  /// **'Not quite. That label only shows what your phone reports about a permission setting: it never proves uploads and is never a safety certification.'**
   String get learnEvidenceQuickTryAgainFeedback;
 
   /// Supporting caption for Layer 1 in the Lesson 4 EvidenceLayersDiagram
@@ -2821,6 +2821,606 @@ abstract class AppLocalizations {
     String retention,
     String parentalControls,
   );
+
+  /// Short folder title for Lesson 5 on the Learn home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Data apps collect'**
+  String get learnDataCollectionFolderTitle;
+
+  /// Full lesson title for Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'What Data Apps Collect'**
+  String get learnDataCollectionTitle;
+
+  /// Short subtitle for Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'The difference between what you type and what runs quietly'**
+  String get learnDataCollectionSubtitle;
+
+  /// Plain-language introduction for Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'Apps gather information in two ways. Some data comes from what you actively enter: your name, email, photos, voice recordings, or homework answers. Other data is collected automatically in the background, like your IP address (the address your phone uses on the internet), device identifiers, advertising ID (a code ads use to recognise your phone), crash logs, and when you open the app.'**
+  String get learnDataCollectionIntro1;
+
+  /// Step 1 of Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'What you type: Your name, school, email, photos, voice clips, and homework answers are data you choose to give.'**
+  String get learnDataCollectionStep1;
+
+  /// Step 2 of Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'What runs quietly: The app can collect an advertising ID, device identifiers, IP address, crash reports, and usage timing without you pressing a button. Quiet collection is not automatically bad: these signals help apps run smoothly.'**
+  String get learnDataCollectionStep2;
+
+  /// Step 3 of Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'Sensitive child data: Location, microphone recordings, camera photos, and biometric data like voiceprints (data about your body or voice) carry higher privacy risk for children.'**
+  String get learnDataCollectionStep3;
+
+  /// Step 4 of Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'Play Store note: Google Play\'s Data Safety section is the developer\'s own description. It is a hint, not proof, and does not include data processed only on your device or kept briefly in memory.'**
+  String get learnDataCollectionStep4;
+
+  /// Quick check question for Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'Which of these is an example of data that runs quietly in the background?'**
+  String get learnDataCollectionQuizQuestion;
+
+  /// First quick check option for Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'A photo you upload for your profile'**
+  String get learnDataCollectionQuizChoiceA;
+
+  /// Correct second quick check option for Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'Your advertising ID and device identifiers'**
+  String get learnDataCollectionQuizChoiceB;
+
+  /// Third quick check option for Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'A homework answer you type in the app'**
+  String get learnDataCollectionQuizChoiceC;
+
+  /// Feedback shown when the user selects the right answer in Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'Correct: advertising IDs and device identifiers are collected automatically without you typing them.'**
+  String get learnDataCollectionQuizFeedbackRight;
+
+  /// Feedback shown when the user selects another option in Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite: that is data you actively enter. Data that runs quietly includes advertising IDs, device identifiers, IP address, and usage timing.'**
+  String get learnDataCollectionQuizFeedbackWrong;
+
+  /// First card title in the Lesson 5 Data Collection diagram
+  ///
+  /// In en, this message translates to:
+  /// **'What you type or give'**
+  String get learnDataCollectionDiagramYouTypeTitle;
+
+  /// First item in the 'What you type' card
+  ///
+  /// In en, this message translates to:
+  /// **'Name, email, school'**
+  String get learnDataCollectionDiagramYouTypeItem1;
+
+  /// Second item in the 'What you type' card
+  ///
+  /// In en, this message translates to:
+  /// **'Photos and videos'**
+  String get learnDataCollectionDiagramYouTypeItem2;
+
+  /// Third item in the 'What you type' card
+  ///
+  /// In en, this message translates to:
+  /// **'Voice recordings'**
+  String get learnDataCollectionDiagramYouTypeItem3;
+
+  /// Fourth item in the 'What you type' card
+  ///
+  /// In en, this message translates to:
+  /// **'Homework answers'**
+  String get learnDataCollectionDiagramYouTypeItem4;
+
+  /// Second card title in the Lesson 5 Data Collection diagram
+  ///
+  /// In en, this message translates to:
+  /// **'What runs quietly'**
+  String get learnDataCollectionDiagramRunsQuietlyTitle;
+
+  /// First item in the 'What runs quietly' card
+  ///
+  /// In en, this message translates to:
+  /// **'Advertising ID'**
+  String get learnDataCollectionDiagramRunsQuietlyItem1;
+
+  /// Second item in the 'What runs quietly' card
+  ///
+  /// In en, this message translates to:
+  /// **'Device identifiers'**
+  String get learnDataCollectionDiagramRunsQuietlyItem2;
+
+  /// Third item in the 'What runs quietly' card
+  ///
+  /// In en, this message translates to:
+  /// **'IP address'**
+  String get learnDataCollectionDiagramRunsQuietlyItem3;
+
+  /// Fourth item in the 'What runs quietly' card
+  ///
+  /// In en, this message translates to:
+  /// **'Crash logs and usage timing'**
+  String get learnDataCollectionDiagramRunsQuietlyItem4;
+
+  /// Calm footer note beside Deni in the Lesson 5 Data Collection diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet does not mean bad: these signals help apps run smoothly.'**
+  String get learnDataCollectionDiagramQuietNote;
+
+  /// Full TalkBack description for the Lesson 5 Data Collection diagram
+  ///
+  /// In en, this message translates to:
+  /// **'A split diagram showing two categories of data collection. The top card titled \"What you type or give\" lists four chips: Name email school, Photos and videos, Voice recordings, Homework answers. The bottom card titled \"What runs quietly\" lists four chips: Advertising ID, Device identifiers, IP address, Crash logs and usage timing. A small note reads \"Quiet does not mean bad: these signals help apps run smoothly.\" Deni the mascot sits below in a thinking pose.'**
+  String get learnDataCollectionDiagramSemanticDescription;
+
+  /// Bridge CTA for Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'Check an app on this phone to see what data it collects.'**
+  String get learnDataCollectionCheckBridge;
+
+  /// Honesty note for Lesson 5
+  ///
+  /// In en, this message translates to:
+  /// **'This lesson explains common data types. It does not prove what any specific app collects or sends. Only the app\'s exact policy text and your phone\'s permission settings can show that.'**
+  String get learnDataCollectionHonestyNote;
+
+  /// Short folder title for Lesson 6 on the Learn home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Retention and deletion'**
+  String get learnRetentionFolderTitle;
+
+  /// Full lesson title for Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'Retention and Deletion'**
+  String get learnRetentionTitle;
+
+  /// Short subtitle for Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstalling an app does not erase data already on company servers'**
+  String get learnRetentionSubtitle;
+
+  /// Plain-language introduction for Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'When you delete an app from your phone, the app\'s files on your device are removed, but any data already uploaded to the company\'s servers stays there. Privacy policies should say how long they keep your data, how to ask for deletion, and what happens to backups, but many policies use vague phrases like \"as long as reasonably necessary.\"'**
+  String get learnRetentionIntro1;
+
+  /// Step 1 of Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'Data collected: While you use the app, your information is sent to and stored on the company\'s servers.'**
+  String get learnRetentionStep1;
+
+  /// Step 2 of Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'Stored on servers: Your data can stay on company systems even after you stop using the app.'**
+  String get learnRetentionStep2;
+
+  /// Step 3 of Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall does not delete server data: Removing the app from your phone only deletes local files, not the copies on company servers.'**
+  String get learnRetentionStep3;
+
+  /// Step 4 of Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'Deletion request: You can ask the company to delete your account and data; policies should say how long this takes.'**
+  String get learnRetentionStep4;
+
+  /// Step 5 of Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown retention: Policies that say \"as long as needed\" or \"for business purposes\" leave the actual deletion timeline unclear.'**
+  String get learnRetentionStep5;
+
+  /// Quick check question for Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'What happens to your data on company servers when you uninstall an app from your phone?'**
+  String get learnRetentionQuizQuestion;
+
+  /// First quick check option for Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'It is deleted automatically'**
+  String get learnRetentionQuizChoiceA;
+
+  /// Correct second quick check option for Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'It may stay on the servers - uninstalling the app does not delete it'**
+  String get learnRetentionQuizChoiceB;
+
+  /// Third quick check option for Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'It is anonymized immediately'**
+  String get learnRetentionQuizChoiceC;
+
+  /// Feedback shown when the user selects the right answer in Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'Correct: uninstalling only removes the app from your phone. Data on company servers may stay until you request deletion.'**
+  String get learnRetentionQuizFeedbackRight;
+
+  /// Feedback shown when the user selects another option in Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite: uninstalling an app does not delete data already uploaded to company servers. You need to request account deletion.'**
+  String get learnRetentionQuizFeedbackWrong;
+
+  /// Step 1 label in the Lesson 6 Retention Timeline diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Data collected during use'**
+  String get learnRetentionDiagramCollected;
+
+  /// Step 2 label in the Lesson 6 Retention Timeline diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Stored on company servers'**
+  String get learnRetentionDiagramStored;
+
+  /// Step 3 label in the Lesson 6 Retention Timeline diagram
+  ///
+  /// In en, this message translates to:
+  /// **'You uninstall the app - phone files go, server data stays'**
+  String get learnRetentionDiagramUninstall;
+
+  /// Step 4 label in the Lesson 6 Retention Timeline diagram
+  ///
+  /// In en, this message translates to:
+  /// **'You request account deletion'**
+  String get learnRetentionDiagramDeleteRequest;
+
+  /// Step 5 label in the Lesson 6 Retention Timeline diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown retention - policy says \"as long as needed\"'**
+  String get learnRetentionDiagramUnknownTail;
+
+  /// Full TalkBack description for the Lesson 6 Retention Timeline diagram
+  ///
+  /// In en, this message translates to:
+  /// **'A five-step timeline showing the data lifecycle. Step 1: Data collected during use, with a database icon. Step 2: Stored on company servers, with a server icon. Step 3: You uninstall the app - phone files go, server data stays, with a smartphone icon. Step 4: You request account deletion, with a trash icon. Step 5: Unknown retention - policy says \"as long as needed,\" shown with a dashed arrow and a help circle icon. Deni the mascot stands below holding a receipt.'**
+  String get learnRetentionDiagramSemanticDescription;
+
+  /// Bridge CTA for Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'Check an app on this phone to see what its policy says about retention.'**
+  String get learnRetentionCheckBridge;
+
+  /// Honesty note for Lesson 6
+  ///
+  /// In en, this message translates to:
+  /// **'This lesson describes common retention patterns. It does not prove what any specific company actually does with your data. Only the exact policy text and a deletion request can show that.'**
+  String get learnRetentionHonestyNote;
+
+  /// Short folder title for Lesson 7 on the Learn home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Unclear policies'**
+  String get learnUnclearPoliciesFolderTitle;
+
+  /// Full lesson title for Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'Spotting Unclear Policies & Tricky Buttons'**
+  String get learnUnclearPoliciesTitle;
+
+  /// Short subtitle for Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'How to recognize vague language and pressured consent screens'**
+  String get learnUnclearPoliciesSubtitle;
+
+  /// Plain-language introduction for Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'Some privacy policies use fuzzy words that make it hard to know what actually happens to your data. Consent screens can also use design tricks, like a big bright \"Accept All\" button next to a tiny \"Manage Settings\" link, to push you into agreeing without reading.'**
+  String get learnUnclearPoliciesIntro1;
+
+  /// Step 1 of Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'Policy fog signs: Watch for open-ended phrases like \"may share with trusted partners,\" \"for business purposes,\" or \"retain as needed\": they leave the real details unspecified.'**
+  String get learnUnclearPoliciesStep1;
+
+  /// Step 2 of Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'Silence is not a promise: If a policy never mentions the microphone, ads, or location, it does not guarantee the app avoids them.'**
+  String get learnUnclearPoliciesStep2;
+
+  /// Step 3 of Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'Missing basics: A trustworthy policy has a clear effective date, a contact email, and one unified document: not a hidden children\'s addendum.'**
+  String get learnUnclearPoliciesStep3;
+
+  /// Step 4 of Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'Pressured consent (dark patterns): Giant \"Accept All\" buttons, pre-checked marketing boxes, nagging re-prompts, and hard-to-find cancellation paths are designed to override your choice.'**
+  String get learnUnclearPoliciesStep4;
+
+  /// Step 5 of Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced choice: A fair screen shows equal \"Allow\" and \"Don\'t allow\" buttons, with optional toggles unchecked by default.'**
+  String get learnUnclearPoliciesStep5;
+
+  /// Quick check question for Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'Which phrase in a privacy policy is a \"foggy\" signal that details are missing?'**
+  String get learnUnclearPoliciesQuizQuestion;
+
+  /// First quick check option for Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'We do not sell your personal information to third parties'**
+  String get learnUnclearPoliciesQuizChoiceA;
+
+  /// Correct second quick check option for Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'We may share data with trusted partners for business purposes'**
+  String get learnUnclearPoliciesQuizChoiceB;
+
+  /// Third quick check option for Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'You can request deletion by emailing privacy@example.com'**
+  String get learnUnclearPoliciesQuizChoiceC;
+
+  /// Feedback shown when the user selects the right answer in Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'Correct: \"may share with trusted partners for business purposes\" is vague and does not say who the partners are or what data is shared.'**
+  String get learnUnclearPoliciesQuizFeedbackRight;
+
+  /// Feedback shown when the user selects another option in Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite: that phrase is specific and actionable. Foggy phrases use open-ended language like \"may share\" or \"as needed\" without details.'**
+  String get learnUnclearPoliciesQuizFeedbackWrong;
+
+  /// Left card title in the Lesson 7 Policy Fog diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Clear policy sentence'**
+  String get learnUnclearPoliciesDiagramClearTitle;
+
+  /// Clear policy example in the Lesson 7 diagram
+  ///
+  /// In en, this message translates to:
+  /// **'We collect your name and email to create your account. We do not share this with advertisers.'**
+  String get learnUnclearPoliciesDiagramClearExample;
+
+  /// Right card title in the Lesson 7 Policy Fog diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Foggy policy sentence'**
+  String get learnUnclearPoliciesDiagramFoggyTitle;
+
+  /// Foggy policy example in the Lesson 7 diagram
+  ///
+  /// In en, this message translates to:
+  /// **'We may share your information with trusted partners for business purposes as needed.'**
+  String get learnUnclearPoliciesDiagramFoggyExample;
+
+  /// Tips card title in the Lesson 7 Policy Fog diagram
+  ///
+  /// In en, this message translates to:
+  /// **'How to spot the fog'**
+  String get learnUnclearPoliciesDiagramTipsTitle;
+
+  /// First tip in the Lesson 7 Policy Fog diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Look for \"may,\" \"could,\" or \"as needed\": they leave the door open.'**
+  String get learnUnclearPoliciesDiagramTip1;
+
+  /// Second tip in the Lesson 7 Policy Fog diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Check if the policy names the specific companies data goes to.'**
+  String get learnUnclearPoliciesDiagramTip2;
+
+  /// Third tip in the Lesson 7 Policy Fog diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Silence on a topic like ads or microphone is not a promise the app avoids it.'**
+  String get learnUnclearPoliciesDiagramTip3;
+
+  /// Footer reminder note beside Deni in the Lesson 7 Policy Fog diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Silence in a policy is not a promise.'**
+  String get learnUnclearPoliciesDiagramSilenceNote;
+
+  /// Full TalkBack description for the Lesson 7 Policy Fog diagram
+  ///
+  /// In en, this message translates to:
+  /// **'A side-by-side comparison of a clear policy sentence and a foggy one. The left card labeled \"Clear\" shows: \"We collect your name and email to create your account. We do not share this with advertisers.\" The right card labeled \"Foggy\" shows: \"We may share your information with trusted partners for business purposes as needed.\" Below, a tips card titled \"How to spot the fog\" lists three tips: Look for \"may,\" \"could,\" or \"as needed\": they leave the door open. Check if the policy names the specific companies data goes to. Silence on a topic like ads or microphone is not a promise the app avoids it. A note on the foggy card reads \"Silence in a policy is not a promise.\" Deni the mascot peeks over the cards.'**
+  String get learnUnclearPoliciesDiagramSemanticDescription;
+
+  /// Bridge CTA for Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'Check an app on this phone to test its consent screen and policy clarity.'**
+  String get learnUnclearPoliciesCheckBridge;
+
+  /// Honesty note for Lesson 7
+  ///
+  /// In en, this message translates to:
+  /// **'This lesson describes common unclear patterns. It does not prove any specific app uses dark patterns or hides data practices. Only reading the exact policy and seeing the real consent screen can show that.'**
+  String get learnUnclearPoliciesHonestyNote;
+
+  /// Short folder title for Lesson 8 on the Learn home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Safe sharing habits'**
+  String get learnSafeSharingFolderTitle;
+
+  /// Full lesson title for Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'Safe-Sharing Habits for Kids'**
+  String get learnSafeSharingTitle;
+
+  /// Short subtitle for Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'Stop, Think, Connect - age-appropriate steps for sharing online'**
+  String get learnSafeSharingSubtitle;
+
+  /// Plain-language introduction for Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'Before you post a photo, video, your name, or your location, pause and use the three steps: Stop, Think, Connect. This lesson is for reading together with a trusted adult. Younger kids (ages 5-7) ask before tapping. Older kids (8-11) use nicknames and strong passwords. Teens (12-17) manage digital footprints (the trail of things you post) and two-factor authentication (a second check, like a code, when you sign in).'**
+  String get learnSafeSharingIntro1;
+
+  /// Step 1 of Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'Stop: Pause before you post a photo, video, name, school, or location. Ask a trusted adult if you are not sure.'**
+  String get learnSafeSharingStep1;
+
+  /// Step 2 of Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'Think: Does this reveal my school, home, or where I am right now? Did I ask my friends before sharing their photos or tagging them?'**
+  String get learnSafeSharingStep2;
+
+  /// Step 3 of Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'Connect: Share only with people you trust. Keep personal details like your full name, birthday, address, and phone number private.'**
+  String get learnSafeSharingStep3;
+
+  /// Step 4 of Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'The Cafeteria Test: Would I be okay if everyone at school (or my whole class) saw this photo or message? Even disappearing posts can be screenshotted and stay online permanently.'**
+  String get learnSafeSharingStep4;
+
+  /// Step 5 of Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'Age 5-7: Ask a trusted adult before typing your name or tapping popups. Age 8-11: Use a nickname (not real name, birthday, and school), strong passwords, never share SMS or OTP codes (one-time codes sent by text message - never share them). Age 12-17: Review privacy settings, turn on two-factor authentication, know how to report problems.'**
+  String get learnSafeSharingStep5;
+
+  /// Quick check question for Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'What is the \"Cafeteria Test\" for sharing online?'**
+  String get learnSafeSharingQuizQuestion;
+
+  /// First quick check option for Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'Only share things you would eat in the cafeteria'**
+  String get learnSafeSharingQuizChoiceA;
+
+  /// Correct second quick check option for Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'Ask: would I be okay if everyone at school saw this photo or message?'**
+  String get learnSafeSharingQuizChoiceB;
+
+  /// Third quick check option for Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'Share only during lunch break'**
+  String get learnSafeSharingQuizChoiceC;
+
+  /// Feedback shown when the user selects the right answer in Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'Correct: the Cafeteria Test means asking yourself if you would be comfortable with everyone seeing what you post.'**
+  String get learnSafeSharingQuizFeedbackRight;
+
+  /// Feedback shown when the user selects another option in Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite: the Cafeteria Test is a mental check: would you be okay if someone showed your post to the whole cafeteria?'**
+  String get learnSafeSharingQuizFeedbackWrong;
+
+  /// Step 1 label in the Lesson 8 Safe Sharing diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Stop - pause before you post'**
+  String get learnSafeSharingDiagramStop;
+
+  /// Step 2 label in the Lesson 8 Safe Sharing diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Think - does this reveal where I am or who I am with?'**
+  String get learnSafeSharingDiagramThink;
+
+  /// Step 3 label in the Lesson 8 Safe Sharing diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Connect - share with people you trust, ask an adult if unsure'**
+  String get learnSafeSharingDiagramConnect;
+
+  /// Cafeteria Test callout in the Lesson 8 Safe Sharing diagram
+  ///
+  /// In en, this message translates to:
+  /// **'The Cafeteria Test: Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.'**
+  String get learnSafeSharingDiagramCafeteriaTest;
+
+  /// Full TalkBack description for the Lesson 8 Safe Sharing diagram
+  ///
+  /// In en, this message translates to:
+  /// **'A four-part diagram teaching safe sharing habits. Step 1: Stop - pause before you post, with a hand icon. Step 2: Think - does this reveal where I am or who I am with, with a brain icon. Step 3: Connect - share with people you trust, ask an adult if unsure, with a users icon. Step 4: The Cafeteria Test callout asks \"Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.\" Deni the mascot stands beside the callout with a raised hand.'**
+  String get learnSafeSharingDiagramSemanticDescription;
+
+  /// Bridge CTA for Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'Check an app together with a parent to see how it handles sharing.'**
+  String get learnSafeSharingCheckBridge;
+
+  /// Honesty note for Lesson 8
+  ///
+  /// In en, this message translates to:
+  /// **'This lesson shares general safe-sharing habits. It does not guarantee any app will protect what you share. Always read the app\'s policy and use your phone\'s privacy settings.'**
+  String get learnSafeSharingHonestyNote;
 }
 
 class _AppLocalizationsDelegate

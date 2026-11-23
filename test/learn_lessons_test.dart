@@ -6,10 +6,14 @@ import 'package:enprive/l10n/app_localizations.dart';
 import 'package:enprive/screens/learn_home_screen.dart';
 import 'package:enprive/screens/learn_lesson_screen.dart';
 import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
+import 'package:enprive/widgets/learn/diagrams/data_collection_diagram.dart';
 import 'package:enprive/widgets/learn/diagrams/evidence_categories_legend.dart';
 import 'package:enprive/widgets/learn/diagrams/evidence_layers_diagram.dart';
 import 'package:enprive/widgets/learn/diagrams/permissions_ladder_diagram.dart';
+import 'package:enprive/widgets/learn/diagrams/policy_fog_diagram.dart';
 import 'package:enprive/widgets/learn/diagrams/policy_limit_diagram.dart';
+import 'package:enprive/widgets/learn/diagrams/retention_timeline_diagram.dart';
+import 'package:enprive/widgets/learn/diagrams/safe_sharing_diagram.dart';
 import 'package:enprive/widgets/learn/diagrams/third_party_diagram.dart';
 import 'package:enprive/widgets/m3e/enprive_m3e_components.dart';
 import 'package:flutter/material.dart';
@@ -95,9 +99,9 @@ void main() {
 
   group('Learn lessons domain model guardrails', () {
     test(
-      'builds all four lessons as data-driven entries with 4-5 steps, plain spoken text, and zero safety-certification claims',
+      'builds all eight lessons as data-driven entries with 4-5 steps, plain spoken text, and zero safety-certification claims',
       () {
-        expect(lessons, hasLength(4));
+        expect(lessons, hasLength(8));
         expect(
           lessons.map((l) => l.id).toList(),
           [
@@ -105,6 +109,10 @@ void main() {
             LearnLessonIds.androidPermissions,
             LearnLessonIds.thirdParties,
             LearnLessonIds.evidence,
+            LearnLessonIds.dataCollection,
+            LearnLessonIds.retention,
+            LearnLessonIds.unclearPolicies,
+            LearnLessonIds.safeSharing,
           ],
         );
 
@@ -136,7 +144,7 @@ void main() {
     );
   });
 
-  group('Full-screen illustrated Learn lessons widget tests (L1–L4)', () {
+  group('Full-screen illustrated Learn lessons widget tests (L1–L8)', () {
     final lessonSpecs = [
       (
         id: LearnLessonIds.privacyPolicy,
@@ -172,6 +180,38 @@ void main() {
           l10nEn.statusInterpretation,
           l10nEn.statusUnverified,
         ),
+        correctOptionIndex: 1,
+        wrongOptionIndex: 0,
+      ),
+      (
+        id: LearnLessonIds.dataCollection,
+        number: 5,
+        diagramType: DataCollectionDiagram,
+        diagramSemantic: l10nEn.learnDataCollectionDiagramSemanticDescription,
+        correctOptionIndex: 1,
+        wrongOptionIndex: 0,
+      ),
+      (
+        id: LearnLessonIds.retention,
+        number: 6,
+        diagramType: RetentionTimelineDiagram,
+        diagramSemantic: l10nEn.learnRetentionDiagramSemanticDescription,
+        correctOptionIndex: 1,
+        wrongOptionIndex: 0,
+      ),
+      (
+        id: LearnLessonIds.unclearPolicies,
+        number: 7,
+        diagramType: PolicyFogDiagram,
+        diagramSemantic: l10nEn.learnUnclearPoliciesDiagramSemanticDescription,
+        correctOptionIndex: 1,
+        wrongOptionIndex: 0,
+      ),
+      (
+        id: LearnLessonIds.safeSharing,
+        number: 8,
+        diagramType: SafeSharingDiagram,
+        diagramSemantic: l10nEn.learnSafeSharingDiagramSemanticDescription,
         correctOptionIndex: 1,
         wrongOptionIndex: 0,
       ),
@@ -215,9 +255,9 @@ void main() {
           );
           expect(find.byType(BottomSheet), findsNothing);
 
-          // Progress hint "Lesson X of 4", collapsing app bar & back button (>=48dp)
+          // Progress hint "Lesson X of 8", collapsing app bar & back button (>=48dp)
           expect(
-            find.text(l10nEn.learnLessonProgress(spec.number, 4)),
+            find.text(l10nEn.learnLessonProgress(spec.number, 8)),
             findsOneWidget,
           );
           final backBtn = find.byKey(const Key('learn_lesson_back_btn'));
@@ -449,10 +489,10 @@ void main() {
         );
         await pumpRouteTransition();
 
-        // Enter Lesson 1 -> Lesson 1 of 4, Next only (no Previous)
+        // Enter Lesson 1 -> Lesson 1 of 8, Next only (no Previous)
         await tester.tap(find.byKey(const Key('learn_folder_privacy_policy')));
         await pumpRouteTransition();
-        expect(find.text('Lesson 1 of 4'), findsOneWidget);
+        expect(find.text('Lesson 1 of 8'), findsOneWidget);
 
         // Start Listen, then scroll to Next -> switches to Lesson 2 and stops TTS
         await tester.tap(find.byKey(const Key('learn_lesson_listen_btn')));
@@ -475,7 +515,7 @@ void main() {
           find.byKey(const Key('learn_lesson_screen_android_permissions')),
           findsOneWidget,
         );
-        expect(find.text('Lesson 2 of 4'), findsOneWidget);
+        expect(find.text('Lesson 2 of 8'), findsOneWidget);
 
         // Scroll to bottom of Lesson 2 -> both Previous and Next visible
         final prevBtn = find.byKey(const Key('learn_prev_lesson_btn'));
@@ -492,7 +532,7 @@ void main() {
           find.byKey(const Key('learn_lesson_screen_privacy_policy')),
           findsOneWidget,
         );
-        expect(find.text('Lesson 1 of 4'), findsOneWidget);
+        expect(find.text('Lesson 1 of 8'), findsOneWidget);
 
         // Android system Back pops cleanly back to LearnHomeScreen
         await tester.binding.handlePopRoute();

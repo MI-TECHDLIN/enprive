@@ -613,7 +613,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get cloudFallbackBannerTitle =>
-      'Cloud unavailable — checked on this phone';
+      'Cloud unavailable: checked on this phone';
 
   @override
   String get cloudFallbackBannerBody =>
@@ -813,7 +813,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get voiceFallbackDeviceNotice =>
-      'Expressive cloud voice was unavailable — using this phone’s offline voice instead.';
+      'Expressive cloud voice was unavailable: using this phone\'s offline voice instead.';
 
   @override
   String get voiceUnavailableNotice =>
@@ -1026,12 +1026,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String associationStatusUnverifiedBody(String appName) {
-    return 'This policy does not name $appName or its app ID. Double-check that it is the right policy — linking it here does not prove ownership.';
+    return 'This policy does not name $appName or its app ID. Double-check that it is the right policy: linking it here does not prove ownership.';
   }
 
   @override
   String associationStatusUnverifiedUrlHostBody(String appName) {
-    return 'The web address includes words from $appName, but the policy text itself does not name this app. Double-check that it is the right policy — linking it here does not prove ownership.';
+    return 'The web address includes words from $appName, but the policy text itself does not name this app. Double-check that it is the right policy: linking it here does not prove ownership.';
   }
 
   @override
@@ -1277,7 +1277,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get learnPolicyStep4 =>
-      'Comparing a policy with your phone\'s permission settings gives a clearer view — while remembering that Enprive cannot see live internet traffic.';
+      'Comparing a policy with your phone\'s permission settings gives a clearer view, while remembering that Enprive cannot see live internet traffic.';
 
   @override
   String get learnPolicyQuickQuestion =>
@@ -1289,7 +1289,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get learnPolicyQuickOption2 =>
-      'What the developer says — not what the app actually sends';
+      'What the developer says: not what the app actually sends';
 
   @override
   String get learnPolicyQuickOption3 =>
@@ -1301,7 +1301,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get learnPolicyQuickTryAgainFeedback =>
-      'Not quite. Reading a policy only tells you what the developer says — it cannot prove internet activity or turn off phone permissions.';
+      'Not quite. Reading a policy only tells you what the developer says: it cannot prove internet activity or turn off phone permissions.';
 
   @override
   String get learnDiagramPolicySaysTitle => 'Policy says';
@@ -1358,7 +1358,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get learnPermissionsStep3 =>
-      'Start with the narrowest choice that lets the feature work — such as Ask every time or While using the app.';
+      'Start with the narrowest choice that lets the feature work, such as Ask every time or While using the app.';
 
   @override
   String get learnPermissionsStep4 =>
@@ -1386,7 +1386,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get learnPermissionsQuickCorrectFeedback =>
-      'Right. Tapping Don\'t allow lets you check if the app works without the camera — and you can change permissions anytime in Android Settings.';
+      'Right. Tapping Don\'t allow lets you check if the app works without the camera, and you can change permissions anytime in Android Settings.';
 
   @override
   String get learnPermissionsQuickTryAgainFeedback =>
@@ -1400,7 +1400,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get learnDiagramPermDenyDetail =>
-      'Blocked — app cannot use this sensor';
+      'Blocked: app cannot use this sensor';
 
   @override
   String get learnDiagramPermAskTitle => 'Ask every time';
@@ -1447,7 +1447,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get learnSharingStep1 =>
-      'First party means the app maker itself — for example, saving homework progress or quiz scores so the app works.';
+      'First party means the app maker itself: for example, saving homework progress or quiz scores so the app works.';
 
   @override
   String get learnSharingStep2 =>
@@ -1482,7 +1482,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get learnSharingQuickTryAgainFeedback =>
-      'Look closer at what each partner does. Not all third parties are the same — some host data or fix crashes, while others run ads or tracking.';
+      'Look closer at what each partner does. Not all third parties are the same: some host data or fix crashes, while others run ads or tracking.';
 
   @override
   String get learnDiagramThirdPartyYou => 'You';
@@ -1521,7 +1521,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get learnEvidenceIntro =>
-      'Enprive separates what a privacy policy says, what your phone shows, and what stays unknown — and groups findings by topic, never as a safety grade.';
+      'Enprive separates what a privacy policy says, what your phone shows, and what stays unknown, and groups findings by topic, never as a safety grade.';
 
   @override
   String get learnEvidenceStep1 =>
@@ -1534,7 +1534,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String learnEvidenceStep3(String deviceObserved) {
-    return '$deviceObserved means your phone reported a permission setting on this device — not proof that data was sent.';
+    return '$deviceObserved means your phone reported a permission setting on this device: not proof that data was sent.';
   }
 
   @override
@@ -1562,7 +1562,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get learnEvidenceQuickOption2 =>
-      'Your phone shows this permission setting on this device — not proof that data was uploaded';
+      'Your phone shows this permission setting on this device: not proof that data was uploaded';
 
   @override
   String get learnEvidenceQuickOption3 =>
@@ -1574,7 +1574,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get learnEvidenceQuickTryAgainFeedback =>
-      'Not quite. That label only shows what your phone reports about a permission setting — it never proves uploads and is never a safety certification.';
+      'Not quite. That label only shows what your phone reports about a permission setting: it never proves uploads and is never a safety certification.';
 
   @override
   String get learnDiagramEvidencePolicyDetail =>
@@ -1620,4 +1620,379 @@ class AppLocalizationsKo extends AppLocalizations {
   ) {
     return 'Five evidence categories shown on Enprive\'s Review screen, each with its own icon and color: $dataCollection, $sharing, $tracking, $retention, and $parentalControls. Color and icon mark the topic, never a safety score.';
   }
+
+  @override
+  String get learnDataCollectionFolderTitle => 'Data apps collect';
+
+  @override
+  String get learnDataCollectionTitle => 'What Data Apps Collect';
+
+  @override
+  String get learnDataCollectionSubtitle =>
+      'The difference between what you type and what runs quietly';
+
+  @override
+  String get learnDataCollectionIntro1 =>
+      'Apps gather information in two ways. Some data comes from what you actively enter: your name, email, photos, voice recordings, or homework answers. Other data is collected automatically in the background, like your IP address (the address your phone uses on the internet), device identifiers, advertising ID (a code ads use to recognise your phone), crash logs, and when you open the app.';
+
+  @override
+  String get learnDataCollectionStep1 =>
+      'What you type: Your name, school, email, photos, voice clips, and homework answers are data you choose to give.';
+
+  @override
+  String get learnDataCollectionStep2 =>
+      'What runs quietly: The app can collect an advertising ID, device identifiers, IP address, crash reports, and usage timing without you pressing a button. Quiet collection is not automatically bad: these signals help apps run smoothly.';
+
+  @override
+  String get learnDataCollectionStep3 =>
+      'Sensitive child data: Location, microphone recordings, camera photos, and biometric data like voiceprints (data about your body or voice) carry higher privacy risk for children.';
+
+  @override
+  String get learnDataCollectionStep4 =>
+      'Play Store note: Google Play\'s Data Safety section is the developer\'s own description. It is a hint, not proof, and does not include data processed only on your device or kept briefly in memory.';
+
+  @override
+  String get learnDataCollectionQuizQuestion =>
+      'Which of these is an example of data that runs quietly in the background?';
+
+  @override
+  String get learnDataCollectionQuizChoiceA =>
+      'A photo you upload for your profile';
+
+  @override
+  String get learnDataCollectionQuizChoiceB =>
+      'Your advertising ID and device identifiers';
+
+  @override
+  String get learnDataCollectionQuizChoiceC =>
+      'A homework answer you type in the app';
+
+  @override
+  String get learnDataCollectionQuizFeedbackRight =>
+      'Correct: advertising IDs and device identifiers are collected automatically without you typing them.';
+
+  @override
+  String get learnDataCollectionQuizFeedbackWrong =>
+      'Not quite: that is data you actively enter. Data that runs quietly includes advertising IDs, device identifiers, IP address, and usage timing.';
+
+  @override
+  String get learnDataCollectionDiagramYouTypeTitle => 'What you type or give';
+
+  @override
+  String get learnDataCollectionDiagramYouTypeItem1 => 'Name, email, school';
+
+  @override
+  String get learnDataCollectionDiagramYouTypeItem2 => 'Photos and videos';
+
+  @override
+  String get learnDataCollectionDiagramYouTypeItem3 => 'Voice recordings';
+
+  @override
+  String get learnDataCollectionDiagramYouTypeItem4 => 'Homework answers';
+
+  @override
+  String get learnDataCollectionDiagramRunsQuietlyTitle => 'What runs quietly';
+
+  @override
+  String get learnDataCollectionDiagramRunsQuietlyItem1 => 'Advertising ID';
+
+  @override
+  String get learnDataCollectionDiagramRunsQuietlyItem2 => 'Device identifiers';
+
+  @override
+  String get learnDataCollectionDiagramRunsQuietlyItem3 => 'IP address';
+
+  @override
+  String get learnDataCollectionDiagramRunsQuietlyItem4 =>
+      'Crash logs and usage timing';
+
+  @override
+  String get learnDataCollectionDiagramQuietNote =>
+      'Quiet does not mean bad: these signals help apps run smoothly.';
+
+  @override
+  String get learnDataCollectionDiagramSemanticDescription =>
+      'A split diagram showing two categories of data collection. The top card titled \"What you type or give\" lists four chips: Name email school, Photos and videos, Voice recordings, Homework answers. The bottom card titled \"What runs quietly\" lists four chips: Advertising ID, Device identifiers, IP address, Crash logs and usage timing. A small note reads \"Quiet does not mean bad: these signals help apps run smoothly.\" Deni the mascot sits below in a thinking pose.';
+
+  @override
+  String get learnDataCollectionCheckBridge =>
+      'Check an app on this phone to see what data it collects.';
+
+  @override
+  String get learnDataCollectionHonestyNote =>
+      'This lesson explains common data types. It does not prove what any specific app collects or sends. Only the app\'s exact policy text and your phone\'s permission settings can show that.';
+
+  @override
+  String get learnRetentionFolderTitle => 'Retention and deletion';
+
+  @override
+  String get learnRetentionTitle => 'Retention and Deletion';
+
+  @override
+  String get learnRetentionSubtitle =>
+      'Uninstalling an app does not erase data already on company servers';
+
+  @override
+  String get learnRetentionIntro1 =>
+      'When you delete an app from your phone, the app\'s files on your device are removed, but any data already uploaded to the company\'s servers stays there. Privacy policies should say how long they keep your data, how to ask for deletion, and what happens to backups, but many policies use vague phrases like \"as long as reasonably necessary.\"';
+
+  @override
+  String get learnRetentionStep1 =>
+      'Data collected: While you use the app, your information is sent to and stored on the company\'s servers.';
+
+  @override
+  String get learnRetentionStep2 =>
+      'Stored on servers: Your data can stay on company systems even after you stop using the app.';
+
+  @override
+  String get learnRetentionStep3 =>
+      'Uninstall does not delete server data: Removing the app from your phone only deletes local files, not the copies on company servers.';
+
+  @override
+  String get learnRetentionStep4 =>
+      'Deletion request: You can ask the company to delete your account and data; policies should say how long this takes.';
+
+  @override
+  String get learnRetentionStep5 =>
+      'Unknown retention: Policies that say \"as long as needed\" or \"for business purposes\" leave the actual deletion timeline unclear.';
+
+  @override
+  String get learnRetentionQuizQuestion =>
+      'What happens to your data on company servers when you uninstall an app from your phone?';
+
+  @override
+  String get learnRetentionQuizChoiceA => 'It is deleted automatically';
+
+  @override
+  String get learnRetentionQuizChoiceB =>
+      'It may stay on the servers - uninstalling the app does not delete it';
+
+  @override
+  String get learnRetentionQuizChoiceC => 'It is anonymized immediately';
+
+  @override
+  String get learnRetentionQuizFeedbackRight =>
+      'Correct: uninstalling only removes the app from your phone. Data on company servers may stay until you request deletion.';
+
+  @override
+  String get learnRetentionQuizFeedbackWrong =>
+      'Not quite: uninstalling an app does not delete data already uploaded to company servers. You need to request account deletion.';
+
+  @override
+  String get learnRetentionDiagramCollected => 'Data collected during use';
+
+  @override
+  String get learnRetentionDiagramStored => 'Stored on company servers';
+
+  @override
+  String get learnRetentionDiagramUninstall =>
+      'You uninstall the app - phone files go, server data stays';
+
+  @override
+  String get learnRetentionDiagramDeleteRequest =>
+      'You request account deletion';
+
+  @override
+  String get learnRetentionDiagramUnknownTail =>
+      'Unknown retention - policy says \"as long as needed\"';
+
+  @override
+  String get learnRetentionDiagramSemanticDescription =>
+      'A five-step timeline showing the data lifecycle. Step 1: Data collected during use, with a database icon. Step 2: Stored on company servers, with a server icon. Step 3: You uninstall the app - phone files go, server data stays, with a smartphone icon. Step 4: You request account deletion, with a trash icon. Step 5: Unknown retention - policy says \"as long as needed,\" shown with a dashed arrow and a help circle icon. Deni the mascot stands below holding a receipt.';
+
+  @override
+  String get learnRetentionCheckBridge =>
+      'Check an app on this phone to see what its policy says about retention.';
+
+  @override
+  String get learnRetentionHonestyNote =>
+      'This lesson describes common retention patterns. It does not prove what any specific company actually does with your data. Only the exact policy text and a deletion request can show that.';
+
+  @override
+  String get learnUnclearPoliciesFolderTitle => 'Unclear policies';
+
+  @override
+  String get learnUnclearPoliciesTitle =>
+      'Spotting Unclear Policies & Tricky Buttons';
+
+  @override
+  String get learnUnclearPoliciesSubtitle =>
+      'How to recognize vague language and pressured consent screens';
+
+  @override
+  String get learnUnclearPoliciesIntro1 =>
+      'Some privacy policies use fuzzy words that make it hard to know what actually happens to your data. Consent screens can also use design tricks, like a big bright \"Accept All\" button next to a tiny \"Manage Settings\" link, to push you into agreeing without reading.';
+
+  @override
+  String get learnUnclearPoliciesStep1 =>
+      'Policy fog signs: Watch for open-ended phrases like \"may share with trusted partners,\" \"for business purposes,\" or \"retain as needed\": they leave the real details unspecified.';
+
+  @override
+  String get learnUnclearPoliciesStep2 =>
+      'Silence is not a promise: If a policy never mentions the microphone, ads, or location, it does not guarantee the app avoids them.';
+
+  @override
+  String get learnUnclearPoliciesStep3 =>
+      'Missing basics: A trustworthy policy has a clear effective date, a contact email, and one unified document: not a hidden children\'s addendum.';
+
+  @override
+  String get learnUnclearPoliciesStep4 =>
+      'Pressured consent (dark patterns): Giant \"Accept All\" buttons, pre-checked marketing boxes, nagging re-prompts, and hard-to-find cancellation paths are designed to override your choice.';
+
+  @override
+  String get learnUnclearPoliciesStep5 =>
+      'Balanced choice: A fair screen shows equal \"Allow\" and \"Don\'t allow\" buttons, with optional toggles unchecked by default.';
+
+  @override
+  String get learnUnclearPoliciesQuizQuestion =>
+      'Which phrase in a privacy policy is a \"foggy\" signal that details are missing?';
+
+  @override
+  String get learnUnclearPoliciesQuizChoiceA =>
+      'We do not sell your personal information to third parties';
+
+  @override
+  String get learnUnclearPoliciesQuizChoiceB =>
+      'We may share data with trusted partners for business purposes';
+
+  @override
+  String get learnUnclearPoliciesQuizChoiceC =>
+      'You can request deletion by emailing privacy@example.com';
+
+  @override
+  String get learnUnclearPoliciesQuizFeedbackRight =>
+      'Correct: \"may share with trusted partners for business purposes\" is vague and does not say who the partners are or what data is shared.';
+
+  @override
+  String get learnUnclearPoliciesQuizFeedbackWrong =>
+      'Not quite: that phrase is specific and actionable. Foggy phrases use open-ended language like \"may share\" or \"as needed\" without details.';
+
+  @override
+  String get learnUnclearPoliciesDiagramClearTitle => 'Clear policy sentence';
+
+  @override
+  String get learnUnclearPoliciesDiagramClearExample =>
+      'We collect your name and email to create your account. We do not share this with advertisers.';
+
+  @override
+  String get learnUnclearPoliciesDiagramFoggyTitle => 'Foggy policy sentence';
+
+  @override
+  String get learnUnclearPoliciesDiagramFoggyExample =>
+      'We may share your information with trusted partners for business purposes as needed.';
+
+  @override
+  String get learnUnclearPoliciesDiagramTipsTitle => 'How to spot the fog';
+
+  @override
+  String get learnUnclearPoliciesDiagramTip1 =>
+      'Look for \"may,\" \"could,\" or \"as needed\": they leave the door open.';
+
+  @override
+  String get learnUnclearPoliciesDiagramTip2 =>
+      'Check if the policy names the specific companies data goes to.';
+
+  @override
+  String get learnUnclearPoliciesDiagramTip3 =>
+      'Silence on a topic like ads or microphone is not a promise the app avoids it.';
+
+  @override
+  String get learnUnclearPoliciesDiagramSilenceNote =>
+      'Silence in a policy is not a promise.';
+
+  @override
+  String get learnUnclearPoliciesDiagramSemanticDescription =>
+      'A side-by-side comparison of a clear policy sentence and a foggy one. The left card labeled \"Clear\" shows: \"We collect your name and email to create your account. We do not share this with advertisers.\" The right card labeled \"Foggy\" shows: \"We may share your information with trusted partners for business purposes as needed.\" Below, a tips card titled \"How to spot the fog\" lists three tips: Look for \"may,\" \"could,\" or \"as needed\": they leave the door open. Check if the policy names the specific companies data goes to. Silence on a topic like ads or microphone is not a promise the app avoids it. A note on the foggy card reads \"Silence in a policy is not a promise.\" Deni the mascot peeks over the cards.';
+
+  @override
+  String get learnUnclearPoliciesCheckBridge =>
+      'Check an app on this phone to test its consent screen and policy clarity.';
+
+  @override
+  String get learnUnclearPoliciesHonestyNote =>
+      'This lesson describes common unclear patterns. It does not prove any specific app uses dark patterns or hides data practices. Only reading the exact policy and seeing the real consent screen can show that.';
+
+  @override
+  String get learnSafeSharingFolderTitle => 'Safe sharing habits';
+
+  @override
+  String get learnSafeSharingTitle => 'Safe-Sharing Habits for Kids';
+
+  @override
+  String get learnSafeSharingSubtitle =>
+      'Stop, Think, Connect - age-appropriate steps for sharing online';
+
+  @override
+  String get learnSafeSharingIntro1 =>
+      'Before you post a photo, video, your name, or your location, pause and use the three steps: Stop, Think, Connect. This lesson is for reading together with a trusted adult. Younger kids (ages 5-7) ask before tapping. Older kids (8-11) use nicknames and strong passwords. Teens (12-17) manage digital footprints (the trail of things you post) and two-factor authentication (a second check, like a code, when you sign in).';
+
+  @override
+  String get learnSafeSharingStep1 =>
+      'Stop: Pause before you post a photo, video, name, school, or location. Ask a trusted adult if you are not sure.';
+
+  @override
+  String get learnSafeSharingStep2 =>
+      'Think: Does this reveal my school, home, or where I am right now? Did I ask my friends before sharing their photos or tagging them?';
+
+  @override
+  String get learnSafeSharingStep3 =>
+      'Connect: Share only with people you trust. Keep personal details like your full name, birthday, address, and phone number private.';
+
+  @override
+  String get learnSafeSharingStep4 =>
+      'The Cafeteria Test: Would I be okay if everyone at school (or my whole class) saw this photo or message? Even disappearing posts can be screenshotted and stay online permanently.';
+
+  @override
+  String get learnSafeSharingStep5 =>
+      'Age 5-7: Ask a trusted adult before typing your name or tapping popups. Age 8-11: Use a nickname (not real name, birthday, and school), strong passwords, never share SMS or OTP codes (one-time codes sent by text message - never share them). Age 12-17: Review privacy settings, turn on two-factor authentication, know how to report problems.';
+
+  @override
+  String get learnSafeSharingQuizQuestion =>
+      'What is the \"Cafeteria Test\" for sharing online?';
+
+  @override
+  String get learnSafeSharingQuizChoiceA =>
+      'Only share things you would eat in the cafeteria';
+
+  @override
+  String get learnSafeSharingQuizChoiceB =>
+      'Ask: would I be okay if everyone at school saw this photo or message?';
+
+  @override
+  String get learnSafeSharingQuizChoiceC => 'Share only during lunch break';
+
+  @override
+  String get learnSafeSharingQuizFeedbackRight =>
+      'Correct: the Cafeteria Test means asking yourself if you would be comfortable with everyone seeing what you post.';
+
+  @override
+  String get learnSafeSharingQuizFeedbackWrong =>
+      'Not quite: the Cafeteria Test is a mental check: would you be okay if someone showed your post to the whole cafeteria?';
+
+  @override
+  String get learnSafeSharingDiagramStop => 'Stop - pause before you post';
+
+  @override
+  String get learnSafeSharingDiagramThink =>
+      'Think - does this reveal where I am or who I am with?';
+
+  @override
+  String get learnSafeSharingDiagramConnect =>
+      'Connect - share with people you trust, ask an adult if unsure';
+
+  @override
+  String get learnSafeSharingDiagramCafeteriaTest =>
+      'The Cafeteria Test: Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.';
+
+  @override
+  String get learnSafeSharingDiagramSemanticDescription =>
+      'A four-part diagram teaching safe sharing habits. Step 1: Stop - pause before you post, with a hand icon. Step 2: Think - does this reveal where I am or who I am with, with a brain icon. Step 3: Connect - share with people you trust, ask an adult if unsure, with a users icon. Step 4: The Cafeteria Test callout asks \"Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.\" Deni the mascot stands beside the callout with a raised hand.';
+
+  @override
+  String get learnSafeSharingCheckBridge =>
+      'Check an app together with a parent to see how it handles sharing.';
+
+  @override
+  String get learnSafeSharingHonestyNote =>
+      'This lesson shares general safe-sharing habits. It does not guarantee any app will protect what you share. Always read the app\'s policy and use your phone\'s privacy settings.';
 }
