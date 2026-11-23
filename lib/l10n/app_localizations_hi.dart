@@ -30,14 +30,14 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get stateReviewRecommendedSubtitle =>
-      'One or more policy parts or phone permissions need a closer look.';
+      'नीति के एक या अधिक हिस्सों या फ़ोन की अनुमतियों पर करीब से ध्यान देने की ज़रूरत है।';
 
   @override
   String get stateInsufficientEvidence => 'अपर्याप्त साक्ष्य';
 
   @override
   String get stateInsufficientEvidenceSubtitle =>
-      'We need more privacy policy text before we can check what this app does.';
+      'यह जाँचने से पहले कि यह ऐप क्या करता है, हमें गोपनीयता नीति का और टेक्स्ट चाहिए।';
 
   @override
   String get chipOnDevice => 'इस डिवाइस पर';
@@ -46,28 +46,28 @@ class AppLocalizationsHi extends AppLocalizations {
   String get chipInCloud => 'क्लाउड में';
 
   @override
-  String get chipLocationUnavailable => 'Source not available';
+  String get chipLocationUnavailable => 'स्रोत उपलब्ध नहीं';
 
   @override
-  String get chipOfflineDeterministic => 'Checked offline on this phone';
+  String get chipOfflineDeterministic => 'इस फ़ोन पर ऑफ़लाइन जाँचा गया';
 
   @override
-  String get chipUnknown => 'Source unknown';
+  String get chipUnknown => 'स्रोत अज्ञात';
 
   @override
-  String get statusSourceMatched => 'Matched in policy';
+  String get statusSourceMatched => 'नीति में मिला';
 
   @override
-  String get statusDeviceObserved => 'Seen on this phone';
+  String get statusDeviceObserved => 'इस फ़ोन पर दिखा';
 
   @override
-  String get statusInterpretation => 'Deni\'s explanation';
+  String get statusInterpretation => 'Deni की व्याख्या';
 
   @override
-  String get statusUnverified => 'Not found in policy';
+  String get statusUnverified => 'नीति में नहीं मिला';
 
   @override
-  String get statusStale => 'Older check';
+  String get statusStale => 'पुरानी जाँच';
 
   @override
   String get btnCheckApp => 'ऐप जांचें';
@@ -105,11 +105,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get cloudConsentDisclosure =>
-      'To check this in the cloud, Enprive will send only the text shown above (with personal details hidden) for this one request. Your apps and phone permissions will never be sent.';
+      'इसे क्लाउड में जाँचने के लिए, Enprive केवल इस एक अनुरोध के लिए ऊपर दिखाया गया टेक्स्ट (व्यक्तिगत विवरण छिपाकर) भेजेगा। आपके ऐप्स और फ़ोन की अनुमतियाँ कभी नहीं भेजी जाएँगी।';
 
   @override
   String get permissionLimitationNotice =>
-      'Your phone shows whether this permission is allowed. It does not prove whether the app actually accessed or sent data.';
+      'आपका फ़ोन दिखाता है कि यह अनुमति दी गई है या नहीं। यह साबित नहीं करता कि ऐप ने वास्तव में डेटा पढ़ा या भेजा।';
 
   @override
   String get navHome => 'होम';
@@ -169,7 +169,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get checkQuoteDesc =>
-      'Highlights data sharing, voice recording, and how long data is kept using exact quotes.';
+      'सटीक उद्धरणों के साथ डेटा साझाकरण, वॉइस रिकॉर्डिंग और डेटा रखने की अवधि को उजागर करता है।';
 
   @override
   String get checkPermissionTitle => 'फ़ोन अनुमति असंगतियाँ';
@@ -193,8 +193,8 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count matched quotes',
-      one: '1 matched quote',
+      other: '$count मिलते उद्धरण',
+      one: '1 मिलता उद्धरण',
     );
     return '$_temp0';
   }
@@ -274,11 +274,11 @@ class AppLocalizationsHi extends AppLocalizations {
       'इस फ़ोन के ऐप्स और उनकी अनुमतियाँ कभी बाहर नहीं भेजी जातीं।';
 
   @override
-  String get readinessRow3Title => 'Personal details hidden';
+  String get readinessRow3Title => 'व्यक्तिगत विवरण छिपे हुए';
 
   @override
   String get readinessRow3Desc =>
-      'If you choose cloud help, names, emails, and phone numbers are hidden before anything is sent.';
+      'यदि आप क्लाउड सहायता चुनते हैं, तो कुछ भी भेजने से पहले नाम, ईमेल और फ़ोन नंबर छिपा दिए जाते हैं।';
 
   @override
   String get settingsTitle => 'सेटिंग्स';
@@ -291,7 +291,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get localScannerProtectedMsg =>
-      'Ready to check policies offline on this phone.';
+      'इस फ़ोन पर ऑफ़लाइन नीतियाँ जाँचने के लिए तैयार।';
 
   @override
   String get statusChecking => 'जांच हो रही है…';
@@ -388,7 +388,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get geminiNanoReadyMsg =>
-      'On-device AI is ready on this phone. Reviews stay completely on your device.';
+      'इस फ़ोन पर ऑन-डिवाइस AI तैयार है। समीक्षाएँ पूरी तरह आपके डिवाइस पर रहती हैं।';
 
   @override
   String get modelDownloadingMsg =>
@@ -400,7 +400,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get localScannerDefaultMsg =>
-      'This phone checks policies offline on your device by default.';
+      'यह फ़ोन डिफ़ॉल्ट रूप से आपके डिवाइस पर ऑफ़लाइन नीतियाँ जाँचता है।';
 
   @override
   String get preparingPrivateAnalysis => 'निजी विश्लेषण तैयार किया जा रहा है…';
@@ -409,7 +409,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get onDeviceAiReadyTitle => 'ऑन-डिवाइस AI तैयार';
 
   @override
-  String get localScannerActiveTitle => 'Offline check ready';
+  String get localScannerActiveTitle => 'ऑफ़लाइन जाँच तैयार';
 
   @override
   String get privateAnalysisSheetSubtitle =>
@@ -425,7 +425,8 @@ class AppLocalizationsHi extends AppLocalizations {
   String get reviewingOnPhone => 'इसी फ़ोन पर समीक्षा जारी…';
 
   @override
-  String get readingClausesInitial => 'Reading policy text on this phone…';
+  String get readingClausesInitial =>
+      'इस फ़ोन पर नीति का टेक्स्ट पढ़ा जा रहा है…';
 
   @override
   String progressStepCounter(int current, int total) {
@@ -444,13 +445,13 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get thoughtSignaturePrefix => 'Check ID';
+  String get thoughtSignaturePrefix => 'जाँच ID';
 
   @override
-  String get viewStreamedThoughts => 'How Enprive checked this';
+  String get viewStreamedThoughts => 'Enprive ने इसे कैसे जाँचा';
 
   @override
-  String get hideStreamedThoughts => 'Hide how Enprive checked this';
+  String get hideStreamedThoughts => 'Enprive की जाँच प्रक्रिया छिपाएँ';
 
   @override
   String get analysisTraceDefaultTitle => 'इस समीक्षा की जांच कैसे हुई';
@@ -459,7 +460,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get savedToLocalReceiptsSnack => 'आपकी स्थानीय रसीदों में सहेजा गया।';
 
   @override
-  String get snapshotSheetTitle => 'Reviewed policy text';
+  String get snapshotSheetTitle => 'समीक्षित नीति का टेक्स्ट';
 
   @override
   String get snapshotSourcePrefix => 'स्रोत';
@@ -468,7 +469,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get snapshotReviewedPrefix => 'समीक्षित';
 
   @override
-  String get snapshotDigestPrefix => 'Document fingerprint';
+  String get snapshotDigestPrefix => 'दस्तावेज़ फ़िंगरप्रिंट';
 
   @override
   String get statFindings => 'निष्कर्ष';
@@ -477,10 +478,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get statVerified => 'सत्यापित';
 
   @override
-  String get statOsGranted => 'Allowed on phone';
+  String get statOsGranted => 'फ़ोन पर अनुमत';
 
   @override
-  String get statUnverified => 'Not found';
+  String get statUnverified => 'नहीं मिला';
 
   @override
   String get keyFindingsTitle => 'मुख्य निष्कर्ष';
@@ -492,19 +493,19 @@ class AppLocalizationsHi extends AppLocalizations {
   String get permissionsOnPhoneTitle => 'इस फ़ोन पर अनुमतियाँ';
 
   @override
-  String get viewReviewedSnapshot => 'View reviewed policy text';
+  String get viewReviewedSnapshot => 'समीक्षित नीति का टेक्स्ट देखें';
 
   @override
   String get btnSavedToReceipts => 'रसीदों में सहेजा गया';
 
   @override
-  String get observedOnPhoneLabel => 'Seen on this phone';
+  String get observedOnPhoneLabel => 'इस फ़ोन पर दिखा';
 
   @override
-  String get quoteVerifiedLabel => 'Exact quote from policy';
+  String get quoteVerifiedLabel => 'नीति से सटीक उद्धरण';
 
   @override
-  String get unverifiedClaimLabel => 'Not found in policy';
+  String get unverifiedClaimLabel => 'नीति में नहीं मिला';
 
   @override
   String get categoryDataCollection => 'डेटा संग्रहण';
@@ -528,7 +529,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get labelOnThisPhone => 'इस फ़ोन पर';
 
   @override
-  String get labelWhatRemainsUnknown => 'What we still don\'t know';
+  String get labelWhatRemainsUnknown => 'हम अभी भी क्या नहीं जानते';
 
   @override
   String get presetQuestionMeaning => 'मेरे बच्चे के लिए इसका क्या अर्थ है?';
@@ -540,13 +541,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get presetQuestionUnknown => 'यहाँ अभी भी क्या स्पष्ट नहीं है?';
 
   @override
-  String get readingCitedClause => 'Reading the policy quote…';
+  String get readingCitedClause => 'नीति का उद्धरण पढ़ा जा रहा है…';
 
   @override
   String get deniAnswerTitle => 'Deni का उत्तर';
 
   @override
-  String get stepsAndReasoning => 'How Deni checked this';
+  String get stepsAndReasoning => 'Deni ने इसे कैसे जाँचा';
 
   @override
   String get chooseReviewModeTitle => 'इस टेक्स्ट की समीक्षा का तरीका चुनें';
@@ -581,32 +582,32 @@ class AppLocalizationsHi extends AppLocalizations {
   String get noMatchingApps => 'इस फ़ोन पर कोई मेल खाने वाला ऐप नहीं मिला।';
 
   @override
-  String get sampleSyntheticBadge => 'Sample app';
+  String get sampleSyntheticBadge => 'सैंपल ऐप';
 
   @override
-  String get permissionInspectionTitle => 'Phone permissions checked';
+  String get permissionInspectionTitle => 'फ़ोन की अनुमतियाँ जाँची गईं';
 
   @override
   String get addAppPrivacyPolicyBtn => 'इस ऐप की गोपनीयता नीति जोड़ें';
 
   @override
-  String get snapshotDigestLabel => 'Document fingerprint';
+  String get snapshotDigestLabel => 'दस्तावेज़ फ़िंगरप्रिंट';
 
   @override
   String get snapshotDigestExplanation =>
-      'A unique code that helps verify this is the exact text Enprive checked. If even one letter changes, this code changes too.';
+      'एक अनूठा कोड जो यह सत्यापित करने में मदद करता है कि Enprive ने यही सटीक टेक्स्ट जाँचा था। यदि एक अक्षर भी बदलता है, तो यह कोड भी बदल जाता है।';
 
   @override
-  String get copyDigestBtn => 'Copy fingerprint';
+  String get copyDigestBtn => 'फ़िंगरप्रिंट कॉपी करें';
 
   @override
-  String get digestCopiedMsg => 'Document fingerprint copied';
+  String get digestCopiedMsg => 'दस्तावेज़ फ़िंगरप्रिंट कॉपी किया गया';
 
   @override
-  String get permissionGrantedBadge => 'Allowed on this phone';
+  String get permissionGrantedBadge => 'इस फ़ोन पर अनुमत';
 
   @override
-  String get permissionNotGrantedBadge => 'Not allowed';
+  String get permissionNotGrantedBadge => 'अनुमत नहीं';
 
   @override
   String get checkingPolicyWithCloudAi =>
@@ -614,7 +615,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get preparingCloudAiStream =>
-      'Hiding personal details before cloud check…';
+      'क्लाउड जाँच से पहले व्यक्तिगत विवरण छिपाए जा रहे हैं…';
 
   @override
   String get cancellingAnalysis => 'रद्द किया जा रहा है…';
@@ -628,226 +629,227 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get cloudFallbackBannerTitle =>
-      'Cloud unavailable: checked on this phone';
+      'क्लाउड उपलब्ध नहीं: इसी फ़ोन पर जाँचा गया';
 
   @override
   String get cloudFallbackBannerBody =>
-      'Cloud analysis was unavailable, so Enprive checked this policy directly on your phone.';
+      'क्लाउड विश्लेषण उपलब्ध नहीं था, इसलिए Enprive ने यह नीति सीधे आपके फ़ोन पर जाँची।';
 
   @override
-  String get appPickerFilterAll => 'All apps';
+  String get appPickerFilterAll => 'सभी ऐप्स';
 
   @override
-  String get appPickerFilterDownloaded => 'Downloaded';
+  String get appPickerFilterDownloaded => 'डाउनलोड किए गए';
 
   @override
-  String get appPickerFilterSystem => 'System';
+  String get appPickerFilterSystem => 'सिस्टम';
 
   @override
-  String get appPickerRecentlyChecked => 'Recently checked';
+  String get appPickerRecentlyChecked => 'हाल में जाँचे गए';
 
   @override
-  String get appPickerStatusPolicySaved => 'Policy review saved';
+  String get appPickerStatusPolicySaved => 'नीति समीक्षा सहेजी गई';
 
   @override
-  String get appPickerStatusPermissionsInspected => 'Permissions checked';
+  String get appPickerStatusPermissionsInspected => 'अनुमतियाँ जाँची गईं';
 
   @override
-  String get appPickerStatusNotReviewed => 'Not reviewed';
+  String get appPickerStatusNotReviewed => 'समीक्षा नहीं हुई';
 
   @override
-  String get appPickerSearchHint => 'Search by app name or App ID…';
+  String get appPickerSearchHint => 'ऐप के नाम या App ID से खोजें…';
 
   @override
-  String get appPickerEmptyInstalledTitle => 'No installed apps available';
+  String get appPickerEmptyInstalledTitle =>
+      'कोई इंस्टॉल किया गया ऐप उपलब्ध नहीं';
 
   @override
   String get appPickerEmptyInstalledBody =>
-      'We couldn\'t find any apps to check on this phone.';
+      'हमें इस फ़ोन पर जाँचने के लिए कोई ऐप नहीं मिला।';
 
   @override
-  String get intakeModeDocument => 'Document';
+  String get intakeModeDocument => 'दस्तावेज़';
 
   @override
-  String get intakeActionInspectText => 'Check policy text';
+  String get intakeActionInspectText => 'नीति टेक्स्ट जाँचें';
 
   @override
-  String get intakeActionFetchUrl => 'Open & check policy';
+  String get intakeActionFetchUrl => 'नीति खोलें और जाँचें';
 
   @override
-  String get intakeActionChooseDocument => 'Choose PDF, TXT, or DOCX';
+  String get intakeActionChooseDocument => 'PDF, TXT या DOCX चुनें';
 
   @override
-  String get intakeActionReplaceDocument => 'Choose replacement document';
+  String get intakeActionReplaceDocument => 'बदली हुई फ़ाइल चुनें';
 
   @override
-  String get intakeWorkingLabel => 'Working…';
+  String get intakeWorkingLabel => 'काम जारी है…';
 
   @override
-  String get intakeCancelFetch => 'Cancel fetch';
+  String get intakeCancelFetch => 'लोड करना रद्द करें';
 
   @override
   String get intakeUrlHint => 'https://example.com/privacy-policy';
 
   @override
   String get intakeUrlDisclosure =>
-      'Loads this public web page directly. Adding a link here does not prove app ownership.';
+      'यह सार्वजनिक वेब पेज सीधे लोड होता है। यहाँ लिंक जोड़ने से ऐप का स्वामित्व साबित नहीं होता।';
 
   @override
   String get intakePasteLocalNote =>
-      'Checked locally on this phone first. Nothing is uploaded without your permission.';
+      'पहले इस फ़ोन पर स्थानीय रूप से जाँचा जाता है। आपकी अनुमति के बिना कुछ भी अपलोड नहीं होता।';
 
   @override
-  String get intakeDocumentCardTitle => 'Import PDF, TXT, or DOCX policy file';
+  String get intakeDocumentCardTitle => 'PDF, TXT या DOCX नीति फ़ाइल आयात करें';
 
   @override
   String get intakeDocumentCardBody =>
-      'We read the text right on your phone (up to 10 MB). Your file is never uploaded.';
+      'हम टेक्स्ट सीधे आपके फ़ोन पर पढ़ते हैं (10 MB तक)। आपकी फ़ाइल कभी अपलोड नहीं होती।';
 
   @override
   String get intakeCompareWithAppPrompt =>
-      'Compare with an installed app (optional)';
+      'इंस्टॉल किए गए ऐप से तुलना करें (वैकल्पिक)';
 
   @override
   String get intakeCompareWithAppHint =>
-      'Runs locally on this phone. App lists never leave your device.';
+      'यह इसी फ़ोन पर स्थानीय रूप से चलता है। आपकी ऐप सूची कभी डिवाइस से बाहर नहीं जाती।';
 
   @override
-  String get intakeCompareWithAppChange => 'Change';
+  String get intakeCompareWithAppChange => 'बदलें';
 
   @override
-  String get intakeCompareWithAppRemove => 'Remove';
+  String get intakeCompareWithAppRemove => 'हटाएँ';
 
   @override
-  String get intakeLockedAppContextLabel => 'Selected app';
+  String get intakeLockedAppContextLabel => 'चयनित ऐप';
 
   @override
-  String get intakeFindPolicyOnPlayStore => 'Find policy link on Play Store';
+  String get intakeFindPolicyOnPlayStore => 'Play Store पर नीति लिंक खोजें';
 
   @override
   String get intakePlayStoreHelperNote =>
-      'Opens the Play Store so you can copy the app\'s privacy policy link. Enprive never copies it automatically or assumes the link is official.';
+      'Play Store खोलता है ताकि आप ऐप की गोपनीयता नीति का लिंक कॉपी कर सकें। Enprive इसे अपने आप कॉपी नहीं करता और न ही इसे आधिकारिक मानता है।';
 
   @override
   String get intakePlayStoreUnavailable =>
-      'Could not open Google Play Store on this device. Paste the policy URL or text manually instead.';
+      'इस डिवाइस पर Google Play Store नहीं खुल सका। इसके बजाय नीति का URL या टेक्स्ट स्वयं पेस्ट करें।';
 
   @override
-  String get intakeRecoverySwitchPaste => 'Paste text instead';
+  String get intakeRecoverySwitchPaste => 'इसके बजाय टेक्स्ट पेस्ट करें';
 
   @override
-  String get intakeRecoverySwitchDocument => 'Import document';
+  String get intakeRecoverySwitchDocument => 'दस्तावेज़ आयात करें';
 
   @override
-  String get intakeRecoveryRetryUrl => 'Retry fetch';
+  String get intakeRecoveryRetryUrl => 'फिर से लोड करें';
 
   @override
   String get intakeExpiredDocumentShareNotice =>
-      'The originally shared file link can no longer be reopened. Choose a replacement PDF, TXT, or DOCX file or paste the policy text manually.';
+      'मूल रूप से साझा की गई फ़ाइल का लिंक अब दोबारा नहीं खुल सकता। कृपया दूसरी PDF, TXT या DOCX फ़ाइल चुनें या नीति का टेक्स्ट स्वयं पेस्ट करें।';
 
   @override
-  String get intakeAssociationWarningTitle => 'App-policy identity check';
+  String get intakeAssociationWarningTitle => 'ऐप और नीति मिलान जाँच';
 
   @override
-  String get intakeAssociationContinueAnyway => 'Continue anyway';
+  String get intakeAssociationContinueAnyway => 'फिर भी जारी रखें';
 
   @override
-  String get intakeAssociationChangeApp => 'Change selected app';
+  String get intakeAssociationChangeApp => 'चयनित ऐप बदलें';
 
   @override
-  String get intakeAssociationInspectWithoutApp => 'Check policy without app';
+  String get intakeAssociationInspectWithoutApp => 'बिना ऐप के नीति जाँचें';
 
   @override
-  String get intakeModeSelectorSemanticLabel => 'Policy input method';
+  String get intakeModeSelectorSemanticLabel => 'नीति डालने का तरीका';
 
   @override
-  String get tooltipClearSearch => 'Clear search';
+  String get tooltipClearSearch => 'खोज साफ़ करें';
 
   @override
-  String get intakeRecoveryEditUrl => 'Edit URL';
+  String get intakeRecoveryEditUrl => 'URL संपादित करें';
 
   @override
-  String get voiceSummaryTitle => 'Deni’s plain-language summary';
+  String get voiceSummaryTitle => 'Deni का सरल भाषा में सारांश';
 
   @override
-  String get voiceSummaryPreparing => 'Preparing plain-language summary…';
+  String get voiceSummaryPreparing => 'सरल भाषा में सारांश तैयार हो रहा है…';
 
   @override
   String get voiceSynthesizingExpressive =>
-      'Preparing Deni’s expressive voice…';
+      'Deni की एक्सप्रेसिव आवाज़ तैयार हो रही है…';
 
   @override
-  String get voiceBtnListenOffline => 'Listen';
+  String get voiceBtnListenOffline => 'सुनें';
 
   @override
-  String get voiceBtnStop => 'Stop';
+  String get voiceBtnStop => 'रोकें';
 
   @override
-  String get voiceBtnExpressiveCloud => 'Expressive voice';
+  String get voiceBtnExpressiveCloud => 'एक्सप्रेसिव आवाज़';
 
   @override
-  String get voiceBtnSummarizeCloud => 'Summarize with Cloud AI';
+  String get voiceBtnSummarizeCloud => 'क्लाउड AI से सारांश बनाएँ';
 
   @override
-  String get voiceBadgeExpressive => 'Expressive cloud voice';
+  String get voiceBadgeExpressive => 'एक्सप्रेसिव क्लाउड आवाज़';
 
   @override
-  String get voiceBadgeDeviceOffline => 'Phone voice · Offline';
+  String get voiceBadgeDeviceOffline => 'फ़ोन की आवाज़ · ऑफ़लाइन';
 
   @override
-  String get voiceViewSourceQuote => 'Source quote';
+  String get voiceViewSourceQuote => 'स्रोत उद्धरण';
 
   @override
-  String get voiceHideSourceQuote => 'Hide quote';
+  String get voiceHideSourceQuote => 'उद्धरण छिपाएँ';
 
   @override
-  String get voiceInspectFinding => 'Inspect finding';
+  String get voiceInspectFinding => 'निष्कर्ष देखें';
 
   @override
-  String get voiceConsentTitle => 'Choose Deni’s voice';
+  String get voiceConsentTitle => 'Deni की आवाज़ चुनें';
 
   @override
   String get voiceConsentDisclosure =>
-      'To read this summary aloud with Deni’s expressive cloud voice, Enprive will send only the summary text shown above (with personal details hidden) for this one request. Your apps and phone permissions are never sent.';
+      'Deni की एक्सप्रेसिव क्लाउड आवाज़ में यह सारांश सुनने के लिए, Enprive केवल इस एक अनुरोध के लिए ऊपर दिखाया गया सारांश टेक्स्ट (व्यक्तिगत विवरण छिपाकर) भेजेगा। आपके ऐप्स और फ़ोन की अनुमतियाँ कभी नहीं भेजी जातीं।';
 
   @override
-  String get voiceConsentPrimaryAction => 'Use expressive voice once';
+  String get voiceConsentPrimaryAction => 'एक बार एक्सप्रेसिव आवाज़ चुनें';
 
   @override
-  String get voiceConsentSecondaryAction => 'Speak on this phone';
+  String get voiceConsentSecondaryAction => 'इस फ़ोन पर सुनें';
 
   @override
-  String get voiceConsentPayloadLabel => 'Exact spoken script';
+  String get voiceConsentPayloadLabel => 'सटीक बोला जाने वाला टेक्स्ट';
 
   @override
-  String get voiceSummaryConsentTitle => 'Summarize findings with Cloud AI';
+  String get voiceSummaryConsentTitle =>
+      'क्लाउड AI से निष्कर्षों का सारांश बनाएँ';
 
   @override
   String get voiceSummaryConsentDisclosure =>
-      'To summarize these policy quotes in plain language in the cloud, Enprive will send only the text shown above (with personal details hidden) for this one request. Your apps and phone permissions are never sent.';
+      'क्लाउड में इन नीति उद्धरणों का सरल भाषा में सारांश बनाने के लिए, Enprive केवल इस एक अनुरोध के लिए ऊपर दिखाया गया टेक्स्ट (व्यक्तिगत विवरण छिपाकर) भेजेगा। आपके ऐप्स और फ़ोन की अनुमतियाँ कभी नहीं भेजी जातीं।';
 
   @override
   String get voiceFallbackDeviceNotice =>
-      'Expressive cloud voice was unavailable: using this phone\'s offline voice instead.';
+      'एक्सप्रेसिव क्लाउड आवाज़ उपलब्ध नहीं थी: इसके बजाय इस फ़ोन की ऑफ़लाइन आवाज़ का उपयोग किया जा रहा है।';
 
   @override
   String get voiceUnavailableNotice =>
-      'Voice playback is unavailable for this language on this phone. You can read Deni’s summary above.';
+      'इस फ़ोन पर इस भाषा के लिए वॉइस प्लेबैक उपलब्ध नहीं है। आप ऊपर Deni का सारांश पढ़ सकते हैं।';
 
   @override
-  String get voiceTooltipReadSummary =>
-      'Listen to Deni’s plain-language summary';
+  String get voiceTooltipReadSummary => 'Deni का सरल भाषा सारांश सुनें';
 
   @override
-  String get voiceTooltipStopReading => 'Stop reading aloud';
+  String get voiceTooltipStopReading => 'पढ़कर सुनाना रोकें';
 
   @override
   String findingsCountUnit(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'findings',
-      one: 'finding',
+      other: 'निष्कर्ष',
+      one: 'निष्कर्ष',
     );
     return '$_temp0';
   }
@@ -857,9 +859,9 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count findings',
-      one: '1 finding',
-      zero: 'No findings',
+      other: '$count निष्कर्ष',
+      one: '1 निष्कर्ष',
+      zero: 'कोई निष्कर्ष नहीं',
     );
     return '$_temp0';
   }
@@ -869,8 +871,8 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count quotes verified in policy',
-      one: '1 quote verified in policy',
+      other: 'नीति में $count सत्यापित उद्धरण',
+      one: 'नीति में 1 सत्यापित उद्धरण',
     );
     return '$_temp0';
   }
@@ -880,213 +882,214 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count observed on this phone',
-      one: '1 observed on this phone',
+      other: 'इस फ़ोन पर $count देखे गए',
+      one: 'इस फ़ोन पर 1 देखा गया',
     );
     return '$_temp0';
   }
 
   @override
-  String get permissionAllowedOnPhone => 'Allowed on this phone';
+  String get permissionAllowedOnPhone => 'इस फ़ोन पर अनुमत';
 
   @override
-  String get permissionNotAllowedOnPhone => 'Not allowed';
+  String get permissionNotAllowedOnPhone => 'अनुमत नहीं';
 
   @override
-  String get permissionAllowedInSample => 'Allowed in sample';
+  String get permissionAllowedInSample => 'सैंपल में अनुमत';
 
   @override
-  String get permissionNotAllowedInSample => 'Not allowed in sample';
+  String get permissionNotAllowedInSample => 'सैंपल में अनुमत नहीं';
 
   @override
-  String get permissionMismatchChip => 'Not in policy';
+  String get permissionMismatchChip => 'नीति में नहीं';
 
   @override
-  String get howEnpriveCheckedThis => 'How Enprive checked this';
+  String get howEnpriveCheckedThis => 'Enprive ने इसे कैसे जाँचा';
 
   @override
-  String get hideHowEnpriveChecked => 'Hide how Enprive checked this';
+  String get hideHowEnpriveChecked => 'Enprive की जाँच प्रक्रिया छिपाएँ';
 
   @override
-  String get consentWhatWouldBeSent => 'What would be sent';
+  String get consentWhatWouldBeSent => 'क्या भेजा जाएगा';
 
   @override
   String get consentSentScope =>
-      'Only the text in the preview leaves this phone, for this one request.';
+      'केवल पूर्वावलोकन में दिखने वाला टेक्स्ट इस एक अनुरोध के लिए इस फ़ोन से बाहर जाता है।';
 
   @override
   String consentMaskedCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count personal details are hidden first.',
-      one: '1 personal detail is hidden first.',
-      zero: 'No personal details were found to hide.',
+      other: '$count व्यक्तिगत विवरण पहले छिपाए गए हैं।',
+      one: '1 व्यक्तिगत विवरण पहले छिपाया गया है।',
+      zero: 'छिपाने के लिए कोई व्यक्तिगत विवरण नहीं मिला।',
     );
     return '$_temp0';
   }
 
   @override
   String get consentStaysOnPhone =>
-      'Your app list and phone permissions stay on this phone.';
+      'आपकी ऐप सूची और फ़ोन की अनुमतियाँ इसी फ़ोन पर रहती हैं।';
 
   @override
   String receiptDeletedSnack(String title) {
-    return 'Deleted $title';
+    return '$title हटाया गया';
   }
 
   @override
-  String get btnUndo => 'Undo';
+  String get btnUndo => 'पूर्ववत करें';
 
   @override
-  String get readinessPromiseMaskedTitle => 'Personal details hidden';
+  String get readinessPromiseMaskedTitle => 'व्यक्तिगत विवरण छिपे हुए';
 
   @override
   String get readinessPromiseMaskedLine =>
-      'If you choose cloud, names, emails and numbers are hidden first.';
+      'यदि आप क्लाउड चुनते हैं, तो नाम, ईमेल और नंबर पहले छिपाए जाते हैं।';
 
   @override
   String findingDetailTitle(int index, int total) {
-    return 'Finding $index of $total';
+    return 'निष्कर्ष $index / $total';
   }
 
   @override
-  String get findingReviewChip => 'Review';
+  String get findingReviewChip => 'समीक्षा';
 
   @override
-  String get askDeniAboutThis => 'Ask Deni about this';
+  String get askDeniAboutThis => 'इस बारे में Deni से पूछें';
 
   @override
-  String get labelWhatPolicySays => 'What the policy says';
+  String get labelWhatPolicySays => 'नीति क्या कहती है';
 
   @override
-  String get labelWhatAndroidReports => 'What your phone shows';
+  String get labelWhatAndroidReports => 'आपका फ़ोन क्या दिखाता है';
 
   @override
-  String get sourceButtonTooltip => 'Reviewed source';
+  String get sourceButtonTooltip => 'समीक्षित स्रोत';
 
   @override
-  String get linkInstalledAppBtn => 'Link an installed app';
+  String get linkInstalledAppBtn => 'इंस्टॉल किया गया ऐप जोड़ें';
 
   @override
-  String get linkInstalledAppCardTitle => 'Compare with an app on this phone';
+  String get linkInstalledAppCardTitle => 'इस फ़ोन के किसी ऐप से तुलना करें';
 
   @override
   String get linkInstalledAppCardBody =>
-      'Pick an installed app to compare its phone permissions with this policy in the same review. Your app list stays on this phone.';
+      'एक ही समीक्षा में इस नीति के साथ फ़ोन की अनुमतियों की तुलना करने के लिए इंस्टॉल किया गया ऐप चुनें। आपकी ऐप सूची इसी फ़ोन पर रहती है।';
 
   @override
-  String get linkAppPickerTitle => 'Link an installed app';
+  String get linkAppPickerTitle => 'इंस्टॉल किया गया ऐप जोड़ें';
 
   @override
-  String get changeLinkedAppPickerTitle => 'Change linked app';
+  String get changeLinkedAppPickerTitle => 'जुड़ा हुआ ऐप बदलें';
 
   @override
   String get linkAppPickerSubtitle =>
-      'Pick an app on this phone to compare its permissions with this policy. Your app list never leaves this phone.';
+      'इस नीति के साथ अनुमतियों की तुलना करने के लिए इस फ़ोन पर कोई ऐप चुनें। आपकी ऐप सूची कभी इस फ़ोन से बाहर नहीं जाती।';
 
   @override
-  String get linkedAppCurrentlySelectedBadge => 'Linked';
+  String get linkedAppCurrentlySelectedBadge => 'जुड़ा हुआ';
 
   @override
-  String get linkedAppSectionLabel => 'Linked app on this phone';
+  String get linkedAppSectionLabel => 'इस फ़ोन पर जुड़ा हुआ ऐप';
 
   @override
-  String get btnChangeLinkedApp => 'Change app';
+  String get btnChangeLinkedApp => 'ऐप बदलें';
 
   @override
-  String get btnUnlinkApp => 'Unlink app';
+  String get btnUnlinkApp => 'ऐप लिंक हटाएँ';
 
   @override
-  String get btnUpdatePrivacyPolicy => 'Attach updated privacy policy';
+  String get btnUpdatePrivacyPolicy => 'नई गोपनीयता नीति जोड़ें';
 
   @override
   String linkedAppSnack(String appName) {
-    return 'Linked $appName. Permissions compared on this phone.';
+    return '$appName जोड़ा गया। इस फ़ोन पर अनुमतियों की तुलना की गई।';
   }
 
   @override
   String linkedAppCheckMatchSnack(String appName) {
-    return 'Linked $appName. Check the app-policy match note below.';
+    return '$appName जोड़ा गया। नीचे ऐप और नीति मिलान नोट देखें।';
   }
 
   @override
   String linkedAppUnchangedSnack(String appName) {
-    return '$appName is already linked with the same permissions.';
+    return '$appName पहले से उन्हीं अनुमतियों के साथ जुड़ा है।';
   }
 
   @override
   String unlinkedAppSnack(String appName) {
-    return 'Unlinked $appName. Showing the policy review only.';
+    return '$appName का लिंक हटाया गया। अब केवल नीति समीक्षा दिखाई जा रही है।';
   }
 
   @override
-  String get associationStatusPackageTitle => 'App ID found in this policy';
+  String get associationStatusPackageTitle => 'इस नीति में App ID मिला';
 
   @override
   String associationStatusPackageBody(String packageName, String appName) {
-    return 'This policy mentions $packageName. That suggests it may describe $appName, though text alone does not prove who owns this policy.';
+    return 'इस नीति में $packageName का उल्लेख है। इससे लगता है कि यह $appName के बारे में हो सकती है, हालांकि केवल टेक्स्ट यह साबित नहीं करता कि इस नीति का मालिक कौन है।';
   }
 
   @override
-  String get associationStatusNameTitle => 'App name found in this policy';
+  String get associationStatusNameTitle => 'इस नीति में ऐप का नाम मिला';
 
   @override
   String associationStatusNameBody(String appName) {
-    return 'This policy mentions $appName. That suggests it may describe this app, though a name match does not prove who owns this policy.';
+    return 'इस नीति में $appName का उल्लेख है। इससे लगता है कि यह इस ऐप के बारे में हो सकती है, हालांकि केवल नाम मिलने से यह साबित नहीं होता कि इस नीति का मालिक कौन है।';
   }
 
   @override
-  String get associationStatusUnverifiedTitle => 'Linked by you for comparison';
+  String get associationStatusUnverifiedTitle =>
+      'तुलना के लिए आपके द्वारा जोड़ा गया';
 
   @override
   String associationStatusUnverifiedBody(String appName) {
-    return 'This policy does not name $appName or its app ID. Double-check that it is the right policy: linking it here does not prove ownership.';
+    return 'इस नीति में $appName या इसके App ID का नाम नहीं है। दोबारा जाँच लें कि यह सही नीति है: इसे यहाँ जोड़ने से स्वामित्व साबित नहीं होता।';
   }
 
   @override
   String associationStatusUnverifiedUrlHostBody(String appName) {
-    return 'The web address includes words from $appName, but the policy text itself does not name this app. Double-check that it is the right policy: linking it here does not prove ownership.';
+    return 'वेब पते में $appName से जुड़े शब्द हैं, लेकिन नीति के टेक्स्ट में इस ऐप का नाम नहीं है। दोबारा जाँच लें कि यह सही नीति है: इसे यहाँ जोड़ने से स्वामित्व साबित नहीं होता।';
   }
 
   @override
   String get associationStatusUnmatchedTitle =>
-      'This policy may be for a different app';
+      'यह नीति किसी दूसरे ऐप की हो सकती है';
 
   @override
   String associationStatusUnmatchedBody(String appName, String otherApps) {
-    return 'This policy does not mention $appName. Instead, it names $otherApps. Check that you linked the right app or opened the right policy.';
+    return 'इस नीति में $appName का उल्लेख नहीं है। इसके बजाय इसमें $otherApps का नाम है। जाँचें कि आपने सही ऐप जोड़ा है या सही नीति खोली है।';
   }
 
   @override
   String get associationStatusAmbiguousConflictTitle =>
-      'This policy mentions more than one app';
+      'इस नीति में एक से अधिक ऐप्स का उल्लेख है';
 
   @override
   String associationStatusAmbiguousConflictBody(
     String appName,
     String otherApps,
   ) {
-    return 'This policy mentions $appName alongside $otherApps. It may cover several apps or a shared company policy, so check that it applies here.';
+    return 'इस नीति में $appName के साथ $otherApps का भी उल्लेख है। यह कई ऐप्स या साझा कंपनी नीति के लिए हो सकती है, इसलिए जाँचें कि यह यहाँ लागू होती है या नहीं।';
   }
 
   @override
   String get associationStatusAmbiguousPeerTitle =>
-      'More than one app on this phone has a similar name';
+      'इस फ़ोन पर एक से अधिक ऐप्स का नाम मिलता-जुलता है';
 
   @override
   String associationStatusAmbiguousPeerBody(String appName, String otherApps) {
-    return 'This policy mentions $appName without listing one exact app ID, and other apps on your phone ($otherApps) have a similar name. Make sure you linked the right one.';
+    return 'इस नीति में बिना किसी सटीक App ID के $appName का नाम है, और आपके फ़ोन पर अन्य ऐप्स ($otherApps) का नाम भी मिलता-जुलता है। सुनिश्चित करें कि आपने सही ऐप जोड़ा है।';
   }
 
   @override
   String associationStatusAmbiguousGenericBody(String appName) {
-    return 'This policy could refer to more than one app. Double-check that it applies to $appName.';
+    return 'यह नीति एक से अधिक ऐप्स के लिए हो सकती है। दोबारा जाँचें कि यह $appName पर लागू होती है।';
   }
 
   @override
   String get associationOwnershipLimitation =>
-      'Text and web links never prove who published or owns a policy.';
+      'टेक्स्ट और वेब लिंक कभी यह साबित नहीं करते कि नीति किसने प्रकाशित की या उसका मालिक कौन है।';
 
   @override
   String permissionComparisonMismatchNote(int count) {
@@ -1094,29 +1097,29 @@ class AppLocalizationsHi extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count permissions on this phone are not clearly mentioned in this policy. A mismatch is a prompt to look closer, not proof of wrongdoing.',
-      one: '1 permission on this phone is not clearly mentioned in this policy. A mismatch is a prompt to look closer, not proof of wrongdoing.',
+          'इस फ़ोन पर $count अनुमतियाँ इस नीति में स्पष्ट रूप से नहीं बताई गई हैं। यह अंतर करीब से देखने का संकेत है, किसी गलत काम का सबूत नहीं।',
+      one: 'इस फ़ोन पर 1 अनुमति इस नीति में स्पष्ट रूप से नहीं बताई गई है। यह अंतर करीब से देखने का संकेत है, किसी गलत काम का सबूत नहीं।',
     );
     return '$_temp0';
   }
 
   @override
   String get permissionComparisonNoMismatchNote =>
-      'None of the checked permissions on this phone contradict this policy. Permissions alone cannot show what an app actually sends.';
+      'इस फ़ोन पर जाँची गई कोई भी अनुमति इस नीति से विरोधाभास नहीं रखती। केवल अनुमतियाँ यह नहीं बता सकतीं कि ऐप वास्तव में क्या भेजता है।';
 
   @override
   String get permissionComparisonLimitationNote =>
-      'Your phone shows permission settings on this phone only. This comparison is a prompt to look closer, never proof of wrongdoing or that data was sent.';
+      'आपका फ़ोन केवल इस फ़ोन की अनुमति सेटिंग्स दिखाता है। यह तुलना करीब से देखने का संकेत है, कभी गलत काम या डेटा भेजे जाने का सबूत नहीं।';
 
   @override
-  String get permissionNotRequestedOnPhone => 'Not requested by app';
+  String get permissionNotRequestedOnPhone => 'ऐप द्वारा नहीं माँगी गई';
 
   @override
-  String get permissionNotRequestedInSample => 'Not requested in sample';
+  String get permissionNotRequestedInSample => 'सैंपल में नहीं माँगी गई';
 
   @override
   String get permissionsEmptyComparisonTitle =>
-      'No sensitive permissions matched in this check';
+      'इस जाँच में कोई संवेदनशील अनुमति नहीं मिली';
 
   @override
   String permissionsEmptyComparisonBody(
@@ -1124,437 +1127,437 @@ class AppLocalizationsHi extends AppLocalizations {
     int grantedCount,
     String appName,
   ) {
-    return 'Your phone lists $requestedCount permissions ($grantedCount allowed) for $appName, with none in the sensitive categories checked here (location, camera, microphone, contacts, photos, or ad ID).';
+    return 'आपका फ़ोन $appName के लिए $requestedCount अनुमतियाँ ($grantedCount अनुमत) दिखाता है, जिनमें यहाँ जाँची गई संवेदनशील श्रेणियों (लोकेशन, कैमरा, माइक्रोफ़ोन, संपर्क, फ़ोटो या विज्ञापन ID) की कोई अनुमति नहीं है।';
   }
 
   @override
-  String get sourceDeviceInspection => 'Checked on this phone';
+  String get sourceDeviceInspection => 'इस फ़ोन पर जाँचा गया';
 
   @override
   String get appIdPrefix => 'App ID';
 
   @override
-  String get advancedDetailsTitle => 'Advanced details';
+  String get advancedDetailsTitle => 'उन्नत विवरण';
 
   @override
   String get advancedDetailsSubtitle =>
-      'Technical details that verify when and where this policy text was checked.';
+      'तकनीकी विवरण जो सत्यापित करते हैं कि यह नीति टेक्स्ट कब और कहाँ जाँचा गया।';
 
   @override
-  String get sourceSectionTitle => 'Where this policy came from';
+  String get sourceSectionTitle => 'यह नीति कहाँ से आई';
 
   @override
-  String get cloudPayloadLabel => 'Exact text to be sent';
+  String get cloudPayloadLabel => 'भेजा जाने वाला सटीक टेक्स्ट';
 
   @override
-  String get cloudPayloadNoPiiLabel => 'No personal details found';
+  String get cloudPayloadNoPiiLabel => 'कोई व्यक्तिगत विवरण नहीं मिला';
 
   @override
   String cloudPayloadHiddenCount(int count) {
-    return 'Hidden ($count)';
+    return 'छिपाए गए ($count)';
   }
 
   @override
-  String get summarySourceOnDevice => 'Summarized on this phone';
+  String get summarySourceOnDevice => 'इस फ़ोन पर सारांशित';
 
   @override
-  String get summarySourceInCloud => 'Summarized in the cloud';
+  String get summarySourceInCloud => 'क्लाउड में सारांशित';
 
   @override
-  String get summarySourceOffline => 'Summarized offline on this phone';
+  String get summarySourceOffline => 'इस फ़ोन पर ऑफ़लाइन सारांशित';
 
   @override
-  String get summarySourceUnknown => 'Summary source unknown';
+  String get summarySourceUnknown => 'सारांश का स्रोत अज्ञात';
 
   @override
-  String get notFromPolicySuffix => 'From your phone settings, not the policy';
+  String get notFromPolicySuffix => 'आपके फ़ोन की सेटिंग्स से, नीति से नहीं';
 
   @override
-  String get sampleNotFromPolicySuffix => 'Example only, not from the policy';
+  String get sampleNotFromPolicySuffix => 'केवल उदाहरण, नीति से नहीं';
 
   @override
-  String get learnHeaderSubtitle => 'Offline privacy guides & diagrams';
+  String get learnHeaderSubtitle => 'ऑफ़लाइन गोपनीयता गाइड और आरेख';
 
   @override
-  String get learnFilterAll => 'All topics';
+  String get learnFilterAll => 'सभी विषय';
 
   @override
-  String get learnFilterPolicies => 'Policies';
+  String get learnFilterPolicies => 'नीतियाँ';
 
   @override
-  String get learnFilterPermissions => 'Permissions';
+  String get learnFilterPermissions => 'अनुमतियाँ';
 
   @override
-  String get learnFilterSharing => 'Sharing';
+  String get learnFilterSharing => 'साझाकरण';
 
   @override
-  String get learnFilterEvidence => 'Evidence';
+  String get learnFilterEvidence => 'साक्ष्य';
 
   @override
   String learnLessonStepCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count steps',
-      one: '1 step',
+      other: '$count चरण',
+      one: '1 चरण',
     );
     return '$_temp0';
   }
 
   @override
-  String get learnDeckTitle => 'Practice privacy habits locally';
+  String get learnDeckTitle => 'स्थानीय रूप से गोपनीयता की आदतें सीखें';
 
   @override
   String get learnDeckBody =>
-      '100% offline lessons with diagrams. Your installed apps and receipts never enter Learn.';
+      'आरेखों के साथ 100% ऑफ़लाइन पाठ। आपके इंस्टॉल किए गए ऐप्स और रसीदें कभी सीखें अनुभाग में नहीं जाते।';
 
   @override
-  String get learnDeckCheckBtn => 'Apply it · Check an app';
+  String get learnDeckCheckBtn => 'अभ्यास करें · ऐप जाँचें';
 
   @override
-  String get learnCheckAppBridgeBtn => 'Check an app on this phone';
+  String get learnCheckAppBridgeBtn => 'इस फ़ोन पर कोई ऐप जाँचें';
 
   @override
-  String get learnSectionDiagram => 'How it works';
+  String get learnSectionDiagram => 'यह कैसे काम करता है';
 
   @override
-  String get learnSectionSteps => 'Key steps';
+  String get learnSectionSteps => 'मुख्य चरण';
 
   @override
-  String get learnSectionQuickCheck => 'Quick check';
+  String get learnSectionQuickCheck => 'त्वरित जाँच';
 
   @override
-  String get learnTooltipListenLesson => 'Read this lesson aloud offline';
+  String get learnTooltipListenLesson => 'यह पाठ ऑफ़लाइन पढ़कर सुनें';
 
   @override
-  String get learnTooltipStopLesson => 'Stop reading lesson aloud';
+  String get learnTooltipStopLesson => 'पाठ पढ़ना रोकें';
 
   @override
   String get learnVoiceUnavailableNotice =>
-      'Offline voice playback is not available for this language on this phone. You can read the lesson below.';
+      'इस फ़ोन पर इस भाषा के लिए ऑफ़लाइन वॉइस प्लेबैक उपलब्ध नहीं है। आप नीचे पाठ पढ़ सकते हैं।';
 
   @override
-  String get learnQuickCheckCorrectBadge => 'Right answer';
+  String get learnQuickCheckCorrectBadge => 'सही उत्तर';
 
   @override
-  String get learnQuickCheckTryAgainBadge => 'Try another choice';
+  String get learnQuickCheckTryAgainBadge => 'दूसरा विकल्प आज़माएँ';
 
   @override
   String learnLessonProgress(int current, int total) {
-    return 'Lesson $current of $total';
+    return 'पाठ $current / $total';
   }
 
   @override
-  String get learnBackTooltip => 'Back to Learn';
+  String get learnBackTooltip => 'सीखें पर लौटें';
 
   @override
-  String get learnPreviousLesson => 'Previous';
+  String get learnPreviousLesson => 'पिछला';
 
   @override
-  String get learnNextLesson => 'Next';
+  String get learnNextLesson => 'अगला';
 
   @override
   String learnLessonNavPreviousSemantic(String title) {
-    return 'Previous lesson: $title';
+    return 'पिछला पाठ: $title';
   }
 
   @override
   String learnLessonNavNextSemantic(String title) {
-    return 'Next lesson: $title';
+    return 'अगला पाठ: $title';
   }
 
   @override
-  String get learnPolicyFolderTitle => 'Privacy policies';
+  String get learnPolicyFolderTitle => 'गोपनीयता नीतियाँ';
 
   @override
   String get learnPolicyTitle =>
-      'What a privacy policy is (and what it can\'t prove)';
+      'गोपनीयता नीति क्या है (और यह क्या साबित नहीं कर सकती)';
 
   @override
   String get learnPolicySubtitle =>
-      'What developers promise vs. what stays unknown';
+      'डेवलपर क्या वादा करते हैं बनाम क्या अज्ञात रहता है';
 
   @override
   String get learnPolicyIntro =>
-      'A privacy policy is a developer\'s public statement explaining what data an app says it collects, why it uses it, who may receive it, and what choices families have.';
+      'गोपनीयता नीति डेवलपर का सार्वजनिक बयान है जो बताता है कि ऐप कौन सा डेटा एकत्र करने की बात करता है, इसका उपयोग क्यों करता है, इसे और कौन पा सकता है और परिवारों के पास क्या विकल्प हैं।';
 
   @override
   String get learnPolicyStep1 =>
-      'Look for four basics: what data is collected, why the app needs it, who else may get it, and how you can ask for deletion.';
+      'चार बुनियादी बातें देखें: कौन सा डेटा एकत्र होता है, ऐप को इसकी ज़रूरत क्यों है, इसे और कौन पा सकता है, और आप इसे हटाने का अनुरोध कैसे कर सकते हैं।';
 
   @override
   String get learnPolicyStep2 =>
-      'Confusing wording is common. A 2026 study of children\'s learning apps found that very few policies were easy to read, and most apps did not fully match what their policies stated.';
+      'उलझाने वाली भाषा आम है। बच्चों के लर्निंग ऐप्स पर 2026 के एक अध्ययन में पाया गया कि बहुत कम नीतियाँ पढ़ने में आसान थीं, और अधिकांश ऐप्स अपनी नीतियों में कही गई बातों से पूरी तरह मेल नहीं खाते थे।';
 
   @override
   String get learnPolicyStep3 =>
-      'A privacy policy only shows what a developer says on paper. Reading it cannot prove what the app actually sends over the internet.';
+      'गोपनीयता नीति केवल वही दिखाती है जो डेवलपर कागज़ पर कहता है। इसे पढ़ने से यह साबित नहीं होता कि ऐप वास्तव में इंटरनेट पर क्या भेजता है।';
 
   @override
   String get learnPolicyStep4 =>
-      'Comparing a policy with your phone\'s permission settings gives a clearer view, while remembering that Enprive cannot see live internet traffic.';
+      'नीति की तुलना अपने फ़ोन की अनुमति सेटिंग्स से करने पर स्पष्ट तस्वीर मिलती है, लेकिन याद रखें कि Enprive लाइव इंटरनेट ट्रैफ़िक नहीं देख सकता।';
 
   @override
   String get learnPolicyQuickQuestion =>
-      'What does reading an app\'s privacy policy prove?';
+      'किसी ऐप की गोपनीयता नीति पढ़ने से क्या साबित होता है?';
 
   @override
-  String get learnPolicyQuickOption1 =>
-      'That the app never sends data to anyone';
+  String get learnPolicyQuickOption1 => 'कि ऐप कभी किसी को डेटा नहीं भेजता';
 
   @override
   String get learnPolicyQuickOption2 =>
-      'What the developer says: not what the app actually sends';
+      'डेवलपर क्या कहता है: यह नहीं कि ऐप वास्तव में क्या भेजता है';
 
   @override
-  String get learnPolicyQuickOption3 =>
-      'That the phone\'s camera and mic are switched off';
+  String get learnPolicyQuickOption3 => 'कि फ़ोन का कैमरा और माइक बंद हैं';
 
   @override
   String get learnPolicyQuickCorrectFeedback =>
-      'That\'s right. A policy is the developer\'s public statement, not proof of what the app actually sends over the internet.';
+      'बिल्कुल सही। नीति डेवलपर का सार्वजनिक बयान है, इस बात का सबूत नहीं कि ऐप वास्तव में इंटरनेट पर क्या भेजता है।';
 
   @override
   String get learnPolicyQuickTryAgainFeedback =>
-      'Not quite. Reading a policy only tells you what the developer says: it cannot prove internet activity or turn off phone permissions.';
+      'पूरी तरह सही नहीं। नीति पढ़ने से केवल यह पता चलता है कि डेवलपर क्या कहता है: इससे इंटरनेट गतिविधि साबित नहीं होती और न ही फ़ोन की अनुमतियाँ बंद होती हैं।';
 
   @override
-  String get learnDiagramPolicySaysTitle => 'Policy says';
+  String get learnDiagramPolicySaysTitle => 'नीति कहती है';
 
   @override
-  String get learnDiagramPolicySaysBody => 'Developer\'s written promise';
+  String get learnDiagramPolicySaysBody => 'डेवलपर का लिखित वादा';
 
   @override
   String get learnDiagramPolicyQuoteSample =>
-      '\"We may share data with partners…\"';
+      '\"हम भागीदारों के साथ डेटा साझा कर सकते हैं…\"';
 
   @override
-  String get learnDiagramPhoneShowsTitle => 'Phone shows';
+  String get learnDiagramPhoneShowsTitle => 'फ़ोन दिखाता है';
 
   @override
-  String get learnDiagramPhoneShowsBody => 'Permissions allowed here';
+  String get learnDiagramPhoneShowsBody => 'यहाँ दी गई अनुमतियाँ';
 
   @override
-  String get learnDiagramUnknownTitle => 'Still unknown';
+  String get learnDiagramUnknownTitle => 'अभी भी अज्ञात';
 
   @override
   String get learnDiagramUnknownBody =>
-      'Live internet traffic Enprive can\'t see';
+      'लाइव इंटरनेट ट्रैफ़िक जिसे Enprive नहीं देख सकता';
 
   @override
   String get learnDiagramPolicyCaption =>
-      'A policy is a promise, not proof of behavior';
+      'नीति एक वादा है, व्यवहार का सबूत नहीं';
 
   @override
   String get learnDiagramPolicySemantic =>
-      'Diagram comparing three parts of app privacy. First, Policy says: the developer\'s written promise. Second, Phone shows: the permissions allowed on this phone. Third, inside a dashed boundary, Still unknown: live internet traffic that Enprive cannot see. A privacy policy is a promise, not proof of behavior.';
+      'ऐप गोपनीयता के तीन हिस्सों की तुलना करने वाला आरेख। पहला, नीति कहती है: डेवलपर का लिखित वादा। दूसरा, फ़ोन दिखाता है: इस फ़ोन पर दी गई अनुमतियाँ। तीसरा, खंडित सीमा के भीतर, अभी भी अज्ञात: लाइव इंटरनेट ट्रैफ़िक जिसे Enprive नहीं देख सकता। गोपनीयता नीति एक वादा है, व्यवहार का सबूत नहीं।';
 
   @override
-  String get learnPermissionsFolderTitle => 'Phone permissions';
+  String get learnPermissionsFolderTitle => 'फ़ोन अनुमतियाँ';
 
   @override
-  String get learnPermissionsTitle => 'Android permissions explained';
+  String get learnPermissionsTitle => 'Android अनुमतियाँ सरल शब्दों में';
 
   @override
   String get learnPermissionsSubtitle =>
-      'The four Android choices & where to review them';
+      'चार Android विकल्प और उन्हें कहाँ देखें';
 
   @override
   String get learnPermissionsIntro =>
-      'Permissions are gates that control whether an app can reach sensors and data on your phone, such as the camera, microphone, location, photos, contacts, or notifications.';
+      'अनुमतियाँ वे द्वार हैं जो तय करते हैं कि कोई ऐप आपके फ़ोन के सेंसर और डेटा तक पहुँच सकता है या नहीं, जैसे कैमरा, माइक्रोफ़ोन, लोकेशन, फ़ोटो, संपर्क या सूचनाएँ।';
 
   @override
   String get learnPermissionsStep1 =>
-      'Ask whether the permission fits the feature: a math quiz or reading app rarely needs your location, contacts, or camera.';
+      'पूछें कि क्या अनुमति उस सुविधा के लिए ज़रूरी है: किसी गणित क्विज़ या पढ़ने वाले ऐप को शायद ही कभी आपकी लोकेशन, संपर्क या कैमरे की ज़रूरत हो।';
 
   @override
   String get learnPermissionsStep2 =>
-      'Android offers up to four choices: Don\'t allow, Ask every time, Allow only while using the app, and All the time (for background location).';
+      'Android चार तक विकल्प देता है: अनुमति न दें, हर बार पूछें, केवल ऐप का उपयोग करते समय अनुमति दें, और हर समय (बैकग्राउंड लोकेशन के लिए)।';
 
   @override
   String get learnPermissionsStep3 =>
-      'Start with the narrowest choice that lets the feature work, such as Ask every time or While using the app.';
+      'सबसे सीमित विकल्प से शुरुआत करें जिससे सुविधा चल सके, जैसे हर बार पूछें या ऐप का उपयोग करते समय।';
 
   @override
   String get learnPermissionsStep4 =>
-      'Open Android Settings and check Privacy Dashboard to see which apps recently accessed Camera, Microphone, or Location.';
+      'Android सेटिंग्स खोलें और गोपनीयता डैशबोर्ड देखें कि किन ऐप्स ने हाल में कैमरा, माइक्रोफ़ोन या लोकेशन का उपयोग किया।';
 
   @override
   String get learnPermissionsStep5 =>
-      'Turn permissions off anytime in App Settings, or keep Pause app activity if unused on so Android removes old permissions automatically. An allowed permission shows capability, not proof that data was sent.';
+      'ऐप सेटिंग्स में कभी भी अनुमतियाँ बंद करें, या उपयोग न होने पर ऐप गतिविधि रोकने का विकल्प चालू रखें ताकि Android पुरानी अनुमतियाँ अपने आप हटा दे। अनुमत अनुमति केवल क्षमता दिखाती है, डेटा भेजे जाने का सबूत नहीं।';
 
   @override
   String get learnPermissionsQuickQuestion =>
-      'A math practice app asks for your camera and you aren\'t sure why. What is the best first step?';
+      'एक गणित अभ्यास ऐप आपका कैमरा माँगता है और आपको कारण नहीं पता। सबसे अच्छा पहला कदम क्या है?';
 
   @override
   String get learnPermissionsQuickOption1 =>
-      'Tap Don\'t allow and see if the math exercises still work';
+      'अनुमति न दें पर टैप करें और देखें कि गणित के अभ्यास फिर भी चलते हैं या नहीं';
 
   @override
   String get learnPermissionsQuickOption2 =>
-      'Choose All the time so the popup doesn\'t come back';
+      'हर समय चुनें ताकि पॉपअप दोबारा न आए';
 
   @override
   String get learnPermissionsQuickOption3 =>
-      'Assume the app has already uploaded photos';
+      'मान लें कि ऐप पहले ही फ़ोटो अपलोड कर चुका है';
 
   @override
   String get learnPermissionsQuickCorrectFeedback =>
-      'Right. Tapping Don\'t allow lets you check if the app works without the camera, and you can change permissions anytime in Android Settings.';
+      'सही। अनुमति न दें पर टैप करके आप देख सकते हैं कि ऐप बिना कैमरे के चलता है या नहीं, और Android सेटिंग्स में आप कभी भी अनुमतियाँ बदल सकते हैं।';
 
   @override
   String get learnPermissionsQuickTryAgainFeedback =>
-      'Try a narrower choice first. Tap Don\'t allow to test if the feature still works, and remember an allowed permission shows capability, not proof of an upload.';
+      'पहले अधिक सीमित विकल्प आज़माएँ। अनुमति न दें पर टैप करके जाँचें कि सुविधा काम करती है या नहीं, और याद रखें कि अनुमत अनुमति केवल क्षमता दिखाती है, अपलोड का सबूत नहीं।';
 
   @override
-  String get learnDiagramPermLadderTitle => 'From narrowest to broadest access';
+  String get learnDiagramPermLadderTitle =>
+      'सबसे सीमित से सबसे व्यापक पहुँच तक';
 
   @override
-  String get learnDiagramPermDenyTitle => 'Don\'t allow';
+  String get learnDiagramPermDenyTitle => 'अनुमति न दें';
 
   @override
   String get learnDiagramPermDenyDetail =>
-      'Blocked: app cannot use this sensor';
+      'अवरुद्ध: ऐप इस सेंसर का उपयोग नहीं कर सकता';
 
   @override
-  String get learnDiagramPermAskTitle => 'Ask every time';
+  String get learnDiagramPermAskTitle => 'हर बार पूछें';
 
   @override
-  String get learnDiagramPermAskDetail => 'One-time access when you tap allow';
+  String get learnDiagramPermAskDetail => 'अनुमति देने पर एक बार की पहुँच';
 
   @override
-  String get learnDiagramPermWhileUsingTitle => 'While using the app';
+  String get learnDiagramPermWhileUsingTitle => 'ऐप उपयोग करते समय';
 
   @override
   String get learnDiagramPermWhileUsingDetail =>
-      'Only while the app is open on screen';
+      'केवल तब जब ऐप स्क्रीन पर खुला हो';
 
   @override
-  String get learnDiagramPermAllTimeTitle => 'All the time';
+  String get learnDiagramPermAllTimeTitle => 'हर समय';
 
   @override
   String get learnDiagramPermAllTimeDetail =>
-      'Background access even when closed';
+      'बंद होने पर भी बैकग्राउंड में पहुँच';
 
   @override
   String get learnDiagramPermFitNote =>
-      'Does it fit? Math quiz + Camera = ask why';
+      'क्या यह मेल खाता है? गणित क्विज़ + कैमरा = कारण पूछें';
 
   @override
   String get learnDiagramPermSemantic =>
-      'Four-step Android permission ladder from narrowest to broadest access. Step 1, Don\'t allow: blocked, the app cannot use this sensor. Step 2, Ask every time: one-time access when you tap allow. Step 3, While using the app: access only while the app is open on screen. Step 4, All the time: background access even when closed, marked with a dashed border for extra caution. Bottom tip: Does it fit? A math quiz asking for the camera is a reason to ask why.';
+      'सबसे सीमित से सबसे व्यापक पहुँच तक चार चरणों वाली Android अनुमति सीढ़ी। चरण 1, अनुमति न दें: अवरुद्ध, ऐप इस सेंसर का उपयोग नहीं कर सकता। चरण 2, हर बार पूछें: अनुमति देने पर एक बार की पहुँच। चरण 3, ऐप उपयोग करते समय: केवल तब पहुँच जब ऐप स्क्रीन पर खुला हो। चरण 4, हर समय: बंद होने पर भी बैकग्राउंड में पहुँच, अतिरिक्त सावधानी के लिए खंडित बॉर्डर के साथ। निचला सुझाव: क्या यह मेल खाता है? गणित क्विज़ का कैमरा माँगना कारण पूछने की वजह है।';
 
   @override
-  String get learnSharingFolderTitle => 'Ads & third parties';
+  String get learnSharingFolderTitle => 'विज्ञापन और तृतीय पक्ष';
 
   @override
   String get learnSharingTitle =>
-      'Who else gets data: ads, analytics & third parties';
+      'डेटा और किसे मिलता है: विज्ञापन, एनालिटिक्स और तृतीय पक्ष';
 
   @override
   String get learnSharingSubtitle =>
-      'App maker vs. helpers, analytics & ad networks';
+      'ऐप निर्माता बनाम सहायक सेवाएँ, एनालिटिक्स और विज्ञापन नेटवर्क';
 
   @override
   String get learnSharingIntro =>
-      'Many free apps connect to other companies behind the scenes. Knowing who receives information helps families tell the difference between running the app and tracking kids across apps.';
+      'कई मुफ़्त ऐप्स पर्दे के पीछे दूसरी कंपनियों से जुड़ते हैं। यह जानना कि जानकारी किसे मिलती है, परिवारों को ऐप चलाने और अलग-अलग ऐप्स में बच्चों की ट्रैकिंग के बीच अंतर समझने में मदद करता है।';
 
   @override
   String get learnSharingStep1 =>
-      'First party means the app maker itself: for example, saving homework progress or quiz scores so the app works.';
+      'प्रथम पक्ष का अर्थ ऐप निर्माता स्वयं है: जैसे होमवर्क की प्रगति या क्विज़ के अंक सहेजना ताकि ऐप चल सके।';
 
   @override
   String get learnSharingStep2 =>
-      'Helper companies are third parties that handle behind-the-scenes jobs like cloud storage or crash reports so bugs get fixed.';
+      'सहायक कंपनियाँ वे तृतीय पक्ष हैं जो पर्दे के पीछे क्लाउड स्टोरेज या क्रैश रिपोर्ट जैसे काम संभालती हैं ताकि खामियाँ ठीक हों।';
 
   @override
   String get learnSharingStep3 =>
-      'Analytics tools measure how screens are used, while ad networks and data brokers may use an advertising ID to show targeted ads or profile activity across apps.';
+      'एनालिटिक्स टूल मापते हैं कि स्क्रीन कैसे उपयोग होती है, जबकि विज्ञापन नेटवर्क और डेटा ब्रोकर लक्षित विज्ञापन दिखाने या ऐप्स के बीच गतिविधि ट्रैक करने के लिए विज्ञापन ID का उपयोग कर सकते हैं।';
 
   @override
   String get learnSharingStep4 =>
-      'Watch for broad phrases like \'trusted partners\' or \'business purposes,\' and check whether a policy explains how to opt out of personalized ads.';
+      '\'विश्वसनीय भागीदार\' या \'व्यावसायिक उद्देश्य\' जैसे व्यापक शब्दों पर ध्यान दें, और देखें कि क्या नीति बताती है कि वैयक्तिकृत विज्ञापनों से बाहर कैसे निकलें।';
 
   @override
   String get learnSharingQuickQuestion =>
-      'A policy says the app shares information with \'third-party partners.\' What is the best next question to ask?';
+      'एक नीति कहती है कि ऐप \'तृतीय-पक्ष भागीदारों\' के साथ जानकारी साझा करता है। अगला सबसे अच्छा सवाल क्या है?';
 
   @override
-  String get learnSharingQuickOption1 => 'Assume that means the app has no ads';
+  String get learnSharingQuickOption1 =>
+      'मान लेना कि ऐप में कोई विज्ञापन नहीं हैं';
 
   @override
   String get learnSharingQuickOption2 =>
-      'Assume every partner does the exact same job';
+      'मान लेना कि हर भागीदार बिल्कुल एक ही काम करता है';
 
   @override
   String get learnSharingQuickOption3 =>
-      'Check whether those partners are helpers (like hosting) or ad networks that track across apps';
+      'जाँचना कि वे भागीदार सहायक सेवाएँ (जैसे होस्टिंग) हैं या ऐप्स के बीच ट्रैक करने वाले विज्ञापन नेटवर्क';
 
   @override
   String get learnSharingQuickCorrectFeedback =>
-      'Spot on. Helper services keep the app running, while ad networks and data brokers may track activity across apps.';
+      'बिल्कुल ठीक। सहायक सेवाएँ ऐप को चलाती हैं, जबकि विज्ञापन नेटवर्क और डेटा ब्रोकर ऐप्स के बीच गतिविधि ट्रैक कर सकते हैं।';
 
   @override
   String get learnSharingQuickTryAgainFeedback =>
-      'Look closer at what each partner does. Not all third parties are the same: some host data or fix crashes, while others run ads or tracking.';
+      'हर भागीदार का काम करीब से देखें। सभी तृतीय पक्ष एक जैसे नहीं होते: कुछ डेटा होस्ट करते हैं या क्रैश ठीक करते हैं, जबकि कुछ विज्ञापन या ट्रैकिंग चलाते हैं।';
 
   @override
-  String get learnDiagramThirdPartyYou => 'You';
+  String get learnDiagramThirdPartyYou => 'आप';
 
   @override
-  String get learnDiagramThirdPartyApp => 'Learning app';
+  String get learnDiagramThirdPartyApp => 'लर्निंग ऐप';
 
   @override
-  String get learnDiagramThirdPartyHosting => 'Helpers & crashes';
+  String get learnDiagramThirdPartyHosting => 'सहायक और क्रैश';
 
   @override
-  String get learnDiagramThirdPartyAnalytics => 'Analytics';
+  String get learnDiagramThirdPartyAnalytics => 'एनालिटिक्स';
 
   @override
-  String get learnDiagramThirdPartyAds => 'Ad networks';
+  String get learnDiagramThirdPartyAds => 'विज्ञापन नेटवर्क';
 
   @override
-  String get learnDiagramThirdPartyFirstParty => 'First party';
+  String get learnDiagramThirdPartyFirstParty => 'प्रथम पक्ष';
 
   @override
-  String get learnDiagramThirdPartyThirdParty => 'Third parties';
+  String get learnDiagramThirdPartyThirdParty => 'तृतीय पक्ष';
 
   @override
   String get learnDiagramThirdPartySemantic =>
-      'Flow diagram showing where data from a child\'s learning app can go. You connect to the learning app, which connects with a solid line to the app maker (first party) and with dashed lines to third parties: helper and crash tools, analytics tools, and ad networks marked for extra attention.';
+      'प्रवाह आरेख दिखाता है कि बच्चों के लर्निंग ऐप से डेटा कहाँ जा सकता है। आप लर्निंग ऐप से जुड़ते हैं, जो ठोस रेखा से ऐप निर्माता (प्रथम पक्ष) से और खंडित रेखाओं से तृतीय पक्षों से जुड़ता है: सहायक और क्रैश टूल, एनालिटिक्स टूल और अतिरिक्त ध्यान के लिए चिह्नित विज्ञापन नेटवर्क।';
 
   @override
-  String get learnEvidenceFolderTitle => 'Reading Enprive';
+  String get learnEvidenceFolderTitle => 'Enprive पढ़ना';
 
   @override
-  String get learnEvidenceTitle => 'How to read Enprive\'s evidence';
+  String get learnEvidenceTitle => 'Enprive के साक्ष्य कैसे पढ़ें';
 
   @override
   String get learnEvidenceSubtitle =>
-      'Evidence layers, categories & honest limits';
+      'साक्ष्य के स्तर, श्रेणियाँ और स्पष्ट सीमाएँ';
 
   @override
   String get learnEvidenceIntro =>
-      'Enprive separates what a privacy policy says, what your phone shows, and what stays unknown, and groups findings by topic, never as a safety grade.';
+      'Enprive यह अलग रखता है कि गोपनीयता नीति क्या कहती है, आपका फ़ोन क्या दिखाता है और क्या अज्ञात रहता है, और निष्कर्षों को विषय के अनुसार समूहित करता है, कभी सुरक्षा ग्रेड के रूप में नहीं।';
 
   @override
   String get learnEvidenceStep1 =>
-      'Five topic categories group every finding with the same icon and color as the Review screen. Color marks the topic, never a safety score.';
+      'पाँच विषय श्रेणियाँ समीक्षा स्क्रीन के समान आइकन और रंग के साथ हर निष्कर्ष को समूहित करती हैं। रंग विषय दर्शाता है, कभी सुरक्षा स्कोर नहीं।';
 
   @override
   String learnEvidenceStep2(String sourceMatched) {
-    return '$sourceMatched means Enprive found an exact quote word for word in the policy text you checked.';
+    return '$sourceMatched का अर्थ है कि Enprive को आपके द्वारा जाँची गई नीति के टेक्स्ट में शब्दशः सटीक उद्धरण मिला।';
   }
 
   @override
   String learnEvidenceStep3(String deviceObserved) {
-    return '$deviceObserved means your phone reported a permission setting on this device: not proof that data was sent.';
+    return '$deviceObserved का अर्थ है कि आपके फ़ोन ने इस डिवाइस पर एक अनुमति सेटिंग बताई: यह डेटा भेजे जाने का सबूत नहीं है।';
   }
 
   @override
   String learnEvidenceStep4(String interpretation, String unverified) {
-    return '$interpretation is Deni\'s plain-language explanation, while $unverified marks details Enprive could not find. Silence in a policy is never a promise.';
+    return '$interpretation सरल भाषा में Deni की व्याख्या है, जबकि $unverified उन विवरणों को चिह्नित करता है जो Enprive को नहीं मिले। नीति में चुप्पी कभी वादा नहीं होती।';
   }
 
   @override
@@ -1563,49 +1566,49 @@ class AppLocalizationsHi extends AppLocalizations {
     String noConcern,
     String insufficientEvidence,
   ) {
-    return 'Reviews end with one of three calm outcomes: $reviewRecommended, $noConcern (which is never a safety certification), or $insufficientEvidence.';
+    return 'समीक्षाएँ तीन शांत परिणामों में से एक पर समाप्त होती हैं: $reviewRecommended, $noConcern (जो कभी सुरक्षा प्रमाणपत्र नहीं है), या $insufficientEvidence।';
   }
 
   @override
   String learnEvidenceQuickQuestion(String deviceObserved) {
-    return 'On a Review screen, what does \'$deviceObserved\' mean?';
+    return 'समीक्षा स्क्रीन पर \'$deviceObserved\' का क्या अर्थ है?';
   }
 
   @override
   String get learnEvidenceQuickOption1 =>
-      'The app is certified safe for children';
+      'कि ऐप बच्चों के लिए प्रमाणित रूप से सुरक्षित है';
 
   @override
   String get learnEvidenceQuickOption2 =>
-      'Your phone shows this permission setting on this device: not proof that data was uploaded';
+      'कि आपका फ़ोन इस डिवाइस पर यह अनुमति सेटिंग दिखाता है: यह डेटा अपलोड होने का सबूत नहीं है';
 
   @override
   String get learnEvidenceQuickOption3 =>
-      'The app has definitely uploaded your child\'s data';
+      'कि ऐप ने निश्चित रूप से आपके बच्चे का डेटा अपलोड किया है';
 
   @override
   String get learnEvidenceQuickCorrectFeedback =>
-      'That\'s right. That label reflects Android\'s permission state on this device; it cannot prove uploads or certify safety.';
+      'बिल्कुल सही। यह लेबल इस डिवाइस पर Android की अनुमति स्थिति दिखाता है; यह अपलोड साबित नहीं कर सकता और न ही सुरक्षा प्रमाणित करता है।';
 
   @override
   String get learnEvidenceQuickTryAgainFeedback =>
-      'Not quite. That label only shows what your phone reports about a permission setting: it never proves uploads and is never a safety certification.';
+      'पूरी तरह सही नहीं। यह लेबल केवल वही दिखाता है जो आपका फ़ोन किसी अनुमति सेटिंग के बारे में बताता है: यह कभी अपलोड साबित नहीं करता और कभी सुरक्षा प्रमाणपत्र नहीं होता।';
 
   @override
   String get learnDiagramEvidencePolicyDetail =>
-      'Exact quote matched in the policy text';
+      'नीति के टेक्स्ट में मिला सटीक उद्धरण';
 
   @override
   String get learnDiagramEvidencePhoneDetail =>
-      'Phone permissions on this device';
+      'इस डिवाइस पर फ़ोन की अनुमतियाँ';
 
   @override
   String get learnDiagramEvidenceDeniDetail =>
-      'Plain-language explanation by Deni';
+      'Deni द्वारा सरल भाषा में व्याख्या';
 
   @override
   String get learnDiagramEvidenceUnknownDetail =>
-      'Silence in a policy is not a promise';
+      'नीति में चुप्पी कोई वादा नहीं है';
 
   @override
   String learnDiagramEvidenceSemantic(
@@ -1614,16 +1617,16 @@ class AppLocalizationsHi extends AppLocalizations {
     String interpretation,
     String unverified,
   ) {
-    return 'Four evidence layers used on Enprive\'s Review screen: 1, $sourceMatched, an exact quote matched in the privacy policy; 2, $deviceObserved, phone permissions on this device; 3, $interpretation, Deni\'s plain-language explanation; and 4, separated by a dashed line, $unverified, because silence in a policy is not a promise.';
+    return 'Enprive की समीक्षा स्क्रीन पर उपयोग किए जाने वाले चार साक्ष्य स्तर: 1, $sourceMatched, गोपनीयता नीति में मिला सटीक उद्धरण; 2, $deviceObserved, इस डिवाइस पर फ़ोन की अनुमतियाँ; 3, $interpretation, सरल भाषा में Deni की व्याख्या; और 4, खंडित रेखा से अलग, $unverified, क्योंकि नीति में चुप्पी कोई वादा नहीं है।';
   }
 
   @override
   String get learnDiagramCategoriesTitle =>
-      'Five topic categories on the Review screen';
+      'समीक्षा स्क्रीन पर पाँच विषय श्रेणियाँ';
 
   @override
   String get learnDiagramCategoriesNote =>
-      'Color and icon mark the topic, never a safety score.';
+      'रंग और आइकन विषय दर्शाते हैं, कभी सुरक्षा स्कोर नहीं।';
 
   @override
   String learnDiagramCategoriesSemantic(
@@ -1633,381 +1636,387 @@ class AppLocalizationsHi extends AppLocalizations {
     String retention,
     String parentalControls,
   ) {
-    return 'Five evidence categories shown on Enprive\'s Review screen, each with its own icon and color: $dataCollection, $sharing, $tracking, $retention, and $parentalControls. Color and icon mark the topic, never a safety score.';
+    return 'Enprive की समीक्षा स्क्रीन पर दिखने वाली पाँच साक्ष्य श्रेणियाँ, हर एक अपने आइकन और रंग के साथ: $dataCollection, $sharing, $tracking, $retention, और $parentalControls। रंग और आइकन विषय दर्शाते हैं, कभी सुरक्षा स्कोर नहीं।';
   }
 
   @override
-  String get learnDataCollectionFolderTitle => 'Data apps collect';
+  String get learnDataCollectionFolderTitle => 'ऐप्स कौन सा डेटा लेते हैं';
 
   @override
-  String get learnDataCollectionTitle => 'What Data Apps Collect';
+  String get learnDataCollectionTitle => 'ऐप्स कौन सा डेटा एकत्र करते हैं';
 
   @override
   String get learnDataCollectionSubtitle =>
-      'The difference between what you type and what runs quietly';
+      'जो आप टाइप करते हैं और जो चुपचाप चलता है, उसके बीच का अंतर';
 
   @override
   String get learnDataCollectionIntro1 =>
-      'Apps gather information in two ways. Some data comes from what you actively enter: your name, email, photos, voice recordings, or homework answers. Other data is collected automatically in the background, like your IP address (the address your phone uses on the internet), device identifiers, advertising ID (a code ads use to recognise your phone), crash logs, and when you open the app.';
+      'ऐप्स दो तरीकों से जानकारी एकत्र करते हैं। कुछ डेटा वह है जो आप स्वयं डालते हैं: आपका नाम, ईमेल, फ़ोटो, वॉइस रिकॉर्डिंग या होमवर्क के उत्तर। अन्य डेटा बैकग्राउंड में अपने आप एकत्र होता है, जैसे आपका IP पता (इंटरनेट पर आपके फ़ोन का पता), डिवाइस पहचानकर्ता, विज्ञापन ID (एक कोड जिससे विज्ञापन आपके फ़ोन को पहचानते हैं), क्रैश लॉग और ऐप खोलने का समय।';
 
   @override
   String get learnDataCollectionStep1 =>
-      'What you type: Your name, school, email, photos, voice clips, and homework answers are data you choose to give.';
+      'जो आप टाइप करते हैं: आपका नाम, स्कूल, ईमेल, फ़ोटो, वॉइस क्लिप और होमवर्क उत्तर वह डेटा हैं जो आप अपनी मर्ज़ी से देते हैं।';
 
   @override
   String get learnDataCollectionStep2 =>
-      'What runs quietly: The app can collect an advertising ID, device identifiers, IP address, crash reports, and usage timing without you pressing a button. Quiet collection is not automatically bad: these signals help apps run smoothly.';
+      'जो चुपचाप चलता है: ऐप बिना कोई बटन दबाए विज्ञापन ID, डिवाइस पहचानकर्ता, IP पता, क्रैश रिपोर्ट और उपयोग समय एकत्र कर सकता है। चुपचाप संग्रह अपने आप बुरा नहीं है: ये संकेत ऐप्स को सुचारु रूप से चलाने में मदद करते हैं।';
 
   @override
   String get learnDataCollectionStep3 =>
-      'Sensitive child data: Location, microphone recordings, camera photos, and biometric data like voiceprints (data about your body or voice) carry higher privacy risk for children.';
+      'बच्चों का संवेदनशील डेटा: लोकेशन, माइक्रोफ़ोन रिकॉर्डिंग, कैमरा फ़ोटो और वॉइसप्रिंट जैसे बायोमेट्रिक डेटा (आपके शरीर या आवाज़ से जुड़ा डेटा) बच्चों के लिए अधिक गोपनीयता जोखिम रखते हैं।';
 
   @override
   String get learnDataCollectionStep4 =>
-      'Play Store note: Google Play\'s Data Safety section is the developer\'s own description. It is a hint, not proof, and does not include data processed only on your device or kept briefly in memory.';
+      'Play Store नोट: Google Play का डेटा सुरक्षा अनुभाग डेवलपर का अपना विवरण है। यह एक संकेत है, सबूत नहीं, और इसमें वह डेटा शामिल नहीं है जो केवल आपके डिवाइस पर प्रोसेस होता है या थोड़ी देर मेमोरी में रहता है।';
 
   @override
   String get learnDataCollectionQuizQuestion =>
-      'Which of these is an example of data that runs quietly in the background?';
+      'इनमें से कौन सा डेटा बैकग्राउंड में चुपचाप एकत्र होने का उदाहरण है?';
 
   @override
   String get learnDataCollectionQuizChoiceA =>
-      'A photo you upload for your profile';
+      'एक फ़ोटो जो आप अपनी प्रोफ़ाइल के लिए अपलोड करते हैं';
 
   @override
   String get learnDataCollectionQuizChoiceB =>
-      'Your advertising ID and device identifiers';
+      'आपकी विज्ञापन ID और डिवाइस पहचानकर्ता';
 
   @override
   String get learnDataCollectionQuizChoiceC =>
-      'A homework answer you type in the app';
+      'एक होमवर्क उत्तर जो आप ऐप में टाइप करते हैं';
 
   @override
   String get learnDataCollectionQuizFeedbackRight =>
-      'Correct: advertising IDs and device identifiers are collected automatically without you typing them.';
+      'सही: विज्ञापन ID और डिवाइस पहचानकर्ता आपके टाइप किए बिना अपने आप एकत्र होते हैं।';
 
   @override
   String get learnDataCollectionQuizFeedbackWrong =>
-      'Not quite: that is data you actively enter. Data that runs quietly includes advertising IDs, device identifiers, IP address, and usage timing.';
+      'पूरी तरह सही नहीं: वह डेटा आप स्वयं दर्ज करते हैं। चुपचाप एकत्र होने वाले डेटा में विज्ञापन ID, डिवाइस पहचानकर्ता, IP पता और उपयोग समय शामिल हैं।';
 
   @override
-  String get learnDataCollectionDiagramYouTypeTitle => 'What you type or give';
+  String get learnDataCollectionDiagramYouTypeTitle =>
+      'जो आप टाइप करते या देते हैं';
 
   @override
-  String get learnDataCollectionDiagramYouTypeItem1 => 'Name, email, school';
+  String get learnDataCollectionDiagramYouTypeItem1 => 'नाम, ईमेल, स्कूल';
 
   @override
-  String get learnDataCollectionDiagramYouTypeItem2 => 'Photos and videos';
+  String get learnDataCollectionDiagramYouTypeItem2 => 'फ़ोटो और वीडियो';
 
   @override
-  String get learnDataCollectionDiagramYouTypeItem3 => 'Voice recordings';
+  String get learnDataCollectionDiagramYouTypeItem3 => 'वॉइस रिकॉर्डिंग';
 
   @override
-  String get learnDataCollectionDiagramYouTypeItem4 => 'Homework answers';
+  String get learnDataCollectionDiagramYouTypeItem4 => 'होमवर्क के उत्तर';
 
   @override
-  String get learnDataCollectionDiagramRunsQuietlyTitle => 'What runs quietly';
+  String get learnDataCollectionDiagramRunsQuietlyTitle => 'जो चुपचाप चलता है';
 
   @override
-  String get learnDataCollectionDiagramRunsQuietlyItem1 => 'Advertising ID';
+  String get learnDataCollectionDiagramRunsQuietlyItem1 => 'विज्ञापन ID';
 
   @override
-  String get learnDataCollectionDiagramRunsQuietlyItem2 => 'Device identifiers';
+  String get learnDataCollectionDiagramRunsQuietlyItem2 => 'डिवाइस पहचानकर्ता';
 
   @override
-  String get learnDataCollectionDiagramRunsQuietlyItem3 => 'IP address';
+  String get learnDataCollectionDiagramRunsQuietlyItem3 => 'IP पता';
 
   @override
   String get learnDataCollectionDiagramRunsQuietlyItem4 =>
-      'Crash logs and usage timing';
+      'क्रैश लॉग और उपयोग समय';
 
   @override
   String get learnDataCollectionDiagramQuietNote =>
-      'Quiet does not mean bad: these signals help apps run smoothly.';
+      'चुपचाप का अर्थ बुरा नहीं है: ये संकेत ऐप्स को ठीक से चलाने में मदद करते हैं।';
 
   @override
   String get learnDataCollectionDiagramSemanticDescription =>
-      'A split diagram showing two categories of data collection. The top card titled \"What you type or give\" lists four chips: Name email school, Photos and videos, Voice recordings, Homework answers. The bottom card titled \"What runs quietly\" lists four chips: Advertising ID, Device identifiers, IP address, Crash logs and usage timing. A small note reads \"Quiet does not mean bad: these signals help apps run smoothly.\" Deni the mascot sits below in a thinking pose.';
+      'डेटा संग्रहण की दो श्रेणियाँ दिखाने वाला विभाजित आरेख। ऊपरी कार्ड \"जो आप टाइप करते या देते हैं\" में चार चिप्स हैं: नाम ईमेल स्कूल, फ़ोटो और वीडियो, वॉइस रिकॉर्डिंग, होमवर्क के उत्तर। निचले कार्ड \"जो चुपचाप चलता है\" में चार चिप्स हैं: विज्ञापन ID, डिवाइस पहचानकर्ता, IP पता, क्रैश लॉग और उपयोग समय। एक छोटा नोट कहता है \"चुपचाप का अर्थ बुरा नहीं है: ये संकेत ऐप्स को ठीक से चलाने में मदद करते हैं।\" Deni नीचे सोचते हुए मुद्रा में बैठा है।';
 
   @override
   String get learnDataCollectionCheckBridge =>
-      'Check an app on this phone to see what data it collects.';
+      'यह देखने के लिए इस फ़ोन पर कोई ऐप जाँचें कि वह कौन सा डेटा एकत्र करता है।';
 
   @override
   String get learnDataCollectionHonestyNote =>
-      'This lesson explains common data types. It does not prove what any specific app collects or sends. Only the app\'s exact policy text and your phone\'s permission settings can show that.';
+      'यह पाठ सामान्य डेटा प्रकार समझाता है। यह साबित नहीं करता कि कोई विशिष्ट ऐप क्या एकत्र करता या भेजता है। केवल ऐप की सटीक नीति और आपके फ़ोन की अनुमति सेटिंग्स यह दिखा सकती हैं।';
 
   @override
-  String get learnRetentionFolderTitle => 'Retention and deletion';
+  String get learnRetentionFolderTitle => 'डेटा रखना और हटाना';
 
   @override
-  String get learnRetentionTitle => 'Retention and Deletion';
+  String get learnRetentionTitle => 'डेटा संग्रहण अवधि और हटाना';
 
   @override
   String get learnRetentionSubtitle =>
-      'Uninstalling an app does not erase data already on company servers';
+      'ऐप अनइंस्टॉल करने से कंपनी के सर्वर पर मौजूद डेटा नहीं मिटता';
 
   @override
   String get learnRetentionIntro1 =>
-      'When you delete an app from your phone, the app\'s files on your device are removed, but any data already uploaded to the company\'s servers stays there. Privacy policies should say how long they keep your data, how to ask for deletion, and what happens to backups, but many policies use vague phrases like \"as long as reasonably necessary.\"';
+      'जब आप अपने फ़ोन से कोई ऐप हटाते हैं, तो आपके डिवाइस से ऐप की फ़ाइलें हट जाती हैं, लेकिन कंपनी के सर्वर पर पहले से अपलोड किया गया डेटा वहीं रहता है। गोपनीयता नीतियों को बताना चाहिए कि वे आपका डेटा कितने समय रखती हैं, हटाने का अनुरोध कैसे करें और बैकअप का क्या होता है, लेकिन कई नीतियाँ \"जितने समय तक उचित रूप से आवश्यक हो\" जैसे अस्पष्ट वाक्य लिखती हैं।';
 
   @override
   String get learnRetentionStep1 =>
-      'Data collected: While you use the app, your information is sent to and stored on the company\'s servers.';
+      'डेटा संग्रहण: ऐप उपयोग करते समय आपकी जानकारी कंपनी के सर्वर पर भेजी और सहेजी जाती है।';
 
   @override
   String get learnRetentionStep2 =>
-      'Stored on servers: Your data can stay on company systems even after you stop using the app.';
+      'सर्वर पर सहेजा गया: ऐप उपयोग करना बंद करने के बाद भी आपका डेटा कंपनी के सिस्टम पर रह सकता है।';
 
   @override
   String get learnRetentionStep3 =>
-      'Uninstall does not delete server data: Removing the app from your phone only deletes local files, not the copies on company servers.';
+      'अनइंस्टॉल करने से सर्वर का डेटा नहीं मिटता: फ़ोन से ऐप हटाने पर केवल स्थानीय फ़ाइलें मिटती हैं, कंपनी के सर्वर की प्रतियाँ नहीं।';
 
   @override
   String get learnRetentionStep4 =>
-      'Deletion request: You can ask the company to delete your account and data; policies should say how long this takes.';
+      'हटाने का अनुरोध: आप कंपनी से अपना खाता और डेटा हटाने को कह सकते हैं; नीतियों को बताना चाहिए कि इसमें कितना समय लगता है।';
 
   @override
   String get learnRetentionStep5 =>
-      'Unknown retention: Policies that say \"as long as needed\" or \"for business purposes\" leave the actual deletion timeline unclear.';
+      'अज्ञात अवधि: \"आवश्यकतानुसार\" या \"व्यावसायिक उद्देश्यों के लिए\" लिखने वाली नीतियाँ वास्तविक हटाने की समय-सीमा अस्पष्ट छोड़ देती हैं।';
 
   @override
   String get learnRetentionQuizQuestion =>
-      'What happens to your data on company servers when you uninstall an app from your phone?';
+      'जब आप अपने फ़ोन से कोई ऐप अनइंस्टॉल करते हैं तो कंपनी के सर्वर पर आपके डेटा का क्या होता है?';
 
   @override
-  String get learnRetentionQuizChoiceA => 'It is deleted automatically';
+  String get learnRetentionQuizChoiceA => 'यह अपने आप हट जाता है';
 
   @override
   String get learnRetentionQuizChoiceB =>
-      'It may stay on the servers - uninstalling the app does not delete it';
+      'यह सर्वर पर रह सकता है: ऐप अनइंस्टॉल करने से यह नहीं हटता';
 
   @override
-  String get learnRetentionQuizChoiceC => 'It is anonymized immediately';
+  String get learnRetentionQuizChoiceC => 'इसे तुरंत गुमनाम कर दिया जाता है';
 
   @override
   String get learnRetentionQuizFeedbackRight =>
-      'Correct: uninstalling only removes the app from your phone. Data on company servers may stay until you request deletion.';
+      'सही: अनइंस्टॉल करने से केवल आपके फ़ोन से ऐप हटता है। कंपनी के सर्वर पर डेटा तब तक रह सकता है जब तक आप हटाने का अनुरोध न करें।';
 
   @override
   String get learnRetentionQuizFeedbackWrong =>
-      'Not quite: uninstalling an app does not delete data already uploaded to company servers. You need to request account deletion.';
+      'पूरी तरह सही नहीं: ऐप अनइंस्टॉल करने से कंपनी के सर्वर पर पहले से अपलोड डेटा नहीं मिटता। आपको खाता हटाने का अनुरोध करना होता है।';
 
   @override
-  String get learnRetentionDiagramCollected => 'Data collected during use';
+  String get learnRetentionDiagramCollected =>
+      'उपयोग के दौरान डेटा एकत्र होता है';
 
   @override
-  String get learnRetentionDiagramStored => 'Stored on company servers';
+  String get learnRetentionDiagramStored => 'कंपनी के सर्वर पर सहेजा जाता है';
 
   @override
   String get learnRetentionDiagramUninstall =>
-      'You uninstall the app - phone files go, server data stays';
+      'आप ऐप अनइंस्टॉल करते हैं: फ़ोन फ़ाइलें हटती हैं, सर्वर डेटा रहता है';
 
   @override
   String get learnRetentionDiagramDeleteRequest =>
-      'You request account deletion';
+      'आप खाता हटाने का अनुरोध करते हैं';
 
   @override
   String get learnRetentionDiagramUnknownTail =>
-      'Unknown retention - policy says \"as long as needed\"';
+      'अज्ञात अवधि: नीति कहती है \"आवश्यकतानुसार\"';
 
   @override
   String get learnRetentionDiagramSemanticDescription =>
-      'A five-step timeline showing the data lifecycle. Step 1: Data collected during use, with a database icon. Step 2: Stored on company servers, with a server icon. Step 3: You uninstall the app - phone files go, server data stays, with a smartphone icon. Step 4: You request account deletion, with a trash icon. Step 5: Unknown retention - policy says \"as long as needed,\" shown with a dashed arrow and a help circle icon. Deni the mascot stands below holding a receipt.';
+      'डेटा जीवनचक्र दिखाने वाली पाँच चरणों की समय-रेखा। चरण 1: उपयोग के दौरान डेटा एकत्र होता है, डेटाबेस आइकन के साथ। चरण 2: कंपनी के सर्वर पर सहेजा जाता है, सर्वर आइकन के साथ। चरण 3: आप ऐप अनइंस्टॉल करते हैं: फ़ोन फ़ाइलें हटती हैं, सर्वर डेटा रहता है, स्मार्टफ़ोन आइकन के साथ। चरण 4: आप खाता हटाने का अनुरोध करते हैं, कचरा आइकन के साथ। चरण 5: अज्ञात अवधि: नीति कहती है \"आवश्यकतानुसार\", खंडित तीर और सहायता आइकन के साथ। Deni नीचे रसीद पकड़े खड़ा है।';
 
   @override
   String get learnRetentionCheckBridge =>
-      'Check an app on this phone to see what its policy says about retention.';
+      'डेटा रखने के बारे में नीति क्या कहती है, यह देखने के लिए इस फ़ोन पर कोई ऐप जाँचें।';
 
   @override
   String get learnRetentionHonestyNote =>
-      'This lesson describes common retention patterns. It does not prove what any specific company actually does with your data. Only the exact policy text and a deletion request can show that.';
+      'यह पाठ डेटा रखने के सामान्य पैटर्न बताता है। यह साबित नहीं करता कि कोई विशिष्ट कंपनी वास्तव में आपके डेटा के साथ क्या करती है। केवल सटीक नीति टेक्स्ट और हटाने का अनुरोध यह दिखा सकते हैं।';
 
   @override
-  String get learnUnclearPoliciesFolderTitle => 'Unclear policies';
+  String get learnUnclearPoliciesFolderTitle => 'अस्पष्ट नीतियाँ';
 
   @override
   String get learnUnclearPoliciesTitle =>
-      'Spotting Unclear Policies & Tricky Buttons';
+      'अस्पष्ट नीतियों और चालाक बटनों की पहचान';
 
   @override
   String get learnUnclearPoliciesSubtitle =>
-      'How to recognize vague language and pressured consent screens';
+      'अस्पष्ट भाषा और दबाव डालने वाली सहमति स्क्रीन कैसे पहचानें';
 
   @override
   String get learnUnclearPoliciesIntro1 =>
-      'Some privacy policies use fuzzy words that make it hard to know what actually happens to your data. Consent screens can also use design tricks, like a big bright \"Accept All\" button next to a tiny \"Manage Settings\" link, to push you into agreeing without reading.';
+      'कुछ गोपनीयता नीतियाँ अस्पष्ट शब्दों का उपयोग करती हैं जिससे जानना कठिन हो जाता है कि आपके डेटा के साथ वास्तव में क्या होता है। सहमति स्क्रीन भी डिज़ाइन तरकीबें अपना सकती हैं, जैसे छोटे से \"सेटिंग्स प्रबंधित करें\" लिंक के बगल में बड़ा चमकदार \"सभी स्वीकार करें\" बटन, ताकि आप बिना पढ़े सहमत हो जाएँ।';
 
   @override
   String get learnUnclearPoliciesStep1 =>
-      'Policy fog signs: Watch for open-ended phrases like \"may share with trusted partners,\" \"for business purposes,\" or \"retain as needed\": they leave the real details unspecified.';
+      'अस्पष्ट नीति के संकेत: \"विश्वसनीय भागीदारों के साथ साझा कर सकते हैं\", \"व्यावसायिक उद्देश्यों के लिए\" या \"आवश्यकतानुसार रख सकते हैं\" जैसे खुले वाक्यों पर ध्यान दें: ये असली विवरण अधूरे छोड़ते हैं।';
 
   @override
   String get learnUnclearPoliciesStep2 =>
-      'Silence is not a promise: If a policy never mentions the microphone, ads, or location, it does not guarantee the app avoids them.';
+      'चुप्पी कोई वादा नहीं है: यदि कोई नीति माइक्रोफ़ोन, विज्ञापन या लोकेशन का ज़िक्र नहीं करती, तो इससे यह गारंटी नहीं मिलती कि ऐप उनसे बचता है।';
 
   @override
   String get learnUnclearPoliciesStep3 =>
-      'Missing basics: A trustworthy policy has a clear effective date, a contact email, and one unified document: not a hidden children\'s addendum.';
+      'गायब बुनियादी बातें: एक स्पष्ट नीति में प्रभावी तिथि, संपर्क ईमेल और एक ही पूरा दस्तावेज़ होता है, न कि बच्चों के लिए छिपा हुआ अलग हिस्सा।';
 
   @override
   String get learnUnclearPoliciesStep4 =>
-      'Pressured consent (dark patterns): Giant \"Accept All\" buttons, pre-checked marketing boxes, nagging re-prompts, and hard-to-find cancellation paths are designed to override your choice.';
+      'दबाव वाली सहमति (डार्क पैटर्न): विशाल \"सभी स्वीकार करें\" बटन, पहले से टिक किए मार्केटिंग बॉक्स, बार-बार परेशान करने वाले पॉपअप और छिपे हुए रद्द करने के रास्ते आपकी पसंद को प्रभावित करने के लिए बनाए जाते हैं।';
 
   @override
   String get learnUnclearPoliciesStep5 =>
-      'Balanced choice: A fair screen shows equal \"Allow\" and \"Don\'t allow\" buttons, with optional toggles unchecked by default.';
+      'संतुलित विकल्प: एक निष्पक्ष स्क्रीन में \"अनुमति दें\" और \"अनुमति न दें\" के बराबर बटन होते हैं, और वैकल्पिक टॉगल डिफ़ॉल्ट रूप से बंद रहते हैं।';
 
   @override
   String get learnUnclearPoliciesQuizQuestion =>
-      'Which phrase in a privacy policy is a \"foggy\" signal that details are missing?';
+      'गोपनीयता नीति में कौन सा वाक्य एक \"अस्पष्ट\" संकेत है कि विवरण गायब हैं?';
 
   @override
   String get learnUnclearPoliciesQuizChoiceA =>
-      'We do not sell your personal information to third parties';
+      'हम आपकी व्यक्तिगत जानकारी तृतीय पक्षों को नहीं बेचते';
 
   @override
   String get learnUnclearPoliciesQuizChoiceB =>
-      'We may share data with trusted partners for business purposes';
+      'हम व्यावसायिक उद्देश्यों के लिए विश्वसनीय भागीदारों के साथ डेटा साझा कर सकते हैं';
 
   @override
   String get learnUnclearPoliciesQuizChoiceC =>
-      'You can request deletion by emailing privacy@example.com';
+      'आप privacy@example.com पर ईमेल करके डेटा हटाने का अनुरोध कर सकते हैं';
 
   @override
   String get learnUnclearPoliciesQuizFeedbackRight =>
-      'Correct: \"may share with trusted partners for business purposes\" is vague and does not say who the partners are or what data is shared.';
+      'सही: \"व्यावसायिक उद्देश्यों के लिए विश्वसनीय भागीदारों के साथ साझा कर सकते हैं\" अस्पष्ट है और नहीं बताता कि भागीदार कौन हैं या कौन सा डेटा साझा होता है।';
 
   @override
   String get learnUnclearPoliciesQuizFeedbackWrong =>
-      'Not quite: that phrase is specific and actionable. Foggy phrases use open-ended language like \"may share\" or \"as needed\" without details.';
+      'पूरी तरह सही नहीं: वह वाक्य स्पष्ट और उपयोगी है। अस्पष्ट वाक्यों में बिना विवरण के \"साझा कर सकते हैं\" या \"आवश्यकतानुसार\" जैसे खुले शब्द होते हैं।';
 
   @override
-  String get learnUnclearPoliciesDiagramClearTitle => 'Clear policy sentence';
+  String get learnUnclearPoliciesDiagramClearTitle => 'स्पष्ट नीति वाक्य';
 
   @override
   String get learnUnclearPoliciesDiagramClearExample =>
-      'We collect your name and email to create your account. We do not share this with advertisers.';
+      'हम आपका खाता बनाने के लिए आपका नाम और ईमेल एकत्र करते हैं। हम इसे विज्ञापनदाताओं से साझा नहीं करते।';
 
   @override
-  String get learnUnclearPoliciesDiagramFoggyTitle => 'Foggy policy sentence';
+  String get learnUnclearPoliciesDiagramFoggyTitle => 'अस्पष्ट नीति वाक्य';
 
   @override
   String get learnUnclearPoliciesDiagramFoggyExample =>
-      'We may share your information with trusted partners for business purposes as needed.';
+      'हम आवश्यकतानुसार व्यावसायिक उद्देश्यों के लिए विश्वसनीय भागीदारों के साथ आपकी जानकारी साझा कर सकते हैं।';
 
   @override
-  String get learnUnclearPoliciesDiagramTipsTitle => 'How to spot the fog';
+  String get learnUnclearPoliciesDiagramTipsTitle => 'अस्पष्टता कैसे पहचानें';
 
   @override
   String get learnUnclearPoliciesDiagramTip1 =>
-      'Look for \"may,\" \"could,\" or \"as needed\": they leave the door open.';
+      '\"सकते हैं\", \"संभव है\" या \"आवश्यकतानुसार\" देखें: ये रास्ता खुला छोड़ते हैं।';
 
   @override
   String get learnUnclearPoliciesDiagramTip2 =>
-      'Check if the policy names the specific companies data goes to.';
+      'जाँचें कि क्या नीति उन विशिष्ट कंपनियों के नाम बताती है जिन्हें डेटा जाता है।';
 
   @override
   String get learnUnclearPoliciesDiagramTip3 =>
-      'Silence on a topic like ads or microphone is not a promise the app avoids it.';
+      'विज्ञापन या माइक्रोफ़ोन पर चुप्पी इस बात का वादा नहीं है कि ऐप उनसे बचता है।';
 
   @override
   String get learnUnclearPoliciesDiagramSilenceNote =>
-      'Silence in a policy is not a promise.';
+      'नीति में चुप्पी कोई वादा नहीं है।';
 
   @override
   String get learnUnclearPoliciesDiagramSemanticDescription =>
-      'A side-by-side comparison of a clear policy sentence and a foggy one. The left card labeled \"Clear\" shows: \"We collect your name and email to create your account. We do not share this with advertisers.\" The right card labeled \"Foggy\" shows: \"We may share your information with trusted partners for business purposes as needed.\" Below, a tips card titled \"How to spot the fog\" lists three tips: Look for \"may,\" \"could,\" or \"as needed\": they leave the door open. Check if the policy names the specific companies data goes to. Silence on a topic like ads or microphone is not a promise the app avoids it. A note on the foggy card reads \"Silence in a policy is not a promise.\" Deni the mascot peeks over the cards.';
+      'एक स्पष्ट और एक अस्पष्ट नीति वाक्य की साथ-साथ तुलना। बाएँ कार्ड \"स्पष्ट\" पर लिखा है: \"हम आपका खाता बनाने के लिए आपका नाम और ईमेल एकत्र करते हैं। हम इसे विज्ञापनदाताओं से साझा नहीं करते।\" दाएँ कार्ड \"अस्पष्ट\" पर लिखा है: \"हम आवश्यकतानुसार व्यावसायिक उद्देश्यों के लिए विश्वसनीय भागीदारों के साथ आपकी जानकारी साझा कर सकते हैं।\" नीचे \"अस्पष्टता कैसे पहचानें\" कार्ड में तीन सुझाव हैं: \"सकते हैं\", \"संभव है\" या \"आवश्यकतानुसार\" देखें; जाँचें कि नीति विशिष्ट कंपनियों के नाम बताती है या नहीं; विज्ञापन या माइक्रोफ़ोन पर चुप्पी कोई वादा नहीं है। अस्पष्ट कार्ड पर नोट लिखा है \"नीति में चुप्पी कोई वादा नहीं है।\" Deni कार्डों के ऊपर से झाँक रहा है।';
 
   @override
   String get learnUnclearPoliciesCheckBridge =>
-      'Check an app on this phone to test its consent screen and policy clarity.';
+      'सहमति स्क्रीन और नीति की स्पष्टता जाँचने के लिए इस फ़ोन पर कोई ऐप जाँचें।';
 
   @override
   String get learnUnclearPoliciesHonestyNote =>
-      'This lesson describes common unclear patterns. It does not prove any specific app uses dark patterns or hides data practices. Only reading the exact policy and seeing the real consent screen can show that.';
+      'यह पाठ सामान्य अस्पष्ट पैटर्न बताता है। यह साबित नहीं करता कि कोई विशिष्ट ऐप डार्क पैटर्न अपनाता है या डेटा अभ्यास छिपाता है। केवल सटीक नीति पढ़कर और वास्तविक सहमति स्क्रीन देखकर ही यह पता चल सकता है।';
 
   @override
-  String get learnSafeSharingFolderTitle => 'Safe sharing habits';
+  String get learnSafeSharingFolderTitle => 'सुरक्षित साझाकरण आदतें';
 
   @override
-  String get learnSafeSharingTitle => 'Safe-Sharing Habits for Kids';
+  String get learnSafeSharingTitle => 'बच्चों के लिए सुरक्षित साझाकरण की आदतें';
 
   @override
   String get learnSafeSharingSubtitle =>
-      'Stop, Think, Connect - age-appropriate steps for sharing online';
+      'रुकें, सोचें, जुड़ें: ऑनलाइन साझा करने के उम्र के अनुसार कदम';
 
   @override
   String get learnSafeSharingIntro1 =>
-      'Before you post a photo, video, your name, or your location, pause and use the three steps: Stop, Think, Connect. This lesson is for reading together with a trusted adult. Younger kids (ages 5-7) ask before tapping. Older kids (8-11) use nicknames and strong passwords. Teens (12-17) manage digital footprints (the trail of things you post) and two-factor authentication (a second check, like a code, when you sign in).';
+      'कोई फ़ोटो, वीडियो, अपना नाम या लोकेशन पोस्ट करने से पहले रुकें और तीन कदम अपनाएँ: रुकें, सोचें, जुड़ें। यह पाठ किसी विश्वसनीय वयस्क के साथ पढ़ने के लिए है। छोटे बच्चे (5-7 वर्ष) टैप करने से पहले पूछते हैं। बड़े बच्चे (8-11 वर्ष) उपनाम और मज़बूत पासवर्ड उपयोग करते हैं। किशोर (12-17 वर्ष) अपने डिजिटल फुटप्रिंट (आप जो पोस्ट करते हैं उसका निशान) और दो-चरण सत्यापन (साइन इन करते समय कोड जैसी दूसरी जाँच) को संभालते हैं।';
 
   @override
   String get learnSafeSharingStep1 =>
-      'Stop: Pause before you post a photo, video, name, school, or location. Ask a trusted adult if you are not sure.';
+      'रुकें: कोई फ़ोटो, वीडियो, नाम, स्कूल या लोकेशन पोस्ट करने से पहले ठहरें। यदि संदेह हो तो किसी विश्वसनीय वयस्क से पूछें।';
 
   @override
   String get learnSafeSharingStep2 =>
-      'Think: Does this reveal my school, home, or where I am right now? Did I ask my friends before sharing their photos or tagging them?';
+      'सोचें: क्या इससे मेरा स्कूल, घर या मेरी मौजूदा जगह पता चलती है? क्या मैंने दोस्तों की फ़ोटो साझा करने या उन्हें टैग करने से पहले उनसे पूछा?';
 
   @override
   String get learnSafeSharingStep3 =>
-      'Connect: Share only with people you trust. Keep personal details like your full name, birthday, address, and phone number private.';
+      'जुड़ें: केवल उन लोगों के साथ साझा करें जिन पर आपको भरोसा है। पूरा नाम, जन्मदिन, पता और फ़ोन नंबर जैसे व्यक्तिगत विवरण निजी रखें।';
 
   @override
   String get learnSafeSharingStep4 =>
-      'The Cafeteria Test: Would I be okay if everyone at school (or my whole class) saw this photo or message? Even disappearing posts can be screenshotted and stay online permanently.';
+      'कैंटीन टेस्ट: क्या मुझे ठीक लगेगा यदि स्कूल में हर कोई (या मेरी पूरी कक्षा) यह फ़ोटो या संदेश देख ले? गायब होने वाली पोस्ट का भी स्क्रीनशॉट लिया जा सकता है और वे हमेशा ऑनलाइन रह सकती हैं।';
 
   @override
   String get learnSafeSharingStep5 =>
-      'Age 5-7: Ask a trusted adult before typing your name or tapping popups. Age 8-11: Use a nickname (not real name, birthday, and school), strong passwords, never share SMS or OTP codes (one-time codes sent by text message - never share them). Age 12-17: Review privacy settings, turn on two-factor authentication, know how to report problems.';
+      'उम्र 5-7: अपना नाम लिखने या पॉपअप पर टैप करने से पहले किसी विश्वसनीय वयस्क से पूछें। उम्र 8-11: उपनाम (असली नाम, जन्मदिन और स्कूल नहीं) और मज़बूत पासवर्ड उपयोग करें, और SMS या OTP कोड (संदेश से आने वाले एक-बार के कोड: इन्हें कभी साझा न करें) कभी न बताएँ। उम्र 12-17: गोपनीयता सेटिंग्स जाँचें, दो-चरण सत्यापन चालू करें और समस्या की रिपोर्ट करना जानें।';
 
   @override
   String get learnSafeSharingQuizQuestion =>
-      'What is the \"Cafeteria Test\" for sharing online?';
+      'ऑनलाइन साझा करने के लिए \"कैंटीन टेस्ट\" क्या है?';
 
   @override
   String get learnSafeSharingQuizChoiceA =>
-      'Only share things you would eat in the cafeteria';
+      'केवल वही चीज़ें साझा करना जो आप कैंटीन में खाएँ';
 
   @override
   String get learnSafeSharingQuizChoiceB =>
-      'Ask: would I be okay if everyone at school saw this photo or message?';
+      'खुद से पूछना: क्या मुझे ठीक लगेगा यदि स्कूल में हर कोई यह फ़ोटो या संदेश देख ले?';
 
   @override
-  String get learnSafeSharingQuizChoiceC => 'Share only during lunch break';
+  String get learnSafeSharingQuizChoiceC => 'केवल लंच ब्रेक के दौरान साझा करना';
 
   @override
   String get learnSafeSharingQuizFeedbackRight =>
-      'Correct: the Cafeteria Test means asking yourself if you would be comfortable with everyone seeing what you post.';
+      'सही: कैंटीन टेस्ट का अर्थ खुद से पूछना है कि क्या आप सहज होंगे यदि हर कोई आपकी पोस्ट देख ले।';
 
   @override
   String get learnSafeSharingQuizFeedbackWrong =>
-      'Not quite: the Cafeteria Test is a mental check: would you be okay if someone showed your post to the whole cafeteria?';
+      'पूरी तरह सही नहीं: कैंटीन टेस्ट एक मानसिक जाँच है: क्या आपको ठीक लगेगा यदि कोई आपकी पोस्ट पूरी कैंटीन को दिखा दे?';
 
   @override
-  String get learnSafeSharingDiagramStop => 'Stop - pause before you post';
+  String get learnSafeSharingDiagramStop => 'रुकें: पोस्ट करने से पहले ठहरें';
 
   @override
   String get learnSafeSharingDiagramThink =>
-      'Think - does this reveal where I am or who I am with?';
+      'सोचें: क्या इससे पता चलता है कि मैं कहाँ या किसके साथ हूँ?';
 
   @override
   String get learnSafeSharingDiagramConnect =>
-      'Connect - share with people you trust, ask an adult if unsure';
+      'जुड़ें: भरोसेमंद लोगों से साझा करें, संदेह में वयस्क से पूछें';
 
   @override
   String get learnSafeSharingDiagramCafeteriaTest =>
-      'The Cafeteria Test: Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.';
+      'कैंटीन टेस्ट: क्या मुझे ठीक लगेगा यदि स्कूल में हर कोई इसे देखे? गायब होने वाली पोस्ट का भी स्क्रीनशॉट लिया जा सकता है और वे हमेशा ऑनलाइन रह सकती हैं।';
 
   @override
   String get learnSafeSharingDiagramSemanticDescription =>
-      'A four-part diagram teaching safe sharing habits. Step 1: Stop - pause before you post, with a hand icon. Step 2: Think - does this reveal where I am or who I am with, with a brain icon. Step 3: Connect - share with people you trust, ask an adult if unsure, with a users icon. Step 4: The Cafeteria Test callout asks \"Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.\" Deni the mascot stands beside the callout with a raised hand.';
+      'सुरक्षित साझाकरण की आदतें सिखाने वाला चार भागों का आरेख। चरण 1: रुकें: पोस्ट करने से पहले ठहरें, हाथ के आइकन के साथ। चरण 2: सोचें: क्या इससे पता चलता है कि मैं कहाँ या किसके साथ हूँ?, मस्तिष्क आइकन के साथ। चरण 3: जुड़ें: भरोसेमंद लोगों से साझा करें, संदेह में वयस्क से पूछें, लोगों के आइकन के साथ। चरण 4: कैंटीन टेस्ट बॉक्स पूछता है \"क्या मुझे ठीक लगेगा यदि स्कूल में हर कोई इसे देखे? गायब होने वाली पोस्ट का भी स्क्रीनशॉट लिया जा सकता है और वे हमेशा ऑनलाइन रह सकती हैं।\" Deni हाथ उठाए बॉक्स के पास खड़ा है।';
 
   @override
   String get learnSafeSharingCheckBridge =>
-      'Check an app together with a parent to see how it handles sharing.';
+      'यह देखने के लिए किसी अभिभावक के साथ ऐप जाँचें कि वह साझाकरण कैसे संभालता है।';
 
   @override
   String get learnSafeSharingHonestyNote =>
-      'This lesson shares general safe-sharing habits. It does not guarantee any app will protect what you share. Always read the app\'s policy and use your phone\'s privacy settings.';
+      'यह पाठ सुरक्षित साझाकरण की सामान्य आदतें बताता है। यह गारंटी नहीं देता कि कोई ऐप आपके द्वारा साझा की गई चीज़ों की रक्षा करेगा। हमेशा ऐप की नीति पढ़ें और अपने फ़ोन की गोपनीयता सेटिंग्स उपयोग करें।';
+
+  @override
+  String get translationDraftNotice =>
+      'कुछ अनुवाद AI द्वारा बनाए गए मसौदे हैं और इनमें गलतियाँ हो सकती हैं। मूल भाषी इनकी समीक्षा कर रहे हैं।';
 }

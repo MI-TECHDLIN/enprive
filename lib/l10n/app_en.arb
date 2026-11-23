@@ -1885,5 +1885,9 @@
   "learnSafeSharingHonestyNote": "This lesson shares general safe-sharing habits. It does not guarantee any app will protect what you share. Always read the app's policy and use your phone's privacy settings.",
   "@learnSafeSharingHonestyNote": {
     "description": "Honesty note for Lesson 8"
+  },
+  "translationDraftNotice": "Some translations are AI-generated drafts and may contain mistakes. Native speakers are reviewing them.",
+  "@translationDraftNotice": {
+    "description": "Short honest note in the language settings area explaining that non-English translations are AI-assisted drafts undergoing native-speaker review"
   }
 }
