@@ -89,6 +89,7 @@ Enprive is currently **paused while waiting for a real Gemini Nano 4 phone** for
 | Core app, Calm Evidence UI, intake (Paste, URL, PDF, TXT, DOCX, Android share), two-way linking, Deni hand poses, 8 illustrated Learn lessons, Quick Settings Companion, explicit SQLite receipts | Built and merged on `main`; verified by automated suites (**391/391** Dart/Flutter tests, **75/75** Android Kotlin JVM tests, `flutter analyze` 0 issues) and live walkthroughs on the Android 16 emulator (`Pixel_9` AVD). |
 | Firebase App Check (enforced on `firebaseml.googleapis.com`) | Debug App Check limited-use token minting verified on emulator with zero attestation rejections (`0` HTTP 403 errors). Production Play Integrity on a signed release build still needs a physical device. |
 | On-device Gemini Nano 4 inference | Wired via Firebase AI Logic `ONLY_ON_DEVICE` (`OnDeviceModelOption.PREVIEW`), **not yet proven on physical Gemini Nano 4 hardware** (waiting for a supported phone). |
+| Accessibility on a real phone | Pending (waiting for the phone to verify live TalkBack, Switch Access, and audio playback). |
 | Live cloud summary (`gemini-3.8-flash`) and expressive voice (`gemini-3.8-flash-tts`) | Consent gating, local redaction, single-attempt enforcement, and offline fallback are verified. Recent free-tier (`Spark`) emulator runs hit upstream capacity limits (`503` high demand / stream timeouts) and fell back honestly to local scan and offline phone speech. |
 | Translations (12 languages) | English (`en`) is complete (548 keys). AI-drafted Stage 1 translations for Arabic (`ar`), Spanish (`es`), French (`fr`), and Hindi (`hi`) are complete on `main` (548/548 keys) with an in-app draft notice in Settings while native speakers review them. Seven languages (`de`, `it`, `pt`, `ru`, `ja`, `ko`, `zh`) have 142/548 keys on `main`, with remaining stages held on separate work branches. |
 
@@ -152,7 +153,7 @@ A quick map of where the hybrid AI and privacy-boundary mechanics live in the co
 ## Accessibility and languages
 
 - **Readable and calm by design**: Built with Material 3 Expressive tonal surfaces in light and dark themes, bundled offline fonts (`Nunito`, `Inter`, and `Source Serif 4`, with runtime font fetching disabled), and plain-language labels across core flows.
-- **Built for assistive tools**: Tested up to 200% text scaling, reduced motion (`disableAnimations`), right-to-left (RTL) layout in Arabic, TalkBack semantics, and keyboard / Switch Access focus activation.
+- **Built for assistive tools**: Checked in automated tests and on an Android 16 emulator: text scaling up to 200%, reduced motion (`disableAnimations`), right-to-left (RTL) layout in Arabic, screen-reader labels, and keyboard focus. Live checks with TalkBack and Switch Access on a real phone are still pending.
 - **12 languages**: English (`en`), Arabic (`ar`), Spanish (`es`), French (`fr`), Hindi (`hi`), German (`de`), Italian (`it`), Portuguese (`pt`), Russian (`ru`), Japanese (`ja`), Korean (`ko`), and Simplified Chinese (`zh`). Where translations are AI-drafted, Settings displays a clear notice while native speakers review them (see [`docs/l10n_glossary.md`](docs/l10n_glossary.md)).
 
 ---
