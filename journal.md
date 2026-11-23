@@ -76,13 +76,13 @@
 ---
 
 ## Current Project Snapshot
-- **Project**: **Enprive** (`com.mitechdlin.enprive`, Kotlin namespace `com.example.enprive`) — Evidence-First Hybrid AI Privacy Assistant for Parents & Teachers (**Google #BuildHybridAI 2026**)
+- **Project**: **Enprive** (`com.mitechdlin.enprive`, Kotlin namespace `com.example.enprive`) - Evidence-First Hybrid AI Privacy Companion for Parents & Teachers (**Google #BuildHybridAI 2026**)
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
-- **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`)
-- **Current `main` HEAD**: `a5c69d1`
-- **Active Feature Branch**: `feature/m3-expressive-rebrand` (baseline HEAD `6aff3b363adeee0f9f8a37e45c0426a8becf7e3e`, D5.2 adaptive navigation shell + authorized accessibility/layout fix pass uncommitted in working tree awaiting commit approval)
-- **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze target: 28 November 2026)
-- **Next Queued Action**: Review D5.2 defect-closure report & commit D5.2 on `feature/m3-expressive-rebrand` before starting D5.3.
+- **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`, Android app `1:71373777460:android:b8983622f3315d6d3d7861`)
+- **Current `main` HEAD**: `bb247b9` (Merge of https://github.com/MI-TECHDLIN/enprive/pull/30 - D5.3-F Stage 1 translations)
+- **Status**: **Paused for physical testing** (waiting for a Gemini Nano 4 capable Android phone)
+- **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze: 28 November 2026)
+- **Next Queued Action**: Connect a Gemini Nano 4 capable phone, register its App Check debug token, install the signed release build, run physical-device verification (Nano 4 + Play Integrity + real-device walkthroughs), finish translations, and record the demo video.
 
 ---
 
@@ -1986,6 +1986,57 @@
   - `flutter build apk --debug --target-platform android-arm64`: succeeded.
   - Visual QA PNGs saved in `/Users/mi-tech/firstmate/data/enprive-d53f-l10n/` and inspected: all 6 Arabic RTL screens (Home, Settings, Learn home, Lesson 1, Consent sheet, Review result), all 6 Hindi screens, and French 200% Home + Settings (0 crashes across 13,144 log lines; zero text clipping or overflow).
 - **Next Immediate Action & Recommended Model**: Open PR 1 into `main`, then proceed to Stage 2 (PR 2: `de`, `it`, `pt`, `ru`). Recommended Model: **Gemini 4 Neon / Claude Opus 5.5**.
+
+---
+
+## Iteration 58: Pause checkpoint: waiting for the Nano 4 phone (2026-11-23)
+
+- **Date**: 2026-11-23
+- **Branch / Base Commit**: `fm/enprive-readme-pause` atop `origin/main` HEAD `bb247b9`
+- **Models Used**: Gemini 4 Neon
+- **What Was Built / Changed** (docs only; zero app code, Gradle, or ARB changes):
+  - Rewrote [`README.md`](README.md) in warm, plain English (~10-12 year old reading level up front, technical map below) explaining who Enprive is for, what it does and will never do, how on-device-first hybrid AI + consent + redaction + quote verification + document fingerprints work, where things honestly stand, how to build and test it, a #BuildHybridAI 2026 judge file map, accessibility/languages, a "What this README does not promise" note, roadmap, contributing, and MIT license.
+  - Updated the `Current Project Snapshot` header in `journal.md` to reflect `origin/main` (`bb247b9`), the `paused for physical testing` state, the 28 November 2026 feature freeze, and the 30 November 2026 competition deadline without rewriting historical entries.
+- **What Is Merged on `main` (PRs #10 to #30 by theme)**:
+  - **DOCX extraction fix**: https://github.com/MI-TECHDLIN/enprive/pull/10 (hardened streaming `XmlPullParser` DOCX extraction on Android, fixing Harmony DOM parser failures).
+  - **Accessibility & intake fixes**: https://github.com/MI-TECHDLIN/enprive/pull/12 (app picker clear-button semantics and no Retry on permanently blocked URLs), https://github.com/MI-TECHDLIN/enprive/pull/13 (shared focusable `EnpriveTactilePressable` for tactile buttons and hero CTA).
+  - **Firebase App Check SDK alignment & enforcement**: https://github.com/MI-TECHDLIN/enprive/pull/14 (Firebase BoM `35.2.0`, build-type-isolated Debug vs Play Integrity providers, process-level `EnpriveApplication` init). App Check enforcement on `firebaseml.googleapis.com` was enabled on 2026-11-22 and re-tested on the emulator on 2026-11-23.
+  - **D5.3-D Phase 3c unified intake & draft-loss guard**: https://github.com/MI-TECHDLIN/enprive/pull/15 (migrated Home manual intake, sample fixtures, `ACTION_SEND` URL/text/documents, and `ACTION_PROCESS_TEXT` into `UnifiedPolicyIntakeSheet` + `PolicyIntakeCoordinator`, plus N1 warm-intent `ReviewExitGuardController`).
+  - **Deni voice & priority hand poses**: https://github.com/MI-TECHDLIN/enprive/pull/17 (evidence-grounded plain-language summary + consented `gemini-3.8-flash-tts` voice with offline Android TTS fallback), https://github.com/MI-TECHDLIN/enprive/pull/20 (5 priority intent hand poses with one-shot `DeniGesture`).
+  - **Android Application ID migration**: https://github.com/MI-TECHDLIN/enprive/pull/18 (migrated `applicationId` to `com.mitechdlin.enprive` while keeping Kotlin `namespace = "com.example.enprive"`, updated Firebase config, and verified signed release APK).
+  - **Direction A "Calm Evidence" UI rebuild**: https://github.com/MI-TECHDLIN/enprive/pull/19 (P0-P2 M3 Expressive rebuild from Deni's teal seed, evidence ring hero, segmented findings, Undo receipt delete, connected Settings controls, onboarding Option 1).
+  - **Two-way app-policy linking**: https://github.com/MI-TECHDLIN/enprive/pull/21 (D5.3-E strictly on-device Link / Change / Unlink installed apps from policy-first reviews).
+  - **Plain-language copy pass**: https://github.com/MI-TECHDLIN/enprive/pull/22 (rewrote developer terms across core screens and moved hashes/technical fields into collapsible `Advanced details`).
+  - **Mainline rebrand merges**: https://github.com/MI-TECHDLIN/enprive/pull/11, https://github.com/MI-TECHDLIN/enprive/pull/16, and https://github.com/MI-TECHDLIN/enprive/pull/23 (synced and landed `feature/m3-expressive-rebrand` onto `main`).
+  - **Offline illustrated Learn lessons 1-8**: https://github.com/MI-TECHDLIN/enprive/pull/24 (`3 tips` label fix), https://github.com/MI-TECHDLIN/enprive/pull/25 (L3/L4 diagrams), https://github.com/MI-TECHDLIN/enprive/pull/26 (Phase 2 diagrams), https://github.com/MI-TECHDLIN/enprive/pull/27 (full-screen offline Lessons 1-4 + offline TTS), https://github.com/MI-TECHDLIN/enprive/pull/28 (Lessons 5-8 wired + em dash cleanup), https://github.com/MI-TECHDLIN/enprive/pull/29 (collision-free flex layout fix for Lessons 5-8 diagrams).
+  - **Translations Stage 1 (`ar`, `es`, `fr`, `hi`)**: https://github.com/MI-TECHDLIN/enprive/pull/30 (12-locale glossary, `tool/l10n_status.py`, Settings AI-draft notice, and 548/548 keys for `ar`, `es`, `fr`, `hi`).
+- **What Is Verified and Where (Emulator Only)**:
+  - Automated checks on `main` (`bb247b9`): `flutter analyze` **0 issues**, `flutter test` **391 / 391 passing**, Android JVM unit tests **75 / 75 passing**, signed arm64 release APK verified with `apksigner` (Iteration 50).
+  - Live runtime checks across PRs #10-#30 were executed on the **Android 16 emulator (`emulator-5554` / `Pixel_9` AVD) only**, not on physical hardware.
+  - Enforced App Check debug token minting (`enprive-appcheck-rerun`, 2026-11-23 on `emulator-5554`) obtained limited-use tokens with `0` HTTP 403 / `App attestation failed` errors and `0` crashes/ANRs.
+- **What Is Open and Why**:
+  - **Gemini Nano 4 proof & all real-device checks**: paused waiting for a Gemini Nano 4 capable phone (real `ONLY_ON_DEVICE` Nano 4 execution, signed release Play Integrity attestation, live TalkBack/Switch Access, audio auditioning, SAF/DOCX/Quick Settings physical walkthroughs).
+  - **Live cloud model success unproven on free tier**: on 2026-11-23 (`enprive-appcheck-rerun`), consented `gemini-3.8-flash` calls returned upstream HTTP 503 ("high demand") and `gemini-3.8-flash-tts` calls timed out past the 45s budget on the Spark plan, falling back honestly to the local clause scan and offline device TTS.
+  - **Translations Stages 2 & 3 + hardcoded-string cleanup**: Stage 2 (`de`, `it`, `pt`, `ru`), Stage 3 (`ja`, `ko`, `zh`), and hardcoded-string cleanup are held on separate work branches / draft PRs outside `main` (on `main`, those 7 locales remain at 142/548 keys). Native-speaker review of AI-drafted locales is still needed.
+  - **Hackathon quota request & billing decision**: pending owner decision / #BuildHybridAI quota support so live cloud summary and expressive voice can succeed reliably during demo recording.
+- **Known Issues**:
+  - Upstream Spark free-tier capacity limits (`503` high demand on `gemini-3.8-flash`; >45s stream timeouts on `gemini-3.8-flash-tts`).
+  - Occasional 10s `APIController: HeaderProvided` App Check token exchange timeout on slow emulator networks (observed on attempt 2 of the 2026-11-23 enforced re-run).
+  - Cold debug launch briefly shows the system theme until saved `ThemeMode` finishes loading asynchronously (`_initializeDeviceAndIntent`).
+  - 7 secondary locales (`de`, `it`, `pt`, `ru`, `ja`, `ko`, `zh`) still carry 406 untranslated keys on `main`, and Stage 1 AI drafts (`ar`, `es`, `fr`, `hi`) await native-speaker review.
+  - No GitHub Actions CI workflow is configured yet; all checks run locally.
+- **How to Resume Checklist**:
+  1. Connect the Gemini Nano 4 capable Android phone and verify `adb devices -l` plus AICore / Gemini Nano 4 readiness.
+  2. Register the phone's App Check debug token in Firebase Console (`Security -> App Check -> Apps -> Manage debug tokens`; never commit tokens to VCS).
+  3. Build and install the signed release build (`com.mitechdlin.enprive`) and verify live Play Integrity App Check attestation.
+  4. Run full physical-device acceptance checks: on-device Gemini Nano 4 review, consented cloud summary + expressive voice (once quota/billing is confirmed), DOCX/PDF/TXT/URL/share intake, Quick Settings Companion, two-way linking, TalkBack, Switch Access, 200% text scaling, reduced motion, and RTL.
+  5. Finish and merge translation Stages 2 and 3 plus hardcoded-string cleanup, and fold in native-speaker edits before the **28 November 2026** feature freeze.
+  6. Record the final #BuildHybridAI 2026 demo video on physical hardware and submit before **30 November 2026, 2:00 PM PT**.
+- **Verification**:
+  - `flutter analyze`: **0 issues** (verified on `fm/enprive-readme-pause`).
+  - `README.md` relative file links: all verified present in the repository; zero em dashes in `README.md` and Iteration 58; zero secret-like patterns in diff.
+- **Next Immediate Action & Recommended Model**:
+  - Hold development paused until the owner confirms the Gemini Nano 4 phone is connected, then execute the **How to Resume** checklist. Recommended Model on resume: **Gemini 4 Argon / Claude Opus 5.5**.
 
 ---
 
