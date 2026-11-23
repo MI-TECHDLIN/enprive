@@ -1961,6 +1961,34 @@
 
 ---
 
+## Iteration 57: D5.3-F Stage 1 (PR 1) - 12-Locale Glossary, Audit Tooling, Settings Draft Note, and ar/es/fr/hi Translations (2026-11-23)
+
+- **Branch / Commit State**: `fm/enprive-d53f-l10n` atop `origin/main` HEAD `5fafa43`; direct PR into `main`. Model: **Gemini 4 Neon**.
+- **Skills Used**: `flutter-setup-localization`, `dart-run-static-analysis`, `flutter-add-widget-test`.
+- **What Was Built & Modified**:
+  1. **Step 0 Glossary & Tooling (`docs/l10n_glossary.md`, `tool/l10n_status.py`)**:
+     - Authored a 12-locale terminology, register, punctuation, and CLDR plural glossary anchored to the 142 previously translated keys in each secondary ARB.
+     - Added stdlib-only `tool/l10n_status.py` reporting missing/extra keys, placeholder mismatches, CLDR plural validity, em dashes, identical-to-English strings, and length outliers, plus `--write-untranslated` and `--changed-since <git-ref>` for cheap pre-freeze delta passes.
+  2. **Honest AI-Translation Draft Note (`lib/l10n/app_en.arb`, `lib/screens/settings_screen.dart`)**:
+     - Added one new English key `translationDraftNotice` and rendered it calmly in the Language `ListTile` subtitle using existing Settings `bodySmall` styling (no other UI changes).
+  3. **Stage 1 Locales (`lib/l10n/app_ar.arb`, `app_es.arb`, `app_fr.arb`, `app_hi.arb`, generated `app_localizations*.dart`, `untranslated_messages.json`)**:
+     - Translated all 406 missing keys per locale (548/548 keys complete in `ar`, `es`, `fr`, `hi`), including all Learn L1-L8 lessons, plain-language copy, two-way linking, consent disclosures, and Deni voice strings. Preserved all 142 legacy keys, exact ICU placeholders, CLDR plurals (6 forms in `ar`), product names (`Enprive`, `Deni`, `App ID`), and zero em dashes.
+  4. **Tests (`test/l10n_completeness_test.dart`, `test/m3e_custom_cards_test.dart`)**:
+     - Added ARB integrity and completeness tests asserting zero em dashes across all 12 ARBs, identical placeholder sets, no extra keys, 100% English key coverage for completed locales (`ar`, `es`, `fr`, `hi`), and Settings draft-note rendering in EN and Arabic RTL at 200% text scale.
+     - Updated `test/m3e_custom_cards_test.dart` Arabic RTL `EnpriveReceiptCard` test to assert `lookupAppLocalizations(const Locale('ar')).quotesVerifiedCount(1)` instead of the old untranslated English fallback.
+- **Challenges & Root-Cause Fixes**:
+  - Back-translation & self-review caught 4 polish fixes prior to shipping: Arabic masculine/feminine agreement in `permissionComparisonMismatchNote` (`many`/`other`), French `tu`/`vous` register consistency in Lesson 8 (`Stop, Réfléchir, Partager`), French parity for `hideStreamedThoughts`, and Hindi `btnUnlinkApp` (`ऐप लिंक हटाएँ` instead of `ऐप हटाएँ` to avoid confusion with uninstalling).
+  - Shared `emulator-5554` had a concurrent install at 17:42; re-installed our debug APK cleanly with `lastUpdateTime` verification (`MATCH: True`) before capturing final Arabic, Hindi, and French 200% screens.
+- **Verification Status** (`emulator-5554` Pixel_9 AVD only, not physical device; 0 cloud calls):
+  - `python3 tool/l10n_status.py --locales ar,es,fr,hi --strict`: 548/548 keys, 0 missing, 0 placeholder mismatches, 0 plural errors, 0 em dashes.
+  - `flutter gen-l10n` & `flutter analyze`: **0 issues**.
+  - Full `flutter test`: **391 / 391 passed**.
+  - `flutter build apk --debug --target-platform android-arm64`: succeeded.
+  - Visual QA PNGs saved in `/Users/mi-tech/firstmate/data/enprive-d53f-l10n/` and inspected: all 6 Arabic RTL screens (Home, Settings, Learn home, Lesson 1, Consent sheet, Review result), all 6 Hindi screens, and French 200% Home + Settings (0 crashes across 13,144 log lines; zero text clipping or overflow).
+- **Next Immediate Action & Recommended Model**: Open PR 1 into `main`, then proceed to Stage 2 (PR 2: `de`, `it`, `pt`, `ru`). Recommended Model: **Gemini 4 Neon / Claude Opus 5.5**.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **D5.3 Core Flow Streamlining (D5.3-B+) & D5.4 Offline Learn MVP**

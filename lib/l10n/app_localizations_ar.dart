@@ -30,14 +30,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get stateReviewRecommendedSubtitle =>
-      'One or more policy parts or phone permissions need a closer look.';
+      'يحتاج جزء أو أكثر من السياسة أو أذونات الهاتف إلى نظرة أدق.';
 
   @override
   String get stateInsufficientEvidence => 'أدلة غير كافية';
 
   @override
   String get stateInsufficientEvidenceSubtitle =>
-      'We need more privacy policy text before we can check what this app does.';
+      'نحتاج إلى مزيد من نص سياسة الخصوصية قبل أن نتمكن من فحص ما يفعله هذا التطبيق.';
 
   @override
   String get chipOnDevice => 'على هذا الجهاز';
@@ -46,28 +46,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chipInCloud => 'في السحابة';
 
   @override
-  String get chipLocationUnavailable => 'Source not available';
+  String get chipLocationUnavailable => 'المصدر غير متاح';
 
   @override
-  String get chipOfflineDeterministic => 'Checked offline on this phone';
+  String get chipOfflineDeterministic => 'تم الفحص دون إنترنت على هذا الهاتف';
 
   @override
-  String get chipUnknown => 'Source unknown';
+  String get chipUnknown => 'المصدر غير معروف';
 
   @override
-  String get statusSourceMatched => 'Matched in policy';
+  String get statusSourceMatched => 'مطابق في السياسة';
 
   @override
-  String get statusDeviceObserved => 'Seen on this phone';
+  String get statusDeviceObserved => 'مرصود على هذا الهاتف';
 
   @override
-  String get statusInterpretation => 'Deni\'s explanation';
+  String get statusInterpretation => 'شرح Deni';
 
   @override
-  String get statusUnverified => 'Not found in policy';
+  String get statusUnverified => 'غير موجود في السياسة';
 
   @override
-  String get statusStale => 'Older check';
+  String get statusStale => 'فحص قديم';
 
   @override
   String get btnCheckApp => 'فحص تطبيق';
@@ -105,11 +105,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cloudConsentDisclosure =>
-      'To check this in the cloud, Enprive will send only the text shown above (with personal details hidden) for this one request. Your apps and phone permissions will never be sent.';
+      'لفحص هذا النص في السحابة، سيرسل Enprive النص المعروض أعلاه فقط (بعد إخفاء التفاصيل الشخصية) لهذا الطلب الواحد. لن تُرسل تطبيقاتك ولا أذونات هاتفك أبدًا.';
 
   @override
   String get permissionLimitationNotice =>
-      'Your phone shows whether this permission is allowed. It does not prove whether the app actually accessed or sent data.';
+      'يعرض هاتفك ما إذا كان هذا الإذن مسموحًا به أم لا. ولا يثبت ذلك ما إذا كان التطبيق قد وصل إلى البيانات أو أرسلها فعلًا.';
 
   @override
   String get navHome => 'الرئيسية';
@@ -169,7 +169,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get checkQuoteDesc =>
-      'Highlights data sharing, voice recording, and how long data is kept using exact quotes.';
+      'يبرز مشاركة البيانات والتسجيل الصوتي ومدة الاحتفاظ بالبيانات باستخدام اقتباسات دقيقة.';
 
   @override
   String get checkPermissionTitle => 'تعارض أذونات الهاتف';
@@ -193,8 +193,12 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count matched quotes',
-      one: '1 matched quote',
+      other: '$count اقتباس مطابق',
+      many: '$count اقتباسًا مطابقًا',
+      few: '$count اقتباسات مطابقة',
+      two: 'اقتباسان مطابقان',
+      one: 'اقتباس واحد مطابق',
+      zero: '0 اقتباسات مطابقة',
     );
     return '$_temp0';
   }
@@ -272,11 +276,11 @@ class AppLocalizationsAr extends AppLocalizations {
       'التطبيقات المثبتة على هذا الهاتف وأذوناتها لا تغادره أبدًا.';
 
   @override
-  String get readinessRow3Title => 'Personal details hidden';
+  String get readinessRow3Title => 'إخفاء التفاصيل الشخصية';
 
   @override
   String get readinessRow3Desc =>
-      'If you choose cloud help, names, emails, and phone numbers are hidden before anything is sent.';
+      'إذا اخترت المساعدة السحابية، تُخفى الأسماء وعناوين البريد الإلكتروني وأرقام الهاتف قبل إرسال أي شيء.';
 
   @override
   String get settingsTitle => 'الإعدادات';
@@ -289,7 +293,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get localScannerProtectedMsg =>
-      'Ready to check policies offline on this phone.';
+      'جاهز لفحص السياسات دون إنترنت على هذا الهاتف.';
 
   @override
   String get statusChecking => 'جارٍ التحقق…';
@@ -390,7 +394,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get geminiNanoReadyMsg =>
-      'On-device AI is ready on this phone. Reviews stay completely on your device.';
+      'الذكاء الاصطناعي على الجهاز جاهز على هذا الهاتف. تبقى المراجعات بالكامل على جهازك.';
 
   @override
   String get modelDownloadingMsg => 'جارٍ تنزيل النموذج الخاص في الخلفية.';
@@ -401,7 +405,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get localScannerDefaultMsg =>
-      'This phone checks policies offline on your device by default.';
+      'يفحص هذا الهاتف السياسات دون إنترنت على جهازك افتراضيًا.';
 
   @override
   String get preparingPrivateAnalysis => 'جارٍ تجهيز التحليل الخاص…';
@@ -410,7 +414,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onDeviceAiReadyTitle => 'الذكاء الاصطناعي المحلي جاهز';
 
   @override
-  String get localScannerActiveTitle => 'Offline check ready';
+  String get localScannerActiveTitle => 'الفحص دون إنترنت جاهز';
 
   @override
   String get privateAnalysisSheetSubtitle =>
@@ -426,7 +430,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get reviewingOnPhone => 'جارٍ المراجعة على هذا الهاتف…';
 
   @override
-  String get readingClausesInitial => 'Reading policy text on this phone…';
+  String get readingClausesInitial => 'جارٍ قراءة نص السياسة على هذا الهاتف…';
 
   @override
   String progressStepCounter(int current, int total) {
@@ -449,13 +453,13 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get thoughtSignaturePrefix => 'Check ID';
+  String get thoughtSignaturePrefix => 'معرّف الفحص';
 
   @override
-  String get viewStreamedThoughts => 'How Enprive checked this';
+  String get viewStreamedThoughts => 'كيف فحص Enprive هذا';
 
   @override
-  String get hideStreamedThoughts => 'Hide how Enprive checked this';
+  String get hideStreamedThoughts => 'إخفاء طريقة فحص Enprive';
 
   @override
   String get analysisTraceDefaultTitle => 'كيف تم التحقق من هذه المراجعة';
@@ -464,7 +468,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get savedToLocalReceiptsSnack => 'تم الحفظ في إيصالاتك المحلية.';
 
   @override
-  String get snapshotSheetTitle => 'Reviewed policy text';
+  String get snapshotSheetTitle => 'نص السياسة الذي تمت مراجعته';
 
   @override
   String get snapshotSourcePrefix => 'المصدر';
@@ -473,7 +477,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get snapshotReviewedPrefix => 'تاريخ المراجعة';
 
   @override
-  String get snapshotDigestPrefix => 'Document fingerprint';
+  String get snapshotDigestPrefix => 'بصمة المستند';
 
   @override
   String get statFindings => 'النتائج';
@@ -482,10 +486,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get statVerified => 'موثّقة';
 
   @override
-  String get statOsGranted => 'Allowed on phone';
+  String get statOsGranted => 'مسموح على الهاتف';
 
   @override
-  String get statUnverified => 'Not found';
+  String get statUnverified => 'غير موجود';
 
   @override
   String get keyFindingsTitle => 'أبرز النتائج';
@@ -497,19 +501,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get permissionsOnPhoneTitle => 'الأذونات على هذا الهاتف';
 
   @override
-  String get viewReviewedSnapshot => 'View reviewed policy text';
+  String get viewReviewedSnapshot => 'عرض نص السياسة الذي تمت مراجعته';
 
   @override
   String get btnSavedToReceipts => 'محفوظ في الإيصالات';
 
   @override
-  String get observedOnPhoneLabel => 'Seen on this phone';
+  String get observedOnPhoneLabel => 'مرصود على هذا الهاتف';
 
   @override
-  String get quoteVerifiedLabel => 'Exact quote from policy';
+  String get quoteVerifiedLabel => 'اقتباس دقيق من السياسة';
 
   @override
-  String get unverifiedClaimLabel => 'Not found in policy';
+  String get unverifiedClaimLabel => 'غير موجود في السياسة';
 
   @override
   String get categoryDataCollection => 'جمع البيانات';
@@ -533,7 +537,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get labelOnThisPhone => 'على هذا الهاتف';
 
   @override
-  String get labelWhatRemainsUnknown => 'What we still don\'t know';
+  String get labelWhatRemainsUnknown => 'ما الذي ما زلنا لا نعرفه';
 
   @override
   String get presetQuestionMeaning => 'ماذا يعني هذا لطفلي؟';
@@ -545,13 +549,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get presetQuestionUnknown => 'ما الذي لا يزال غير واضح هنا؟';
 
   @override
-  String get readingCitedClause => 'Reading the policy quote…';
+  String get readingCitedClause => 'جارٍ قراءة اقتباس السياسة…';
 
   @override
   String get deniAnswerTitle => 'إجابة ديني';
 
   @override
-  String get stepsAndReasoning => 'How Deni checked this';
+  String get stepsAndReasoning => 'كيف فحص Deni هذا';
 
   @override
   String get chooseReviewModeTitle => 'اختر طريقة مراجعة هذا النص';
@@ -587,32 +591,32 @@ class AppLocalizationsAr extends AppLocalizations {
       'لم يتم العثور على تطبيقات مطابقة على هذا الهاتف.';
 
   @override
-  String get sampleSyntheticBadge => 'Sample app';
+  String get sampleSyntheticBadge => 'تطبيق نموذجي';
 
   @override
-  String get permissionInspectionTitle => 'Phone permissions checked';
+  String get permissionInspectionTitle => 'تم فحص أذونات الهاتف';
 
   @override
   String get addAppPrivacyPolicyBtn => 'إضافة سياسة خصوصية هذا التطبيق';
 
   @override
-  String get snapshotDigestLabel => 'Document fingerprint';
+  String get snapshotDigestLabel => 'بصمة المستند';
 
   @override
   String get snapshotDigestExplanation =>
-      'A unique code that helps verify this is the exact text Enprive checked. If even one letter changes, this code changes too.';
+      'رمز فريد يساعد على التحقق من أن هذا هو النص نفسه الذي فحصه Enprive. إذا تغيّر حرف واحد فقط، يتغيّر هذا الرمز أيضًا.';
 
   @override
-  String get copyDigestBtn => 'Copy fingerprint';
+  String get copyDigestBtn => 'نسخ البصمة';
 
   @override
-  String get digestCopiedMsg => 'Document fingerprint copied';
+  String get digestCopiedMsg => 'تم نسخ بصمة المستند';
 
   @override
-  String get permissionGrantedBadge => 'Allowed on this phone';
+  String get permissionGrantedBadge => 'مسموح على هذا الهاتف';
 
   @override
-  String get permissionNotGrantedBadge => 'Not allowed';
+  String get permissionNotGrantedBadge => 'غير مسموح';
 
   @override
   String get checkingPolicyWithCloudAi =>
@@ -620,7 +624,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get preparingCloudAiStream =>
-      'Hiding personal details before cloud check…';
+      'جارٍ إخفاء التفاصيل الشخصية قبل الفحص السحابي…';
 
   @override
   String get cancellingAnalysis => 'جارٍ الإلغاء…';
@@ -634,226 +638,229 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cloudFallbackBannerTitle =>
-      'Cloud unavailable: checked on this phone';
+      'السحابة غير متاحة: تم الفحص على هذا الهاتف';
 
   @override
   String get cloudFallbackBannerBody =>
-      'Cloud analysis was unavailable, so Enprive checked this policy directly on your phone.';
+      'لم يكن التحليل السحابي متاحًا، لذلك فحص Enprive هذه السياسة مباشرة على هاتفك.';
 
   @override
-  String get appPickerFilterAll => 'All apps';
+  String get appPickerFilterAll => 'كل التطبيقات';
 
   @override
-  String get appPickerFilterDownloaded => 'Downloaded';
+  String get appPickerFilterDownloaded => 'المُنزَّلة';
 
   @override
-  String get appPickerFilterSystem => 'System';
+  String get appPickerFilterSystem => 'النظام';
 
   @override
-  String get appPickerRecentlyChecked => 'Recently checked';
+  String get appPickerRecentlyChecked => 'فُحصت مؤخرًا';
 
   @override
-  String get appPickerStatusPolicySaved => 'Policy review saved';
+  String get appPickerStatusPolicySaved => 'تم حفظ مراجعة السياسة';
 
   @override
-  String get appPickerStatusPermissionsInspected => 'Permissions checked';
+  String get appPickerStatusPermissionsInspected => 'تم فحص الأذونات';
 
   @override
-  String get appPickerStatusNotReviewed => 'Not reviewed';
+  String get appPickerStatusNotReviewed => 'لم تُراجع';
 
   @override
-  String get appPickerSearchHint => 'Search by app name or App ID…';
+  String get appPickerSearchHint => 'ابحث باسم التطبيق أو App ID…';
 
   @override
-  String get appPickerEmptyInstalledTitle => 'No installed apps available';
+  String get appPickerEmptyInstalledTitle => 'لا توجد تطبيقات مثبتة متاحة';
 
   @override
   String get appPickerEmptyInstalledBody =>
-      'We couldn\'t find any apps to check on this phone.';
+      'لم نتمكن من العثور على أي تطبيقات لفحصها على هذا الهاتف.';
 
   @override
-  String get intakeModeDocument => 'Document';
+  String get intakeModeDocument => 'مستند';
 
   @override
-  String get intakeActionInspectText => 'Check policy text';
+  String get intakeActionInspectText => 'فحص نص السياسة';
 
   @override
-  String get intakeActionFetchUrl => 'Open & check policy';
+  String get intakeActionFetchUrl => 'فتح السياسة وفحصها';
 
   @override
-  String get intakeActionChooseDocument => 'Choose PDF, TXT, or DOCX';
+  String get intakeActionChooseDocument => 'اختر ملف PDF أو TXT أو DOCX';
 
   @override
-  String get intakeActionReplaceDocument => 'Choose replacement document';
+  String get intakeActionReplaceDocument => 'اختر مستندًا بديلًا';
 
   @override
-  String get intakeWorkingLabel => 'Working…';
+  String get intakeWorkingLabel => 'جارٍ العمل…';
 
   @override
-  String get intakeCancelFetch => 'Cancel fetch';
+  String get intakeCancelFetch => 'إلغاء الجلب';
 
   @override
   String get intakeUrlHint => 'https://example.com/privacy-policy';
 
   @override
   String get intakeUrlDisclosure =>
-      'Loads this public web page directly. Adding a link here does not prove app ownership.';
+      'يفتح صفحة الويب العامة هذه مباشرة. إضافة رابط هنا لا تثبت ملكية التطبيق.';
 
   @override
   String get intakePasteLocalNote =>
-      'Checked locally on this phone first. Nothing is uploaded without your permission.';
+      'يُفحص محليًا على هذا الهاتف أولًا. لا يُرفع أي شيء دون إذنك.';
 
   @override
-  String get intakeDocumentCardTitle => 'Import PDF, TXT, or DOCX policy file';
+  String get intakeDocumentCardTitle => 'استيراد ملف سياسة PDF أو TXT أو DOCX';
 
   @override
   String get intakeDocumentCardBody =>
-      'We read the text right on your phone (up to 10 MB). Your file is never uploaded.';
+      'نقرأ النص مباشرة على هاتفك (حتى 10 MB). لا يُرفع ملفك أبدًا.';
 
   @override
-  String get intakeCompareWithAppPrompt =>
-      'Compare with an installed app (optional)';
+  String get intakeCompareWithAppPrompt => 'المقارنة مع تطبيق مثبت (اختياري)';
 
   @override
   String get intakeCompareWithAppHint =>
-      'Runs locally on this phone. App lists never leave your device.';
+      'يعمل محليًا على هذا الهاتف. قائمة تطبيقاتك لا تغادر جهازك أبدًا.';
 
   @override
-  String get intakeCompareWithAppChange => 'Change';
+  String get intakeCompareWithAppChange => 'تغيير';
 
   @override
-  String get intakeCompareWithAppRemove => 'Remove';
+  String get intakeCompareWithAppRemove => 'إزالة';
 
   @override
-  String get intakeLockedAppContextLabel => 'Selected app';
+  String get intakeLockedAppContextLabel => 'التطبيق المحدد';
 
   @override
-  String get intakeFindPolicyOnPlayStore => 'Find policy link on Play Store';
+  String get intakeFindPolicyOnPlayStore =>
+      'البحث عن رابط السياسة في Play Store';
 
   @override
   String get intakePlayStoreHelperNote =>
-      'Opens the Play Store so you can copy the app\'s privacy policy link. Enprive never copies it automatically or assumes the link is official.';
+      'يفتح Play Store حتى تتمكن من نسخ رابط سياسة خصوصية التطبيق. لا ينسخه Enprive تلقائيًا ولا يفترض أن الرابط رسمي.';
 
   @override
   String get intakePlayStoreUnavailable =>
-      'Could not open Google Play Store on this device. Paste the policy URL or text manually instead.';
+      'تعذّر فتح Google Play Store على هذا الجهاز. الصق رابط السياسة أو نصها يدويًا بدلًا من ذلك.';
 
   @override
-  String get intakeRecoverySwitchPaste => 'Paste text instead';
+  String get intakeRecoverySwitchPaste => 'لصق النص بدلًا من ذلك';
 
   @override
-  String get intakeRecoverySwitchDocument => 'Import document';
+  String get intakeRecoverySwitchDocument => 'استيراد مستند';
 
   @override
-  String get intakeRecoveryRetryUrl => 'Retry fetch';
+  String get intakeRecoveryRetryUrl => 'إعادة محاولة الجلب';
 
   @override
   String get intakeExpiredDocumentShareNotice =>
-      'The originally shared file link can no longer be reopened. Choose a replacement PDF, TXT, or DOCX file or paste the policy text manually.';
+      'لم يعد بالإمكان إعادة فتح رابط الملف المُشارك أصلًا. اختر ملف PDF أو TXT أو DOCX بديلًا أو الصق نص السياسة يدويًا.';
 
   @override
-  String get intakeAssociationWarningTitle => 'App-policy identity check';
+  String get intakeAssociationWarningTitle => 'فحص تطابق التطبيق والسياسة';
 
   @override
-  String get intakeAssociationContinueAnyway => 'Continue anyway';
+  String get intakeAssociationContinueAnyway => 'المتابعة على أي حال';
 
   @override
-  String get intakeAssociationChangeApp => 'Change selected app';
+  String get intakeAssociationChangeApp => 'تغيير التطبيق المحدد';
 
   @override
-  String get intakeAssociationInspectWithoutApp => 'Check policy without app';
+  String get intakeAssociationInspectWithoutApp => 'فحص السياسة دون تطبيق';
 
   @override
-  String get intakeModeSelectorSemanticLabel => 'Policy input method';
+  String get intakeModeSelectorSemanticLabel => 'طريقة إدخال السياسة';
 
   @override
-  String get tooltipClearSearch => 'Clear search';
+  String get tooltipClearSearch => 'مسح البحث';
 
   @override
-  String get intakeRecoveryEditUrl => 'Edit URL';
+  String get intakeRecoveryEditUrl => 'تعديل الرابط';
 
   @override
-  String get voiceSummaryTitle => 'Deni’s plain-language summary';
+  String get voiceSummaryTitle => 'ملخص Deni بلغة واضحة';
 
   @override
-  String get voiceSummaryPreparing => 'Preparing plain-language summary…';
+  String get voiceSummaryPreparing => 'جارٍ إعداد الملخص بلغة واضحة…';
 
   @override
-  String get voiceSynthesizingExpressive =>
-      'Preparing Deni’s expressive voice…';
+  String get voiceSynthesizingExpressive => 'جارٍ تجهيز صوت Deni التعبيري…';
 
   @override
-  String get voiceBtnListenOffline => 'Listen';
+  String get voiceBtnListenOffline => 'استمع';
 
   @override
-  String get voiceBtnStop => 'Stop';
+  String get voiceBtnStop => 'إيقاف';
 
   @override
-  String get voiceBtnExpressiveCloud => 'Expressive voice';
+  String get voiceBtnExpressiveCloud => 'صوت تعبيري';
 
   @override
-  String get voiceBtnSummarizeCloud => 'Summarize with Cloud AI';
+  String get voiceBtnSummarizeCloud => 'التلخيص بالذكاء الاصطناعي السحابي';
 
   @override
-  String get voiceBadgeExpressive => 'Expressive cloud voice';
+  String get voiceBadgeExpressive => 'صوت سحابي تعبيري';
 
   @override
-  String get voiceBadgeDeviceOffline => 'Phone voice · Offline';
+  String get voiceBadgeDeviceOffline => 'صوت الهاتف · دون إنترنت';
 
   @override
-  String get voiceViewSourceQuote => 'Source quote';
+  String get voiceViewSourceQuote => 'اقتباس المصدر';
 
   @override
-  String get voiceHideSourceQuote => 'Hide quote';
+  String get voiceHideSourceQuote => 'إخفاء الاقتباس';
 
   @override
-  String get voiceInspectFinding => 'Inspect finding';
+  String get voiceInspectFinding => 'فحص النتيجة';
 
   @override
-  String get voiceConsentTitle => 'Choose Deni’s voice';
+  String get voiceConsentTitle => 'اختر صوت Deni';
 
   @override
   String get voiceConsentDisclosure =>
-      'To read this summary aloud with Deni’s expressive cloud voice, Enprive will send only the summary text shown above (with personal details hidden) for this one request. Your apps and phone permissions are never sent.';
+      'لقراءة هذا الملخص بصوت عالٍ باستخدام صوت Deni السحابي التعبيري، سيرسل Enprive نص الملخص المعروض أعلاه فقط (بعد إخفاء التفاصيل الشخصية) لهذا الطلب الواحد. لن تُرسل تطبيقاتك ولا أذونات هاتفك أبدًا.';
 
   @override
-  String get voiceConsentPrimaryAction => 'Use expressive voice once';
+  String get voiceConsentPrimaryAction => 'استخدام الصوت التعبيري مرة واحدة';
 
   @override
-  String get voiceConsentSecondaryAction => 'Speak on this phone';
+  String get voiceConsentSecondaryAction => 'القراءة على هذا الهاتف';
 
   @override
-  String get voiceConsentPayloadLabel => 'Exact spoken script';
+  String get voiceConsentPayloadLabel => 'النص المنطوق بدقة';
 
   @override
-  String get voiceSummaryConsentTitle => 'Summarize findings with Cloud AI';
+  String get voiceSummaryConsentTitle =>
+      'تلخيص النتائج بالذكاء الاصطناعي السحابي';
 
   @override
   String get voiceSummaryConsentDisclosure =>
-      'To summarize these policy quotes in plain language in the cloud, Enprive will send only the text shown above (with personal details hidden) for this one request. Your apps and phone permissions are never sent.';
+      'لتلخيص اقتباسات السياسة هذه بلغة واضحة في السحابة، سيرسل Enprive النص المعروض أعلاه فقط (بعد إخفاء التفاصيل الشخصية) لهذا الطلب الواحد. لن تُرسل تطبيقاتك ولا أذونات هاتفك أبدًا.';
 
   @override
   String get voiceFallbackDeviceNotice =>
-      'Expressive cloud voice was unavailable: using this phone\'s offline voice instead.';
+      'الصوت السحابي التعبيري غير متاح: يتم استخدام صوت هذا الهاتف دون إنترنت بدلًا منه.';
 
   @override
   String get voiceUnavailableNotice =>
-      'Voice playback is unavailable for this language on this phone. You can read Deni’s summary above.';
+      'التشغيل الصوتي غير متاح لهذه اللغة على هذا الهاتف. يمكنك قراءة ملخص Deni أعلاه.';
 
   @override
-  String get voiceTooltipReadSummary =>
-      'Listen to Deni’s plain-language summary';
+  String get voiceTooltipReadSummary => 'الاستماع إلى ملخص Deni بلغة واضحة';
 
   @override
-  String get voiceTooltipStopReading => 'Stop reading aloud';
+  String get voiceTooltipStopReading => 'إيقاف القراءة الصوتية';
 
   @override
   String findingsCountUnit(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'findings',
-      one: 'finding',
+      other: 'نتيجة',
+      many: 'نتيجة',
+      few: 'نتائج',
+      two: 'نتيجتان',
+      one: 'نتيجة',
+      zero: 'نتائج',
     );
     return '$_temp0';
   }
@@ -863,9 +870,12 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count findings',
-      one: '1 finding',
-      zero: 'No findings',
+      other: '$count نتيجة',
+      many: '$count نتيجة',
+      few: '$count نتائج',
+      two: 'نتيجتان',
+      one: 'نتيجة واحدة',
+      zero: 'لا توجد نتائج',
     );
     return '$_temp0';
   }
@@ -875,8 +885,12 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count quotes verified in policy',
-      one: '1 quote verified in policy',
+      other: '$count اقتباس موثّق في السياسة',
+      many: '$count اقتباسًا موثّقًا في السياسة',
+      few: '$count اقتباسات موثّقة في السياسة',
+      two: 'اقتباسان موثّقان في السياسة',
+      one: 'اقتباس واحد موثّق في السياسة',
+      zero: '0 اقتباسات موثّقة في السياسة',
     );
     return '$_temp0';
   }
@@ -886,213 +900,222 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count observed on this phone',
-      one: '1 observed on this phone',
+      other: '$count عنصر مرصود على هذا الهاتف',
+      many: '$count عنصرًا مرصودًا على هذا الهاتف',
+      few: '$count عناصر مرصودة على هذا الهاتف',
+      two: 'عنصران مرصودان على هذا الهاتف',
+      one: 'عنصر واحد مرصود على هذا الهاتف',
+      zero: '0 مرصود على هذا الهاتف',
     );
     return '$_temp0';
   }
 
   @override
-  String get permissionAllowedOnPhone => 'Allowed on this phone';
+  String get permissionAllowedOnPhone => 'مسموح على هذا الهاتف';
 
   @override
-  String get permissionNotAllowedOnPhone => 'Not allowed';
+  String get permissionNotAllowedOnPhone => 'غير مسموح';
 
   @override
-  String get permissionAllowedInSample => 'Allowed in sample';
+  String get permissionAllowedInSample => 'مسموح في النموذج';
 
   @override
-  String get permissionNotAllowedInSample => 'Not allowed in sample';
+  String get permissionNotAllowedInSample => 'غير مسموح في النموذج';
 
   @override
-  String get permissionMismatchChip => 'Not in policy';
+  String get permissionMismatchChip => 'غير مذكور في السياسة';
 
   @override
-  String get howEnpriveCheckedThis => 'How Enprive checked this';
+  String get howEnpriveCheckedThis => 'كيف فحص Enprive هذا';
 
   @override
-  String get hideHowEnpriveChecked => 'Hide how Enprive checked this';
+  String get hideHowEnpriveChecked => 'إخفاء طريقة فحص Enprive';
 
   @override
-  String get consentWhatWouldBeSent => 'What would be sent';
+  String get consentWhatWouldBeSent => 'ما الذي سيُرسل';
 
   @override
   String get consentSentScope =>
-      'Only the text in the preview leaves this phone, for this one request.';
+      'يغادر هذا الهاتف النص المعروض في المعاينة فقط، لهذا الطلب الواحد.';
 
   @override
   String consentMaskedCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count personal details are hidden first.',
-      one: '1 personal detail is hidden first.',
-      zero: 'No personal details were found to hide.',
+      other: 'تم إخفاء $count تفصيل شخصي أولًا.',
+      many: 'تم إخفاء $count تفصيلًا شخصيًا أولًا.',
+      few: 'تم إخفاء $count تفاصيل شخصية أولًا.',
+      two: 'تم إخفاء تفصيلين شخصيين أولًا.',
+      one: 'تم إخفاء تفصيل شخصي واحد أولًا.',
+      zero: 'لم يُعثر على تفاصيل شخصية لإخفائها.',
     );
     return '$_temp0';
   }
 
   @override
   String get consentStaysOnPhone =>
-      'Your app list and phone permissions stay on this phone.';
+      'قائمة تطبيقاتك وأذونات هاتفك تبقى على هذا الهاتف.';
 
   @override
   String receiptDeletedSnack(String title) {
-    return 'Deleted $title';
+    return 'تم حذف $title';
   }
 
   @override
-  String get btnUndo => 'Undo';
+  String get btnUndo => 'تراجع';
 
   @override
-  String get readinessPromiseMaskedTitle => 'Personal details hidden';
+  String get readinessPromiseMaskedTitle => 'إخفاء التفاصيل الشخصية';
 
   @override
   String get readinessPromiseMaskedLine =>
-      'If you choose cloud, names, emails and numbers are hidden first.';
+      'إذا اخترت السحابة، تُخفى الأسماء وعناوين البريد والأرقام أولًا.';
 
   @override
   String findingDetailTitle(int index, int total) {
-    return 'Finding $index of $total';
+    return 'النتيجة $index من $total';
   }
 
   @override
-  String get findingReviewChip => 'Review';
+  String get findingReviewChip => 'مراجعة';
 
   @override
-  String get askDeniAboutThis => 'Ask Deni about this';
+  String get askDeniAboutThis => 'اسأل Deni عن هذا';
 
   @override
-  String get labelWhatPolicySays => 'What the policy says';
+  String get labelWhatPolicySays => 'ما تقوله السياسة';
 
   @override
-  String get labelWhatAndroidReports => 'What your phone shows';
+  String get labelWhatAndroidReports => 'ما يعرضه هاتفك';
 
   @override
-  String get sourceButtonTooltip => 'Reviewed source';
+  String get sourceButtonTooltip => 'المصدر الذي تمت مراجعته';
 
   @override
-  String get linkInstalledAppBtn => 'Link an installed app';
+  String get linkInstalledAppBtn => 'ربط تطبيق مثبت';
 
   @override
-  String get linkInstalledAppCardTitle => 'Compare with an app on this phone';
+  String get linkInstalledAppCardTitle => 'المقارنة مع تطبيق على هذا الهاتف';
 
   @override
   String get linkInstalledAppCardBody =>
-      'Pick an installed app to compare its phone permissions with this policy in the same review. Your app list stays on this phone.';
+      'اختر تطبيقًا مثبتًا لمقارنة أذوناته على الهاتف مع هذه السياسة في المراجعة نفسها. قائمة تطبيقاتك تبقى على هذا الهاتف.';
 
   @override
-  String get linkAppPickerTitle => 'Link an installed app';
+  String get linkAppPickerTitle => 'ربط تطبيق مثبت';
 
   @override
-  String get changeLinkedAppPickerTitle => 'Change linked app';
+  String get changeLinkedAppPickerTitle => 'تغيير التطبيق المرتبط';
 
   @override
   String get linkAppPickerSubtitle =>
-      'Pick an app on this phone to compare its permissions with this policy. Your app list never leaves this phone.';
+      'اختر تطبيقًا على هذا الهاتف لمقارنة أذوناته مع هذه السياسة. قائمة تطبيقاتك لا تغادر هذا الهاتف أبدًا.';
 
   @override
-  String get linkedAppCurrentlySelectedBadge => 'Linked';
+  String get linkedAppCurrentlySelectedBadge => 'مرتبط';
 
   @override
-  String get linkedAppSectionLabel => 'Linked app on this phone';
+  String get linkedAppSectionLabel => 'التطبيق المرتبط على هذا الهاتف';
 
   @override
-  String get btnChangeLinkedApp => 'Change app';
+  String get btnChangeLinkedApp => 'تغيير التطبيق';
 
   @override
-  String get btnUnlinkApp => 'Unlink app';
+  String get btnUnlinkApp => 'إلغاء الربط';
 
   @override
-  String get btnUpdatePrivacyPolicy => 'Attach updated privacy policy';
+  String get btnUpdatePrivacyPolicy => 'إرفاق سياسة خصوصية محدّثة';
 
   @override
   String linkedAppSnack(String appName) {
-    return 'Linked $appName. Permissions compared on this phone.';
+    return 'تم ربط $appName. تمت مقارنة الأذونات على هذا الهاتف.';
   }
 
   @override
   String linkedAppCheckMatchSnack(String appName) {
-    return 'Linked $appName. Check the app-policy match note below.';
+    return 'تم ربط $appName. راجع ملاحظة تطابق التطبيق والسياسة أدناه.';
   }
 
   @override
   String linkedAppUnchangedSnack(String appName) {
-    return '$appName is already linked with the same permissions.';
+    return 'التطبيق $appName مرتبط بالفعل بالأذونات نفسها.';
   }
 
   @override
   String unlinkedAppSnack(String appName) {
-    return 'Unlinked $appName. Showing the policy review only.';
+    return 'تم إلغاء ربط $appName. يتم عرض مراجعة السياسة فقط.';
   }
 
   @override
-  String get associationStatusPackageTitle => 'App ID found in this policy';
+  String get associationStatusPackageTitle =>
+      'تم العثور على App ID في هذه السياسة';
 
   @override
   String associationStatusPackageBody(String packageName, String appName) {
-    return 'This policy mentions $packageName. That suggests it may describe $appName, though text alone does not prove who owns this policy.';
+    return 'تذكر هذه السياسة $packageName. يشير ذلك إلى أنها قد تصف $appName، لكن النص وحده لا يثبت من يملك هذه السياسة.';
   }
 
   @override
-  String get associationStatusNameTitle => 'App name found in this policy';
+  String get associationStatusNameTitle =>
+      'تم العثور على اسم التطبيق في هذه السياسة';
 
   @override
   String associationStatusNameBody(String appName) {
-    return 'This policy mentions $appName. That suggests it may describe this app, though a name match does not prove who owns this policy.';
+    return 'تذكر هذه السياسة $appName. يشير ذلك إلى أنها قد تصف هذا التطبيق، لكن تطابق الاسم لا يثبت من يملك هذه السياسة.';
   }
 
   @override
-  String get associationStatusUnverifiedTitle => 'Linked by you for comparison';
+  String get associationStatusUnverifiedTitle => 'ربطته أنت للمقارنة';
 
   @override
   String associationStatusUnverifiedBody(String appName) {
-    return 'This policy does not name $appName or its app ID. Double-check that it is the right policy: linking it here does not prove ownership.';
+    return 'لا تذكر هذه السياسة اسم $appName ولا App ID الخاص به. تحقق جيدًا من أنها السياسة الصحيحة: ربطها هنا لا يثبت الملكية.';
   }
 
   @override
   String associationStatusUnverifiedUrlHostBody(String appName) {
-    return 'The web address includes words from $appName, but the policy text itself does not name this app. Double-check that it is the right policy: linking it here does not prove ownership.';
+    return 'يتضمن عنوان الويب كلمات من $appName، لكن نص السياسة نفسه لا يذكر هذا التطبيق. تحقق جيدًا من أنها السياسة الصحيحة: ربطها هنا لا يثبت الملكية.';
   }
 
   @override
   String get associationStatusUnmatchedTitle =>
-      'This policy may be for a different app';
+      'قد تكون هذه السياسة لتطبيق مختلف';
 
   @override
   String associationStatusUnmatchedBody(String appName, String otherApps) {
-    return 'This policy does not mention $appName. Instead, it names $otherApps. Check that you linked the right app or opened the right policy.';
+    return 'لا تذكر هذه السياسة $appName. بل تذكر بدلًا منه $otherApps. تحقق من أنك ربطت التطبيق الصحيح أو فتحت السياسة الصحيحة.';
   }
 
   @override
   String get associationStatusAmbiguousConflictTitle =>
-      'This policy mentions more than one app';
+      'تذكر هذه السياسة أكثر من تطبيق';
 
   @override
   String associationStatusAmbiguousConflictBody(
     String appName,
     String otherApps,
   ) {
-    return 'This policy mentions $appName alongside $otherApps. It may cover several apps or a shared company policy, so check that it applies here.';
+    return 'تذكر هذه السياسة $appName إلى جانب $otherApps. قد تغطي عدة تطبيقات أو تكون سياسة مشتركة للشركة، لذا تحقق من أنها تنطبق هنا.';
   }
 
   @override
   String get associationStatusAmbiguousPeerTitle =>
-      'More than one app on this phone has a similar name';
+      'أكثر من تطبيق على هذا الهاتف له اسم مشابه';
 
   @override
   String associationStatusAmbiguousPeerBody(String appName, String otherApps) {
-    return 'This policy mentions $appName without listing one exact app ID, and other apps on your phone ($otherApps) have a similar name. Make sure you linked the right one.';
+    return 'تذكر هذه السياسة $appName دون إدراج App ID واحد دقيق، وتوجد تطبيقات أخرى على هاتفك ($otherApps) تحمل اسمًا مشابهًا. تأكد من أنك ربطت التطبيق الصحيح.';
   }
 
   @override
   String associationStatusAmbiguousGenericBody(String appName) {
-    return 'This policy could refer to more than one app. Double-check that it applies to $appName.';
+    return 'قد تشير هذه السياسة إلى أكثر من تطبيق. تحقق جيدًا من أنها تنطبق على $appName.';
   }
 
   @override
   String get associationOwnershipLimitation =>
-      'Text and web links never prove who published or owns a policy.';
+      'لا تثبت النصوص ولا روابط الويب أبدًا من نشر السياسة أو من يملكها.';
 
   @override
   String permissionComparisonMismatchNote(int count) {
@@ -1100,29 +1123,35 @@ class AppLocalizationsAr extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count permissions on this phone are not clearly mentioned in this policy. A mismatch is a prompt to look closer, not proof of wrongdoing.',
-      one: '1 permission on this phone is not clearly mentioned in this policy. A mismatch is a prompt to look closer, not proof of wrongdoing.',
+          '$count إذن على هذا الهاتف غير مذكور بوضوح في هذه السياسة. هذا التعارض دعوة للنظر عن قرب، وليس دليلًا على مخالفة.',
+      many:
+          '$count إذنًا على هذا الهاتف غير مذكور بوضوح في هذه السياسة. هذا التعارض دعوة للنظر عن قرب، وليس دليلًا على مخالفة.',
+      few:
+          '$count أذونات على هذا الهاتف غير مذكورة بوضوح في هذه السياسة. هذا التعارض دعوة للنظر عن قرب، وليس دليلًا على مخالفة.',
+      two: 'إذنان على هذا الهاتف غير مذكورين بوضوح في هذه السياسة. هذا التعارض دعوة للنظر عن قرب، وليس دليلًا على مخالفة.',
+      one: 'إذن واحد على هذا الهاتف غير مذكور بوضوح في هذه السياسة. هذا التعارض دعوة للنظر عن قرب، وليس دليلًا على مخالفة.',
+      zero: 'لا توجد أذونات غير مذكورة في هذه السياسة.',
     );
     return '$_temp0';
   }
 
   @override
   String get permissionComparisonNoMismatchNote =>
-      'None of the checked permissions on this phone contradict this policy. Permissions alone cannot show what an app actually sends.';
+      'لا يتعارض أي من الأذونات المفحوصة على هذا الهاتف مع هذه السياسة. ولا يمكن للأذونات وحدها أن تُظهر ما يرسله التطبيق فعلًا.';
 
   @override
   String get permissionComparisonLimitationNote =>
-      'Your phone shows permission settings on this phone only. This comparison is a prompt to look closer, never proof of wrongdoing or that data was sent.';
+      'يعرض هاتفك إعدادات الأذونات على هذا الهاتف فقط. هذه المقارنة دعوة للنظر عن قرب، وليست أبدًا دليلًا على مخالفة أو على إرسال بيانات.';
 
   @override
-  String get permissionNotRequestedOnPhone => 'Not requested by app';
+  String get permissionNotRequestedOnPhone => 'لم يطلبه التطبيق';
 
   @override
-  String get permissionNotRequestedInSample => 'Not requested in sample';
+  String get permissionNotRequestedInSample => 'غير مطلوب في النموذج';
 
   @override
   String get permissionsEmptyComparisonTitle =>
-      'No sensitive permissions matched in this check';
+      'لم تُطابق أي أذونات حساسة في هذا الفحص';
 
   @override
   String permissionsEmptyComparisonBody(
@@ -1130,437 +1159,437 @@ class AppLocalizationsAr extends AppLocalizations {
     int grantedCount,
     String appName,
   ) {
-    return 'Your phone lists $requestedCount permissions ($grantedCount allowed) for $appName, with none in the sensitive categories checked here (location, camera, microphone, contacts, photos, or ad ID).';
+    return 'يعرض هاتفك $requestedCount أذونات ($grantedCount مسموح بها) للتطبيق $appName، دون أي إذن ضمن الفئات الحساسة المفحوصة هنا (الموقع أو الكاميرا أو الميكروفون أو جهات الاتصال أو الصور أو معرّف الإعلانات).';
   }
 
   @override
-  String get sourceDeviceInspection => 'Checked on this phone';
+  String get sourceDeviceInspection => 'تم الفحص على هذا الهاتف';
 
   @override
   String get appIdPrefix => 'App ID';
 
   @override
-  String get advancedDetailsTitle => 'Advanced details';
+  String get advancedDetailsTitle => 'تفاصيل متقدمة';
 
   @override
   String get advancedDetailsSubtitle =>
-      'Technical details that verify when and where this policy text was checked.';
+      'تفاصيل تقنية تتحقق من وقت ومكان فحص نص هذه السياسة.';
 
   @override
-  String get sourceSectionTitle => 'Where this policy came from';
+  String get sourceSectionTitle => 'من أين جاءت هذه السياسة';
 
   @override
-  String get cloudPayloadLabel => 'Exact text to be sent';
+  String get cloudPayloadLabel => 'النص الدقيق الذي سيُرسل';
 
   @override
-  String get cloudPayloadNoPiiLabel => 'No personal details found';
+  String get cloudPayloadNoPiiLabel => 'لم يُعثر على تفاصيل شخصية';
 
   @override
   String cloudPayloadHiddenCount(int count) {
-    return 'Hidden ($count)';
+    return 'مخفي ($count)';
   }
 
   @override
-  String get summarySourceOnDevice => 'Summarized on this phone';
+  String get summarySourceOnDevice => 'ملخّص على هذا الهاتف';
 
   @override
-  String get summarySourceInCloud => 'Summarized in the cloud';
+  String get summarySourceInCloud => 'ملخّص في السحابة';
 
   @override
-  String get summarySourceOffline => 'Summarized offline on this phone';
+  String get summarySourceOffline => 'ملخّص دون إنترنت على هذا الهاتف';
 
   @override
-  String get summarySourceUnknown => 'Summary source unknown';
+  String get summarySourceUnknown => 'مصدر الملخص غير معروف';
 
   @override
-  String get notFromPolicySuffix => 'From your phone settings, not the policy';
+  String get notFromPolicySuffix => 'من إعدادات هاتفك، وليس من السياسة';
 
   @override
-  String get sampleNotFromPolicySuffix => 'Example only, not from the policy';
+  String get sampleNotFromPolicySuffix => 'مثال فقط، وليس من السياسة';
 
   @override
-  String get learnHeaderSubtitle => 'Offline privacy guides & diagrams';
+  String get learnHeaderSubtitle => 'أدلة خصوصية ورسوم توضيحية دون إنترنت';
 
   @override
-  String get learnFilterAll => 'All topics';
+  String get learnFilterAll => 'كل المواضيع';
 
   @override
-  String get learnFilterPolicies => 'Policies';
+  String get learnFilterPolicies => 'السياسات';
 
   @override
-  String get learnFilterPermissions => 'Permissions';
+  String get learnFilterPermissions => 'الأذونات';
 
   @override
-  String get learnFilterSharing => 'Sharing';
+  String get learnFilterSharing => 'المشاركة';
 
   @override
-  String get learnFilterEvidence => 'Evidence';
+  String get learnFilterEvidence => 'الأدلة';
 
   @override
   String learnLessonStepCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count steps',
-      one: '1 step',
+      other: '$count خطوة',
+      many: '$count خطوة',
+      few: '$count خطوات',
+      two: 'خطوتان',
+      one: 'خطوة واحدة',
+      zero: '0 خطوات',
     );
     return '$_temp0';
   }
 
   @override
-  String get learnDeckTitle => 'Practice privacy habits locally';
+  String get learnDeckTitle => 'تدرّب على عادات الخصوصية محليًا';
 
   @override
   String get learnDeckBody =>
-      '100% offline lessons with diagrams. Your installed apps and receipts never enter Learn.';
+      'دروس دون إنترنت بالكامل مع رسوم توضيحية. لا تدخل تطبيقاتك المثبتة ولا إيصالاتك أبدًا إلى قسم تعلّم.';
 
   @override
-  String get learnDeckCheckBtn => 'Apply it · Check an app';
+  String get learnDeckCheckBtn => 'طبّق ذلك · فحص تطبيق';
 
   @override
-  String get learnCheckAppBridgeBtn => 'Check an app on this phone';
+  String get learnCheckAppBridgeBtn => 'فحص تطبيق على هذا الهاتف';
 
   @override
-  String get learnSectionDiagram => 'How it works';
+  String get learnSectionDiagram => 'كيف يعمل ذلك';
 
   @override
-  String get learnSectionSteps => 'Key steps';
+  String get learnSectionSteps => 'الخطوات الأساسية';
 
   @override
-  String get learnSectionQuickCheck => 'Quick check';
+  String get learnSectionQuickCheck => 'اختبار سريع';
 
   @override
-  String get learnTooltipListenLesson => 'Read this lesson aloud offline';
+  String get learnTooltipListenLesson => 'قراءة هذا الدرس بصوت عالٍ دون إنترنت';
 
   @override
-  String get learnTooltipStopLesson => 'Stop reading lesson aloud';
+  String get learnTooltipStopLesson => 'إيقاف القراءة الصوتية للدرس';
 
   @override
   String get learnVoiceUnavailableNotice =>
-      'Offline voice playback is not available for this language on this phone. You can read the lesson below.';
+      'التشغيل الصوتي دون إنترنت غير متاح لهذه اللغة على هذا الهاتف. يمكنك قراءة الدرس أدناه.';
 
   @override
-  String get learnQuickCheckCorrectBadge => 'Right answer';
+  String get learnQuickCheckCorrectBadge => 'إجابة صحيحة';
 
   @override
-  String get learnQuickCheckTryAgainBadge => 'Try another choice';
+  String get learnQuickCheckTryAgainBadge => 'جرّب خيارًا آخر';
 
   @override
   String learnLessonProgress(int current, int total) {
-    return 'Lesson $current of $total';
+    return 'الدرس $current من $total';
   }
 
   @override
-  String get learnBackTooltip => 'Back to Learn';
+  String get learnBackTooltip => 'العودة إلى تعلّم';
 
   @override
-  String get learnPreviousLesson => 'Previous';
+  String get learnPreviousLesson => 'السابق';
 
   @override
-  String get learnNextLesson => 'Next';
+  String get learnNextLesson => 'التالي';
 
   @override
   String learnLessonNavPreviousSemantic(String title) {
-    return 'Previous lesson: $title';
+    return 'الدرس السابق: $title';
   }
 
   @override
   String learnLessonNavNextSemantic(String title) {
-    return 'Next lesson: $title';
+    return 'الدرس التالي: $title';
   }
 
   @override
-  String get learnPolicyFolderTitle => 'Privacy policies';
+  String get learnPolicyFolderTitle => 'سياسات الخصوصية';
 
   @override
-  String get learnPolicyTitle =>
-      'What a privacy policy is (and what it can\'t prove)';
+  String get learnPolicyTitle => 'ما هي سياسة الخصوصية (وما لا يمكنها إثباته)';
 
   @override
   String get learnPolicySubtitle =>
-      'What developers promise vs. what stays unknown';
+      'ما يعد به المطورون مقابل ما يبقى غير معروف';
 
   @override
   String get learnPolicyIntro =>
-      'A privacy policy is a developer\'s public statement explaining what data an app says it collects, why it uses it, who may receive it, and what choices families have.';
+      'سياسة الخصوصية هي بيان عام من المطور يوضح البيانات التي يقول التطبيق إنه يجمعها، ولماذا يستخدمها، ومن قد يتلقاها، وما الخيارات المتاحة للعائلات.';
 
   @override
   String get learnPolicyStep1 =>
-      'Look for four basics: what data is collected, why the app needs it, who else may get it, and how you can ask for deletion.';
+      'ابحث عن أربعة أساسيات: ما البيانات التي تُجمع، ولماذا يحتاجها التطبيق، ومن غيره قد يحصل عليها، وكيف يمكنك طلب الحذف.';
 
   @override
   String get learnPolicyStep2 =>
-      'Confusing wording is common. A 2026 study of children\'s learning apps found that very few policies were easy to read, and most apps did not fully match what their policies stated.';
+      'الصياغة المربكة شائعة. وجدت دراسة أُجريت عام 2026 حول تطبيقات تعلم الأطفال أن قلة قليلة من السياسات كانت سهلة القراءة، وأن معظم التطبيقات لم تتطابق بالكامل مع ما ذكرته سياساتها.';
 
   @override
   String get learnPolicyStep3 =>
-      'A privacy policy only shows what a developer says on paper. Reading it cannot prove what the app actually sends over the internet.';
+      'تُظهر سياسة الخصوصية فقط ما يقوله المطور على الورق. قراءتها لا تثبت ما يرسله التطبيق فعلًا عبر الإنترنت.';
 
   @override
   String get learnPolicyStep4 =>
-      'Comparing a policy with your phone\'s permission settings gives a clearer view, while remembering that Enprive cannot see live internet traffic.';
+      'مقارنة السياسة بإعدادات أذونات هاتفك تمنحك صورة أوضح، مع تذكر أن Enprive لا يستطيع رؤية حركة الإنترنت المباشرة.';
 
   @override
   String get learnPolicyQuickQuestion =>
-      'What does reading an app\'s privacy policy prove?';
+      'ما الذي تثبته قراءة سياسة خصوصية تطبيق ما؟';
 
   @override
   String get learnPolicyQuickOption1 =>
-      'That the app never sends data to anyone';
+      'أن التطبيق لا يرسل البيانات إلى أي جهة أبدًا';
 
   @override
   String get learnPolicyQuickOption2 =>
-      'What the developer says: not what the app actually sends';
+      'ما يقوله المطور: وليس ما يرسله التطبيق فعلًا';
 
   @override
-  String get learnPolicyQuickOption3 =>
-      'That the phone\'s camera and mic are switched off';
+  String get learnPolicyQuickOption3 => 'أن كاميرا الهاتف وميكروفونه مغلقان';
 
   @override
   String get learnPolicyQuickCorrectFeedback =>
-      'That\'s right. A policy is the developer\'s public statement, not proof of what the app actually sends over the internet.';
+      'صحيح. السياسة هي بيان عام من المطور، وليست دليلًا على ما يرسله التطبيق فعلًا عبر الإنترنت.';
 
   @override
   String get learnPolicyQuickTryAgainFeedback =>
-      'Not quite. Reading a policy only tells you what the developer says: it cannot prove internet activity or turn off phone permissions.';
+      'ليس تمامًا. قراءة السياسة تخبرك فقط بما يقوله المطور: لا يمكنها إثبات نشاط الإنترنت ولا إيقاف أذونات الهاتف.';
 
   @override
-  String get learnDiagramPolicySaysTitle => 'Policy says';
+  String get learnDiagramPolicySaysTitle => 'السياسة تقول';
 
   @override
-  String get learnDiagramPolicySaysBody => 'Developer\'s written promise';
+  String get learnDiagramPolicySaysBody => 'وعد المطور المكتوب';
 
   @override
-  String get learnDiagramPolicyQuoteSample =>
-      '\"We may share data with partners…\"';
+  String get learnDiagramPolicyQuoteSample => '\"قد نشارك البيانات مع شركاء…\"';
 
   @override
-  String get learnDiagramPhoneShowsTitle => 'Phone shows';
+  String get learnDiagramPhoneShowsTitle => 'الهاتف يعرض';
 
   @override
-  String get learnDiagramPhoneShowsBody => 'Permissions allowed here';
+  String get learnDiagramPhoneShowsBody => 'الأذونات المسموح بها هنا';
 
   @override
-  String get learnDiagramUnknownTitle => 'Still unknown';
+  String get learnDiagramUnknownTitle => 'لا يزال غير معروف';
 
   @override
   String get learnDiagramUnknownBody =>
-      'Live internet traffic Enprive can\'t see';
+      'حركة الإنترنت المباشرة التي لا يراها Enprive';
 
   @override
   String get learnDiagramPolicyCaption =>
-      'A policy is a promise, not proof of behavior';
+      'السياسة وعد مكتوب، وليست دليلًا على السلوك';
 
   @override
   String get learnDiagramPolicySemantic =>
-      'Diagram comparing three parts of app privacy. First, Policy says: the developer\'s written promise. Second, Phone shows: the permissions allowed on this phone. Third, inside a dashed boundary, Still unknown: live internet traffic that Enprive cannot see. A privacy policy is a promise, not proof of behavior.';
+      'رسم توضيحي يقارن بين ثلاثة أجزاء من خصوصية التطبيقات. أولًا، السياسة تقول: وعد المطور المكتوب. ثانيًا، الهاتف يعرض: الأذونات المسموح بها على هذا الهاتف. ثالثًا، داخل حدود متقطعة، لا يزال غير معروف: حركة الإنترنت المباشرة التي لا يستطيع Enprive رؤيتها. سياسة الخصوصية وعد، وليست دليلًا على السلوك.';
 
   @override
-  String get learnPermissionsFolderTitle => 'Phone permissions';
+  String get learnPermissionsFolderTitle => 'أذونات الهاتف';
 
   @override
-  String get learnPermissionsTitle => 'Android permissions explained';
+  String get learnPermissionsTitle => 'شرح أذونات Android';
 
   @override
-  String get learnPermissionsSubtitle =>
-      'The four Android choices & where to review them';
+  String get learnPermissionsSubtitle => 'خيارات Android الأربعة وأين تراجعها';
 
   @override
   String get learnPermissionsIntro =>
-      'Permissions are gates that control whether an app can reach sensors and data on your phone, such as the camera, microphone, location, photos, contacts, or notifications.';
+      'الأذونات هي بوابات تتحكم في ما إذا كان بإمكان التطبيق الوصول إلى الحساسات والبيانات على هاتفك، مثل الكاميرا والميكروفون والموقع والصور وجهات الاتصال والإشعارات.';
 
   @override
   String get learnPermissionsStep1 =>
-      'Ask whether the permission fits the feature: a math quiz or reading app rarely needs your location, contacts, or camera.';
+      'اسأل هل يتناسب الإذن مع الميزة: نادرًا ما يحتاج تطبيق اختبارات رياضيات أو قراءة إلى موقعك أو جهات اتصالك أو الكاميرا.';
 
   @override
   String get learnPermissionsStep2 =>
-      'Android offers up to four choices: Don\'t allow, Ask every time, Allow only while using the app, and All the time (for background location).';
+      'يوفر Android ما يصل إلى أربعة خيارات: عدم السماح، السؤال كل مرة، السماح فقط أثناء استخدام التطبيق، والسماح طوال الوقت (للموقع في الخلفية).';
 
   @override
   String get learnPermissionsStep3 =>
-      'Start with the narrowest choice that lets the feature work, such as Ask every time or While using the app.';
+      'ابدأ بالخيار الأضيق الذي يسمح للميزة بالعمل، مثل السؤال كل مرة أو أثناء استخدام التطبيق.';
 
   @override
   String get learnPermissionsStep4 =>
-      'Open Android Settings and check Privacy Dashboard to see which apps recently accessed Camera, Microphone, or Location.';
+      'افتح إعدادات Android وتفقد لوحة بيانات الخصوصية لمعرفة التطبيقات التي وصلت مؤخرًا إلى الكاميرا أو الميكروفون أو الموقع.';
 
   @override
   String get learnPermissionsStep5 =>
-      'Turn permissions off anytime in App Settings, or keep Pause app activity if unused on so Android removes old permissions automatically. An allowed permission shows capability, not proof that data was sent.';
+      'أوقف الأذونات في أي وقت من إعدادات التطبيق، أو أبقِ خيار إيقاف نشاط التطبيق مؤقتًا إذا لم يُستخدم مُفعّلًا ليزيل Android الأذونات القديمة تلقائيًا. الإذن المسموح يُظهر القدرة، وليس دليلًا على إرسال بيانات.';
 
   @override
   String get learnPermissionsQuickQuestion =>
-      'A math practice app asks for your camera and you aren\'t sure why. What is the best first step?';
+      'طلب تطبيق لتدريب الرياضيات إذن الكاميرا ولم تعرف السبب. ما أفضل خطوة أولى؟';
 
   @override
   String get learnPermissionsQuickOption1 =>
-      'Tap Don\'t allow and see if the math exercises still work';
+      'اضغط عدم السماح وتأكد هل ما زالت تمارين الرياضيات تعمل';
 
   @override
   String get learnPermissionsQuickOption2 =>
-      'Choose All the time so the popup doesn\'t come back';
+      'اختر طوال الوقت حتى لا تظهر النافذة مرة أخرى';
 
   @override
   String get learnPermissionsQuickOption3 =>
-      'Assume the app has already uploaded photos';
+      'افترض أن التطبيق رفع صورًا بالفعل';
 
   @override
   String get learnPermissionsQuickCorrectFeedback =>
-      'Right. Tapping Don\'t allow lets you check if the app works without the camera, and you can change permissions anytime in Android Settings.';
+      'صحيح. الضغط على عدم السماح يتيح لك التأكد مما إذا كان التطبيق يعمل دون الكاميرا، ويمكنك تغيير الأذونات في أي وقت من إعدادات Android.';
 
   @override
   String get learnPermissionsQuickTryAgainFeedback =>
-      'Try a narrower choice first. Tap Don\'t allow to test if the feature still works, and remember an allowed permission shows capability, not proof of an upload.';
+      'جرّب خيارًا أضيق أولًا. اضغط عدم السماح لتجربة ما إذا كانت الميزة لا تزال تعمل، وتذكر أن الإذن المسموح يُظهر القدرة، وليس دليلًا على رفع البيانات.';
 
   @override
-  String get learnDiagramPermLadderTitle => 'From narrowest to broadest access';
+  String get learnDiagramPermLadderTitle => 'من الأضيق إلى الأوسع وصولًا';
 
   @override
-  String get learnDiagramPermDenyTitle => 'Don\'t allow';
+  String get learnDiagramPermDenyTitle => 'عدم السماح';
 
   @override
   String get learnDiagramPermDenyDetail =>
-      'Blocked: app cannot use this sensor';
+      'محظور: لا يمكن للتطبيق استخدام هذا الحساس';
 
   @override
-  String get learnDiagramPermAskTitle => 'Ask every time';
+  String get learnDiagramPermAskTitle => 'السؤال كل مرة';
 
   @override
-  String get learnDiagramPermAskDetail => 'One-time access when you tap allow';
+  String get learnDiagramPermAskDetail =>
+      'وصول لمرة واحدة عند الضغط على السماح';
 
   @override
-  String get learnDiagramPermWhileUsingTitle => 'While using the app';
+  String get learnDiagramPermWhileUsingTitle => 'أثناء استخدام التطبيق';
 
   @override
   String get learnDiagramPermWhileUsingDetail =>
-      'Only while the app is open on screen';
+      'فقط بينما التطبيق مفتوح على الشاشة';
 
   @override
-  String get learnDiagramPermAllTimeTitle => 'All the time';
+  String get learnDiagramPermAllTimeTitle => 'طوال الوقت';
 
   @override
-  String get learnDiagramPermAllTimeDetail =>
-      'Background access even when closed';
+  String get learnDiagramPermAllTimeDetail => 'وصول في الخلفية حتى عند إغلاقه';
 
   @override
   String get learnDiagramPermFitNote =>
-      'Does it fit? Math quiz + Camera = ask why';
+      'هل يناسب الميزة؟ اختبار رياضيات + كاميرا = اسأل لماذا';
 
   @override
   String get learnDiagramPermSemantic =>
-      'Four-step Android permission ladder from narrowest to broadest access. Step 1, Don\'t allow: blocked, the app cannot use this sensor. Step 2, Ask every time: one-time access when you tap allow. Step 3, While using the app: access only while the app is open on screen. Step 4, All the time: background access even when closed, marked with a dashed border for extra caution. Bottom tip: Does it fit? A math quiz asking for the camera is a reason to ask why.';
+      'سلم أذونات Android من أربع خطوات من الأضيق إلى الأوسع وصولًا. الخطوة 1، عدم السماح: محظور، لا يمكن للتطبيق استخدام هذا الحساس. الخطوة 2، السؤال كل مرة: وصول لمرة واحدة عند الضغط على السماح. الخطوة 3، أثناء استخدام التطبيق: وصول فقط بينما التطبيق مفتوح على الشاشة. الخطوة 4، طوال الوقت: وصول في الخلفية حتى عند إغلاقه، ومميز بإطار متقطع لمزيد من الانتباه. نصيحة أسفل الرسم: هل يناسب الميزة؟ تطبيق رياضيات يطلب الكاميرا سبب وجيه للسؤال عن السبب.';
 
   @override
-  String get learnSharingFolderTitle => 'Ads & third parties';
+  String get learnSharingFolderTitle => 'الإعلانات والأطراف الثالثة';
 
   @override
   String get learnSharingTitle =>
-      'Who else gets data: ads, analytics & third parties';
+      'من يحصل أيضًا على البيانات: الإعلانات والتحليلات والأطراف الثالثة';
 
   @override
   String get learnSharingSubtitle =>
-      'App maker vs. helpers, analytics & ad networks';
+      'صانع التطبيق مقابل المساعدين والتحليلات وشبكات الإعلانات';
 
   @override
   String get learnSharingIntro =>
-      'Many free apps connect to other companies behind the scenes. Knowing who receives information helps families tell the difference between running the app and tracking kids across apps.';
+      'تتصل كثير من التطبيقات المجانية بشركات أخرى في الخلفية. معرفة من يتلقى المعلومات تساعد العائلات على التمييز بين تشغيل التطبيق وتتبع الأطفال عبر التطبيقات.';
 
   @override
   String get learnSharingStep1 =>
-      'First party means the app maker itself: for example, saving homework progress or quiz scores so the app works.';
+      'الطرف الأول يعني صانع التطبيق نفسه: مثل حفظ تقدم الواجبات أو درجات الاختبارات حتى يعمل التطبيق.';
 
   @override
   String get learnSharingStep2 =>
-      'Helper companies are third parties that handle behind-the-scenes jobs like cloud storage or crash reports so bugs get fixed.';
+      'الشركات المساعدة هي أطراف ثالثة تؤدي مهامًا خلف الكواليس مثل التخزين السحابي أو تقارير الأعطال لإصلاح الأخطاء.';
 
   @override
   String get learnSharingStep3 =>
-      'Analytics tools measure how screens are used, while ad networks and data brokers may use an advertising ID to show targeted ads or profile activity across apps.';
+      'تقيس أدوات التحليلات كيفية استخدام الشاشات، بينما قد تستخدم شبكات الإعلانات ووسطاء البيانات معرّف الإعلانات لعرض إعلانات موجهة أو تتبع النشاط عبر التطبيقات.';
 
   @override
   String get learnSharingStep4 =>
-      'Watch for broad phrases like \'trusted partners\' or \'business purposes,\' and check whether a policy explains how to opt out of personalized ads.';
+      'انتبه للعبارات الواسعة مثل \'شركاء موثوقين\' أو \'لأغراض تجارية\'، وتحقق مما إذا كانت السياسة تشرح كيفية رفض الإعلانات المخصصة.';
 
   @override
   String get learnSharingQuickQuestion =>
-      'A policy says the app shares information with \'third-party partners.\' What is the best next question to ask?';
+      'تقول إحدى السياسات إن التطبيق يشارك المعلومات مع \'شركاء من أطراف ثالثة\'. ما أفضل سؤال تطرحه بعد ذلك؟';
 
   @override
-  String get learnSharingQuickOption1 => 'Assume that means the app has no ads';
+  String get learnSharingQuickOption1 =>
+      'الافتراض أن ذلك يعني عدم وجود إعلانات في التطبيق';
 
   @override
   String get learnSharingQuickOption2 =>
-      'Assume every partner does the exact same job';
+      'الافتراض أن كل شريك يقوم بالدور نفسه تمامًا';
 
   @override
   String get learnSharingQuickOption3 =>
-      'Check whether those partners are helpers (like hosting) or ad networks that track across apps';
+      'التحقق مما إذا كان هؤلاء الشركاء خدمات مساعدة (مثل الاستضافة) أم شبكات إعلانات تتبع النشاط عبر التطبيقات';
 
   @override
   String get learnSharingQuickCorrectFeedback =>
-      'Spot on. Helper services keep the app running, while ad networks and data brokers may track activity across apps.';
+      'أصبت. الخدمات المساعدة تحافظ على عمل التطبيق، بينما قد تتبع شبكات الإعلانات ووسطاء البيانات النشاط عبر التطبيقات.';
 
   @override
   String get learnSharingQuickTryAgainFeedback =>
-      'Look closer at what each partner does. Not all third parties are the same: some host data or fix crashes, while others run ads or tracking.';
+      'انظر عن قرب إلى دور كل شريك. ليست كل الأطراف الثالثة متشابهة: بعضها يستضيف البيانات أو يصلح الأعطال، بينما يشغّل بعضها الآخر الإعلانات أو التتبع.';
 
   @override
-  String get learnDiagramThirdPartyYou => 'You';
+  String get learnDiagramThirdPartyYou => 'أنت';
 
   @override
-  String get learnDiagramThirdPartyApp => 'Learning app';
+  String get learnDiagramThirdPartyApp => 'تطبيق التعلم';
 
   @override
-  String get learnDiagramThirdPartyHosting => 'Helpers & crashes';
+  String get learnDiagramThirdPartyHosting => 'مساعدون وأعطال';
 
   @override
-  String get learnDiagramThirdPartyAnalytics => 'Analytics';
+  String get learnDiagramThirdPartyAnalytics => 'التحليلات';
 
   @override
-  String get learnDiagramThirdPartyAds => 'Ad networks';
+  String get learnDiagramThirdPartyAds => 'شبكات الإعلانات';
 
   @override
-  String get learnDiagramThirdPartyFirstParty => 'First party';
+  String get learnDiagramThirdPartyFirstParty => 'طرف أول';
 
   @override
-  String get learnDiagramThirdPartyThirdParty => 'Third parties';
+  String get learnDiagramThirdPartyThirdParty => 'أطراف ثالثة';
 
   @override
   String get learnDiagramThirdPartySemantic =>
-      'Flow diagram showing where data from a child\'s learning app can go. You connect to the learning app, which connects with a solid line to the app maker (first party) and with dashed lines to third parties: helper and crash tools, analytics tools, and ad networks marked for extra attention.';
+      'مخطط تدفق يوضح أين يمكن أن تذهب بيانات تطبيق تعلم للأطفال. تتصل أنت بتطبيق التعلم، ويتصل التطبيق بخط متصل بصانع التطبيق (طرف أول) وبخطوط متقطعة بأطراف ثالثة: أدوات المساعدة والأعطال، وأدوات التحليلات، وشبكات الإعلانات المميزة لمزيد من الانتباه.';
 
   @override
-  String get learnEvidenceFolderTitle => 'Reading Enprive';
+  String get learnEvidenceFolderTitle => 'قراءة نتائج Enprive';
 
   @override
-  String get learnEvidenceTitle => 'How to read Enprive\'s evidence';
+  String get learnEvidenceTitle => 'كيف تقرأ أدلة Enprive';
 
   @override
-  String get learnEvidenceSubtitle =>
-      'Evidence layers, categories & honest limits';
+  String get learnEvidenceSubtitle => 'طبقات الأدلة والفئات والحدود الصادقة';
 
   @override
   String get learnEvidenceIntro =>
-      'Enprive separates what a privacy policy says, what your phone shows, and what stays unknown, and groups findings by topic, never as a safety grade.';
+      'يفصل Enprive بين ما تقوله سياسة الخصوصية، وما يعرضه هاتفك، وما يبقى غير معروف، ويجمّع النتائج حسب الموضوع لا كدرجة أمان أبدًا.';
 
   @override
   String get learnEvidenceStep1 =>
-      'Five topic categories group every finding with the same icon and color as the Review screen. Color marks the topic, never a safety score.';
+      'تجمّع خمس فئات موضوعية كل نتيجة بالأيقونة واللون نفسهما كما في شاشة المراجعة. يشير اللون إلى الموضوع، ولا يمثل درجة أمان أبدًا.';
 
   @override
   String learnEvidenceStep2(String sourceMatched) {
-    return '$sourceMatched means Enprive found an exact quote word for word in the policy text you checked.';
+    return 'تعني عبارة $sourceMatched أن Enprive وجد اقتباسًا مطابقًا حرفيًا في نص السياسة الذي فحصته.';
   }
 
   @override
   String learnEvidenceStep3(String deviceObserved) {
-    return '$deviceObserved means your phone reported a permission setting on this device: not proof that data was sent.';
+    return 'تعني عبارة $deviceObserved أن هاتفك أبلغ عن إعداد إذن على هذا الجهاز: وليس دليلًا على إرسال بيانات.';
   }
 
   @override
   String learnEvidenceStep4(String interpretation, String unverified) {
-    return '$interpretation is Deni\'s plain-language explanation, while $unverified marks details Enprive could not find. Silence in a policy is never a promise.';
+    return 'تمثل عبارة $interpretation شرح Deni بلغة واضحة، بينما تشير عبارة $unverified إلى تفاصيل لم يعثر عليها Enprive. الصمت في السياسة ليس وعدًا أبدًا.';
   }
 
   @override
@@ -1569,49 +1598,44 @@ class AppLocalizationsAr extends AppLocalizations {
     String noConcern,
     String insufficientEvidence,
   ) {
-    return 'Reviews end with one of three calm outcomes: $reviewRecommended, $noConcern (which is never a safety certification), or $insufficientEvidence.';
+    return 'تنتهي المراجعات بواحدة من ثلاث نتائج هادئة: $reviewRecommended، أو $noConcern (وهي ليست شهادة أمان أبدًا)، أو $insufficientEvidence.';
   }
 
   @override
   String learnEvidenceQuickQuestion(String deviceObserved) {
-    return 'On a Review screen, what does \'$deviceObserved\' mean?';
+    return 'في شاشة المراجعة، ماذا تعني عبارة \'$deviceObserved\'؟';
   }
 
   @override
-  String get learnEvidenceQuickOption1 =>
-      'The app is certified safe for children';
+  String get learnEvidenceQuickOption1 => 'أن التطبيق معتمد كآمن للأطفال';
 
   @override
   String get learnEvidenceQuickOption2 =>
-      'Your phone shows this permission setting on this device: not proof that data was uploaded';
+      'أن هاتفك يعرض إعداد هذا الإذن على هذا الجهاز: وليس دليلًا على رفع البيانات';
 
   @override
-  String get learnEvidenceQuickOption3 =>
-      'The app has definitely uploaded your child\'s data';
+  String get learnEvidenceQuickOption3 => 'أن التطبيق رفع بيانات طفلك بالتأكيد';
 
   @override
   String get learnEvidenceQuickCorrectFeedback =>
-      'That\'s right. That label reflects Android\'s permission state on this device; it cannot prove uploads or certify safety.';
+      'صحيح. تعكس هذه العلامة حالة إذن Android على هذا الجهاز؛ ولا يمكنها إثبات رفع البيانات أو منح شهادة أمان.';
 
   @override
   String get learnEvidenceQuickTryAgainFeedback =>
-      'Not quite. That label only shows what your phone reports about a permission setting: it never proves uploads and is never a safety certification.';
+      'ليس تمامًا. تعرض هذه العلامة فقط ما يبلغ عنه هاتفك حول إعداد إذن ما: لا تثبت رفع البيانات أبدًا وليست شهادة أمان أبدًا.';
 
   @override
   String get learnDiagramEvidencePolicyDetail =>
-      'Exact quote matched in the policy text';
+      'اقتباس دقيق مطابق في نص السياسة';
 
   @override
-  String get learnDiagramEvidencePhoneDetail =>
-      'Phone permissions on this device';
+  String get learnDiagramEvidencePhoneDetail => 'أذونات الهاتف على هذا الجهاز';
 
   @override
-  String get learnDiagramEvidenceDeniDetail =>
-      'Plain-language explanation by Deni';
+  String get learnDiagramEvidenceDeniDetail => 'شرح بلغة واضحة من Deni';
 
   @override
-  String get learnDiagramEvidenceUnknownDetail =>
-      'Silence in a policy is not a promise';
+  String get learnDiagramEvidenceUnknownDetail => 'الصمت في السياسة ليس وعدًا';
 
   @override
   String learnDiagramEvidenceSemantic(
@@ -1620,16 +1644,15 @@ class AppLocalizationsAr extends AppLocalizations {
     String interpretation,
     String unverified,
   ) {
-    return 'Four evidence layers used on Enprive\'s Review screen: 1, $sourceMatched, an exact quote matched in the privacy policy; 2, $deviceObserved, phone permissions on this device; 3, $interpretation, Deni\'s plain-language explanation; and 4, separated by a dashed line, $unverified, because silence in a policy is not a promise.';
+    return 'أربع طبقات أدلة مستخدمة في شاشة المراجعة في Enprive: 1، $sourceMatched، اقتباس دقيق مطابق في سياسة الخصوصية؛ 2، $deviceObserved، أذونات الهاتف على هذا الجهاز؛ 3، $interpretation، شرح Deni بلغة واضحة؛ و4، مفصولة بخط متقطع، $unverified، لأن الصمت في السياسة ليس وعدًا.';
   }
 
   @override
-  String get learnDiagramCategoriesTitle =>
-      'Five topic categories on the Review screen';
+  String get learnDiagramCategoriesTitle => 'خمس فئات موضوعية في شاشة المراجعة';
 
   @override
   String get learnDiagramCategoriesNote =>
-      'Color and icon mark the topic, never a safety score.';
+      'اللون والأيقونة يحددان الموضوع، وليسا درجة أمان أبدًا.';
 
   @override
   String learnDiagramCategoriesSemantic(
@@ -1639,381 +1662,381 @@ class AppLocalizationsAr extends AppLocalizations {
     String retention,
     String parentalControls,
   ) {
-    return 'Five evidence categories shown on Enprive\'s Review screen, each with its own icon and color: $dataCollection, $sharing, $tracking, $retention, and $parentalControls. Color and icon mark the topic, never a safety score.';
+    return 'خمس فئات للأدلة تظهر في شاشة المراجعة في Enprive، ولكل منها أيقونتها ولونها: $dataCollection، و$sharing، و$tracking، و$retention، و$parentalControls. اللون والأيقونة يحددان الموضوع، وليسا درجة أمان أبدًا.';
   }
 
   @override
-  String get learnDataCollectionFolderTitle => 'Data apps collect';
+  String get learnDataCollectionFolderTitle => 'البيانات التي تجمعها التطبيقات';
 
   @override
-  String get learnDataCollectionTitle => 'What Data Apps Collect';
+  String get learnDataCollectionTitle => 'ما البيانات التي تجمعها التطبيقات';
 
   @override
   String get learnDataCollectionSubtitle =>
-      'The difference between what you type and what runs quietly';
+      'الفرق بين ما تكتبه وما يعمل بهدوء في الخلفية';
 
   @override
   String get learnDataCollectionIntro1 =>
-      'Apps gather information in two ways. Some data comes from what you actively enter: your name, email, photos, voice recordings, or homework answers. Other data is collected automatically in the background, like your IP address (the address your phone uses on the internet), device identifiers, advertising ID (a code ads use to recognise your phone), crash logs, and when you open the app.';
+      'تجمع التطبيقات المعلومات بطريقتين. تأتي بعض البيانات مما تدخله بنفسك: اسمك أو بريدك الإلكتروني أو صورك أو تسجيلاتك الصوتية أو إجابات الواجبات. وتُجمع بيانات أخرى تلقائيًا في الخلفية، مثل عنوان IP (العنوان الذي يستخدمه هاتفك على الإنترنت) ومعرّفات الجهاز ومعرّف الإعلانات (رمز تستخدمه الإعلانات للتعرف على هاتفك) وسجلات الأعطال وأوقات فتح التطبيق.';
 
   @override
   String get learnDataCollectionStep1 =>
-      'What you type: Your name, school, email, photos, voice clips, and homework answers are data you choose to give.';
+      'ما تكتبه: اسمك ومدرستك وبريدك الإلكتروني وصورك ومقاطعك الصوتية وإجابات الواجبات هي بيانات تختار تقديمها.';
 
   @override
   String get learnDataCollectionStep2 =>
-      'What runs quietly: The app can collect an advertising ID, device identifiers, IP address, crash reports, and usage timing without you pressing a button. Quiet collection is not automatically bad: these signals help apps run smoothly.';
+      'ما يعمل بهدوء: يمكن للتطبيق جمع معرّف الإعلانات ومعرّفات الجهاز وعنوان IP وتقارير الأعطال وأوقات الاستخدام دون أن تضغط أي زر. الجمع الهادئ ليس سيئًا تلقائيًا: فهذه الإشارات تساعد التطبيقات على العمل بسلاسة.';
 
   @override
   String get learnDataCollectionStep3 =>
-      'Sensitive child data: Location, microphone recordings, camera photos, and biometric data like voiceprints (data about your body or voice) carry higher privacy risk for children.';
+      'بيانات الأطفال الحساسة: يحمل الموقع وتسجيلات الميكروفون وصور الكاميرا والبيانات الحيوية مثل البصمات الصوتية (بيانات عن جسمك أو صوتك) مخاطر خصوصية أعلى للأطفال.';
 
   @override
   String get learnDataCollectionStep4 =>
-      'Play Store note: Google Play\'s Data Safety section is the developer\'s own description. It is a hint, not proof, and does not include data processed only on your device or kept briefly in memory.';
+      'ملاحظة حول Play Store: قسم أمان البيانات في Google Play هو وصف المطور نفسه. إنه تلميح وليس دليلًا، ولا يشمل البيانات التي تُعالج على جهازك فقط أو تُحفظ مؤقتًا في الذاكرة.';
 
   @override
   String get learnDataCollectionQuizQuestion =>
-      'Which of these is an example of data that runs quietly in the background?';
+      'أي مما يلي مثال على بيانات تعمل بهدوء في الخلفية؟';
 
   @override
-  String get learnDataCollectionQuizChoiceA =>
-      'A photo you upload for your profile';
+  String get learnDataCollectionQuizChoiceA => 'صورة ترفعها لملفك الشخصي';
 
   @override
-  String get learnDataCollectionQuizChoiceB =>
-      'Your advertising ID and device identifiers';
+  String get learnDataCollectionQuizChoiceB => 'معرّف الإعلانات ومعرّفات جهازك';
 
   @override
-  String get learnDataCollectionQuizChoiceC =>
-      'A homework answer you type in the app';
+  String get learnDataCollectionQuizChoiceC => 'إجابة واجب تكتبها داخل التطبيق';
 
   @override
   String get learnDataCollectionQuizFeedbackRight =>
-      'Correct: advertising IDs and device identifiers are collected automatically without you typing them.';
+      'صحيح: تُجمع معرّفات الإعلانات ومعرّفات الجهاز تلقائيًا دون أن تكتبها.';
 
   @override
   String get learnDataCollectionQuizFeedbackWrong =>
-      'Not quite: that is data you actively enter. Data that runs quietly includes advertising IDs, device identifiers, IP address, and usage timing.';
+      'ليس تمامًا: تلك بيانات تدخلها بنفسك. أما البيانات التي تعمل بهدوء فتشمل معرّفات الإعلانات ومعرّفات الجهاز وعنوان IP وأوقات الاستخدام.';
 
   @override
-  String get learnDataCollectionDiagramYouTypeTitle => 'What you type or give';
+  String get learnDataCollectionDiagramYouTypeTitle => 'ما تكتبه أو تقدّمه';
 
   @override
-  String get learnDataCollectionDiagramYouTypeItem1 => 'Name, email, school';
+  String get learnDataCollectionDiagramYouTypeItem1 => 'الاسم، البريد، المدرسة';
 
   @override
-  String get learnDataCollectionDiagramYouTypeItem2 => 'Photos and videos';
+  String get learnDataCollectionDiagramYouTypeItem2 => 'الصور والفيديوهات';
 
   @override
-  String get learnDataCollectionDiagramYouTypeItem3 => 'Voice recordings';
+  String get learnDataCollectionDiagramYouTypeItem3 => 'التسجيلات الصوتية';
 
   @override
-  String get learnDataCollectionDiagramYouTypeItem4 => 'Homework answers';
+  String get learnDataCollectionDiagramYouTypeItem4 => 'إجابات الواجبات';
 
   @override
-  String get learnDataCollectionDiagramRunsQuietlyTitle => 'What runs quietly';
+  String get learnDataCollectionDiagramRunsQuietlyTitle => 'ما يعمل بهدوء';
 
   @override
-  String get learnDataCollectionDiagramRunsQuietlyItem1 => 'Advertising ID';
+  String get learnDataCollectionDiagramRunsQuietlyItem1 => 'معرّف الإعلانات';
 
   @override
-  String get learnDataCollectionDiagramRunsQuietlyItem2 => 'Device identifiers';
+  String get learnDataCollectionDiagramRunsQuietlyItem2 => 'معرّفات الجهاز';
 
   @override
-  String get learnDataCollectionDiagramRunsQuietlyItem3 => 'IP address';
+  String get learnDataCollectionDiagramRunsQuietlyItem3 => 'عنوان IP';
 
   @override
   String get learnDataCollectionDiagramRunsQuietlyItem4 =>
-      'Crash logs and usage timing';
+      'سجلات الأعطال وأوقات الاستخدام';
 
   @override
   String get learnDataCollectionDiagramQuietNote =>
-      'Quiet does not mean bad: these signals help apps run smoothly.';
+      'العمل بهدوء لا يعني أنه سيئ: هذه الإشارات تساعد التطبيقات على العمل بسلاسة.';
 
   @override
   String get learnDataCollectionDiagramSemanticDescription =>
-      'A split diagram showing two categories of data collection. The top card titled \"What you type or give\" lists four chips: Name email school, Photos and videos, Voice recordings, Homework answers. The bottom card titled \"What runs quietly\" lists four chips: Advertising ID, Device identifiers, IP address, Crash logs and usage timing. A small note reads \"Quiet does not mean bad: these signals help apps run smoothly.\" Deni the mascot sits below in a thinking pose.';
+      'رسم توضيحي مقسّم يعرض فئتين لجمع البيانات. البطاقة العلوية بعنوان \"ما تكتبه أو تقدّمه\" تسرد أربع شرائح: الاسم البريد المدرسة، الصور والفيديوهات، التسجيلات الصوتية، إجابات الواجبات. والبطاقة السفلية بعنوان \"ما يعمل بهدوء\" تسرد أربع شرائح: معرّف الإعلانات، معرّفات الجهاز، عنوان IP، سجلات الأعطال وأوقات الاستخدام. وتقول ملاحظة صغيرة \"العمل بهدوء لا يعني أنه سيئ: هذه الإشارات تساعد التطبيقات على العمل بسلاسة.\" ويجلس Deni أسفلها بوضعية تفكير.';
 
   @override
   String get learnDataCollectionCheckBridge =>
-      'Check an app on this phone to see what data it collects.';
+      'افحص تطبيقًا على هذا الهاتف لمعرفة البيانات التي يجمعها.';
 
   @override
   String get learnDataCollectionHonestyNote =>
-      'This lesson explains common data types. It does not prove what any specific app collects or sends. Only the app\'s exact policy text and your phone\'s permission settings can show that.';
+      'يشرح هذا الدرس أنواع البيانات الشائعة. ولا يثبت ما يجمعه أو يرسله أي تطبيق بعينه. وحده نص السياسة الدقيق وإعدادات أذونات هاتفك يمكنهما إظهار ذلك.';
 
   @override
-  String get learnRetentionFolderTitle => 'Retention and deletion';
+  String get learnRetentionFolderTitle => 'الاحتفاظ والحذف';
 
   @override
-  String get learnRetentionTitle => 'Retention and Deletion';
+  String get learnRetentionTitle => 'الاحتفاظ بالبيانات وحذفها';
 
   @override
   String get learnRetentionSubtitle =>
-      'Uninstalling an app does not erase data already on company servers';
+      'إزالة تثبيت التطبيق لا تمحو البيانات الموجودة بالفعل على خوادم الشركة';
 
   @override
   String get learnRetentionIntro1 =>
-      'When you delete an app from your phone, the app\'s files on your device are removed, but any data already uploaded to the company\'s servers stays there. Privacy policies should say how long they keep your data, how to ask for deletion, and what happens to backups, but many policies use vague phrases like \"as long as reasonably necessary.\"';
+      'عندما تحذف تطبيقًا من هاتفك، تُزال ملفات التطبيق من جهازك، لكن أي بيانات رُفعت بالفعل إلى خوادم الشركة تبقى هناك. ينبغي أن توضح سياسات الخصوصية مدة الاحتفاظ ببياناتك، وكيفية طلب الحذف، وما يحدث للنسخ الاحتياطية، لكن سياسات كثيرة تستخدم عبارات غامضة مثل \"للمدة اللازمة بشكل معقول\".';
 
   @override
   String get learnRetentionStep1 =>
-      'Data collected: While you use the app, your information is sent to and stored on the company\'s servers.';
+      'جمع البيانات: أثناء استخدامك التطبيق، تُرسل معلوماتك وتُخزّن على خوادم الشركة.';
 
   @override
   String get learnRetentionStep2 =>
-      'Stored on servers: Your data can stay on company systems even after you stop using the app.';
+      'التخزين على الخوادم: يمكن أن تبقى بياناتك على أنظمة الشركة حتى بعد توقفك عن استخدام التطبيق.';
 
   @override
   String get learnRetentionStep3 =>
-      'Uninstall does not delete server data: Removing the app from your phone only deletes local files, not the copies on company servers.';
+      'إزالة التثبيت لا تحذف بيانات الخادم: حذف التطبيق من هاتفك يزيل الملفات المحلية فقط، وليس النسخ الموجودة على خوادم الشركة.';
 
   @override
   String get learnRetentionStep4 =>
-      'Deletion request: You can ask the company to delete your account and data; policies should say how long this takes.';
+      'طلب الحذف: يمكنك أن تطلب من الشركة حذف حسابك وبياناتك؛ وينبغي أن توضح السياسات المدة التي يستغرقها ذلك.';
 
   @override
   String get learnRetentionStep5 =>
-      'Unknown retention: Policies that say \"as long as needed\" or \"for business purposes\" leave the actual deletion timeline unclear.';
+      'مدة احتفاظ غير معروفة: السياسات التي تقول \"للمدة اللازمة\" أو \"لأغراض تجارية\" تترك موعد الحذف الفعلي غير واضح.';
 
   @override
   String get learnRetentionQuizQuestion =>
-      'What happens to your data on company servers when you uninstall an app from your phone?';
+      'ماذا يحدث لبياناتك على خوادم الشركة عندما تزيل تثبيت تطبيق من هاتفك؟';
 
   @override
-  String get learnRetentionQuizChoiceA => 'It is deleted automatically';
+  String get learnRetentionQuizChoiceA => 'تُحذف تلقائيًا';
 
   @override
   String get learnRetentionQuizChoiceB =>
-      'It may stay on the servers - uninstalling the app does not delete it';
+      'قد تبقى على الخوادم: إزالة تثبيت التطبيق لا تحذفها';
 
   @override
-  String get learnRetentionQuizChoiceC => 'It is anonymized immediately';
+  String get learnRetentionQuizChoiceC => 'تُجهَّل هويتها فورًا';
 
   @override
   String get learnRetentionQuizFeedbackRight =>
-      'Correct: uninstalling only removes the app from your phone. Data on company servers may stay until you request deletion.';
+      'صحيح: إزالة التثبيت تزيل التطبيق من هاتفك فقط. وقد تبقى البيانات على خوادم الشركة حتى تطلب حذفها.';
 
   @override
   String get learnRetentionQuizFeedbackWrong =>
-      'Not quite: uninstalling an app does not delete data already uploaded to company servers. You need to request account deletion.';
+      'ليس تمامًا: إزالة تثبيت التطبيق لا تحذف البيانات المرفوعة بالفعل إلى خوادم الشركة. تحتاج إلى طلب حذف الحساب.';
 
   @override
-  String get learnRetentionDiagramCollected => 'Data collected during use';
+  String get learnRetentionDiagramCollected => 'تُجمع البيانات أثناء الاستخدام';
 
   @override
-  String get learnRetentionDiagramStored => 'Stored on company servers';
+  String get learnRetentionDiagramStored => 'تُخزّن على خوادم الشركة';
 
   @override
   String get learnRetentionDiagramUninstall =>
-      'You uninstall the app - phone files go, server data stays';
+      'تزيل تثبيت التطبيق: تُحذف ملفات الهاتف وتبقى بيانات الخادم';
 
   @override
-  String get learnRetentionDiagramDeleteRequest =>
-      'You request account deletion';
+  String get learnRetentionDiagramDeleteRequest => 'تطلب حذف الحساب';
 
   @override
   String get learnRetentionDiagramUnknownTail =>
-      'Unknown retention - policy says \"as long as needed\"';
+      'مدة احتفاظ غير معروفة: السياسة تقول \"للمدة اللازمة\"';
 
   @override
   String get learnRetentionDiagramSemanticDescription =>
-      'A five-step timeline showing the data lifecycle. Step 1: Data collected during use, with a database icon. Step 2: Stored on company servers, with a server icon. Step 3: You uninstall the app - phone files go, server data stays, with a smartphone icon. Step 4: You request account deletion, with a trash icon. Step 5: Unknown retention - policy says \"as long as needed,\" shown with a dashed arrow and a help circle icon. Deni the mascot stands below holding a receipt.';
+      'خط زمني من خمس خطوات يوضح دورة حياة البيانات. الخطوة 1: تُجمع البيانات أثناء الاستخدام، مع أيقونة قاعدة بيانات. الخطوة 2: تُخزّن على خوادم الشركة، مع أيقونة خادم. الخطوة 3: تزيل تثبيت التطبيق: تُحذف ملفات الهاتف وتبقى بيانات الخادم، مع أيقونة هاتف ذكي. الخطوة 4: تطلب حذف الحساب، مع أيقونة سلة مهملات. الخطوة 5: مدة احتفاظ غير معروفة: السياسة تقول \"للمدة اللازمة\"، بسهم متقطع وأيقونة علامة استفهام. ويقف Deni أسفل المخطط حاملًا إيصالًا.';
 
   @override
   String get learnRetentionCheckBridge =>
-      'Check an app on this phone to see what its policy says about retention.';
+      'افحص تطبيقًا على هذا الهاتف لمعرفة ما تقوله سياسته حول الاحتفاظ بالبيانات.';
 
   @override
   String get learnRetentionHonestyNote =>
-      'This lesson describes common retention patterns. It does not prove what any specific company actually does with your data. Only the exact policy text and a deletion request can show that.';
+      'يصف هذا الدرس أنماط الاحتفاظ الشائعة. ولا يثبت ما تفعله أي شركة بعينها ببياناتك. وحده نص السياسة الدقيق وطلب الحذف يمكنهما إظهار ذلك.';
 
   @override
-  String get learnUnclearPoliciesFolderTitle => 'Unclear policies';
+  String get learnUnclearPoliciesFolderTitle => 'سياسات غير واضحة';
 
   @override
   String get learnUnclearPoliciesTitle =>
-      'Spotting Unclear Policies & Tricky Buttons';
+      'اكتشاف السياسات الغامضة والأزرار الخادعة';
 
   @override
   String get learnUnclearPoliciesSubtitle =>
-      'How to recognize vague language and pressured consent screens';
+      'كيف تميّز الصياغة الغامضة وشاشات الموافقة الضاغطة';
 
   @override
   String get learnUnclearPoliciesIntro1 =>
-      'Some privacy policies use fuzzy words that make it hard to know what actually happens to your data. Consent screens can also use design tricks, like a big bright \"Accept All\" button next to a tiny \"Manage Settings\" link, to push you into agreeing without reading.';
+      'تستخدم بعض سياسات الخصوصية كلمات فضفاضة تصعّب معرفة ما يحدث لبياناتك فعلًا. كما قد تستخدم شاشات الموافقة حيل تصميم، مثل زر \"قبول الكل\" كبير وساطع بجانب رابط صغير جدًا لـ\"إدارة الإعدادات\"، لدفعك إلى الموافقة دون قراءة.';
 
   @override
   String get learnUnclearPoliciesStep1 =>
-      'Policy fog signs: Watch for open-ended phrases like \"may share with trusted partners,\" \"for business purposes,\" or \"retain as needed\": they leave the real details unspecified.';
+      'علامات ضبابية السياسة: انتبه للعبارات المفتوحة مثل \"قد نشارك مع شركاء موثوقين\" أو \"لأغراض تجارية\" أو \"نحتفظ حسب الحاجة\": فهي تترك التفاصيل الحقيقية غير محددة.';
 
   @override
   String get learnUnclearPoliciesStep2 =>
-      'Silence is not a promise: If a policy never mentions the microphone, ads, or location, it does not guarantee the app avoids them.';
+      'الصمت ليس وعدًا: إذا لم تذكر السياسة الميكروفون أو الإعلانات أو الموقع أبدًا، فذلك لا يضمن أن التطبيق يتجنبها.';
 
   @override
   String get learnUnclearPoliciesStep3 =>
-      'Missing basics: A trustworthy policy has a clear effective date, a contact email, and one unified document: not a hidden children\'s addendum.';
+      'أساسيات مفقودة: تتضمن السياسة الواضحة تاريخ سريان محددًا وبريدًا للتواصل ومستندًا واحدًا متكاملًا: وليس ملحقًا مخفيًا للأطفال.';
 
   @override
   String get learnUnclearPoliciesStep4 =>
-      'Pressured consent (dark patterns): Giant \"Accept All\" buttons, pre-checked marketing boxes, nagging re-prompts, and hard-to-find cancellation paths are designed to override your choice.';
+      'الموافقة تحت الضغط (الأنماط المضللة): أزرار \"قبول الكل\" العملاقة ومربعات التسويق المحددة مسبقًا والطلبات المتكررة المزعجة ومسارات الإلغاء المخفية صُممت للتأثير على اختيارك.';
 
   @override
   String get learnUnclearPoliciesStep5 =>
-      'Balanced choice: A fair screen shows equal \"Allow\" and \"Don\'t allow\" buttons, with optional toggles unchecked by default.';
+      'اختيار متوازن: تعرض الشاشة العادلة زرّي \"السماح\" و\"عدم السماح\" بالتساوي، مع بقاء الخيارات الإضافية غير مفعّلة افتراضيًا.';
 
   @override
   String get learnUnclearPoliciesQuizQuestion =>
-      'Which phrase in a privacy policy is a \"foggy\" signal that details are missing?';
+      'أي عبارة في سياسة الخصوصية تُعد إشارة \"ضبابية\" تدل على نقص التفاصيل؟';
 
   @override
   String get learnUnclearPoliciesQuizChoiceA =>
-      'We do not sell your personal information to third parties';
+      'لا نبيع معلوماتك الشخصية لأطراف ثالثة';
 
   @override
   String get learnUnclearPoliciesQuizChoiceB =>
-      'We may share data with trusted partners for business purposes';
+      'قد نشارك البيانات مع شركاء موثوقين لأغراض تجارية';
 
   @override
   String get learnUnclearPoliciesQuizChoiceC =>
-      'You can request deletion by emailing privacy@example.com';
+      'يمكنك طلب الحذف عبر مراسلة privacy@example.com';
 
   @override
   String get learnUnclearPoliciesQuizFeedbackRight =>
-      'Correct: \"may share with trusted partners for business purposes\" is vague and does not say who the partners are or what data is shared.';
+      'صحيح: عبارة \"قد نشارك مع شركاء موثوقين لأغراض تجارية\" غامضة ولا توضح من هم الشركاء ولا ما البيانات التي تُشارك.';
 
   @override
   String get learnUnclearPoliciesQuizFeedbackWrong =>
-      'Not quite: that phrase is specific and actionable. Foggy phrases use open-ended language like \"may share\" or \"as needed\" without details.';
+      'ليس تمامًا: تلك العبارة محددة وواضحة. أما العبارات الضبابية فتستخدم صياغة مفتوحة مثل \"قد نشارك\" أو \"حسب الحاجة\" دون تفاصيل.';
 
   @override
-  String get learnUnclearPoliciesDiagramClearTitle => 'Clear policy sentence';
+  String get learnUnclearPoliciesDiagramClearTitle => 'جملة واضحة في السياسة';
 
   @override
   String get learnUnclearPoliciesDiagramClearExample =>
-      'We collect your name and email to create your account. We do not share this with advertisers.';
+      'نجمع اسمك وبريدك الإلكتروني لإنشاء حسابك. ولا نشارك ذلك مع المعلنين.';
 
   @override
-  String get learnUnclearPoliciesDiagramFoggyTitle => 'Foggy policy sentence';
+  String get learnUnclearPoliciesDiagramFoggyTitle => 'جملة ضبابية في السياسة';
 
   @override
   String get learnUnclearPoliciesDiagramFoggyExample =>
-      'We may share your information with trusted partners for business purposes as needed.';
+      'قد نشارك معلوماتك مع شركاء موثوقين لأغراض تجارية حسب الحاجة.';
 
   @override
-  String get learnUnclearPoliciesDiagramTipsTitle => 'How to spot the fog';
+  String get learnUnclearPoliciesDiagramTipsTitle => 'كيف تكتشف الغموض';
 
   @override
   String get learnUnclearPoliciesDiagramTip1 =>
-      'Look for \"may,\" \"could,\" or \"as needed\": they leave the door open.';
+      'ابحث عن \"قد\" أو \"يمكن\" أو \"حسب الحاجة\": فهي تترك الباب مفتوحًا.';
 
   @override
   String get learnUnclearPoliciesDiagramTip2 =>
-      'Check if the policy names the specific companies data goes to.';
+      'تحقق هل تذكر السياسة أسماء الشركات المحددة التي تصلها البيانات.';
 
   @override
   String get learnUnclearPoliciesDiagramTip3 =>
-      'Silence on a topic like ads or microphone is not a promise the app avoids it.';
+      'الصمت حول موضوع مثل الإعلانات أو الميكروفون ليس وعدًا بأن التطبيق يتجنبه.';
 
   @override
   String get learnUnclearPoliciesDiagramSilenceNote =>
-      'Silence in a policy is not a promise.';
+      'الصمت في السياسة ليس وعدًا.';
 
   @override
   String get learnUnclearPoliciesDiagramSemanticDescription =>
-      'A side-by-side comparison of a clear policy sentence and a foggy one. The left card labeled \"Clear\" shows: \"We collect your name and email to create your account. We do not share this with advertisers.\" The right card labeled \"Foggy\" shows: \"We may share your information with trusted partners for business purposes as needed.\" Below, a tips card titled \"How to spot the fog\" lists three tips: Look for \"may,\" \"could,\" or \"as needed\": they leave the door open. Check if the policy names the specific companies data goes to. Silence on a topic like ads or microphone is not a promise the app avoids it. A note on the foggy card reads \"Silence in a policy is not a promise.\" Deni the mascot peeks over the cards.';
+      'مقارنة جنبًا إلى جنب بين جملة واضحة في السياسة وأخرى ضبابية. البطاقة اليسرى بعنوان \"واضحة\" تعرض: \"نجمع اسمك وبريدك الإلكتروني لإنشاء حسابك. ولا نشارك ذلك مع المعلنين.\" والبطاقة اليمنى بعنوان \"ضبابية\" تعرض: \"قد نشارك معلوماتك مع شركاء موثوقين لأغراض تجارية حسب الحاجة.\" وأسفلها بطاقة نصائح بعنوان \"كيف تكتشف الغموض\" تسرد ثلاث نصائح: ابحث عن \"قد\" أو \"يمكن\" أو \"حسب الحاجة\": فهي تترك الباب مفتوحًا. تحقق هل تذكر السياسة أسماء الشركات المحددة التي تصلها البيانات. الصمت حول موضوع مثل الإعلانات أو الميكروفون ليس وعدًا بأن التطبيق يتجنبه. وتقرأ ملاحظة على البطاقة الضبابية \"الصمت في السياسة ليس وعدًا.\" ويطل Deni من فوق البطاقات.';
 
   @override
   String get learnUnclearPoliciesCheckBridge =>
-      'Check an app on this phone to test its consent screen and policy clarity.';
+      'افحص تطبيقًا على هذا الهاتف للتحقق من شاشة الموافقة ووضوح سياسته.';
 
   @override
   String get learnUnclearPoliciesHonestyNote =>
-      'This lesson describes common unclear patterns. It does not prove any specific app uses dark patterns or hides data practices. Only reading the exact policy and seeing the real consent screen can show that.';
+      'يصف هذا الدرس أنماطًا غامضة شائعة. ولا يثبت أن أي تطبيق بعينه يستخدم أنماطًا مضللة أو يخفي ممارسات البيانات. وحدها قراءة السياسة الدقيقة ورؤية شاشة الموافقة الفعلية يمكنهما إظهار ذلك.';
 
   @override
-  String get learnSafeSharingFolderTitle => 'Safe sharing habits';
+  String get learnSafeSharingFolderTitle => 'عادات المشاركة الآمنة';
 
   @override
-  String get learnSafeSharingTitle => 'Safe-Sharing Habits for Kids';
+  String get learnSafeSharingTitle => 'عادات المشاركة الواعية للأطفال';
 
   @override
   String get learnSafeSharingSubtitle =>
-      'Stop, Think, Connect - age-appropriate steps for sharing online';
+      'توقّف، فكّر، شارك بحذر: خطوات مناسبة لكل عمر عند النشر على الإنترنت';
 
   @override
   String get learnSafeSharingIntro1 =>
-      'Before you post a photo, video, your name, or your location, pause and use the three steps: Stop, Think, Connect. This lesson is for reading together with a trusted adult. Younger kids (ages 5-7) ask before tapping. Older kids (8-11) use nicknames and strong passwords. Teens (12-17) manage digital footprints (the trail of things you post) and two-factor authentication (a second check, like a code, when you sign in).';
+      'قبل نشر صورة أو فيديو أو اسمك أو موقعك، توقّف قليلًا واتبع الخطوات الثلاث: توقّف، فكّر، شارك بحذر. هذا الدرس مخصص للقراءة مع بالغ موثوق. الأطفال الأصغر سنًا (5-7 سنوات) يسألون قبل الضغط. والأكبر سنًا (8-11 سنة) يستخدمون أسماء مستعارة وكلمات مرور قوية. والمراهقون (12-17 سنة) يديرون بصمتهم الرقمية (الأثر الذي تتركه منشوراتك) والتحقق بخطوتين (تحقق إضافي مثل رمز عند تسجيل الدخول).';
 
   @override
   String get learnSafeSharingStep1 =>
-      'Stop: Pause before you post a photo, video, name, school, or location. Ask a trusted adult if you are not sure.';
+      'توقّف: تمهّل قبل نشر صورة أو فيديو أو اسمك أو مدرستك أو موقعك. اسأل بالغًا موثوقًا إذا لم تكن متأكدًا.';
 
   @override
   String get learnSafeSharingStep2 =>
-      'Think: Does this reveal my school, home, or where I am right now? Did I ask my friends before sharing their photos or tagging them?';
+      'فكّر: هل يكشف هذا مدرستي أو منزلي أو مكاني الآن؟ هل استأذنت أصدقائي قبل مشاركة صورهم أو الإشارة إليهم؟';
 
   @override
   String get learnSafeSharingStep3 =>
-      'Connect: Share only with people you trust. Keep personal details like your full name, birthday, address, and phone number private.';
+      'شارك بحذر: شارك فقط مع أشخاص تثق بهم. حافظ على خصوصية تفاصيلك الشخصية مثل اسمك الكامل وتاريخ ميلادك وعنوانك ورقم هاتفك.';
 
   @override
   String get learnSafeSharingStep4 =>
-      'The Cafeteria Test: Would I be okay if everyone at school (or my whole class) saw this photo or message? Even disappearing posts can be screenshotted and stay online permanently.';
+      'اختبار المقصف المدرسي: هل سأشعر بالارتياح لو شاهد الجميع في المدرسة (أو كل صفي) هذه الصورة أو الرسالة؟ حتى المنشورات التي تختفي يمكن التقاط لقطة شاشة لها لتبقى على الإنترنت دائمًا.';
 
   @override
   String get learnSafeSharingStep5 =>
-      'Age 5-7: Ask a trusted adult before typing your name or tapping popups. Age 8-11: Use a nickname (not real name, birthday, and school), strong passwords, never share SMS or OTP codes (one-time codes sent by text message - never share them). Age 12-17: Review privacy settings, turn on two-factor authentication, know how to report problems.';
+      'الأعمار 5-7: اسأل بالغًا موثوقًا قبل كتابة اسمك أو الضغط على النوافذ المنبثقة. الأعمار 8-11: استخدم اسمًا مستعارًا (لا الاسم الحقيقي ولا تاريخ الميلاد ولا المدرسة)، وكلمات مرور قوية، ولا تشارك رموز SMS أو OTP أبدًا (رموز لمرة واحدة تُرسل برسالة نصية، لا تشاركها أبدًا). الأعمار 12-17: راجع إعدادات الخصوصية، وفعّل التحقق بخطوتين، واعرف كيف تبلغ عن المشكلات.';
 
   @override
   String get learnSafeSharingQuizQuestion =>
-      'What is the \"Cafeteria Test\" for sharing online?';
+      'ما هو \"اختبار المقصف المدرسي\" عند المشاركة على الإنترنت؟';
 
   @override
   String get learnSafeSharingQuizChoiceA =>
-      'Only share things you would eat in the cafeteria';
+      'مشاركة الأشياء التي تأكلها في المقصف فقط';
 
   @override
   String get learnSafeSharingQuizChoiceB =>
-      'Ask: would I be okay if everyone at school saw this photo or message?';
+      'أن تسأل نفسك: هل سأرتاح لو رأى الجميع في المدرسة هذه الصورة أو الرسالة؟';
 
   @override
-  String get learnSafeSharingQuizChoiceC => 'Share only during lunch break';
+  String get learnSafeSharingQuizChoiceC => 'المشاركة خلال استراحة الغداء فقط';
 
   @override
   String get learnSafeSharingQuizFeedbackRight =>
-      'Correct: the Cafeteria Test means asking yourself if you would be comfortable with everyone seeing what you post.';
+      'صحيح: يعني اختبار المقصف المدرسي أن تسأل نفسك هل ستشعر بالارتياح لو رأى الجميع ما تنشره.';
 
   @override
   String get learnSafeSharingQuizFeedbackWrong =>
-      'Not quite: the Cafeteria Test is a mental check: would you be okay if someone showed your post to the whole cafeteria?';
+      'ليس تمامًا: اختبار المقصف المدرسي هو فحص ذهني بسيط: هل ستشعر بالارتياح لو عرض شخص ما منشورك على كل من في المقصف؟';
 
   @override
-  String get learnSafeSharingDiagramStop => 'Stop - pause before you post';
+  String get learnSafeSharingDiagramStop => 'توقّف: تمهّل قبل أن تنشر';
 
   @override
   String get learnSafeSharingDiagramThink =>
-      'Think - does this reveal where I am or who I am with?';
+      'فكّر: هل يكشف هذا مكاني أو من معي؟';
 
   @override
   String get learnSafeSharingDiagramConnect =>
-      'Connect - share with people you trust, ask an adult if unsure';
+      'شارك بحذر: مع من تثق بهم فقط، واسأل بالغًا عند الشك';
 
   @override
   String get learnSafeSharingDiagramCafeteriaTest =>
-      'The Cafeteria Test: Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.';
+      'اختبار المقصف المدرسي: هل سأرتاح لو رأى الجميع في المدرسة هذا؟ حتى المنشورات التي تختفي يمكن التقاط لقطة شاشة لها لتبقى على الإنترنت دائمًا.';
 
   @override
   String get learnSafeSharingDiagramSemanticDescription =>
-      'A four-part diagram teaching safe sharing habits. Step 1: Stop - pause before you post, with a hand icon. Step 2: Think - does this reveal where I am or who I am with, with a brain icon. Step 3: Connect - share with people you trust, ask an adult if unsure, with a users icon. Step 4: The Cafeteria Test callout asks \"Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.\" Deni the mascot stands beside the callout with a raised hand.';
+      'رسم توضيحي من أربعة أجزاء يعلّم عادات المشاركة الواعية. الخطوة 1: توقّف: تمهّل قبل أن تنشر، مع أيقونة يد. الخطوة 2: فكّر: هل يكشف هذا مكاني أو من معي؟ مع أيقونة دماغ. الخطوة 3: شارك بحذر: مع من تثق بهم فقط، واسأل بالغًا عند الشك، مع أيقونة أشخاص. الخطوة 4: بطاقة اختبار المقصف المدرسي تسأل \"هل سأرتاح لو رأى الجميع في المدرسة هذا؟ حتى المنشورات التي تختفي يمكن التقاط لقطة شاشة لها لتبقى على الإنترنت دائمًا.\" ويقف Deni بجانب البطاقة رافعًا يده.';
 
   @override
   String get learnSafeSharingCheckBridge =>
-      'Check an app together with a parent to see how it handles sharing.';
+      'افحص تطبيقًا مع أحد والديك لمعرفة كيف يتعامل مع المشاركة.';
 
   @override
   String get learnSafeSharingHonestyNote =>
-      'This lesson shares general safe-sharing habits. It does not guarantee any app will protect what you share. Always read the app\'s policy and use your phone\'s privacy settings.';
+      'يشارك هذا الدرس عادات عامة للمشاركة الواعية. ولا يضمن أن يحمي أي تطبيق ما تشاركه. اقرأ دائمًا سياسة التطبيق واستخدم إعدادات الخصوصية في هاتفك.';
+
+  @override
+  String get translationDraftNotice =>
+      'بعض الترجمات مسودات مُنشأة بالذكاء الاصطناعي وقد تحتوي على أخطاء. يعمل متحدثون أصليون على مراجعتها.';
 }

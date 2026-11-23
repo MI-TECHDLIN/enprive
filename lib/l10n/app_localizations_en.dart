@@ -2008,4 +2008,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get learnSafeSharingHonestyNote =>
       'This lesson shares general safe-sharing habits. It does not guarantee any app will protect what you share. Always read the app\'s policy and use your phone\'s privacy settings.';
+
+  @override
+  String get translationDraftNotice =>
+      'Some translations are AI-generated drafts and may contain mistakes. Native speakers are reviewing them.';
 }

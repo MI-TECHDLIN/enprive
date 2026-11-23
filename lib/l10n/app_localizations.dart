@@ -3421,6 +3421,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This lesson shares general safe-sharing habits. It does not guarantee any app will protect what you share. Always read the app\'s policy and use your phone\'s privacy settings.'**
   String get learnSafeSharingHonestyNote;
+
+  /// Short honest note in the language settings area explaining that non-English translations are AI-assisted drafts undergoing native-speaker review
+  ///
+  /// In en, this message translates to:
+  /// **'Some translations are AI-generated drafts and may contain mistakes. Native speakers are reviewing them.'**
+  String get translationDraftNotice;
 }
 
 class _AppLocalizationsDelegate

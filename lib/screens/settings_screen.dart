@@ -286,11 +286,25 @@ class _SettingsScreenState extends State<SettingsScreen>
                   color: scheme.onSurface,
                 ),
               ),
-              subtitle: Text(
-                activeLang.nativeName,
-                style: m3e.typeScale.bodyMedium.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    activeLang.nativeName,
+                    style: m3e.typeScale.bodyMedium.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.translationDraftNotice,
+                    key: const Key('settings_translation_draft_note'),
+                    style: m3e.typeScale.bodySmall.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
               ),
             ),
             if (widget.onReplayOnboarding != null)

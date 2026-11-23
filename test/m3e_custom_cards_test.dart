@@ -436,7 +436,10 @@ void main() {
 
         expect(find.text('EduTrack Classroom'), findsOneWidget);
         expect(find.text('Review recommended'), findsOneWidget);
-        expect(find.text('1 quote verified in policy'), findsOneWidget);
+        expect(
+          find.text(lookupAppLocalizations(const Locale('ar')).quotesVerifiedCount(1)),
+          findsOneWidget,
+        );
         expect(find.text('2'), findsOneWidget);
         expect(find.textContaining('SHA-256'), findsNothing);
         expect(tester.takeException(), isNull);
