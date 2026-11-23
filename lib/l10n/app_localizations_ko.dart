@@ -1707,6 +1707,10 @@ class AppLocalizationsKo extends AppLocalizations {
       'Crash logs and usage timing';
 
   @override
+  String get learnDataCollectionDiagramQuietNote =>
+      'Quiet does not mean bad: these signals help apps run smoothly.';
+
+  @override
   String get learnDataCollectionDiagramSemanticDescription =>
       'A split diagram showing two categories of data collection. The top card titled \"What you type or give\" lists four chips: Name email school, Photos and videos, Voice recordings, Homework answers. The bottom card titled \"What runs quietly\" lists four chips: Advertising ID, Device identifiers, IP address, Crash logs and usage timing. A small note reads \"Quiet does not mean bad: these signals help apps run smoothly.\" Deni the mascot sits below in a thinking pose.';
 
@@ -1893,6 +1897,10 @@ class AppLocalizationsKo extends AppLocalizations {
       'Silence on a topic like ads or microphone is not a promise the app avoids it.';
 
   @override
+  String get learnUnclearPoliciesDiagramSilenceNote =>
+      'Silence in a policy is not a promise.';
+
+  @override
   String get learnUnclearPoliciesDiagramSemanticDescription =>
       'A side-by-side comparison of a clear policy sentence and a foggy one. The left card labeled \"Clear\" shows: \"We collect your name and email to create your account. We do not share this with advertisers.\" The right card labeled \"Foggy\" shows: \"We may share your information with trusted partners for business purposes as needed.\" Below, a tips card titled \"How to spot the fog\" lists three tips: Look for \"may,\" \"could,\" or \"as needed\": they leave the door open. Check if the policy names the specific companies data goes to. Silence on a topic like ads or microphone is not a promise the app avoids it. A note on the foggy card reads \"Silence in a policy is not a promise.\" Deni the mascot peeks over the cards.';
 
@@ -1978,7 +1986,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get learnSafeSharingDiagramSemanticDescription =>
-      'A four-part diagram teaching safe sharing habits. Step 1: Stop - pause before you post, with a hand icon. Step 2: Think - does this reveal where I am or who I am with, with a brain icon. Step 3: Connect - share with people you trust, ask an adult if unsure, with a users icon. Step 4: The Cafeteria Test callout asks \"Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.\" A note below reads \"Even disappearing posts can be screenshotted and stay online permanently.\" Deni the mascot stands below with a raised hand.';
+      'A four-part diagram teaching safe sharing habits. Step 1: Stop - pause before you post, with a hand icon. Step 2: Think - does this reveal where I am or who I am with, with a brain icon. Step 3: Connect - share with people you trust, ask an adult if unsure, with a users icon. Step 4: The Cafeteria Test callout asks \"Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.\" Deni the mascot stands beside the callout with a raised hand.';
 
   @override
   String get learnSafeSharingCheckBridge =>

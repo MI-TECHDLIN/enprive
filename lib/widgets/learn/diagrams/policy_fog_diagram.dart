@@ -18,6 +18,7 @@ class PolicyFogDiagramLabels {
     required this.tipsTitle,
     required this.tips,
     required this.semanticDescription,
+    this.silenceNote,
   });
 
   final String clearTitle;
@@ -27,562 +28,293 @@ class PolicyFogDiagramLabels {
   final String tipsTitle;
   final List<String> tips;
   final String semanticDescription;
+
+  /// Optional localized reminder note displayed in the reserved Deni footer.
+  final String? silenceNote;
 }
 
-/// A side-by-side (stacked above 1.35x text scale) comparison of a clear policy sentence
-/// versus a foggy one ('may share with trusted partners for business purposes') with
-/// marker icons and 2-3 fog-spotting tips, including that silence is not a promise.
+/// A comparison diagram of a clear policy sentence versus a foggy one, followed
+/// by fog-spotting tips and a separate silence-is-not-a-promise footer note
+/// paired with Deni.
+///
+/// Built in pure flex flow (no Stack overlap) with Direction A tonal surfaces,
+/// solid vs. dashed framing so meaning never relies on color alone, and clean
+/// reflow from 320dp widths up to wide screens and 200% text scale.
 class PolicyFogDiagram extends StatelessWidget {
   const PolicyFogDiagram({super.key, required this.labels});
 
-  final PolicyFogDiagramLabels labels;
+  static const Key mascotKey = Key('policy_fog_diagram_mascot');
+  static const Key clearTitleKey = Key('policy_fog_clear_title');
+  static const Key clearExampleKey = Key('policy_fog_clear_example');
+  static const Key foggyTitleKey = Key('policy_fog_foggy_title');
+  static const Key foggyExampleKey = Key('policy_fog_foggy_example');
+  static const Key tipsTitleKey = Key('policy_fog_tips_title');
+  static const Key silenceNoteKey = Key('policy_fog_silence_note');
 
-  @override
-  Widget build(BuildContext context) {
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
-    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+  static Key tipBadgeKey(int index) => Key('policy_fog_tip_badge_$index');
 
-    return Semantics(
-      container: true,
-      excludeSemantics: true,
-      label: labels.semanticDescription,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-          final useVerticalLayout =
-              constraints.maxWidth < 480 || textScale > 1.35;
-
-          return _PolicyFogContent(
-            labels: labels,
-            isRtl: isRtl,
-            useVerticalLayout: useVerticalLayout,
-            reduceMotion: reduceMotion,
-            maxWidth: constraints.maxWidth,
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _PolicyFogContent extends StatelessWidget {
-  const _PolicyFogContent({
-    required this.labels,
-    required this.isRtl,
-    required this.useVerticalLayout,
-    required this.reduceMotion,
-    required this.maxWidth,
-  });
+  static Key tipTextKey(int index) => Key('policy_fog_tip_text_$index');
 
   final PolicyFogDiagramLabels labels;
-  final bool isRtl;
-  final bool useVerticalLayout;
-  final bool reduceMotion;
-  final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
     final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
     final categoryColors = context.categoryColors;
-    final semantics = context.enpriveSemantics;
-
-    // Colors
-    final clearColor = categoryColors.parentalConsent.color;
-    final foggyColor = semantics.reviewRecommended.icon;
-    final tipColor = categoryColors.tracking.color;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = maxWidth;
-        final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-        final clampedTextScale = textScale.clamp(1.0, 1.5);
-        final cardPadding = 16.0 * clampedTextScale;
-        final spacing = 16.0 * clampedTextScale;
-        final titleSize = 16 * clampedTextScale;
-        final exampleSize = 13 * clampedTextScale;
-        final tipSize = 13 * clampedTextScale;
-        final deniSize = 56 * clampedTextScale;
-
-        // Calculate card dimensions
-        final cardWidth = useVerticalLayout
-            ? width - 32
-            : (width - 48) / 3; // 16 left + 16 right + 16 gap * 2
-
-        // Estimate card heights (rough estimate for layout)
-        final clearCardHeight = _estimateCardHeight(
-          titleSize: titleSize,
-          exampleSize: exampleSize,
-          cardPadding: cardPadding,
-          clampedTextScale: clampedTextScale,
-        );
-        final foggyCardHeight = _estimateCardHeight(
-          titleSize: titleSize,
-          exampleSize: exampleSize,
-          cardPadding: cardPadding,
-          clampedTextScale: clampedTextScale,
-        );
-        final tipsCardHeight = _estimateTipsCardHeight(
-          tipSize: tipSize,
-          cardPadding: cardPadding,
-          clampedTextScale: clampedTextScale,
-          tipsCount: labels.tips.length,
-        );
-
-        double contentHeight;
-        if (useVerticalLayout) {
-          contentHeight =
-              clearCardHeight + foggyCardHeight + tipsCardHeight +
-              spacing * 3 + deniSize + 32;
-        } else {
-          contentHeight =
-              math.max(math.max(clearCardHeight, foggyCardHeight), tipsCardHeight) +
-              spacing * 2 +
-              deniSize +
-              32;
-        }
-
-        return SizedBox(
-          width: width,
-          height: contentHeight,
-          child: Stack(
-            children: [
-              // Clear Policy Card (top in vertical, left in horizontal)
-              if (useVerticalLayout)
-                Positioned(
-                  top: 0,
-                  left: 16,
-                  right: 16,
-                  child: _PolicyExampleCard(
-                    title: labels.clearTitle,
-                    example: labels.clearExample,
-                    icon: LucideIcons.checkCircle2,
-                    accentColor: clearColor,
-                    backgroundColor: scheme.surfaceContainerLow,
-                    borderColor: clearColor,
-                    badgeLabel: 'Clear',
-                    badgeIcon: LucideIcons.shieldCheck,
-                    cardPadding: cardPadding,
-                    titleSize: titleSize,
-                    exampleSize: exampleSize,
-                    clampedTextScale: clampedTextScale,
-                  )
-                )
-              else
-                Positioned(
-                  top: 0,
-                  left: isRtl ? width * 2 / 3 + 16 : 16,
-                  width: cardWidth,
-                  bottom: spacing + deniSize + 16,
-                  child: _PolicyExampleCard(
-                    title: labels.clearTitle,
-                    example: labels.clearExample,
-                    icon: LucideIcons.checkCircle2,
-                    accentColor: clearColor,
-                    backgroundColor: scheme.surfaceContainerLow,
-                    borderColor: clearColor,
-                    badgeLabel: 'Clear',
-                    badgeIcon: LucideIcons.shieldCheck,
-                    cardPadding: cardPadding,
-                    titleSize: titleSize,
-                    exampleSize: exampleSize,
-                    clampedTextScale: clampedTextScale,
-                  ),
-                ),
-
-              // Foggy Policy Card (middle in vertical, center in horizontal)
-              if (useVerticalLayout)
-                Positioned(
-                  top: clearCardHeight + spacing,
-                  left: 16,
-                  right: 16,
-                  child: _PolicyExampleCard(
-                    title: labels.foggyTitle,
-                    example: labels.foggyExample,
-                    icon: LucideIcons.alertCircle,
-                    accentColor: foggyColor,
-                    backgroundColor: scheme.surfaceContainer,
-                    borderColor: foggyColor,
-                    badgeLabel: 'Foggy',
-                    badgeIcon: LucideIcons.cloud,
-                    cardPadding: cardPadding,
-                    titleSize: titleSize,
-                    exampleSize: exampleSize,
-                    clampedTextScale: clampedTextScale,
-                    isFoggy: true,
-                  )
-                )
-              else
-                Positioned(
-                  top: 0,
-                  left: isRtl ? width / 3 + 16 : width / 3 + 16,
-                  width: cardWidth,
-                  bottom: spacing + deniSize + 16,
-                  child: _PolicyExampleCard(
-                    title: labels.foggyTitle,
-                    example: labels.foggyExample,
-                    icon: LucideIcons.alertCircle,
-                    accentColor: foggyColor,
-                    backgroundColor: scheme.surfaceContainer,
-                    borderColor: foggyColor,
-                    badgeLabel: 'Foggy',
-                    badgeIcon: LucideIcons.cloud,
-                    cardPadding: cardPadding,
-                    titleSize: titleSize,
-                    exampleSize: exampleSize,
-                    clampedTextScale: clampedTextScale,
-                    isFoggy: true,
-                  ),
-                ),
-
-              // Tips Card (bottom in vertical, right in horizontal)
-              if (useVerticalLayout)
-                Positioned(
-                  top: clearCardHeight + foggyCardHeight + spacing * 2,
-                  left: 16,
-                  right: 16,
-                  child: _FogTipsCard(
-                    title: labels.tipsTitle,
-                    tips: labels.tips,
-                    accentColor: tipColor,
-                    backgroundColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderColor: tipColor,
-                    cardPadding: cardPadding,
-                    titleSize: titleSize,
-                    tipSize: tipSize,
-                    clampedTextScale: clampedTextScale,
-                  )
-                )
-              else
-                Positioned(
-                  top: 0,
-                  left: isRtl ? 16 : width * 2 / 3 + 16,
-                  width: cardWidth,
-                  bottom: spacing + deniSize + 16,
-                  child: _FogTipsCard(
-                    title: labels.tipsTitle,
-                    tips: labels.tips,
-                    accentColor: tipColor,
-                    backgroundColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderColor: tipColor,
-                    cardPadding: cardPadding,
-                    titleSize: titleSize,
-                    tipSize: tipSize,
-                    clampedTextScale: clampedTextScale,
-                  ),
-                ),
-
-              // Deni mascot
-              Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
-                child: Center(
-                  child: DeniAnimatedMascot(
-                    size: deniSize,
-                    pose: DeniPose.peek,
-                    holdStill: true,
-                    showAmbientGlow: false,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    final reviewAmber = EnpriveStaticColors.reviewAmber(
+      Theme.of(context).brightness,
     );
-  }
+    final quoteStyle = context.enpriveType.policyQuotation;
 
-  double _estimateCardHeight({
-    required double titleSize,
-    required double exampleSize,
-    required double cardPadding,
-    required double clampedTextScale,
-  }) {
-    return cardPadding * 2 + titleSize * 1.25 + 8 + exampleSize * 1.4 * 3 + 24;
-  }
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: labels.semanticDescription,
+      child: ExcludeSemantics(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+            final useSideBySide =
+                constraints.maxWidth >= 520 && textScale <= 1.25;
+            final stackFooter =
+                constraints.maxWidth < 340 && textScale > 1.5;
 
-  double _estimateTipsCardHeight({
-    required double tipSize,
-    required double cardPadding,
-    required double clampedTextScale,
-    required int tipsCount,
-  }) {
-    return cardPadding * 2 + 16 * clampedTextScale * 1.25 + 8 + tipsCount * (tipSize * 1.4 + 8);
+            final clearCard = _PolicyExampleCard(
+              title: labels.clearTitle,
+              titleKey: clearTitleKey,
+              example: labels.clearExample,
+              exampleKey: clearExampleKey,
+              icon: LucideIcons.checkCircle2,
+              containerColor: scheme.secondaryContainer,
+              onContainerColor: scheme.onSecondaryContainer,
+              accentColor: scheme.secondary,
+              quoteStyle: quoteStyle,
+              dashedOutline: false,
+            );
+
+            final foggyCard = _PolicyExampleCard(
+              title: labels.foggyTitle,
+              titleKey: foggyTitleKey,
+              example: labels.foggyExample,
+              exampleKey: foggyExampleKey,
+              icon: LucideIcons.cloud,
+              containerColor: reviewAmber.container,
+              onContainerColor: reviewAmber.onContainer,
+              accentColor: reviewAmber.color,
+              quoteStyle: quoteStyle,
+              dashedOutline: true,
+            );
+
+            final tipsCard = _FogTipsCard(
+              title: labels.tipsTitle,
+              titleKey: tipsTitleKey,
+              tips: labels.tips,
+              badgeContainerColor: categoryColors.tracking.container,
+              badgeOnContainerColor: categoryColors.tracking.onContainer,
+              accentColor: categoryColors.tracking.color,
+            );
+
+            final noteText = labels.silenceNote?.trim();
+            final hasSilenceNote = noteText != null && noteText.isNotEmpty;
+
+            final mascot = const DeniAnimatedMascot(
+              key: mascotKey,
+              size: 48,
+              pose: DeniPose.peek,
+              holdStill: true,
+              showAmbientGlow: false,
+            );
+
+            final footer = Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(EnpriveRadii.md),
+              ),
+              child: !hasSilenceNote
+                  ? Center(child: mascot)
+                  : stackFooter
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        mascot,
+                        const SizedBox(height: 8),
+                        Text(
+                          noteText,
+                          key: silenceNoteKey,
+                          style: m3e.typeScale.bodySmall.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: scheme.onSurface,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        mascot,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            noteText,
+                            key: silenceNoteKey,
+                            style: m3e.typeScale.bodySmall.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurface,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+            );
+
+            final diagramBody = Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(EnpriveRadii.card),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (useSideBySide)
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(child: clearCard),
+                          const SizedBox(width: 12),
+                          Expanded(child: foggyCard),
+                        ],
+                      ),
+                    )
+                  else ...[
+                    clearCard,
+                    const SizedBox(height: 12),
+                    foggyCard,
+                  ],
+                  const SizedBox(height: 12),
+                  tipsCard,
+                  const SizedBox(height: 12),
+                  footer,
+                ],
+              ),
+            );
+
+            return constraints.maxHeight.isFinite
+                ? SingleChildScrollView(primary: false, child: diagramBody)
+                : diagramBody;
+          },
+        ),
+      ),
+    );
   }
 }
 
 class _PolicyExampleCard extends StatelessWidget {
   const _PolicyExampleCard({
     required this.title,
+    required this.titleKey,
     required this.example,
+    required this.exampleKey,
     required this.icon,
+    required this.containerColor,
+    required this.onContainerColor,
     required this.accentColor,
-    required this.backgroundColor,
-    required this.borderColor,
-    required this.badgeLabel,
-    required this.badgeIcon,
-    required this.cardPadding,
-    required this.titleSize,
-    required this.exampleSize,
-    required this.clampedTextScale,
-    this.isFoggy = false,
+    required this.quoteStyle,
+    required this.dashedOutline,
   });
 
   final String title;
+  final Key titleKey;
   final String example;
+  final Key exampleKey;
   final IconData icon;
+  final Color containerColor;
+  final Color onContainerColor;
   final Color accentColor;
-  final Color backgroundColor;
-  final Color borderColor;
-  final String badgeLabel;
-  final IconData badgeIcon;
-  final double cardPadding;
-  final double titleSize;
-  final double exampleSize;
-  final double clampedTextScale;
-  final bool isFoggy;
+  final TextStyle quoteStyle;
+  final bool dashedOutline;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
 
-    return ExcludeSemantics(
-      child: Container(
-        padding: EdgeInsets.all(cardPadding),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(EnpriveRadii.card),
-          border: Border.all(
-            color: borderColor.withValues(alpha: 0.3),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Badge + icon + title - use LayoutBuilder to adapt to available width
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final isNarrow = constraints.maxWidth < 200;
-                if (isNarrow) {
-                  // Column layout for very narrow cards
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 10 * clampedTextScale,
-                              vertical: 4 * clampedTextScale,
-                            ),
-                            decoration: BoxDecoration(
-                              color: accentColor.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(EnpriveRadii.chip),
-                              border: Border.all(
-                                color: accentColor.withValues(alpha: 0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  badgeIcon,
-                                  size: 12 * clampedTextScale,
-                                  color: accentColor,
-                                ),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(
-                                    badgeLabel,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 11 * clampedTextScale,
-                                      fontWeight: FontWeight.w700,
-                                      color: accentColor,
-                                      height: 1.2,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 32 * clampedTextScale,
-                            height: 32 * clampedTextScale,
-                            decoration: BoxDecoration(
-                              color: accentColor.withValues(alpha: 0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: Icon(
-                              icon,
-                              size: 16 * clampedTextScale,
-                              color: accentColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        title,
-                        softWrap: true,
-                        style: TextStyle(
-                          fontSize: titleSize,
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onSurface,
-                          height: 1.25,
-                        ),
-                      ),
-                    ],
-                  );
-                }
-
-                // Normal row layout with flexible badge
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Flexible(
-                      fit: FlexFit.loose,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(minWidth: 0),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 10 * clampedTextScale,
-                            vertical: 4 * clampedTextScale,
-                          ),
-                          decoration: BoxDecoration(
-                            color: accentColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(EnpriveRadii.chip),
-                            border: Border.all(
-                              color: accentColor.withValues(alpha: 0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                badgeIcon,
-                                size: 12 * clampedTextScale,
-                                color: accentColor,
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  badgeLabel,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 11 * clampedTextScale,
-                                    fontWeight: FontWeight.w700,
-                                    color: accentColor,
-                                    height: 1.2,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Flexible(
-                      fit: FlexFit.loose,
-                      child: Container(
-                        width: 36 * clampedTextScale,
-                        height: 36 * clampedTextScale,
-                        decoration: BoxDecoration(
-                          color: accentColor.withValues(alpha: 0.12),
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: Icon(
-                          icon,
-                          size: 18 * clampedTextScale,
-                          color: accentColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        title,
-                        softWrap: true,
-                        style: TextStyle(
-                          fontSize: titleSize,
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onSurface,
-                          height: 1.25,
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            // Example text
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(12 * clampedTextScale),
-              decoration: BoxDecoration(
-                color: scheme.surface,
-                borderRadius: BorderRadius.circular(EnpriveRadii.md),
-                border: Border.all(
-                  color: accentColor.withValues(alpha: 0.2),
-                  width: 1,
+    final card = Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(EnpriveRadii.md),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: scheme.surface.withValues(alpha: 0.78),
+                  shape: BoxShape.circle,
                 ),
+                child: Icon(icon, size: 18, color: accentColor),
               ),
-              child: Text(
-                example,
-                style: TextStyle(
-                  fontSize: exampleSize,
-                  fontWeight: FontWeight.w400,
-                  color: scheme.onSurfaceVariant,
-                  height: 1.4,
-                  fontFamily: 'SourceSerif4',
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  key: titleKey,
+                  style: m3e.typography.emphasized.titleSmall.copyWith(
+                    color: onContainerColor,
+                    height: 1.28,
+                  ),
                 ),
-              ),
-            ),
-            if (isFoggy) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(
-                    LucideIcons.info,
-                    size: 14 * clampedTextScale,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Silence in a policy is not a promise.',
-                      style: TextStyle(
-                        fontSize: 11 * clampedTextScale,
-                        fontWeight: FontWeight.w600,
-                        color: scheme.onSurfaceVariant,
-                        height: 1.2,
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ],
-          ],
-        ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: scheme.surface.withValues(alpha: 0.86),
+              borderRadius: BorderRadius.circular(EnpriveRadii.sm),
+            ),
+            child: Text(
+              example,
+              key: exampleKey,
+              style: quoteStyle.copyWith(
+                fontSize: 13.0,
+                fontWeight: FontWeight.w500,
+                color: scheme.onSurface,
+                height: 1.44,
+              ),
+            ),
+          ),
+        ],
       ),
+    );
+
+    if (!dashedOutline) return card;
+
+    return CustomPaint(
+      foregroundPainter: _DashedRRectPainter(
+        color: accentColor,
+        radius: EnpriveRadii.md,
+      ),
+      child: card,
     );
   }
 }
@@ -590,133 +322,150 @@ class _PolicyExampleCard extends StatelessWidget {
 class _FogTipsCard extends StatelessWidget {
   const _FogTipsCard({
     required this.title,
+    required this.titleKey,
     required this.tips,
+    required this.badgeContainerColor,
+    required this.badgeOnContainerColor,
     required this.accentColor,
-    required this.backgroundColor,
-    required this.borderColor,
-    required this.cardPadding,
-    required this.titleSize,
-    required this.tipSize,
-    required this.clampedTextScale,
   });
 
   final String title;
+  final Key titleKey;
   final List<String> tips;
+  final Color badgeContainerColor;
+  final Color badgeOnContainerColor;
   final Color accentColor;
-  final Color backgroundColor;
-  final Color borderColor;
-  final double cardPadding;
-  final double titleSize;
-  final double tipSize;
-  final double clampedTextScale;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
 
-    return ExcludeSemantics(
-      child: Container(
-        padding: EdgeInsets.all(cardPadding),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(EnpriveRadii.card),
-          border: Border.all(
-            color: borderColor.withValues(alpha: 0.3),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 36 * clampedTextScale,
-                  height: 36 * clampedTextScale,
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    LucideIcons.lightbulb,
-                    size: 18 * clampedTextScale,
-                    color: accentColor,
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(EnpriveRadii.md),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: badgeContainerColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  LucideIcons.lightbulb,
+                  size: 18,
+                  color: badgeOnContainerColor,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  key: titleKey,
+                  style: m3e.typography.emphasized.titleSmall.copyWith(
+                    color: scheme.onSurface,
+                    height: 1.28,
                   ),
                 ),
-                const SizedBox(width: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          for (var i = 0; i < tips.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  constraints: const BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: badgeContainerColor,
+                    borderRadius: BorderRadius.circular(EnpriveRadii.pill),
+                  ),
+                  child: Center(
+                    widthFactor: 1,
+                    heightFactor: 1,
+                    child: Text(
+                      '${i + 1}',
+                      key: PolicyFogDiagram.tipBadgeKey(i),
+                      style: m3e.typography.emphasized.labelSmall.copyWith(
+                        color: badgeOnContainerColor,
+                        height: 1.15,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: titleSize,
-                      fontWeight: FontWeight.w700,
+                    tips[i],
+                    key: PolicyFogDiagram.tipTextKey(i),
+                    style: m3e.typeScale.bodySmall.copyWith(
+                      fontWeight: FontWeight.w500,
                       color: scheme.onSurface,
-                      height: 1.25,
+                      height: 1.42,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            ...tips.asMap().entries.map((entry) {
-              final index = entry.key;
-              final tip = entry.value;
-              return Padding(
-                padding: EdgeInsets.only(bottom: index == tips.length - 1 ? 0 : 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 20 * clampedTextScale,
-                      height: 20 * clampedTextScale,
-                      margin: EdgeInsets.only(top: 2 * clampedTextScale),
-                      decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: accentColor.withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '${index + 1}',
-                        style: TextStyle(
-                          fontSize: 10 * clampedTextScale,
-                          fontWeight: FontWeight.w800,
-                          color: accentColor,
-                          height: 1.0,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        tip,
-                        style: TextStyle(
-                          fontSize: tipSize,
-                          fontWeight: FontWeight.w500,
-                          color: scheme.onSurface,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
           ],
-        ),
+        ],
       ),
     );
   }
+}
+
+class _DashedRRectPainter extends CustomPainter {
+  const _DashedRRectPainter({required this.color, required this.radius});
+
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rrect = RRect.fromRectAndRadius(
+      (Offset.zero & size).deflate(1.0),
+      Radius.circular(radius),
+    );
+    final path = Path()..addRRect(rrect);
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.6
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final dashPath = Path();
+    for (final metric in path.computeMetrics()) {
+      double dist = 0;
+      while (dist < metric.length) {
+        final next = math.min(dist + 6.0, metric.length);
+        dashPath.addPath(metric.extractPath(dist, next), Offset.zero);
+        dist = next + 4.5;
+      }
+    }
+    canvas.drawPath(dashPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRRectPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.radius != radius;
 }

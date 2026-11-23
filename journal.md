@@ -13,6 +13,35 @@
 
 ---
 
+## Iteration 12 — Learn Lessons 5–8 Diagram Layout Visual Fix & Emulator Verification
+
+- **Date**: 2026-11-23
+- **Branch / Commits**: `fm/enprive-learn-visual-fix` (based on `fm/enprive-learn-wire-2` `1337393`, targeting PR #28)
+- **Models Used**: Gemini 4 Neon
+- **Skills & References Used**: `material-3` (all 6 references: `color-system.md`, `typography-and-shape.md`, `component-catalog.md`, `layout-and-responsive.md`, `navigation-patterns.md`, `theming-and-dynamic-color.md`), `mobile-app-ui-design`, `flutter-build-responsive-layout`, `flutter-fix-layout-issues`, `flutter-add-widget-test`, `dart-run-static-analysis`, `svg-mascot-animator`
+- **What Was Built / Changed**:
+  - Rewrote all four Batch 2 Learn diagram widgets in Direction A Calm Evidence tonal surfaces using Stack-free `Column`/`Row` flow, removing guessed `SizedBox(height: ...)` + `Positioned(...)` coordinates, double text scaling, hardcoded English strings, and em dashes while preserving existing public label APIs:
+    - `lib/widgets/learn/diagrams/data_collection_diagram.dart` (Lesson 5): Solid blue "What you type or give" vs dashed rose "What runs quietly" adaptive cards, flexible auto-wrapping item rows, reserved Deni footer strip with localized `quietNote` (`learnDataCollectionDiagramQuietNote`, zero em dashes).
+    - `lib/widgets/learn/diagrams/retention_timeline_diagram.dart` (Lesson 6): Clean vertical 5-node rail (`44dp` icon circles + auto-stretching `_VerticalRailConnectorPainter` with dashed Step 5 connector/circle/card), full multi-line wrapped labels with zero ellipsis clipping, RTL rail mirroring, compact circular step badges (`heightFactor: 1`), and reserved bottom Deni strip.
+    - `lib/widgets/learn/diagrams/policy_fog_diagram.dart` (Lesson 7): Stacked/adaptive Clear (`secondaryContainer`) vs Foggy (dashed `reviewAmber`) comparison cards with `SourceSerif4` quote wells, separate `_FogTipsCard` with numbered badges, and dedicated Deni + localized `silenceNote` (`learnUnclearPoliciesDiagramSilenceNote`) footer strip.
+    - `lib/widgets/learn/diagrams/safe_sharing_diagram.dart` (Lesson 8): Uniform `10dp` spacing across Stop/Think/Connect tonal cards (3-column row on wide screens), eliminated all 5 hardcoded duplicate English strings so the Cafeteria Test renders once inside a dashed `reviewAmber` callout beside Deni (`DeniPose.raiseHand`, `holdStill: true`).
+  - Updated `lib/l10n/app_en.arb`, regenerated `lib/l10n/app_localizations*.dart` (`flutter gen-l10n`), and wired the two new optional diagram note labels in `lib/domain/learn/learn_lesson.dart` (also deduplicated `learnSafeSharingDiagramSemanticDescription`).
+  - Added strict layout regression tests in `test/learn_diagrams_batch2_test.dart` covering all 4 diagrams across a 9-condition matrix (light, dark, 200% text scale, Arabic RTL, 320dp, 400dp, 620dp) asserting zero overflow exceptions, diagram-bounds containment, pairwise non-overlap of every `Text` rect with every other `Text` rect and `DeniAnimatedMascot`, `RenderParagraph.didExceedMaxLines == false`, zero em dashes, vertical rail alignment + compact pill height on `RetentionTimelineDiagram`, vertical ordering on `PolicyFogDiagram`, and single-occurrence Cafeteria Test on `SafeSharingDiagram`.
+- **Challenges & Root-Cause Fixes**:
+  - *Challenge 1*: Original PR #26 diagrams combined `Stack`/`Positioned` height guesses with manual `fontSize * textScale` multiplication (double scaling with `MediaQuery.textScaler`), causing severe overlaps and ellipsis clipping on real devices and at 200% text scale.
+    - *Fix*: Replaced all absolute positioning with flex `Column`/`Row` + `IntrinsicHeight` containers and standard theme typography scaled once by Flutter's `MediaQuery.textScaler`.
+  - *Challenge 2*: First emulator verification pass at 200% font scale revealed stretched vertical numeral pills (`1`–`5`) inside `RetentionTimelineDiagram`'s multi-line cards because `Center(widthFactor: 1)` without `heightFactor: 1` expands to finite `maxHeight` passed down by `IntrinsicHeight` + `CrossAxisAlignment.stretch`.
+    - *Fix*: Added `heightFactor: 1` to the numeral badge `Center` widgets in `retention_timeline_diagram.dart`, `policy_fog_diagram.dart`, and `safe_sharing_diagram.dart`, added a badge-height regression test, rebuilt, and re-verified on `emulator-5554`.
+- **Verification**:
+  - `flutter analyze`: 0 issues
+  - `flutter test`: 386/386 tests passing
+  - `flutter build apk --debug --target-platform android-arm64`: Success
+  - Emulator `emulator-5554` (`com.mitechdlin.enprive` in-place install, data kept): Captured and visually inspected all 84 PNGs across Lessons 5–8 in light, dark, 200% font scale, and Arabic RTL (saved with before/after report at `/Users/mi-tech/firstmate/data/enprive-learn-visual-fix/before_after.md`), then restored English, light theme (`Night mode: no`), and `font_scale = 1.0`.
+- **Next Immediate Action**: Open PR into `fm/enprive-learn-wire-2` for firstmate merge into PR #28.
+- **Recommended Model for Next Turn**: Gemini 4 Argon
+
+---
+
 ## Iteration 11 — Learn Lessons 5-8 (Topics 2, 5, 7, 9) + Em Dash Cleanup
 
 - **Date**: 2026-11-22
