@@ -2966,6 +2966,12 @@ abstract class AppLocalizations {
   /// **'Crash logs and usage timing'**
   String get learnDataCollectionDiagramRunsQuietlyItem4;
 
+  /// Calm footer note beside Deni in the Lesson 5 Data Collection diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet does not mean bad: these signals help apps run smoothly.'**
+  String get learnDataCollectionDiagramQuietNote;
+
   /// Full TalkBack description for the Lesson 5 Data Collection diagram
   ///
   /// In en, this message translates to:
@@ -3260,6 +3266,12 @@ abstract class AppLocalizations {
   /// **'Silence on a topic like ads or microphone is not a promise the app avoids it.'**
   String get learnUnclearPoliciesDiagramTip3;
 
+  /// Footer reminder note beside Deni in the Lesson 7 Policy Fog diagram
+  ///
+  /// In en, this message translates to:
+  /// **'Silence in a policy is not a promise.'**
+  String get learnUnclearPoliciesDiagramSilenceNote;
+
   /// Full TalkBack description for the Lesson 7 Policy Fog diagram
   ///
   /// In en, this message translates to:
@@ -3395,7 +3407,7 @@ abstract class AppLocalizations {
   /// Full TalkBack description for the Lesson 8 Safe Sharing diagram
   ///
   /// In en, this message translates to:
-  /// **'A four-part diagram teaching safe sharing habits. Step 1: Stop - pause before you post, with a hand icon. Step 2: Think - does this reveal where I am or who I am with, with a brain icon. Step 3: Connect - share with people you trust, ask an adult if unsure, with a users icon. Step 4: The Cafeteria Test callout asks \"Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.\" A note below reads \"Even disappearing posts can be screenshotted and stay online permanently.\" Deni the mascot stands below with a raised hand.'**
+  /// **'A four-part diagram teaching safe sharing habits. Step 1: Stop - pause before you post, with a hand icon. Step 2: Think - does this reveal where I am or who I am with, with a brain icon. Step 3: Connect - share with people you trust, ask an adult if unsure, with a users icon. Step 4: The Cafeteria Test callout asks \"Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.\" Deni the mascot stands beside the callout with a raised hand.'**
   String get learnSafeSharingDiagramSemanticDescription;
 
   /// Bridge CTA for Lesson 8

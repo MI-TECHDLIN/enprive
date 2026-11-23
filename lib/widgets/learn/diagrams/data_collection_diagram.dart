@@ -16,6 +16,7 @@ class DataCollectionDiagramLabels {
     required this.runsQuietlyTitle,
     required this.runsQuietlyItems,
     required this.semanticDescription,
+    this.quietNote,
   });
 
   final String youTypeTitle;
@@ -23,61 +24,36 @@ class DataCollectionDiagramLabels {
   final String runsQuietlyTitle;
   final List<String> runsQuietlyItems;
   final String semanticDescription;
+
+  /// Optional localized calm note placed beside Deni in the reserved footer.
+  final String? quietNote;
 }
 
 /// A diagram showing the two categories of data collection:
 /// 1. What you actively type or give (name, email, photos, voice, homework)
-/// 2. What runs quietly in the background (IP address, device ID, ad ID, crash logs, usage timing)
+/// 2. What runs quietly in the background (advertising ID, device IDs, IP
+///    address, crash logs, usage timing)
 ///
-/// Uses a split-card "iceberg" layout with clear visual separation.
-/// 'Quiet does not mean bad' tone - neutral styling for both groups.
+/// Uses Direction A Calm Evidence tonal surfaces in pure flex flow (no Stack
+/// overlap). Switches between side-by-side columns on wide screens and stacked
+/// cards on narrow widths or high text scales, with Deni in a reserved footer.
 class DataCollectionDiagram extends StatelessWidget {
   const DataCollectionDiagram({super.key, required this.labels});
 
-  final DataCollectionDiagramLabels labels;
+  static const Key mascotKey = Key('data_collection_diagram_mascot');
+  static const Key youTypeTitleKey = Key('data_collection_you_type_title');
+  static const Key runsQuietlyTitleKey = Key(
+    'data_collection_runs_quietly_title',
+  );
+  static const Key quietNoteKey = Key('data_collection_quiet_note');
 
-  @override
-  Widget build(BuildContext context) {
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
-    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+  static Key youTypeItemKey(int index) =>
+      Key('data_collection_you_type_item_$index');
 
-    return Semantics(
-      container: true,
-      excludeSemantics: true,
-      label: labels.semanticDescription,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-          final useVerticalLayout =
-              constraints.maxWidth < 480 || textScale > 1.35;
-
-          return _DataCollectionContent(
-            labels: labels,
-            isRtl: isRtl,
-            useVerticalLayout: useVerticalLayout,
-            reduceMotion: reduceMotion,
-            maxWidth: constraints.maxWidth,
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _DataCollectionContent extends StatelessWidget {
-  const _DataCollectionContent({
-    required this.labels,
-    required this.isRtl,
-    required this.useVerticalLayout,
-    required this.reduceMotion,
-    required this.maxWidth,
-  });
+  static Key runsQuietlyItemKey(int index) =>
+      Key('data_collection_runs_quietly_item_$index');
 
   final DataCollectionDiagramLabels labels;
-  final bool isRtl;
-  final bool useVerticalLayout;
-  final bool reduceMotion;
-  final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -85,152 +61,146 @@ class _DataCollectionContent extends StatelessWidget {
     final scheme = m3e.colorScheme;
     final categoryColors = context.categoryColors;
 
-    // Colors from evidence categories
-    final youTypeColor = categoryColors.dataCollection.color;
-    final runsQuietlyColor = categoryColors.tracking.color;
+    final youTypePalette = categoryColors.dataCollection;
+    final runsQuietlyPalette = categoryColors.tracking;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = maxWidth;
-        final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-        final clampedTextScale = textScale.clamp(1.0, 1.5);
-        final chipHeight = 40.0 * clampedTextScale;
-        final cardPadding = 16.0 * clampedTextScale;
-        final spacing = 16.0 * clampedTextScale;
-        final titleSize = 16 * clampedTextScale;
-        final chipFontSize = 13 * clampedTextScale;
-        final deniSize = 56 * clampedTextScale;
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: labels.semanticDescription,
+      child: ExcludeSemantics(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+            final useSideBySide =
+                constraints.maxWidth >= 480 && textScale <= 1.25;
+            final stackFooter =
+                constraints.maxWidth < 340 && textScale > 1.5;
 
-        // Calculate card dimensions
-        final cardWidth = useVerticalLayout
-            ? width - 32
-            : (width - 40) / 2; // 16 left + 16 right + 8 gap
+            final youTypeCard = _DataCategoryCard(
+              title: labels.youTypeTitle,
+              titleKey: youTypeTitleKey,
+              icon: LucideIcons.userPen,
+              itemIcon: LucideIcons.pencil,
+              items: labels.youTypeItems,
+              itemKeyBuilder: youTypeItemKey,
+              containerColor: youTypePalette.container,
+              onContainerColor: youTypePalette.onContainer,
+              accentColor: youTypePalette.color,
+              dashedOutline: false,
+            );
 
-        // Calculate content height
-        final youTypeCardHeight =
-            56 + (labels.youTypeItems.length * (chipHeight + 8)).toDouble();
-        final runsQuietlyCardHeight =
-            56 + (labels.runsQuietlyItems.length * (chipHeight + 8)).toDouble();
+            final runsQuietlyCard = _DataCategoryCard(
+              title: labels.runsQuietlyTitle,
+              titleKey: runsQuietlyTitleKey,
+              icon: LucideIcons.cpu,
+              itemIcon: LucideIcons.radio,
+              items: labels.runsQuietlyItems,
+              itemKeyBuilder: runsQuietlyItemKey,
+              containerColor: runsQuietlyPalette.container,
+              onContainerColor: runsQuietlyPalette.onContainer,
+              accentColor: runsQuietlyPalette.color,
+              dashedOutline: true,
+            );
 
-        double contentHeight;
-        if (useVerticalLayout) {
-          contentHeight =
-              youTypeCardHeight + runsQuietlyCardHeight + spacing * 3 + deniSize + 32;
-        } else {
-          contentHeight =
-              math.max(youTypeCardHeight, runsQuietlyCardHeight) +
-              spacing * 2 +
-              deniSize +
-              32;
-        }
+            final quietNoteText = labels.quietNote?.trim();
+            final hasQuietNote =
+                quietNoteText != null && quietNoteText.isNotEmpty;
 
-        return SizedBox(
-          width: width,
-          height: contentHeight,
-          child: Stack(
-            children: [
-              // You Type card (top in vertical, left in horizontal)
-              if (useVerticalLayout)
-                Positioned(
-                  top: 0,
-                  left: 16,
-                  right: 16,
-                  child: _DataCategoryCard(
-                    title: labels.youTypeTitle,
-                    icon: LucideIcons.userPen,
-                    items: labels.youTypeItems,
-                    accentColor: youTypeColor,
-                    backgroundColor: scheme.surfaceContainerLow,
-                    borderColor: youTypeColor,
-                    chipHeight: chipHeight,
-                    cardPadding: cardPadding,
-                    titleSize: titleSize,
-                    chipFontSize: chipFontSize,
-                    clampedTextScale: clampedTextScale,
-                  ),
-                )
-              else
-                Positioned(
-                  top: 0,
-                  left: isRtl ? width / 2 + 4 : 16,
-                  width: cardWidth,
-                  bottom: spacing + deniSize + 16,
-                  child: _DataCategoryCard(
-                    title: labels.youTypeTitle,
-                    icon: LucideIcons.userPen,
-                    items: labels.youTypeItems,
-                    accentColor: youTypeColor,
-                    backgroundColor: scheme.surfaceContainerLow,
-                    borderColor: youTypeColor,
-                    chipHeight: chipHeight,
-                    cardPadding: cardPadding,
-                    titleSize: titleSize,
-                    chipFontSize: chipFontSize,
-                    clampedTextScale: clampedTextScale,
-                  ),
-                ),
+            final mascot = const DeniAnimatedMascot(
+              key: mascotKey,
+              size: 48,
+              pose: DeniPose.thinking,
+              holdStill: true,
+              showAmbientGlow: false,
+            );
 
-              // Runs Quietly card (bottom in vertical, right in horizontal)
-              if (useVerticalLayout)
-                Positioned(
-                  top: youTypeCardHeight + spacing,
-                  left: 16,
-                  right: 16,
-                  child: _DataCategoryCard(
-                    title: labels.runsQuietlyTitle,
-                    icon: LucideIcons.cpu,
-                    items: labels.runsQuietlyItems,
-                    accentColor: runsQuietlyColor,
-                    backgroundColor: scheme.surfaceContainer,
-                    borderColor: runsQuietlyColor,
-                    chipHeight: chipHeight,
-                    cardPadding: cardPadding,
-                    titleSize: titleSize,
-                    chipFontSize: chipFontSize,
-                    clampedTextScale: clampedTextScale,
-                    isQuietNote: true,
-                  ),
-                )
-              else
-                Positioned(
-                  top: 0,
-                  left: isRtl ? 16 : width / 2 + 4,
-                  width: cardWidth,
-                  bottom: spacing + deniSize + 16,
-                  child: _DataCategoryCard(
-                    title: labels.runsQuietlyTitle,
-                    icon: LucideIcons.cpu,
-                    items: labels.runsQuietlyItems,
-                    accentColor: runsQuietlyColor,
-                    backgroundColor: scheme.surfaceContainer,
-                    borderColor: runsQuietlyColor,
-                    chipHeight: chipHeight,
-                    cardPadding: cardPadding,
-                    titleSize: titleSize,
-                    chipFontSize: chipFontSize,
-                    clampedTextScale: clampedTextScale,
-                    isQuietNote: true,
-                  ),
-                ),
-
-              // Deni mascot
-              Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
-                child: Center(
-                  child: DeniAnimatedMascot(
-                    size: deniSize,
-                    pose: DeniPose.thinking,
-                    holdStill: true,
-                    showAmbientGlow: false,
-                  ),
-                ),
+            final footer = Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainer,
+                borderRadius: BorderRadius.circular(EnpriveRadii.md),
               ),
-            ],
-          ),
-        );
-      },
+              child: !hasQuietNote
+                  ? Center(child: mascot)
+                  : stackFooter
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        mascot,
+                        const SizedBox(height: 8),
+                        Text(
+                          quietNoteText,
+                          key: quietNoteKey,
+                          style: m3e.typeScale.bodySmall.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: scheme.onSurface,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        mascot,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            quietNoteText,
+                            key: quietNoteKey,
+                            style: m3e.typeScale.bodySmall.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurface,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+            );
+
+            final diagramBody = Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(EnpriveRadii.card),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (useSideBySide)
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(child: youTypeCard),
+                          const SizedBox(width: 12),
+                          Expanded(child: runsQuietlyCard),
+                        ],
+                      ),
+                    )
+                  else ...[
+                    youTypeCard,
+                    const SizedBox(height: 12),
+                    runsQuietlyCard,
+                  ],
+                  const SizedBox(height: 12),
+                  footer,
+                ],
+              ),
+            );
+
+            return constraints.maxHeight.isFinite
+                ? SingleChildScrollView(primary: false, child: diagramBody)
+                : diagramBody;
+          },
+        ),
+      ),
     );
   }
 }
@@ -238,159 +208,150 @@ class _DataCollectionContent extends StatelessWidget {
 class _DataCategoryCard extends StatelessWidget {
   const _DataCategoryCard({
     required this.title,
+    required this.titleKey,
     required this.icon,
+    required this.itemIcon,
     required this.items,
+    required this.itemKeyBuilder,
+    required this.containerColor,
+    required this.onContainerColor,
     required this.accentColor,
-    required this.backgroundColor,
-    required this.borderColor,
-    required this.chipHeight,
-    required this.cardPadding,
-    required this.titleSize,
-    required this.chipFontSize,
-    required this.clampedTextScale,
-    this.isQuietNote = false,
+    required this.dashedOutline,
   });
 
   final String title;
+  final Key titleKey;
   final IconData icon;
+  final IconData itemIcon;
   final List<String> items;
+  final Key Function(int index) itemKeyBuilder;
+  final Color containerColor;
+  final Color onContainerColor;
   final Color accentColor;
-  final Color backgroundColor;
-  final Color borderColor;
-  final double chipHeight;
-  final double cardPadding;
-  final double titleSize;
-  final double chipFontSize;
-  final double clampedTextScale;
-  final bool isQuietNote;
+  final bool dashedOutline;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final m3e = EnpriveM3ETheme.of(context);
+    final scheme = m3e.colorScheme;
 
-    return ExcludeSemantics(
-      child: Container(
-        padding: EdgeInsets.all(cardPadding),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(EnpriveRadii.card),
-          border: Border.all(
-            color: borderColor.withValues(alpha: 0.3),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Title with icon
-            Row(
-              children: [
-                Container(
-                  width: 36 * clampedTextScale,
-                  height: 36 * clampedTextScale,
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    icon,
-                    size: 18 * clampedTextScale,
-                    color: accentColor,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: titleSize,
-                      fontWeight: FontWeight.w700,
-                      color: scheme.onSurface,
-                      height: 1.25,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Item chips
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: items.map((item) {
-                return Container(
-                  height: chipHeight,
-                  padding: EdgeInsets.symmetric(horizontal: 12 * clampedTextScale),
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(EnpriveRadii.chip),
-                    border: Border.all(
-                      color: accentColor.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      item,
-                      style: TextStyle(
-                        fontSize: chipFontSize,
-                        fontWeight: FontWeight.w500,
-                        color: accentColor,
-                        height: 1.2,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            if (isQuietNote) ...[
-              const SizedBox(height: 12),
+    final card = Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(EnpriveRadii.md),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
               Container(
-                padding: EdgeInsets.all(12 * clampedTextScale),
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(EnpriveRadii.md),
-                  border: Border.all(
-                    color: scheme.outlineVariant,
-                    width: 1,
-                  ),
+                  color: scheme.surface.withValues(alpha: 0.78),
+                  shape: BoxShape.circle,
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      LucideIcons.info,
-                      size: 16 * clampedTextScale,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Quiet does not mean bad — these signals help apps run smoothly.',
-                        style: TextStyle(
-                          fontSize: 12 * clampedTextScale,
-                          fontWeight: FontWeight.w500,
-                          color: scheme.onSurfaceVariant,
-                          height: 1.3,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: Icon(icon, size: 18, color: accentColor),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  key: titleKey,
+                  style: m3e.typography.emphasized.titleSmall.copyWith(
+                    color: onContainerColor,
+                    height: 1.28,
+                  ),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          for (var i = 0; i < items.length; i++) ...[
+            if (i > 0) const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: scheme.surface.withValues(alpha: 0.82),
+                borderRadius: BorderRadius.circular(EnpriveRadii.sm),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(itemIcon, size: 14, color: accentColor),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      items[i],
+                      key: itemKeyBuilder(i),
+                      style: m3e.typeScale.bodySmall.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onSurface,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
+
+    if (!dashedOutline) return card;
+
+    return CustomPaint(
+      foregroundPainter: _DashedRRectPainter(
+        color: accentColor.withValues(alpha: 0.65),
+        radius: EnpriveRadii.md,
+      ),
+      child: card,
+    );
   }
+}
+
+class _DashedRRectPainter extends CustomPainter {
+  const _DashedRRectPainter({required this.color, required this.radius});
+
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rrect = RRect.fromRectAndRadius(
+      (Offset.zero & size).deflate(1.0),
+      Radius.circular(radius),
+    );
+    final path = Path()..addRRect(rrect);
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final dashPath = Path();
+    for (final metric in path.computeMetrics()) {
+      double dist = 0;
+      while (dist < metric.length) {
+        final next = math.min(dist + 6.0, metric.length);
+        dashPath.addPath(metric.extractPath(dist, next), Offset.zero);
+        dist = next + 4.5;
+      }
+    }
+    canvas.drawPath(dashPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRRectPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.radius != radius;
 }
