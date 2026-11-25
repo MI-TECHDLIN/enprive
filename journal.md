@@ -79,7 +79,7 @@
 - **Project**: **Enprive** (`com.mitechdlin.enprive`, Kotlin namespace `com.example.enprive`) - Evidence-First Hybrid AI Privacy Companion for Parents & Teachers (**Google #BuildHybridAI 2026**)
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`, Android app `1:71373777460:android:b8983622f3315d6d3d7861`)
-- **Current `main` HEAD**: `79fd2e0` (Merge of https://github.com/MI-TECHDLIN/enprive/pull/31 - README and Iteration 58 pause checkpoint)
+- **Current `main` HEAD**: `d738f55` (Merge of https://github.com/MI-TECHDLIN/enprive/pull/33 - D5.3-F Stage 2 translations)
 - **Status**: **Paused for physical testing** (waiting for a Gemini Nano 4 capable Android phone)
 - **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze: 28 November 2026)
 - **Next Queued Action**: Connect a Gemini Nano 4 capable phone, register its App Check debug token, install the signed release build, run physical-device verification (Nano 4 + Play Integrity + real-device walkthroughs), finish translations, and record the demo video.
@@ -2097,6 +2097,20 @@
   3. Russian visual QA on `emulator-5554` (Settings, Home, Learn, lesson): shortened `themeModeSystem` ("Авто"), `depthBalanced` ("Баланс") and `learnPolicyFolderTitle` so no word breaks mid-word.
 - **Verification**: `l10n_status.py --strict` clean for 8 locales, `flutter analyze` 0 issues, `flutter test` 392/392, arm64 debug build OK.
 - **Not done**: consent sheet and Review result screenshots and 200% text in Russian; de/it/pt not visually checked.
+
+
+---
+
+## Iteration 61: D5.3-F Stage 3 (PR 3) - ja, ko, zh Translations (2026-11-25)
+
+- **Branch / Commit State**: `fm/enprive-d53f-l10n-stage3` atop `origin/main` `d738f55` (PRs #32 and #33 merged); direct PR into `main`. Model: **Claude Sonnet 5.5**.
+- **Skills Used**: `flutter-setup-localization`, `dart-run-static-analysis`, `flutter-add-widget-test`.
+- **What Was Built**:
+  1. `app_{ja,ko,zh}.arb` now hold all 729 keys: 142 existing, 406 pre-pause drafts and 181 externalized keys, following `docs/l10n_glossary.md`.
+  2. `test/l10n_completeness_test.dart` now covers all 11 secondary locales; `untranslated_messages.json` regenerated (no untranslated keys remain).
+  3. Japanese visual QA on `emulator-5554` (Settings, Home, Learn): no clipping or mid-word breaks; English, light theme and font scale 1.0 restored.
+- **Verification**: `l10n_status.py --strict` clean for 11 locales, `flutter analyze` 0 issues, `flutter test` 392/392, arm64 debug build OK.
+- **Not done**: consent sheet, Review result and lesson screenshots, 200% text in Japanese; ko and zh not visually checked.
 
 ---
 
