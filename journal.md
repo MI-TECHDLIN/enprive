@@ -2084,6 +2084,20 @@
   Then for Stage 2, branch `fm/enprive-d53f-l10n-pr2` from the updated base, extract the 548-key polished `app_{de,it,pt,ru}.arb` from commit `3a48be3` (`git show 3a48be3:lib/l10n/app_de.arb`, etc.), and add the 181 keys from `/Users/mi-tech/firstmate/data/enprive-d53f-l10n/ext_keys_en.json`.
 - **Recommended Model for Resume**: **Gemini 4 Neon / Gemini 4 Argon**.
 
+
+---
+
+## Iteration 60: D5.3-F Stage 2 (PR 2) - de, it, pt, ru Translations (2026-11-25)
+
+- **Branch / Commit State**: `fm/enprive-d53f-l10n-stage2` atop the head of PR #32 (`fm/enprive-d53f-l10n-hardcoded`, not yet merged); direct PR. Model: **Claude Sonnet 5.5**.
+- **Skills Used**: `flutter-setup-localization`, `dart-run-static-analysis`, `flutter-add-widget-test`.
+- **What Was Built**:
+  1. `app_{de,it,pt,ru}.arb` now hold all 729 keys: the 548 keys drafted before the pause plus the 181 externalized keys, using `docs/l10n_glossary.md` terms (Quick Settings, Usage Access, Receipts, Cloud AI, on-device AI).
+  2. `test/l10n_completeness_test.dart` now covers `ar, de, es, fr, hi, it, pt, ru`; `untranslated_messages.json` regenerated.
+  3. Russian visual QA on `emulator-5554` (Settings, Home, Learn, lesson): shortened `themeModeSystem` ("Авто"), `depthBalanced` ("Баланс") and `learnPolicyFolderTitle` so no word breaks mid-word.
+- **Verification**: `l10n_status.py --strict` clean for 8 locales, `flutter analyze` 0 issues, `flutter test` 392/392, arm64 debug build OK.
+- **Not done**: consent sheet and Review result screenshots and 200% text in Russian; de/it/pt not visually checked.
+
 ---
 
 ## Upcoming Iterations Queue (From Docs & Architecture Review)

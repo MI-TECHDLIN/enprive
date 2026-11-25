@@ -12,7 +12,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Locales fully translated in this stage (expanded across D5.3-F PRs 1-3).
-const List<String> _completedSecondaryLocales = ['ar', 'es', 'fr', 'hi'];
+const List<String> _completedSecondaryLocales = [
+  'ar',
+  'de',
+  'es',
+  'fr',
+  'hi',
+  'it',
+  'pt',
+  'ru',
+];
 
 const List<String> _allSecondaryLocales = [
   'ar',
@@ -83,97 +92,98 @@ void main() {
     final enArb = _loadArb('en');
     final enKeys = enArb.keys.where((k) => !k.startsWith('@')).toList();
 
-    test('No ARB file (English or any secondary locale) contains em dashes', () {
-      for (final code in ['en', ..._allSecondaryLocales]) {
+    test(
+      'No ARB file (English or any secondary locale) contains em dashes',
+      () {
+        for (final code in ['en', ..._allSecondaryLocales]) {
+          final arb = _loadArb(code);
+          final offending = <String>[];
+          for (final entry in arb.entries) {
+            if (entry.key.startsWith('@')) continue;
+            final val = entry.value.toString();
+            if (val.contains('\u2014')) {
+              offending.add(entry.key);
+            }
+          }
+          expect(
+            offending,
+            isEmpty,
+            reason: 'Em dash found in app_$code.arb: $offending',
+          );
+        }
+      },
+    );
+
+    test('Every translated key in every locale matches English placeholder sets and has no extra keys', () {
+      final enKeySet = enKeys.toSet();
+      for (final code in _allSecondaryLocales) {
         final arb = _loadArb(code);
-        final offending = <String>[];
+        final extraKeys = arb.keys
+            .where((k) => !k.startsWith('@') && !enKeySet.contains(k))
+            .toList();
+        expect(
+          extraKeys,
+          isEmpty,
+          reason: 'Unexpected extra keys in app_$code.arb: $extraKeys',
+        );
+
+        final mismatches = <String>[];
         for (final entry in arb.entries) {
           if (entry.key.startsWith('@')) continue;
           final val = entry.value.toString();
-          if (val.contains('\u2014')) {
-            offending.add(entry.key);
+          expect(
+            val.trim(),
+            isNotEmpty,
+            reason: 'Empty value for ${entry.key} in app_$code.arb',
+          );
+          final enPh = _extractPlaceholders(enArb[entry.key].toString());
+          final locPh = _extractPlaceholders(val);
+          if (enPh.length != locPh.length || !enPh.containsAll(locPh)) {
+            mismatches.add('${entry.key}: EN=$enPh vs $code=$locPh');
           }
         }
         expect(
-          offending,
+          mismatches,
           isEmpty,
-          reason: 'Em dash found in app_$code.arb: $offending',
+          reason: 'Placeholder mismatches in app_$code.arb: $mismatches',
         );
       }
     });
 
-    test(
-      'Every translated key in every locale matches English placeholder sets and has no extra keys',
-      () {
-        final enKeySet = enKeys.toSet();
-        for (final code in _allSecondaryLocales) {
-          final arb = _loadArb(code);
-          final extraKeys = arb.keys
-              .where((k) => !k.startsWith('@') && !enKeySet.contains(k))
-              .toList();
-          expect(
-            extraKeys,
-            isEmpty,
-            reason: 'Unexpected extra keys in app_$code.arb: $extraKeys',
-          );
+    test('Every completed locale has every English key and valid localized lookups', () {
+      for (final code in _completedSecondaryLocales) {
+        final arb = _loadArb(code);
+        final missing = enKeys.where((k) => !arb.containsKey(k)).toList();
+        expect(
+          missing,
+          isEmpty,
+          reason:
+              'app_$code.arb is missing ${missing.length} keys: '
+              '${missing.take(10).toList()}',
+        );
 
-          final mismatches = <String>[];
-          for (final entry in arb.entries) {
-            if (entry.key.startsWith('@')) continue;
-            final val = entry.value.toString();
-            expect(
-              val.trim(),
-              isNotEmpty,
-              reason: 'Empty value for ${entry.key} in app_$code.arb',
-            );
-            final enPh = _extractPlaceholders(enArb[entry.key].toString());
-            final locPh = _extractPlaceholders(val);
-            if (enPh.length != locPh.length || !enPh.containsAll(locPh)) {
-              mismatches.add('${entry.key}: EN=$enPh vs $code=$locPh');
-            }
-          }
-          expect(
-            mismatches,
-            isEmpty,
-            reason: 'Placeholder mismatches in app_$code.arb: $mismatches',
-          );
-        }
-      },
-    );
-
-    test(
-      'Every completed locale has every English key and valid localized lookups',
-      () {
-        for (final code in _completedSecondaryLocales) {
-          final arb = _loadArb(code);
-          final missing = enKeys.where((k) => !arb.containsKey(k)).toList();
-          expect(
-            missing,
-            isEmpty,
-            reason: 'app_$code.arb is missing ${missing.length} keys: '
-                '${missing.take(10).toList()}',
-          );
-
-          final l10n = lookupAppLocalizations(Locale(code));
-          expect(l10n.translationDraftNotice.trim(), isNotEmpty);
-          expect(l10n.translationDraftNotice, isNot(enArb['translationDraftNotice']));
-          expect(l10n.cloudConsentDisclosure.trim(), isNotEmpty);
-          expect(l10n.statusSourceMatched.trim(), isNotEmpty);
-          expect(l10n.statusDeviceObserved.trim(), isNotEmpty);
-          expect(l10n.statusInterpretation.trim(), isNotEmpty);
-          expect(l10n.statusUnverified.trim(), isNotEmpty);
-          expect(l10n.verifiedClausesCount(1), isNotEmpty);
-          expect(l10n.verifiedClausesCount(5), isNotEmpty);
-          expect(l10n.consentMaskedCount(0), isNotEmpty);
-          expect(l10n.consentMaskedCount(1), isNotEmpty);
-          expect(l10n.consentMaskedCount(3), isNotEmpty);
-          expect(l10n.permissionComparisonMismatchNote(1), isNotEmpty);
-          expect(l10n.permissionComparisonMismatchNote(4), isNotEmpty);
-          expect(l10n.learnLessonStepCount(1), isNotEmpty);
-          expect(l10n.learnLessonStepCount(5), isNotEmpty);
-        }
-      },
-    );
+        final l10n = lookupAppLocalizations(Locale(code));
+        expect(l10n.translationDraftNotice.trim(), isNotEmpty);
+        expect(
+          l10n.translationDraftNotice,
+          isNot(enArb['translationDraftNotice']),
+        );
+        expect(l10n.cloudConsentDisclosure.trim(), isNotEmpty);
+        expect(l10n.statusSourceMatched.trim(), isNotEmpty);
+        expect(l10n.statusDeviceObserved.trim(), isNotEmpty);
+        expect(l10n.statusInterpretation.trim(), isNotEmpty);
+        expect(l10n.statusUnverified.trim(), isNotEmpty);
+        expect(l10n.verifiedClausesCount(1), isNotEmpty);
+        expect(l10n.verifiedClausesCount(5), isNotEmpty);
+        expect(l10n.consentMaskedCount(0), isNotEmpty);
+        expect(l10n.consentMaskedCount(1), isNotEmpty);
+        expect(l10n.consentMaskedCount(3), isNotEmpty);
+        expect(l10n.permissionComparisonMismatchNote(1), isNotEmpty);
+        expect(l10n.permissionComparisonMismatchNote(4), isNotEmpty);
+        expect(l10n.learnLessonStepCount(1), isNotEmpty);
+        expect(l10n.learnLessonStepCount(5), isNotEmpty);
+      }
+    });
 
     test('All 12 supported locales are registered in kEnpriveLanguages', () {
       expect(kEnpriveLanguages.length, 12);
@@ -188,7 +198,8 @@ void main() {
       'renders calm translation draft note in English and Arabic RTL at 200% text without overflow',
       (WidgetTester tester) async {
         for (final locale in const [Locale('en'), Locale('ar')]) {
-          final expected = lookupAppLocalizations(locale).translationDraftNotice;
+          final expected = lookupAppLocalizations(locale)
+              .translationDraftNotice;
           await tester.pumpWidget(
             MaterialApp(
               locale: locale,
