@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../../core/theme/enprive_theme.dart';
+import '../../l10n/app_localizations.dart';
 import 'enprive_material_card_surface.dart';
 
 /// Archival Material 3 Expressive policy quotation card inspired by Warm
@@ -49,6 +50,10 @@ class EnpriveQuoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context) ??
+        lookupAppLocalizations(
+          Localizations.maybeLocaleOf(context) ?? const Locale('en'),
+        );
     final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
     final surfaces = context.enpriveSurfaces;
@@ -189,7 +194,7 @@ class EnpriveQuoteCard extends StatelessWidget {
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
-                                    'Document fingerprint · $sha256Digest',
+                                    '${l10n.snapshotDigestLabel} · $sha256Digest',
                                     overflow: TextOverflow.ellipsis,
                                     style: typeExt.sha256Hash.copyWith(
                                       fontSize: 11.5,
@@ -207,12 +212,12 @@ class EnpriveQuoteCard extends StatelessWidget {
                                     ScaffoldMessenger.maybeOf(context)
                                       ?..hideCurrentSnackBar()
                                       ..showSnackBar(
-                                        const SnackBar(
+                                        SnackBar(
                                           content: Text(
-                                            'Document fingerprint copied',
+                                            l10n.digestCopiedMsg,
                                           ),
                                           behavior: SnackBarBehavior.floating,
-                                          duration: Duration(seconds: 2),
+                                          duration: const Duration(seconds: 2),
                                         ),
                                       );
                                   },

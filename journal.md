@@ -79,7 +79,7 @@
 - **Project**: **Enprive** (`com.mitechdlin.enprive`, Kotlin namespace `com.example.enprive`) - Evidence-First Hybrid AI Privacy Companion for Parents & Teachers (**Google #BuildHybridAI 2026**)
 - **Repository**: `https://github.com/MI-TECHDLIN/enprive`
 - **Firebase Project**: `enprive-hybrid-ai` (Project Number: `71373777460`, Android app `1:71373777460:android:b8983622f3315d6d3d7861`)
-- **Current `main` HEAD**: `bb247b9` (Merge of https://github.com/MI-TECHDLIN/enprive/pull/30 - D5.3-F Stage 1 translations)
+- **Current `main` HEAD**: `79fd2e0` (Merge of https://github.com/MI-TECHDLIN/enprive/pull/31 - README and Iteration 58 pause checkpoint)
 - **Status**: **Paused for physical testing** (waiting for a Gemini Nano 4 capable Android phone)
 - **Competition Deadline**: 30 November 2026, 2:00 PM PT (Feature Freeze: 28 November 2026)
 - **Next Queued Action**: Connect a Gemini Nano 4 capable phone, register its App Check debug token, install the signed release build, run physical-device verification (Nano 4 + Play Integrity + real-device walkthroughs), finish translations, and record the demo video.
@@ -2037,6 +2037,52 @@
   - `README.md` relative file links: all verified present in the repository; zero em dashes in `README.md` and Iteration 58; zero secret-like patterns in diff.
 - **Next Immediate Action & Recommended Model**:
   - Hold development paused until the owner confirms the Gemini Nano 4 phone is connected, then execute the **How to Resume** checklist. Recommended Model on resume: **Gemini 4 Argon / Claude Opus 5.5**.
+
+---
+
+## Iteration 59: D5.3-F Hardcoded-English UI Externalization & Paused Handoff (2026-11-23)
+
+- **Branch / Commit State**: `fm/enprive-d53f-l10n-hardcoded` atop `origin/main` (`bb247b9`, after PR #30 Stage 1 merged); pushed as a **DRAFT PR** per captain's pause instruction until the Gemini Nano 4 phone is ready for testing. Model: **Gemini 4 Neon**.
+- **Skills Used**: `flutter-setup-localization`, `dart-run-static-analysis`, `flutter-add-widget-test`.
+- **What Was Built & Completed**:
+  1. **Hardcoded User-Visible English Externalization (+181 ARB keys, 729 total in `lib/l10n/app_en.arb`)**:
+     - Externalized hardcoded UI strings and wired `AppLocalizations` across:
+       - `lib/main.dart` (Home Quick Settings Companion card)
+       - `lib/screens/settings_screen.dart` (Appearance System/Light/Dark, Quick Settings & Usage Access section, dialogs, status badges, snackbars)
+       - `lib/screens/companion_screen.dart` (header/AppBar, lock-screen guard, foreground detection prompts, manual app picker prompt, permission list & guided category chips, 6 explanation section headers, persistence card, snackbars, plus UI mapping of known native `ForegroundAppResolver` fallback reasons)
+       - `lib/widgets/cloud_consent_sheet.dart` (localized UI mapping of `ReviewCoordinator` `deviceReason` notices without breaking unit-test return strings)
+       - `lib/widgets/review/unsaved_review_exit_sheet.dart` (title, draft/modified descriptions, buttons)
+       - `lib/screens/review_result_screen.dart` (policy update title, save/delete snackbars, modified draft banner, retry button, sample permissions header, source kind labels, extraction status labels, Advanced details rows)
+       - Shared widgets (`lib/widgets/private_readiness_sheet.dart`, `lib/widgets/navigation/enprive_navigation_shell.dart`, `lib/widgets/enprive_provenance_chip.dart`, `lib/widgets/deni_animated_mascot.dart`, `lib/widgets/m3e/enprive_quote_card.dart`, `lib/widgets/m3e/enprive_collapsible_quote_box.dart`).
+     - Replaced remaining UI em dashes with colons (`Deni: Enprive Companion`, `companionLookingAtSubtitle`, `companionSaveReceiptFailed`, `reviewModifiedDraftBody`), updated `test/quick_settings_companion_test.dart:721`, and applied the 3 requested English consistency fixes (`recognise` -> `recognize` in `learnDataCollectionIntro1`; `app ID` -> `App ID` in `associationStatusUnverifiedBody` and `associationStatusAmbiguousPeerBody`).
+  2. **Stage 1 Locales Updated (`ar`, `es`, `fr`, `hi`)**:
+     - Translated all 181 newly externalized keys across `lib/l10n/app_ar.arb`, `app_es.arb`, `app_fr.arb`, and `app_hi.arb` (729/729 keys complete in each; 0 em dashes; exact placeholders).
+     - Regenerated `lib/l10n/app_localizations*.dart` (`flutter gen-l10n`) and updated `untranslated_messages.json` (7 remaining locales tracked).
+  3. **Tests Extended (`test/l10n_completeness_test.dart`)**:
+     - Added assertions verifying externalized Settings Appearance/Quick Settings strings in EN and Arabic RTL at 200% text scale, plus `CloudConsentSheet` localized `deviceReason` rendering in Arabic.
+- **Verification Status** (emulator was not modified during this branch; restored to English, light theme, and font scale 1.0 after PR #30):
+  - `python3 tool/l10n_status.py --locales ar,es,fr,hi --strict`: **729/729 keys**, 0 missing, 0 extra, 0 placeholder mismatches, 0 plural errors, 0 em dashes.
+  - `flutter analyze`: **0 issues**.
+  - Full `flutter test`: **392 / 392 passed**.
+  - `flutter build apk --debug --target-platform android-arm64`: **succeeded**.
+- **What Remains (Paused Until Nano 4 Phone Testing)**:
+  1. **Finalize this branch (`fm/enprive-d53f-l10n-hardcoded`)**: Mark draft PR ready for review once resumed (or keep as separate PR before Stage 2). Note: dynamic domain-layer explanation prose inside `CompanionPolicyResolver.buildExplanation` (e.g. `whatAppDeclared`, `policyStatusHeadline`, `unknowns`, `suggestedQuestions`) remains English domain output and can be localized in a follow-up if needed.
+  2. **Stage 2 / PR 2 (`de`, `it`, `pt`, `ru`)**:
+     - Already drafted and self-reviewed for the original 548 keys on local WIP branch `fm/enprive-d53f-l10n-pr2` (`3a48be3`) and under `/Users/mi-tech/firstmate/data/enprive-d53f-l10n/{de,it,pt,ru}_{core,learn}.json`.
+     - Translate the 181 externalized keys (listed in `/Users/mi-tech/firstmate/data/enprive-d53f-l10n/ext_keys_en.json`) into `de`, `it`, `pt`, `ru`, run quality gates (a)-(b), expand `_completedSecondaryLocales` in `test/l10n_completeness_test.dart`, run `flutter gen-l10n` + `tool/l10n_status.py --locales ar,de,es,fr,hi,it,pt,ru --strict --write-untranslated` + `flutter analyze` + `flutter test` + debug APK build, and run Russian (`ru`) emulator visual QA (then restore EN/light/1.0).
+  3. **Stage 3 / PR 3 (`ja`, `ko`, `zh`)**:
+     - Original 406-key drafts already saved under `/Users/mi-tech/firstmate/data/enprive-d53f-l10n/{ja,ko,zh}_{core,learn}.json`.
+     - Merge those + translate the 181 externalized keys into `ja`, `ko`, `zh`, run quality gates (a)-(b), expand `_completedSecondaryLocales` to all 11 secondary locales (`untranslated_messages.json` becomes `{}`), verify `tool/l10n_status.py --strict`, `flutter analyze`, `flutter test`, debug APK build, and run Japanese (`ja`) emulator visual QA (then restore EN/light/1.0).
+- **How to Resume**:
+  ```bash
+  git fetch origin main
+  git checkout fm/enprive-d53f-l10n-hardcoded
+  git rebase origin/main
+  python3 tool/l10n_status.py --locales ar,es,fr,hi --strict
+  flutter analyze && flutter test test/l10n_completeness_test.dart
+  ```
+  Then for Stage 2, branch `fm/enprive-d53f-l10n-pr2` from the updated base, extract the 548-key polished `app_{de,it,pt,ru}.arb` from commit `3a48be3` (`git show 3a48be3:lib/l10n/app_de.arb`, etc.), and add the 181 keys from `/Users/mi-tech/firstmate/data/enprive-d53f-l10n/ext_keys_en.json`.
+- **Recommended Model for Resume**: **Gemini 4 Neon / Gemini 4 Argon**.
 
 ---
 

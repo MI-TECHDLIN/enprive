@@ -718,7 +718,7 @@ void main() {
         await _pumpFrames(tester);
 
         expect(find.byType(CompanionScreen), findsOneWidget);
-        expect(find.text('Deni — Enprive Companion'), findsWidgets);
+        expect(find.text('Deni: Enprive Companion'), findsWidgets);
         expect(
           find.text("We think you're using Math Makers. Is this correct?"),
           findsOneWidget,

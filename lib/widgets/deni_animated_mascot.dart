@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/enprive_colors.dart';
 import '../core/theme/enprive_tokens.dart';
+import '../l10n/app_localizations.dart';
 import 'deni_gesture.dart';
 
 enum DeniPose {
@@ -303,8 +304,12 @@ class _DeniAnimatedMascotState extends State<DeniAnimatedMascot>
       // Decorative: adjacent text already labels the content.
       return ExcludeSemantics(child: mascot);
     }
+    final l10n = AppLocalizations.of(context) ??
+        lookupAppLocalizations(
+          Localizations.maybeLocaleOf(context) ?? const Locale('en'),
+        );
     return Semantics(
-      label: widget.semanticLabel ?? 'Deni, your privacy guide',
+      label: widget.semanticLabel ?? l10n.semanticsDeniMascot,
       button: true,
       child: mascot,
     );

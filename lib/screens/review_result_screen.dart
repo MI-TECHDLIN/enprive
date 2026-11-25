@@ -1174,7 +1174,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         : null;
     final sheetTitle = isInitialAttachment
         ? l10n.addAppPrivacyPolicyBtn
-        : 'Update privacy policy for $displayTitle';
+        : l10n.updatePrivacyPolicyForTitle(displayTitle);
 
     _isOpeningAttachSheet = true;
     PolicyIntakeSuccess? intake;
@@ -1356,8 +1356,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       return true;
     } catch (_) {
       if (!mounted) return false;
-      const errMsg =
-          'Could not save receipt. Your review draft is still open.';
+      final errMsg = l10n.reviewSaveFailedError;
       setState(() {
         _lifecycleState = ReceiptLifecycleState.saveFailure;
         _saveErrorMessage = errMsg;
@@ -1365,7 +1364,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(errMsg),
             behavior: SnackBarBehavior.floating,
           ),
@@ -1402,8 +1401,8 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(
-            content: Text('Removed from saved receipts.'),
+          SnackBar(
+            content: Text(l10n.reviewRemovedFromReceiptsSnack),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -1413,8 +1412,8 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(
-            content: Text('Could not remove saved receipt.'),
+          SnackBar(
+            content: Text(l10n.reviewRemoveFailedSnack),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -1970,7 +1969,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'New draft from saved receipt',
+                                            l10n.reviewModifiedDraftTitle,
                                             style: m3e.typeScale.labelLarge
                                                 .copyWith(
                                                   fontWeight: FontWeight.w800,
@@ -1979,7 +1978,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                           ),
                                           const SizedBox(height: 3),
                                           Text(
-                                            'Save to Receipts to keep this updated review — your original saved receipt remains unchanged.',
+                                            l10n.reviewModifiedDraftBody,
                                             style: m3e.typeScale.bodySmall
                                                 .copyWith(
                                                   color:
@@ -2056,7 +2055,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                                   receipt,
                                                 ),
                                               ),
-                                              child: const Text('Retry save'),
+                                              child: Text(l10n.btnRetrySave),
                                             ),
                                           ],
                                         ],
@@ -2343,7 +2342,9 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               const SizedBox(height: 24),
                               Text(
                                 isSampleReceipt
-                                    ? 'Sample permissions (${l10n.sampleSyntheticBadge})'
+                                    ? l10n.samplePermissionsHeader(
+                                        l10n.sampleSyntheticBadge,
+                                      )
                                     : l10n.permissionsOnPhoneTitle,
                                 style: m3e.typeScale.titleLarge.copyWith(
                                   color: scheme.onSurface,
@@ -2575,28 +2576,31 @@ class _SourceProvenanceBlockState extends State<_SourceProvenanceBlock> {
     final digest = widget.snapshotDigest?.trim() ?? '';
 
     final sourceKindLabel = switch (snapshot.sourceType) {
-      PolicySourceType.url => 'Public web link',
-      PolicySourceType.pdf => 'Local PDF file',
-      PolicySourceType.docx => 'Local Word (DOCX) file',
-      PolicySourceType.textDocument => 'Local text file',
-      PolicySourceType.sharedText => 'Shared text',
-      PolicySourceType.selectedText => 'Selected text',
-      PolicySourceType.sample => 'Sample app',
-      PolicySourceType.devicePermissions => 'Phone permissions',
-      PolicySourceType.pastedText => 'Pasted text',
+      PolicySourceType.url => l10n.sourceKindUrl,
+      PolicySourceType.pdf => l10n.sourceKindPdf,
+      PolicySourceType.docx => l10n.sourceKindDocx,
+      PolicySourceType.textDocument => l10n.sourceKindTextFile,
+      PolicySourceType.sharedText => l10n.sourceKindSharedText,
+      PolicySourceType.selectedText => l10n.sourceKindSelectedText,
+      PolicySourceType.sample => l10n.sourceKindSampleApp,
+      PolicySourceType.devicePermissions => l10n.sourceKindPhonePermissions,
+      PolicySourceType.pastedText => l10n.sourceKindPastedText,
     };
 
     final statusLabel = switch (snapshot.extractionStatus) {
-      DocumentExtractionStatus.extracted => 'Read on this phone',
-      DocumentExtractionStatus.none => 'Provided on this phone',
-      DocumentExtractionStatus.unsupportedMime => 'Unsupported file type',
-      DocumentExtractionStatus.tooLarge => 'File too large',
-      DocumentExtractionStatus.empty => 'No readable text',
-      DocumentExtractionStatus.corrupt => 'Could not read file',
-      DocumentExtractionStatus.passwordProtected => 'Password-protected',
-      DocumentExtractionStatus.permissionDenied => 'Permission denied',
-      DocumentExtractionStatus.readError => 'Could not read file',
-      DocumentExtractionStatus.cancelled => 'Cancelled',
+      DocumentExtractionStatus.extracted => l10n.extractionStatusExtracted,
+      DocumentExtractionStatus.none => l10n.extractionStatusNone,
+      DocumentExtractionStatus.unsupportedMime =>
+        l10n.extractionStatusUnsupported,
+      DocumentExtractionStatus.tooLarge => l10n.extractionStatusTooLarge,
+      DocumentExtractionStatus.empty => l10n.extractionStatusEmpty,
+      DocumentExtractionStatus.corrupt => l10n.extractionStatusReadError,
+      DocumentExtractionStatus.passwordProtected =>
+        l10n.extractionStatusPasswordProtected,
+      DocumentExtractionStatus.permissionDenied =>
+        l10n.extractionStatusPermissionDenied,
+      DocumentExtractionStatus.readError => l10n.extractionStatusReadError,
+      DocumentExtractionStatus.cancelled => l10n.extractionStatusCancelled,
     };
 
     return Container(
@@ -2669,7 +2673,9 @@ class _SourceProvenanceBlockState extends State<_SourceProvenanceBlock> {
           if (_expanded) ...[
             const SizedBox(height: 6),
             Text(
-              'Checked at: ${_formatUtcTimestamp(snapshot.retrievedAt)}',
+              l10n.advancedDetailsCheckedAt(
+                _formatUtcTimestamp(snapshot.retrievedAt),
+              ),
               style: m3e.typeScale.bodySmall.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
@@ -2678,7 +2684,7 @@ class _SourceProvenanceBlockState extends State<_SourceProvenanceBlock> {
                 snapshot.canonicalUrl!.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(
-                'Canonical URL: ${snapshot.canonicalUrl}',
+                l10n.advancedDetailsCanonicalUrl(snapshot.canonicalUrl!),
                 style: m3e.typeScale.bodySmall.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -2689,7 +2695,7 @@ class _SourceProvenanceBlockState extends State<_SourceProvenanceBlock> {
                 snapshot.requestedUrl!.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(
-                'Redirected from: ${snapshot.requestedUrl}',
+                l10n.advancedDetailsRedirectedFrom(snapshot.requestedUrl!),
                 style: m3e.typeScale.bodySmall.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -2699,9 +2705,9 @@ class _SourceProvenanceBlockState extends State<_SourceProvenanceBlock> {
                 snapshot.originalFilename!.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(
-                'File: ${snapshot.originalFilename}'
+                '${l10n.advancedDetailsFileLine(snapshot.originalFilename!)}'
                 '${snapshot.mimeType != null ? ' (${snapshot.mimeType})' : ''}'
-                ' · Status: $statusLabel',
+                ' · ${l10n.advancedDetailsStatusSuffix(statusLabel)}',
                 style: m3e.typeScale.bodySmall.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -2758,7 +2764,7 @@ class _SourceProvenanceBlockState extends State<_SourceProvenanceBlock> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
-                    'SHA-256 source hash: ${snapshot.sourceSha256Hash}',
+                    l10n.advancedDetailsSha256Hash(snapshot.sourceSha256Hash),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: typeExt.sha256Hash.copyWith(

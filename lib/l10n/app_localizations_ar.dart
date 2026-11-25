@@ -2039,4 +2039,646 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get translationDraftNotice =>
       'بعض الترجمات مسودات مُنشأة بالذكاء الاصطناعي وقد تحتوي على أخطاء. يعمل متحدثون أصليون على مراجعتها.';
+
+  @override
+  String get homeQuickSettingsTitle => 'المرافق في الإعدادات السريعة';
+
+  @override
+  String get homeQuickSettingsSubtitle =>
+      'اسأل Deni عن التطبيق الذي تستخدمه في أي وقت';
+
+  @override
+  String get appearanceSectionTitle => 'المظهر';
+
+  @override
+  String get themeModeSystem => 'النظام';
+
+  @override
+  String get themeModeLight => 'فاتح';
+
+  @override
+  String get themeModeDark => 'داكن';
+
+  @override
+  String get quickSettingsSectionTitle => 'ربط Enprive بالإعدادات السريعة';
+
+  @override
+  String get quickSettingsSectionSubtitle =>
+      'أضف Enprive Check إلى لوحة الإعدادات السريعة في Android لتسأل Deni عن التطبيقات دون مغادرة ما تفعله.';
+
+  @override
+  String get quickSettingsTileTitle => 'مربع Enprive Check';
+
+  @override
+  String get quickSettingsTileSubtitle =>
+      'أضف Enprive Check إلى الإعدادات السريعة لتسأل Deni عن التطبيق الذي تستخدمه دون البحث عن Enprive أولاً.';
+
+  @override
+  String get quickSettingsStatusAdded => 'تمت الإضافة';
+
+  @override
+  String get quickSettingsStatusManual => 'يدوي';
+
+  @override
+  String get quickSettingsStatusNotAdded => 'غير مضاف';
+
+  @override
+  String get usageAccessStatusGranted => 'ممنوح';
+
+  @override
+  String get usageAccessStatusNotGranted => 'غير ممنوح';
+
+  @override
+  String get usageAccessTitle =>
+      'السماح بالوصول إلى بيانات الاستخدام (اختياري)';
+
+  @override
+  String get usageAccessExplanation =>
+      'يستخدم Enprive الوصول إلى بيانات الاستخدام فقط عند النقر على Enprive Check لتحديد التطبيق الذي كنت تستخدمه للتو. يساعد ذلك Deni في العثور على التطبيق الصحيح ومعلومات الخصوصية الخاصة به. لا يراقب Enprive شاشتك باستمرار.';
+
+  @override
+  String get usageAccessManageLink => 'كيفية الإدارة أو الإلغاء';
+
+  @override
+  String get usageAccessManageTitle =>
+      'إدارة الوصول إلى بيانات الاستخدام أو إلغاؤه';
+
+  @override
+  String get usageAccessManageBody =>
+      'الوصول إلى بيانات الاستخدام هو مفتاح خاص في إعدادات Android (وليس نافذة منبثقة تلقائية). يمكنك إيقافه في أي وقت من إعدادات Android -> التطبيقات -> وصول خاص للتطبيقات -> الوصول إلى بيانات الاستخدام -> enprive. يظل Deni قابلاً للاستخدام بدونه عبر اختيار التطبيق يدوياً.';
+
+  @override
+  String get openDeniCompanionTitle => 'فتح مرافق Deni';
+
+  @override
+  String get openDeniCompanionSubtitle =>
+      'افحص أذونات تطبيق حديث أو محدد دون الإعدادات السريعة.';
+
+  @override
+  String get btnGotIt => 'حسناً';
+
+  @override
+  String get quickSettingsReadyDialogTitle =>
+      'Enprive Check جاهز في الإعدادات السريعة';
+
+  @override
+  String get quickSettingsReadyDialogBody =>
+      'اسحب لأسفل مرتين من أعلى الشاشة وانقر على \"Enprive Check\" في أي وقت تريد أن يشرح فيه Deni أذونات تطبيق.';
+
+  @override
+  String get quickSettingsManualDialogTitle => 'إضافة Enprive Check يدوياً';
+
+  @override
+  String get quickSettingsManualDialogBody =>
+      '1. اسحب لأسفل مرتين من أعلى شاشة Android لفتح الإعدادات السريعة.\n2. انقر على زر التعديل (القلم).\n3. ابحث عن \"Enprive Check\" واسحبه إلى مربعات الإعدادات السريعة النشطة.';
+
+  @override
+  String get quickSettingsSnackAdded =>
+      'تمت إضافة Enprive Check إلى شريط الإعدادات السريعة.';
+
+  @override
+  String get quickSettingsSnackAlreadyAdded =>
+      'Enprive Check موجود بالفعل في شريط الإعدادات السريعة.';
+
+  @override
+  String get quickSettingsSnackDeclined =>
+      'تم رفض الطلب. لن يسأل Enprive مرة أخرى إلا إذا اخترت التعديل في الإعدادات السريعة.';
+
+  @override
+  String get quickSettingsSnackManual =>
+      'اسحب الإعدادات السريعة لأسفل، وانقر على التعديل، واسحب Enprive Check إلى مربعاتك.';
+
+  @override
+  String get quickSettingsSnackUnavailable =>
+      'نافذة النظام غير متاحة هنا؛ يمكنك سحب Enprive Check يدوياً من تعديل الإعدادات السريعة.';
+
+  @override
+  String get usageAccessOpenFailedSnack =>
+      'تعذر فتح إعدادات الوصول إلى بيانات الاستخدام على هذا الجهاز.';
+
+  @override
+  String get companionTitle => 'Deni: مرافق Enprive';
+
+  @override
+  String get companionSubtitle =>
+      'اسأل Deni عن أذونات أحد التطبيقات وما تقوله سياسة الخصوصية الخاصة به.';
+
+  @override
+  String get companionTooltipReturnToPrev => 'العودة إلى التطبيق السابق';
+
+  @override
+  String get companionTooltipBack => 'رجوع';
+
+  @override
+  String get companionLockedBadge => 'محمي بقفل الشاشة';
+
+  @override
+  String get companionLockedTitle => 'افتح قفل هاتفك للمتابعة';
+
+  @override
+  String get companionLockedBody =>
+      'يخفي Enprive أسماء التطبيقات والأذونات المصرّح بها وأدلة المراجعة أثناء قفل الجهاز.';
+
+  @override
+  String get companionCheckUnlockBtn => 'التحقق من حالة القفل';
+
+  @override
+  String get companionCheckingAppHeadline =>
+      'جارٍ التحقق من التطبيق الذي كنت تستخدمه…';
+
+  @override
+  String get companionCheckingAppSubtitle =>
+      'فحص لمرة واحدة على هذا الهاتف دون مراقبة شاشتك.';
+
+  @override
+  String get companionGeneralGuideHeadline => 'دليل أذونات Android العام';
+
+  @override
+  String get companionGeneralGuideSubtitle =>
+      'لم يتم اختيار تطبيق. يشرح Enprive أذونات Android باستخدام إرشادات محلية فقط.';
+
+  @override
+  String companionLookingAtHeadline(String appName) {
+    return 'أنت تنظر إلى $appName.';
+  }
+
+  @override
+  String get companionLookingAtSubtitle =>
+      'الأذونات المدرجة أدناه تأتي من التطبيق على هاتفك: يظل Android متحكماً في أي نافذة منبثقة تظهر على الشاشة.';
+
+  @override
+  String get companionThisAppFallback => 'هذا التطبيق';
+
+  @override
+  String companionSawAppAgo(String appName, int seconds) {
+    return 'رصدنا $appName قبل $seconds ثانية. هل هذا صحيح؟';
+  }
+
+  @override
+  String companionThinkUsingApp(String appName) {
+    return 'نعتقد أنك تستخدم $appName. هل هذا صحيح؟';
+  }
+
+  @override
+  String companionAppIdLine(String packageName) {
+    return 'App ID: $packageName';
+  }
+
+  @override
+  String companionConfirmAppBtn(String appName) {
+    return 'تأكيد · $appName';
+  }
+
+  @override
+  String get companionChooseAnotherAppBtn => 'اختيار تطبيق آخر';
+
+  @override
+  String get companionWithoutAppContextBtn => 'دون تحديد تطبيق';
+
+  @override
+  String get companionMultipleAppsTitle => 'كانت عدة تطبيقات نشطة للتو';
+
+  @override
+  String get companionMultipleAppsPrompt => 'أكّد التطبيق الذي تريد فحصه:';
+
+  @override
+  String companionSecondsAgo(int seconds) {
+    return 'قبل $seconds ثانية';
+  }
+
+  @override
+  String get companionSelectAppTitle => 'اختر التطبيق الذي تريد فحصه';
+
+  @override
+  String get companionSelectAppBody =>
+      'اختر التطبيق يدوياً من التطبيقات المثبتة، أو تابع دون تحديد تطبيق.';
+
+  @override
+  String get companionChooseAppManuallyBtn => 'اختيار تطبيق يدوياً';
+
+  @override
+  String get companionOpenUsageAccessBtn =>
+      'فتح إعدادات الوصول إلى بيانات الاستخدام';
+
+  @override
+  String get companionContinueWithoutAppBtn => 'المتابعة دون تحديد تطبيق';
+
+  @override
+  String get companionAddTileBtn => 'إضافة مربع Enprive Check';
+
+  @override
+  String get companionContinuingWithoutApp => 'المتابعة دون تحديد تطبيق';
+
+  @override
+  String get companionSwitchAppBtn => 'تبديل التطبيق';
+
+  @override
+  String get companionPermissionsReadLocally =>
+      'الأذونات المعروضة أدناه مقروءة مباشرة من هاتفك.';
+
+  @override
+  String get companionPickPermissionType => 'اختر نوع إذن لاستكشافه';
+
+  @override
+  String get companionPickAppBtn => 'اختيار تطبيق';
+
+  @override
+  String get companionCouldNotReadPermsTitle => 'تعذرت قراءة أذونات التطبيق';
+
+  @override
+  String get companionCouldNotReadPermsBody =>
+      'منع Android فحص أذونات هذا التطبيق.';
+
+  @override
+  String get companionUnsurePermBtn => 'لست متأكداً أي إذن';
+
+  @override
+  String get companionWhichPermissionPrompt => 'أي إذن تريد فهمه؟';
+
+  @override
+  String get companionPermissionsListDisclaimer =>
+      'هذه الأذونات يدرجها التطبيق على هاتفك، وليست بالضرورة النافذة المنبثقة الظاهرة على شاشتك الآن.';
+
+  @override
+  String get companionNoSensitivePermsMsg =>
+      'لا يطلب هذا التطبيق أي أذونات حساسة على هاتفك.';
+
+  @override
+  String get companionGuidedMatchTitle =>
+      'طابق ما طلبته النافذة المنبثقة على شاشتك';
+
+  @override
+  String get companionGuidedMatchSubtitle =>
+      'لا يستطيع Enprive قراءة نافذة Android الحالية مباشرة. اختر العبارة الأقرب لما ظهر على الشاشة:';
+
+  @override
+  String get companionSection1Title => '1. ماذا يعني هذا الإذن';
+
+  @override
+  String get companionSection2Title => '2. ما يطلبه التطبيق على هاتفك';
+
+  @override
+  String get companionSection3Title => '3. ما تقوله سياسة الخصوصية الخاصة به';
+
+  @override
+  String get companionSection4Title => '4. لماذا قد يرتبط هذا بميزة';
+
+  @override
+  String get companionSection4Fallback =>
+      'لم يُعثر على تفسير موثّق من المطوّر لهذه الميزة. صِف أدناه الميزة التي كنت تحاول استخدامها إذا أردت أن يتحقق Deni من الصلة.';
+
+  @override
+  String get companionSection5Title => '5. ما يظل غير معروف';
+
+  @override
+  String get companionSection6Title => '6. أسئلة يمكنك طرحها على Deni';
+
+  @override
+  String get companionAddPolicyBtn => 'إضافة سياسة الخصوصية';
+
+  @override
+  String get companionCheckUpdatedPolicyBtn => 'فحص سياسة خصوصية محدّثة';
+
+  @override
+  String companionVerifyPolicyTitle(String appName) {
+    return 'التحقق من السياسة لـ $appName';
+  }
+
+  @override
+  String get companionFeatureFieldLabel => 'الميزة التي كنت تستخدمها (اختياري)';
+
+  @override
+  String get companionFeatureFieldHint =>
+      'مثال: مسح رمز QR أو تسجيل تدريب صوتي';
+
+  @override
+  String get companionQuestionFieldLabel => 'اسأل Deni سؤالاً';
+
+  @override
+  String get companionQuestionFieldHint => 'ماذا يحدث إذا رفضت هذا الإذن؟';
+
+  @override
+  String get companionReceiptSavedTitle => 'محفوظ في إيصالات Enprive';
+
+  @override
+  String get companionReceiptUnsavedTitle => 'لم تُحفظ المراجعة في Enprive بعد';
+
+  @override
+  String get companionReceiptSavedBody =>
+      'محفوظ محلياً في أرشيف إيصالات Enprive لديك.';
+
+  @override
+  String get companionReceiptUpdatedUnsavedBody =>
+      'تُحتفظ مراجعة السياسة المحدّثة في هذه الجلسة فقط. مغادرة المرافق تتجاهل هذه المسودة وتبقي إيصالك المحفوظ دون تغيير.';
+
+  @override
+  String get companionReceiptUnsavedBody =>
+      'تُحتفظ في هذه الجلسة فقط. مغادرة المرافق ستتجاهلها ما لم تحفظها.';
+
+  @override
+  String get companionSaveReceiptBtn => 'حفظ الإيصال في Enprive';
+
+  @override
+  String get companionSaveReceiptFailed =>
+      'تعذر حفظ الإيصال. محفوظ في هذه الجلسة: حاول مرة أخرى.';
+
+  @override
+  String get companionSavedLocalReceiptsSnack =>
+      'تم الحفظ في الإيصالات المحلية.';
+
+  @override
+  String companionDoneReturnToApp(String appName) {
+    return 'تم · العودة إلى $appName';
+  }
+
+  @override
+  String get companionDoneReturnToPrev => 'تم · العودة إلى التطبيق السابق';
+
+  @override
+  String get companionOpenFullAppBtn => 'فتح تطبيق Enprive الكامل';
+
+  @override
+  String get companionCloudTimeoutSnack =>
+      'استغرق التحليل السحابي وقتاً طويلاً وتوقف قبل الاكتمال.';
+
+  @override
+  String get companionAnalysisCancelledSnack => 'تم إلغاء التحليل.';
+
+  @override
+  String get companionCloudAnswerTimeoutSnack =>
+      'انتهت مهلة الإجابة السحابية بأمان.';
+
+  @override
+  String get companionQuestionCancelledSnack => 'تم إلغاء السؤال.';
+
+  @override
+  String get companionTileAddedSnack =>
+      'تمت إضافة Enprive Check إلى الإعدادات السريعة في Android.';
+
+  @override
+  String get companionTileAlreadyAddedSnack =>
+      'Enprive Check موجود بالفعل في الإعدادات السريعة.';
+
+  @override
+  String get companionTileDeclinedSnack =>
+      'تم رفض طلب المربع. يمكنك إضافته في أي وقت من الإعدادات أو تعديل الإعدادات السريعة.';
+
+  @override
+  String get companionTileManualSnack =>
+      'اسحب الإعدادات السريعة لأسفل مرتين، وانقر على التعديل، واسحب Enprive Check إلى مربعاتك.';
+
+  @override
+  String get companionTileUnavailableSnack =>
+      'لم يتمكن Android من عرض نافذة الإعدادات السريعة على هذا الجهاز. يمكنك سحب Enprive Check يدوياً من تعديل الإعدادات السريعة.';
+
+  @override
+  String get companionUsageOptionalReason =>
+      'الوصول إلى بيانات الاستخدام اختياري. يمكنك اختيار تطبيق يدوياً أو السماح بالوصول إلى بيانات الاستخدام للتحديد بنقرة واحدة.';
+
+  @override
+  String get companionPermPreciseLocation => 'الموقع الدقيق';
+
+  @override
+  String get companionPermBackgroundLocation => 'الموقع في الخلفية';
+
+  @override
+  String get companionPermCamera => 'الكاميرا';
+
+  @override
+  String get companionPermMicrophone => 'الميكروفون';
+
+  @override
+  String get companionPermAdId => 'معرّف الإعلانات من Google';
+
+  @override
+  String companionPermDeclaredBy(String permission, String appName) {
+    return 'إذن Android ($permission) مصرّح به من قِبل $appName.';
+  }
+
+  @override
+  String get companionPermStatusAdId => 'مدرج في التطبيق · معرّف الإعلانات';
+
+  @override
+  String get companionPermStatusAllowed => 'مدرج في التطبيق · مسموح';
+
+  @override
+  String get companionPermStatusNotAllowed => 'مدرج في التطبيق · غير مسموح';
+
+  @override
+  String get guidedCatLocation => 'الموقع';
+
+  @override
+  String get guidedCatContacts => 'جهات الاتصال';
+
+  @override
+  String get guidedCatPhotosMedia => 'الصور والوسائط';
+
+  @override
+  String get guidedCatNotifications => 'الإشعارات';
+
+  @override
+  String get guidedCatNearbyDevices => 'الأجهزة القريبة';
+
+  @override
+  String get guidedCatCalendar => 'التقويم';
+
+  @override
+  String get guidedCatPhone => 'الهاتف';
+
+  @override
+  String get guidedCatSms => 'الرسائل النصية SMS';
+
+  @override
+  String get companionFallbackUsageNotEnabled =>
+      'لم يتم تفعيل الوصول إلى بيانات الاستخدام في إعدادات Android.';
+
+  @override
+  String get companionFallbackUsageUnavailable =>
+      'خدمة Android UsageStatsManager غير متاحة.';
+
+  @override
+  String get companionFallbackTransientUi =>
+      'ظهرت واجهة نظام Android أو نافذة الأذونات فقط في أحداث الاستخدام الأخيرة؛ اختر التطبيق يدوياً.';
+
+  @override
+  String get companionFallbackVisibilityRestricted =>
+      'لا يمكن فحص آخر تطبيق نشط بسبب قيود رؤية الحزم في Android. يرجى اختيار تطبيق من القائمة أو لصق سياسته.';
+
+  @override
+  String get companionFallbackUnlockRequired =>
+      'افتح قفل جهازك قبل عرض سياق التطبيق.';
+
+  @override
+  String get consentReasonPolicyTooDetailed =>
+      'هذه السياسة مفصّلة جداً للمعالجة بالذكاء الاصطناعي على الجهاز.';
+
+  @override
+  String get consentReasonExcerptTooDetailed =>
+      'هذا المقتطف مفصّل جداً للمعالجة بالذكاء الاصطناعي على الجهاز.';
+
+  @override
+  String get consentReasonOnDeviceUnavailable =>
+      'الذكاء الاصطناعي على الجهاز غير متاح على هذا الهاتف الآن.';
+
+  @override
+  String get consentReasonOnDeviceCannotAnswer =>
+      'لم يتمكن الذكاء الاصطناعي على الجهاز من الإجابة من هذا الجهاز الآن.';
+
+  @override
+  String get consentReasonVoiceTooLong =>
+      'تتجاوز هذه النتائج الموثّقة حدود الملخص على الجهاز. يمكنك استخدام الملخص دون اتصال الآن أو إرسال النتائج المنقّحة إلى الذكاء الاصطناعي السحابي لمرة واحدة.';
+
+  @override
+  String get consentReasonVoiceUnavailable =>
+      'الذكاء الاصطناعي على الجهاز غير متاح على هذا الهاتف الآن. جارٍ عرض ملخص Enprive بلغة مبسطة دون اتصال.';
+
+  @override
+  String get consentReasonVoiceTimedOut =>
+      'انتهت مهلة الملخص على الجهاز. جارٍ عرض ملخص Enprive بلغة مبسطة دون اتصال.';
+
+  @override
+  String get unsavedExitTitle => 'هل تريد حفظ مراجعة الخصوصية هذه؟';
+
+  @override
+  String get unsavedExitModifiedBody =>
+      'تُحذف المراجعات غير المحفوظة عند إغلاق هذه الشاشة، لذا لا يُخزّن شيء على هاتفك دون اختيارك. سيبقى إيصالك المحفوظ الأصلي دون تغيير.';
+
+  @override
+  String get unsavedExitDraftBody =>
+      'تُحذف المراجعات غير المحفوظة عند إغلاق هذه الشاشة، لذا لا يُخزّن شيء على هاتفك دون اختيارك.';
+
+  @override
+  String get unsavedExitDiscardBtn => 'تجاهل دون حفظ';
+
+  @override
+  String get unsavedExitContinueBtn => 'متابعة المراجعة';
+
+  @override
+  String updatePrivacyPolicyForTitle(String title) {
+    return 'تحديث سياسة الخصوصية لـ $title';
+  }
+
+  @override
+  String get reviewSaveFailedError =>
+      'تعذر حفظ الإيصال. ما تزال مسودة المراجعة مفتوحة.';
+
+  @override
+  String get reviewRemovedFromReceiptsSnack =>
+      'تمت الإزالة من الإيصالات المحفوظة.';
+
+  @override
+  String get reviewRemoveFailedSnack => 'تعذرت إزالة الإيصال المحفوظ.';
+
+  @override
+  String get reviewModifiedDraftTitle => 'مسودة جديدة من إيصال محفوظ';
+
+  @override
+  String get reviewModifiedDraftBody =>
+      'احفظ في الإيصالات للاحتفاظ بهذه المراجعة المحدّثة: يبقى إيصالك المحفوظ الأصلي دون تغيير.';
+
+  @override
+  String get btnRetrySave => 'إعادة محاولة الحفظ';
+
+  @override
+  String samplePermissionsHeader(String badge) {
+    return 'أذونات العينة ($badge)';
+  }
+
+  @override
+  String get sourceKindUrl => 'رابط ويب عام';
+
+  @override
+  String get sourceKindPdf => 'ملف PDF محلي';
+
+  @override
+  String get sourceKindDocx => 'ملف Word (DOCX) محلي';
+
+  @override
+  String get sourceKindTextFile => 'ملف نصي محلي';
+
+  @override
+  String get sourceKindSharedText => 'نص مشترك';
+
+  @override
+  String get sourceKindSelectedText => 'نص محدد';
+
+  @override
+  String get sourceKindSampleApp => 'تطبيق تجريبي';
+
+  @override
+  String get sourceKindPhonePermissions => 'أذونات الهاتف';
+
+  @override
+  String get sourceKindPastedText => 'نص ملصوق';
+
+  @override
+  String get extractionStatusExtracted => 'مقروء على هذا الهاتف';
+
+  @override
+  String get extractionStatusNone => 'مقدّم على هذا الهاتف';
+
+  @override
+  String get extractionStatusUnsupported => 'نوع ملف غير مدعوم';
+
+  @override
+  String get extractionStatusTooLarge => 'الملف كبير جداً';
+
+  @override
+  String get extractionStatusEmpty => 'لا يوجد نص مقروء';
+
+  @override
+  String get extractionStatusReadError => 'تعذرت قراءة الملف';
+
+  @override
+  String get extractionStatusPasswordProtected => 'محمي بكلمة مرور';
+
+  @override
+  String get extractionStatusPermissionDenied => 'تم رفض الإذن';
+
+  @override
+  String get extractionStatusCancelled => 'تم الإلغاء';
+
+  @override
+  String advancedDetailsCheckedAt(String timestamp) {
+    return 'تم الفحص في: $timestamp';
+  }
+
+  @override
+  String advancedDetailsCanonicalUrl(String url) {
+    return 'الرابط الأساسي: $url';
+  }
+
+  @override
+  String advancedDetailsRedirectedFrom(String url) {
+    return 'أُعيد التوجيه من: $url';
+  }
+
+  @override
+  String advancedDetailsFileLine(String filename) {
+    return 'الملف: $filename';
+  }
+
+  @override
+  String advancedDetailsStatusSuffix(String status) {
+    return 'الحالة: $status';
+  }
+
+  @override
+  String advancedDetailsSha256Hash(String hash) {
+    return 'تجزئة المصدر SHA-256: $hash';
+  }
+
+  @override
+  String get semanticsPrimaryNavigation => 'التنقل الرئيسي';
+
+  @override
+  String semanticsProcessingLocation(String label) {
+    return 'مكان المعالجة: $label';
+  }
+
+  @override
+  String get semanticsDeniMascot => 'Deni، دليلك للخصوصية';
+
+  @override
+  String get quoteCollapsibleDefaultHeader => 'مقتطف دقيق من السياسة';
 }
