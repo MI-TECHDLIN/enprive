@@ -4,7 +4,30 @@
 
 Privacy policies are long, full of legal words, and hard to read on a phone. Yet children use new learning apps, games, and classroom tools every week. Parents and teachers are often left guessing what an app asks to collect or share.
 
-Enprive is a calm Android privacy companion built for **Google #BuildHybridAI 2026**. It reads a policy with you, highlights the exact sentences that matter, puts them beside the permissions Android reports on your phone, and tells you plainly what is still unknown.
+Enprive is a calm Android privacy companion built for **Google #BuildHybridAI 2026**. It reads a policy with you, highlights the exact sentences that matter, puts them beside the permissions Android reports on your phone, and tells you plainly what is still unknown. Deni, a friendly pebble-shaped helper, explains things in plain words.
+
+<p align="center">
+  <img src="docs/images/deni-mascot.webp" alt="Deni, Enprive's friendly teal pebble mascot, smiling with one arm held out to welcome you" width="200">
+</p>
+
+---
+
+## See it
+
+All screenshots come from the Android emulator and use the built-in **sample apps** (EduTrack Classroom and CalmMath Kids). No real apps or personal data are shown.
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/images/enprive-home.webp" alt="Enprive home screen with a Check an app button, a Paste terms or URL button, and two sample apps" width="240"><br><b>1. Start a check</b><br>Pick an app or paste a policy.</td>
+    <td align="center" width="33%"><img src="docs/images/enprive-consent.webp" alt="Consent sheet listing exactly what would be sent, one hidden email address, with Review on this phone and Use cloud for this check buttons" width="240"><br><b>2. You choose how</b><br>Stay on your phone, or allow the cloud for this one check.</td>
+    <td align="center" width="33%"><img src="docs/images/enprive-result.webp" alt="Review result for the sample EduTrack Classroom app showing seven findings in five categories and a plain-language summary from Deni" width="240"><br><b>3. See the result</b><br>Findings by topic, and Deni's summary.</td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><img src="docs/images/enprive-evidence.webp" alt="List of findings where one finding is expanded to show the exact quote from the policy" width="240"><br><b>4. Check the evidence</b><br>Every finding can show the exact quote.</td>
+    <td align="center" width="33%"><img src="docs/images/enprive-lesson.webp" alt="Learn lesson 1 of 8, What a privacy policy is and what it cannot prove, with a diagram" width="240"><br><b>5. Learn the basics</b><br>Eight short offline lessons with diagrams.</td>
+    <td align="center" width="33%"><img src="docs/images/enprive-ar-home.webp" alt="Enprive home screen in Arabic, laid out right to left" width="240"><br><b>6. Your language</b><br>12 languages, including right-to-left Arabic.</td>
+  </tr>
+</table>
 
 ---
 
@@ -16,86 +39,137 @@ Enprive is a calm Android privacy companion built for **Google #BuildHybridAI 20
 
 ---
 
-## What Enprive does
+## How a check works
 
-- **Check an installed app or any privacy policy**: Pick an app already on your phone, paste policy text, enter a public policy web link, import a local PDF, TXT, or DOCX file, or share text, a link, or a file straight from another Android app.
-- **See policy text next to phone permissions**: Compare quotes from the policy against the Android permissions the app requests or is allowed to use on your phone, kept clearly separate from each other.
-- **Link an app and a policy from either direction**: Start from an installed app and attach its policy, or start from a policy and link an installed app later. Enprive checks for name or App ID clues and warns you clearly when a policy may belong to a different app, while reminding you that text and web links never prove who owns a policy.
-- **Ask Deni and listen aloud**: Deni, Enprive's protective pebble companion, explains individual findings in plain language and summarizes what stood out. You can read on screen, listen offline using your phone's voice, or choose an expressive cloud voice for a single check after giving consent.
-- **Save receipts only when you choose**: Keep a local history of reviews on your phone in SQLite (`enprive_receipts.db`) only when you press **Save**. Nothing is saved silently in the background.
-- **Learn offline with 8 illustrated lessons**: Open the Learn tab for eight short, offline lessons with custom diagrams, quick checks, and offline audio covering privacy policies, Android permissions, ads and third parties, reading Enprive's evidence, data collection, retention and deletion, unclear policies, and safe-sharing habits for kids.
-- **Quick Settings Companion**: Add the **Enprive Check** tile to Android Quick Settings to check the app on screen when a permission prompt appears.
+1. **Choose what to check.** Pick an installed app, paste policy text, enter a public policy link, import a PDF, TXT, or DOCX file, or share text, a link, or a file to Enprive from another Android app.
+2. **Enprive reads it.** It first tries the AI that lives on your phone (Gemini Nano). If that is not available or the policy is too long, it asks you what to do.
+3. **You decide.** The consent sheet shows the exact text that would leave your phone, with personal details such as emails and phone numbers already hidden. Choose **Review on this phone**, or **Use cloud for this check**. The choice covers one check only.
+4. **Every quote is verified.** Enprive compares each quote word for word with the policy text. A quote that does not match is never shown as verified.
+5. **You read the result.** Findings are grouped by topic, each with its source quote, a plain-language explanation from Deni, and what Android permissions show on your phone, kept clearly separate.
+6. **You decide whether to keep it.** Nothing is saved until you tap **Save**. If you close an unsaved review, Enprive asks first.
+
+Enprive keeps four kinds of information apart so you can always see where a statement came from: **Matched in policy** (exact quote), **Seen on this phone** (local Android permission state), **Deni's explanation** (plain-language interpretation), and **Not found in policy / Still unknown**.
 
 ---
+
+## What Enprive does
+
+- **Check an installed app or any privacy policy** from paste, link, PDF, TXT, DOCX, or an Android share.
+- **See policy text next to phone permissions.** Quotes from the policy sit beside the Android permissions the app requests, clearly separate from each other.
+- **Link an app and a policy from either direction.** Enprive looks for name or App ID clues and warns you when a policy may belong to a different app. Text and web links never prove who owns a policy.
+- **Ask Deni and listen aloud.** Read on screen, listen offline with your phone's voice, or choose an expressive cloud voice for a single check after giving consent.
+- **Save receipts only when you choose.** Saved reviews live in a local SQLite database on your phone (`enprive_receipts.db`).
+- **Learn offline with 8 illustrated lessons**: privacy policies, Android permissions, ads and third parties, reading Enprive's evidence, data collection, retention and deletion, unclear policies, and safe-sharing habits for kids.
+- **Quick Settings Companion.** Add the **Enprive Check** tile to Android Quick Settings to check the app on screen when a permission prompt appears.
+
+---
+
+## Our privacy promises
+
+- **Your phone first.** App lists, permission snapshots, document parsing, and saved receipts stay on your phone.
+- **Consent for every cloud check.** Nothing goes to the cloud without your explicit yes, one check at a time, with no automatic retries.
+- **Personal details hidden.** Emails, phone numbers, addresses, names, IDs, and IP addresses are replaced with placeholders on your phone before any cloud request.
+- **Your app list never leaves.** Installed apps and phone permissions are never sent to the cloud.
+- **Saved only when you tap Save.** Drafts stay temporary.
+- **No ads, no data brokers, no selling your review activity.**
 
 ## What Enprive will never do
 
-- **Never calls an app "safe", "approved", or "compliant".** When nothing concerning appears in the text reviewed, Enprive says: *"No concern identified in the reviewed evidence. This is not a safety certification."*
-- **Never claims a phone permission proves data use.** An allowed permission shows what an app can access, not what it actually collects or sends.
-- **Never sends anything to the cloud without asking first.** Every cloud review or expressive voice call requires your explicit, one-check-at-a-time consent.
-- **Never saves a review behind your back.** Drafts stay temporary until you tap **Save**, and you are prompted before an unsaved review is discarded.
-- **Never sends your installed app list or phone permissions to the cloud.** App inspection and permission comparisons happen strictly on your phone.
-- **No ads, no data brokers, and no selling your review activity.**
+- **Never calls an app "safe", "approved", or "compliant".** When nothing concerning appears, Enprive says: *"No concern identified in the reviewed evidence. This is not a safety certification."*
+- **Never claims a phone permission proves data use.** An allowed permission shows what an app can access, not what it collects or sends.
+- **Never gives legal advice** or checks school compliance.
+
+## Honest limits today
+
+- **Cloud checks depend on quota.** Cloud summaries and expressive voice run on a free tier. When the service is busy, Enprive falls back honestly to the offline scan and your phone's own voice.
+- **On-device Gemini Nano needs a supported phone**, such as a Pixel 10 or Galaxy S25 and newer. On other phones, Enprive uses the offline scanner or a consented cloud check. The Gemini Nano path is wired up but not yet proven on physical Gemini Nano hardware.
+- **Translations are AI-drafted.** All 12 languages are complete, and Settings shows a notice while native speakers review them.
+- **Real-phone accessibility checks are pending** (TalkBack, Switch Access).
 
 ---
 
-## How it works
+## Languages
 
-Enprive keeps four kinds of information separate so you can always see where a statement came from: **Matched in policy** (exact quote), **Seen on this phone** (local Android permission state), **Deni's explanation** (plain-language interpretation), and **Not found in policy / Still unknown**.
+English, Arabic (right to left), Spanish, French, Hindi, German, Italian, Portuguese, Russian, Japanese, Korean, and Simplified Chinese: **12 languages** in total. The wording rules are in [`docs/l10n_glossary.md`](docs/l10n_glossary.md).
 
-```text
-  Policy text / URL / PDF / TXT / DOCX              Installed app permissions
-                  |                                    (Android PackageManager)
-                  v                                               |
-   1. Try on-device AI first                                      |
-      (Gemini Nano 4, ONLY_ON_DEVICE)                             |
-                  |                                               |
-       Available? +-- Yes --> Structured findings                 |
-                  |                                               |
-                 No                                               |
-                  v                                               |
-   2. Ask your consent (one check at a time)                      |
-      - Stay offline --> Local offline clause scanner             |
-      - Use cloud    --> Hide personal details locally            |
-                         ([EMAIL], [PHONE], [ADDRESS],            |
-                          [PERSON], [ID], [IP_ADDRESS])           |
-                         Show exact text to be sent               |
-                         Send once via Firebase AI Logic          |
-                         + App Check limited-use token            |
-                  |                                               |
-                  v                                               |
-   3. EvidenceValidator checks every quote word-for-word          |
-      against the captured policy text                            |
-      (unmatched quotes are never shown as verified)              |
-                  |                                               |
-                  +-------------------+---------------------------+
-                                      v
-                 Calm Evidence Review Screen + Document Fingerprint
-                 (saved locally in SQLite only if you press Save)
+---
+
+## How it is built (architecture)
+
+In plain words: a Flutter app draws every screen. Two coordinators do the thinking. The **intake coordinator** gets the policy text in and checks it. The **review coordinator** analyses it, asks for consent, and checks the evidence. A small Kotlin layer talks to Android for things Flutter cannot do alone, such as receiving shared files, reading DOCX files, listing app permissions, and calling Firebase AI.
+
+```mermaid
+flowchart TD
+    UI["Flutter UI<br/>screens, widgets, Deni, Learn"]
+    Intake["PolicyIntakeCoordinator<br/>get text in and validate it"]
+    Review["ReviewCoordinator<br/>analysis, consent, evidence"]
+    Bridge["Kotlin native bridge<br/>MainActivity and helpers"]
+    Share["Android share and<br/>process-text intents"]
+    Docx["DocumentTextExtractor<br/>DOCX and PDF text"]
+    Nano["Gemini Nano<br/>on device, tried first"]
+    Consent{"Cloud consent sheet<br/>one check at a time"}
+    Redact["PiiRedactor<br/>hide personal details"]
+    Cloud["Firebase AI Logic<br/>with App Check"]
+    Scan["DeterministicClauseScanner<br/>offline fallback"]
+    Validate["EvidenceValidator<br/>every quote checked"]
+    Receipts[("ReceiptRepository<br/>SQLite, only on Save")]
+    Learn["Learn lessons registry<br/>buildLearnLessons"]
+    L10n["Localization<br/>12 ARB files"]
+
+    UI --> Intake
+    Share --> Bridge
+    Bridge --> Docx
+    Intake <--> Bridge
+    Intake --> Review
+    Review --> Nano
+    Nano -- "not available" --> Consent
+    Consent -- "stay on phone" --> Scan
+    Consent -- "use cloud" --> Redact
+    Redact --> Cloud
+    Nano --> Validate
+    Cloud --> Validate
+    Scan --> Validate
+    Validate --> UI
+    UI -- "tap Save" --> Receipts
+    UI --- Learn
+    UI --- L10n
+    Review <--> Bridge
 ```
 
-- **On-device first, cloud only with consent**: Enprive tries on-device **Gemini Nano 4** first. If on-device AI is unavailable, it shows you a consent sheet with **Review on this phone** (offline local clause scan) as the primary choice. If you choose cloud analysis for that check, Enprive hides personal details locally first, shows you the exact text that would be sent, and sends a single request protected by **Firebase App Check** (`useLimitedUseAppCheckTokens = true`) with zero automatic retries.
-- **Verified quotes only**: Every policy quote returned by a model is checked by `EvidenceValidator` against the captured policy text. Any claim whose quote does not match is downgraded instead of shown as verified.
-- **Document fingerprint**: Enprive calculates a unique fingerprint from the exact text it checked (an FNV-1a 64-bit digest and a SHA-256 hash, visible under **Advanced details**). If even one letter of the policy changes later, that fingerprint changes too.
+| Piece | What it does | Where it lives |
+| --- | --- | --- |
+| Flutter UI layer | All screens and widgets, light and dark themes, Deni's poses | [`lib/screens/`](lib/screens), [`lib/widgets/`](lib/widgets) |
+| Intake coordinator | Brings policy text in from paste, link, PDF, TXT, DOCX, or share, and validates it | [`policy_intake_coordinator.dart`](lib/services/intake/policy_intake_coordinator.dart), [`policy_url_retriever.dart`](lib/services/network/policy_url_retriever.dart) |
+| Review coordinator | Runs the analysis, handles consent, and sends results through evidence validation | [`review_coordinator.dart`](lib/domain/review/review_coordinator.dart) |
+| Local-first hybrid AI | Gemini Nano on the phone first, then your choice: offline scan or a consented cloud check | [`HybridAiPolicy.kt`](android/app/src/main/kotlin/com/example/enprive/HybridAiPolicy.kt), [`hybrid_ai_bridge.dart`](lib/services/platform/hybrid_ai_bridge.dart) |
+| Cloud path | Firebase AI Logic protected by App Check limited-use tokens, after local redaction | [`MainActivity.kt`](android/app/src/main/kotlin/com/example/enprive/MainActivity.kt), [`EnpriveApplication.kt`](android/app/src/main/kotlin/com/example/enprive/EnpriveApplication.kt), [`pii_redactor.dart`](lib/domain/privacy/pii_redactor.dart) |
+| Offline fallback | Deterministic clause scanner, no AI and no network | [`deterministic_clause_scanner.dart`](lib/domain/review/deterministic_clause_scanner.dart) |
+| Evidence validation | Rejects any quote that is not in the captured policy text | [`evidence_validator.dart`](lib/domain/evidence/evidence_validator.dart) |
+| Receipts | Local SQLite storage, written only when you tap Save | [`receipt_repository.dart`](lib/services/storage/receipt_repository.dart) |
+| Kotlin native bridge | Android share and process-text intents, DOCX extraction, permission inspection | [`IncomingShareRouter.kt`](android/app/src/main/kotlin/com/example/enprive/IncomingShareRouter.kt), [`DocumentTextExtractor.kt`](android/app/src/main/kotlin/com/example/enprive/DocumentTextExtractor.kt), [`AppPackageInspector.kt`](android/app/src/main/kotlin/com/example/enprive/AppPackageInspector.kt) |
+| Learn lessons registry | Builds the 8 offline lessons from localized text | [`learn_lesson.dart`](lib/domain/learn/learn_lesson.dart) |
+| Localization | One ARB file per language, generated Flutter localizations | [`lib/l10n/`](lib/l10n) |
+
+Enprive also calculates a document fingerprint (FNV-1a 64-bit and SHA-256, visible under **Advanced details**) from the exact text it checked. If even one letter of the policy changes later, the fingerprint changes too.
 
 ---
 
 ## Where things stand
 
-Enprive is currently **paused while waiting for a real Gemini Nano 4 phone** for physical-device testing. Here is an honest view of what is verified today and what is still pending:
+Enprive is currently **paused while waiting for a real Gemini Nano phone** for physical-device testing.
 
 | Area | Current status |
 | --- | --- |
-| Core app, Calm Evidence UI, intake (Paste, URL, PDF, TXT, DOCX, Android share), two-way linking, Deni hand poses, 8 illustrated Learn lessons, Quick Settings Companion, explicit SQLite receipts | Built and merged on `main`; verified by automated suites (**391/391** Dart/Flutter tests, **75/75** Android Kotlin JVM tests, `flutter analyze` 0 issues) and live walkthroughs on the Android 16 emulator (`Pixel_9` AVD). |
-| Firebase App Check (enforced on `firebaseml.googleapis.com`) | Debug App Check limited-use token minting verified on emulator with zero attestation rejections (`0` HTTP 403 errors). Production Play Integrity on a signed release build still needs a physical device. |
-| On-device Gemini Nano 4 inference | Wired via Firebase AI Logic `ONLY_ON_DEVICE` (`OnDeviceModelOption.PREVIEW`), **not yet proven on physical Gemini Nano 4 hardware** (waiting for a supported phone). |
-| Accessibility on a real phone | Pending (waiting for the phone to verify live TalkBack, Switch Access, and audio playback). |
-| Live cloud summary (`gemini-3.8-flash`) and expressive voice (`gemini-3.8-flash-tts`) | Consent gating, local redaction, single-attempt enforcement, and offline fallback are verified. Recent free-tier (`Spark`) emulator runs hit upstream capacity limits (`503` high demand / stream timeouts) and fell back honestly to local scan and offline phone speech. |
-| Translations (12 languages) | English (`en`) is complete (548 keys). AI-drafted Stage 1 translations for Arabic (`ar`), Spanish (`es`), French (`fr`), and Hindi (`hi`) are complete on `main` (548/548 keys) with an in-app draft notice in Settings while native speakers review them. Seven languages (`de`, `it`, `pt`, `ru`, `ja`, `ko`, `zh`) have 142/548 keys on `main`, with remaining stages held on separate work branches. |
+| Core app, intake, two-way linking, Deni, 8 Learn lessons, Quick Settings Companion, SQLite receipts | Built and merged on `main`; checked by automated suites (`flutter test` 392 tests, Kotlin JVM tests, `flutter analyze` 0 issues) and live walkthroughs on the Android 16 emulator (`Pixel_9` AVD). |
+| Firebase App Check | Debug limited-use token minting verified on the emulator. Production Play Integrity on a signed release build still needs a physical device. |
+| On-device Gemini Nano | Wired through Firebase AI Logic `ONLY_ON_DEVICE`, **not yet proven on physical Gemini Nano hardware**. |
+| Cloud summary and expressive voice | Consent gating, local redaction, single-attempt enforcement, and offline fallback are verified. Free-tier capacity limits sometimes force the fallback. |
+| Accessibility on a real phone | Pending (TalkBack, Switch Access, audio playback). |
+| Translations | All 12 languages complete (729 keys each), AI-drafted, native-speaker review pending. |
 
 ---
 
-## Try it
+## Run and test it
 
 ### Requirements
 
@@ -150,23 +224,6 @@ A quick map of where the hybrid AI and privacy-boundary mechanics live in the co
 
 ---
 
-## Accessibility and languages
-
-- **Readable and calm by design**: Built with Material 3 Expressive tonal surfaces in light and dark themes, bundled offline fonts (`Nunito`, `Inter`, and `Source Serif 4`, with runtime font fetching disabled), and plain-language labels across core flows.
-- **Built for assistive tools**: Checked in automated tests and on an Android 16 emulator: text scaling up to 200%, reduced motion (`disableAnimations`), right-to-left (RTL) layout in Arabic, screen-reader labels, and keyboard focus. Live checks with TalkBack and Switch Access on a real phone are still pending.
-- **12 languages**: English (`en`), Arabic (`ar`), Spanish (`es`), French (`fr`), Hindi (`hi`), German (`de`), Italian (`it`), Portuguese (`pt`), Russian (`ru`), Japanese (`ja`), Korean (`ko`), and Simplified Chinese (`zh`). Where translations are AI-drafted, Settings displays a clear notice while native speakers review them (see [`docs/l10n_glossary.md`](docs/l10n_glossary.md)).
-
----
-
-## Privacy and safety principles
-
-1. **Local by default**: App lists, permission snapshots, document parsing (PDF/TXT/DOCX), and saved receipts stay on your phone.
-2. **Consent is per check, never silent**: Cloud analysis and expressive cloud voice are always opt-in, one request at a time, with zero automatic retries.
-3. **Evidence over scores**: Every finding is tied to an exact quote or a local Android permission observation, alongside what remains unknown.
-4. **Honest wording**: Enprive never certifies safety, never gives legal advice, and marks sample classroom apps clearly as sample apps.
-
----
-
 ## What this README does not promise
 
 Enprive is an informational privacy reading companion, **not** legal advice, **not** a school compliance certification tool, and **not** a network traffic monitor. Reading a policy and checking Android permissions cannot prove what an app's servers do in the background. Any item marked pending in **Where things stand** (including live Gemini Nano 4 on-device inference and physical-device Play Integrity) has not yet been proven on real hardware.
@@ -176,7 +233,7 @@ Enprive is an informational privacy reading companion, **not** legal advice, **n
 ## Roadmap
 
 - **Resume on a Gemini Nano 4 phone**: Verify real on-device Gemini Nano 4 inference, Play Integrity on a signed release build, physical TalkBack and audio quality, and real-device intake flows.
-- **Finish translations**: Land the remaining language batches (`de`, `it`, `pt`, `ru`, `ja`, `ko`, `zh`) and incorporate native-speaker reviews across all 12 locales.
+- **Native-speaker review**: All 12 languages are translated; next is native-speaker review of the AI-drafted text.
 - **#BuildHybridAI 2026 submission**: Complete pre-freeze checks (28 November 2026) and record the real-device demo before the 30 November 2026 deadline.
 - **After the competition**: Validate an education-focused workflow with parents and teachers before expanding checklists or institutional tools.
 
