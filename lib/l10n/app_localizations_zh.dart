@@ -28,15 +28,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stateReviewRecommended => '建议人工复查';
 
   @override
-  String get stateReviewRecommendedSubtitle =>
-      'One or more policy parts or phone permissions need a closer look.';
+  String get stateReviewRecommendedSubtitle => '有一项或多项隐私政策内容或手机权限需要进一步查看。';
 
   @override
   String get stateInsufficientEvidence => '证据不足';
 
   @override
-  String get stateInsufficientEvidenceSubtitle =>
-      'We need more privacy policy text before we can check what this app does.';
+  String get stateInsufficientEvidenceSubtitle => '我们需要更多隐私政策正文，才能检查此应用的行为。';
 
   @override
   String get chipOnDevice => '在此设备上';
@@ -45,28 +43,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chipInCloud => '云端分析';
 
   @override
-  String get chipLocationUnavailable => 'Source not available';
+  String get chipLocationUnavailable => '来源不可用';
 
   @override
-  String get chipOfflineDeterministic => 'Checked offline on this phone';
+  String get chipOfflineDeterministic => '已在此手机上离线检查';
 
   @override
-  String get chipUnknown => 'Source unknown';
+  String get chipUnknown => '来源未知';
 
   @override
-  String get statusSourceMatched => 'Matched in policy';
+  String get statusSourceMatched => '政策原文匹配';
 
   @override
-  String get statusDeviceObserved => 'Seen on this phone';
+  String get statusDeviceObserved => '在此手机上看到';
 
   @override
-  String get statusInterpretation => 'Deni\'s explanation';
+  String get statusInterpretation => 'Deni 的说明';
 
   @override
-  String get statusUnverified => 'Not found in policy';
+  String get statusUnverified => '政策中未找到';
 
   @override
-  String get statusStale => 'Older check';
+  String get statusStale => '较早的检查';
 
   @override
   String get btnCheckApp => '检查应用';
@@ -104,11 +102,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cloudConsentDisclosure =>
-      'To check this in the cloud, Enprive will send only the text shown above (with personal details hidden) for this one request. Your apps and phone permissions will never be sent.';
+      '为了在云端检查此内容，Enprive 仅在本次请求中发送上方显示的文本（已隐藏个人信息）。绝不会发送您的应用列表和手机权限。';
 
   @override
-  String get permissionLimitationNotice =>
-      'Your phone shows whether this permission is allowed. It does not prove whether the app actually accessed or sent data.';
+  String get permissionLimitationNotice => '您的手机仅显示此权限是否已允许，不能证明该应用实际访问或发送了数据。';
 
   @override
   String get navHome => '首页';
@@ -165,8 +162,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get checkQuoteTitle => '精确原文引用';
 
   @override
-  String get checkQuoteDesc =>
-      'Highlights data sharing, voice recording, and how long data is kept using exact quotes.';
+  String get checkQuoteDesc => '使用精确原文引用，标出数据共享、语音录制及数据保存时长。';
 
   @override
   String get checkPermissionTitle => '手机权限不一致';
@@ -188,8 +184,7 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count matched quotes',
-      one: '1 matched quote',
+      other: '$count 条匹配引用',
     );
     return '$_temp0';
   }
@@ -265,11 +260,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readinessRow2Desc => '此手机上的已安装应用及 Android 权限状态绝不上传。';
 
   @override
-  String get readinessRow3Title => 'Personal details hidden';
+  String get readinessRow3Title => '隐藏个人信息';
 
   @override
-  String get readinessRow3Desc =>
-      'If you choose cloud help, names, emails, and phone numbers are hidden before anything is sent.';
+  String get readinessRow3Desc => '如果您选择云端协助，发送前会先隐藏姓名、邮箱和电话号码。';
 
   @override
   String get settingsTitle => '设置';
@@ -281,8 +275,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onDeviceReadyMsg => '端侧 AI 已激活并准备就绪。';
 
   @override
-  String get localScannerProtectedMsg =>
-      'Ready to check policies offline on this phone.';
+  String get localScannerProtectedMsg => '已准备好在此手机上离线检查隐私政策。';
 
   @override
   String get statusChecking => '正在检查…';
@@ -375,8 +368,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get checkingPhoneReadiness => '正在检查此手机的私密分析就绪状态…';
 
   @override
-  String get geminiNanoReadyMsg =>
-      'On-device AI is ready on this phone. Reviews stay completely on your device.';
+  String get geminiNanoReadyMsg => '此手机上的端侧 AI 已就绪。审查记录完全保留在您的设备上。';
 
   @override
   String get modelDownloadingMsg => '正在后台下载端侧私密模型。';
@@ -385,8 +377,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modelDownloadableMsg => '可在连接 Wi-Fi 时下载端侧模型。';
 
   @override
-  String get localScannerDefaultMsg =>
-      'This phone checks policies offline on your device by default.';
+  String get localScannerDefaultMsg => '此手机默认在您的设备上离线检查隐私政策。';
 
   @override
   String get preparingPrivateAnalysis => '正在准备私密分析…';
@@ -395,7 +386,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onDeviceAiReadyTitle => '端侧 AI 已就绪';
 
   @override
-  String get localScannerActiveTitle => 'Offline check ready';
+  String get localScannerActiveTitle => '离线检查已就绪';
 
   @override
   String get privateAnalysisSheetSubtitle => '你的已安装应用列表和权限检查绝不会离开手机。';
@@ -410,7 +401,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reviewingOnPhone => '正在此手机上审查…';
 
   @override
-  String get readingClausesInitial => 'Reading policy text on this phone…';
+  String get readingClausesInitial => '正在此手机上读取隐私政策正文…';
 
   @override
   String progressStepCounter(int current, int total) {
@@ -428,13 +419,13 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get thoughtSignaturePrefix => 'Check ID';
+  String get thoughtSignaturePrefix => '检查 ID';
 
   @override
-  String get viewStreamedThoughts => 'How Enprive checked this';
+  String get viewStreamedThoughts => 'Enprive 如何检查此内容';
 
   @override
-  String get hideStreamedThoughts => 'Hide how Enprive checked this';
+  String get hideStreamedThoughts => '隐藏 Enprive 的检查过程';
 
   @override
   String get analysisTraceDefaultTitle => '本次审查的验证过程';
@@ -443,7 +434,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get savedToLocalReceiptsSnack => '已保存到本机收据记录。';
 
   @override
-  String get snapshotSheetTitle => 'Reviewed policy text';
+  String get snapshotSheetTitle => '已审查的政策正文';
 
   @override
   String get snapshotSourcePrefix => '来源';
@@ -452,7 +443,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get snapshotReviewedPrefix => '审查时间';
 
   @override
-  String get snapshotDigestPrefix => 'Document fingerprint';
+  String get snapshotDigestPrefix => '文档指纹';
 
   @override
   String get statFindings => '发现条目';
@@ -461,10 +452,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get statVerified => '已验证';
 
   @override
-  String get statOsGranted => 'Allowed on phone';
+  String get statOsGranted => '手机已允许';
 
   @override
-  String get statUnverified => 'Not found';
+  String get statUnverified => '未找到';
 
   @override
   String get keyFindingsTitle => '核心发现';
@@ -476,19 +467,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get permissionsOnPhoneTitle => '此手机上的应用权限';
 
   @override
-  String get viewReviewedSnapshot => 'View reviewed policy text';
+  String get viewReviewedSnapshot => '查看已审查的政策正文';
 
   @override
   String get btnSavedToReceipts => '已保存至收据';
 
   @override
-  String get observedOnPhoneLabel => 'Seen on this phone';
+  String get observedOnPhoneLabel => '在此手机上看到';
 
   @override
-  String get quoteVerifiedLabel => 'Exact quote from policy';
+  String get quoteVerifiedLabel => '政策原文精确引用';
 
   @override
-  String get unverifiedClaimLabel => 'Not found in policy';
+  String get unverifiedClaimLabel => '政策中未找到';
 
   @override
   String get categoryDataCollection => '数据收集';
@@ -512,7 +503,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get labelOnThisPhone => '本机权限情况';
 
   @override
-  String get labelWhatRemainsUnknown => 'What we still don\'t know';
+  String get labelWhatRemainsUnknown => '我们仍不知道的内容';
 
   @override
   String get presetQuestionMeaning => '这对我的孩子意味着什么？';
@@ -524,13 +515,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get presetQuestionUnknown => '这里还有哪些未明确的信息？';
 
   @override
-  String get readingCitedClause => 'Reading the policy quote…';
+  String get readingCitedClause => '正在读取政策引用…';
 
   @override
   String get deniAnswerTitle => 'Deni 的回答';
 
   @override
-  String get stepsAndReasoning => 'How Deni checked this';
+  String get stepsAndReasoning => 'Deni 如何检查此内容';
 
   @override
   String get chooseReviewModeTitle => '选择如何审查此文本';
@@ -563,39 +554,38 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noMatchingApps => '在此手机上未找到匹配的应用。';
 
   @override
-  String get sampleSyntheticBadge => 'Sample app';
+  String get sampleSyntheticBadge => '示例应用';
 
   @override
-  String get permissionInspectionTitle => 'Phone permissions checked';
+  String get permissionInspectionTitle => '已检查手机权限';
 
   @override
   String get addAppPrivacyPolicyBtn => '添加此应用的隐私政策';
 
   @override
-  String get snapshotDigestLabel => 'Document fingerprint';
+  String get snapshotDigestLabel => '文档指纹';
 
   @override
   String get snapshotDigestExplanation =>
-      'A unique code that helps verify this is the exact text Enprive checked. If even one letter changes, this code changes too.';
+      '这是一段唯一代码，用于确认这就是 Enprive 实际检查过的原文。哪怕改动一个字，代码也会随之变化。';
 
   @override
-  String get copyDigestBtn => 'Copy fingerprint';
+  String get copyDigestBtn => '复制指纹';
 
   @override
-  String get digestCopiedMsg => 'Document fingerprint copied';
+  String get digestCopiedMsg => '已复制文档指纹';
 
   @override
-  String get permissionGrantedBadge => 'Allowed on this phone';
+  String get permissionGrantedBadge => '在此手机上已允许';
 
   @override
-  String get permissionNotGrantedBadge => 'Not allowed';
+  String get permissionNotGrantedBadge => '未允许';
 
   @override
   String get checkingPolicyWithCloudAi => '正在使用云端 AI 检查政策。';
 
   @override
-  String get preparingCloudAiStream =>
-      'Hiding personal details before cloud check…';
+  String get preparingCloudAiStream => '云端检查前正在隐藏个人信息…';
 
   @override
   String get cancellingAnalysis => '正在取消…';
@@ -607,227 +597,215 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloudTimedOutNotice => '云端 AI 响应超时。未发送任何自动重试。';
 
   @override
-  String get cloudFallbackBannerTitle =>
-      'Cloud unavailable: checked on this phone';
+  String get cloudFallbackBannerTitle => '云端不可用：已在此手机上检查';
 
   @override
   String get cloudFallbackBannerBody =>
-      'Cloud analysis was unavailable, so Enprive checked this policy directly on your phone.';
+      '云端分析暂时不可用，因此 Enprive 直接在您的手机上检查了这份隐私政策。';
 
   @override
-  String get appPickerFilterAll => 'All apps';
+  String get appPickerFilterAll => '全部应用';
 
   @override
-  String get appPickerFilterDownloaded => 'Downloaded';
+  String get appPickerFilterDownloaded => '已下载';
 
   @override
-  String get appPickerFilterSystem => 'System';
+  String get appPickerFilterSystem => '系统';
 
   @override
-  String get appPickerRecentlyChecked => 'Recently checked';
+  String get appPickerRecentlyChecked => '最近检查';
 
   @override
-  String get appPickerStatusPolicySaved => 'Policy review saved';
+  String get appPickerStatusPolicySaved => '已保存政策审查';
 
   @override
-  String get appPickerStatusPermissionsInspected => 'Permissions checked';
+  String get appPickerStatusPermissionsInspected => '已检查权限';
 
   @override
-  String get appPickerStatusNotReviewed => 'Not reviewed';
+  String get appPickerStatusNotReviewed => '未审查';
 
   @override
-  String get appPickerSearchHint => 'Search by app name or App ID…';
+  String get appPickerSearchHint => '按应用名称或 App ID 搜索…';
 
   @override
-  String get appPickerEmptyInstalledTitle => 'No installed apps available';
+  String get appPickerEmptyInstalledTitle => '没有可用的已安装应用';
 
   @override
-  String get appPickerEmptyInstalledBody =>
-      'We couldn\'t find any apps to check on this phone.';
+  String get appPickerEmptyInstalledBody => '此手机上未找到可供检查的应用。';
 
   @override
-  String get intakeModeDocument => 'Document';
+  String get intakeModeDocument => '文档';
 
   @override
-  String get intakeActionInspectText => 'Check policy text';
+  String get intakeActionInspectText => '检查政策正文';
 
   @override
-  String get intakeActionFetchUrl => 'Open & check policy';
+  String get intakeActionFetchUrl => '打开并检查政策';
 
   @override
-  String get intakeActionChooseDocument => 'Choose PDF, TXT, or DOCX';
+  String get intakeActionChooseDocument => '选择 PDF、TXT 或 DOCX';
 
   @override
-  String get intakeActionReplaceDocument => 'Choose replacement document';
+  String get intakeActionReplaceDocument => '选择替代文档';
 
   @override
-  String get intakeWorkingLabel => 'Working…';
+  String get intakeWorkingLabel => '正在处理…';
 
   @override
-  String get intakeCancelFetch => 'Cancel fetch';
+  String get intakeCancelFetch => '取消获取';
 
   @override
   String get intakeUrlHint => 'https://example.com/privacy-policy';
 
   @override
-  String get intakeUrlDisclosure =>
-      'Loads this public web page directly. Adding a link here does not prove app ownership.';
+  String get intakeUrlDisclosure => '将直接加载此公开网页。在此添加链接并不能证明应用归属权。';
 
   @override
-  String get intakePasteLocalNote =>
-      'Checked locally on this phone first. Nothing is uploaded without your permission.';
+  String get intakePasteLocalNote => '优先在此手机本地检查。未经您的许可，不会上传任何内容。';
 
   @override
-  String get intakeDocumentCardTitle => 'Import PDF, TXT, or DOCX policy file';
+  String get intakeDocumentCardTitle => '导入 PDF、TXT 或 DOCX 政策文件';
 
   @override
-  String get intakeDocumentCardBody =>
-      'We read the text right on your phone (up to 10 MB). Your file is never uploaded.';
+  String get intakeDocumentCardBody => '我们直接在您的手机上读取文本（最大 10 MB）。您的文件绝不会上传。';
 
   @override
-  String get intakeCompareWithAppPrompt =>
-      'Compare with an installed app (optional)';
+  String get intakeCompareWithAppPrompt => '与已安装应用对比（可选）';
 
   @override
-  String get intakeCompareWithAppHint =>
-      'Runs locally on this phone. App lists never leave your device.';
+  String get intakeCompareWithAppHint => '在此手机本地运行。应用列表绝不会离开您的设备。';
 
   @override
-  String get intakeCompareWithAppChange => 'Change';
+  String get intakeCompareWithAppChange => '更改';
 
   @override
-  String get intakeCompareWithAppRemove => 'Remove';
+  String get intakeCompareWithAppRemove => '移除';
 
   @override
-  String get intakeLockedAppContextLabel => 'Selected app';
+  String get intakeLockedAppContextLabel => '已选应用';
 
   @override
-  String get intakeFindPolicyOnPlayStore => 'Find policy link on Play Store';
+  String get intakeFindPolicyOnPlayStore => '在 Play Store 查找政策链接';
 
   @override
   String get intakePlayStoreHelperNote =>
-      'Opens the Play Store so you can copy the app\'s privacy policy link. Enprive never copies it automatically or assumes the link is official.';
+      '打开 Play Store 以便您复制该应用的隐私政策链接。Enprive 绝不会自动复制，也不会默认该链接为官方链接。';
 
   @override
   String get intakePlayStoreUnavailable =>
-      'Could not open Google Play Store on this device. Paste the policy URL or text manually instead.';
+      '无法在此设备上打开 Google Play Store。请改为手动粘贴政策网址或正文。';
 
   @override
-  String get intakeRecoverySwitchPaste => 'Paste text instead';
+  String get intakeRecoverySwitchPaste => '改为粘贴文本';
 
   @override
-  String get intakeRecoverySwitchDocument => 'Import document';
+  String get intakeRecoverySwitchDocument => '导入文档';
 
   @override
-  String get intakeRecoveryRetryUrl => 'Retry fetch';
+  String get intakeRecoveryRetryUrl => '重试获取';
 
   @override
   String get intakeExpiredDocumentShareNotice =>
-      'The originally shared file link can no longer be reopened. Choose a replacement PDF, TXT, or DOCX file or paste the policy text manually.';
+      '最初分享的文件链接已无法重新打开。请另选一个 PDF、TXT 或 DOCX 文件，或手动粘贴政策正文。';
 
   @override
-  String get intakeAssociationWarningTitle => 'App-policy identity check';
+  String get intakeAssociationWarningTitle => '应用与政策匹配检查';
 
   @override
-  String get intakeAssociationContinueAnyway => 'Continue anyway';
+  String get intakeAssociationContinueAnyway => '仍然继续';
 
   @override
-  String get intakeAssociationChangeApp => 'Change selected app';
+  String get intakeAssociationChangeApp => '更改已选应用';
 
   @override
-  String get intakeAssociationInspectWithoutApp => 'Check policy without app';
+  String get intakeAssociationInspectWithoutApp => '不关联应用直接检查';
 
   @override
-  String get intakeModeSelectorSemanticLabel => 'Policy input method';
+  String get intakeModeSelectorSemanticLabel => '政策输入方式';
 
   @override
-  String get tooltipClearSearch => 'Clear search';
+  String get tooltipClearSearch => '清除搜索';
 
   @override
-  String get intakeRecoveryEditUrl => 'Edit URL';
+  String get intakeRecoveryEditUrl => '编辑网址';
 
   @override
-  String get voiceSummaryTitle => 'Deni’s plain-language summary';
+  String get voiceSummaryTitle => 'Deni 的通俗摘要';
 
   @override
-  String get voiceSummaryPreparing => 'Preparing plain-language summary…';
+  String get voiceSummaryPreparing => '正在准备通俗摘要…';
 
   @override
-  String get voiceSynthesizingExpressive =>
-      'Preparing Deni’s expressive voice…';
+  String get voiceSynthesizingExpressive => '正在准备 Deni 的生动语音…';
 
   @override
-  String get voiceBtnListenOffline => 'Listen';
+  String get voiceBtnListenOffline => '收听';
 
   @override
-  String get voiceBtnStop => 'Stop';
+  String get voiceBtnStop => '停止';
 
   @override
-  String get voiceBtnExpressiveCloud => 'Expressive voice';
+  String get voiceBtnExpressiveCloud => '生动语音';
 
   @override
-  String get voiceBtnSummarizeCloud => 'Summarize with Cloud AI';
+  String get voiceBtnSummarizeCloud => '用云端 AI 总结';
 
   @override
-  String get voiceBadgeExpressive => 'Expressive cloud voice';
+  String get voiceBadgeExpressive => '云端生动语音';
 
   @override
-  String get voiceBadgeDeviceOffline => 'Phone voice · Offline';
+  String get voiceBadgeDeviceOffline => '手机语音 · 离线';
 
   @override
-  String get voiceViewSourceQuote => 'Source quote';
+  String get voiceViewSourceQuote => '原文引用';
 
   @override
-  String get voiceHideSourceQuote => 'Hide quote';
+  String get voiceHideSourceQuote => '隐藏引用';
 
   @override
-  String get voiceInspectFinding => 'Inspect finding';
+  String get voiceInspectFinding => '查看发现';
 
   @override
-  String get voiceConsentTitle => 'Choose Deni’s voice';
+  String get voiceConsentTitle => '选择 Deni 的语音';
 
   @override
   String get voiceConsentDisclosure =>
-      'To read this summary aloud with Deni’s expressive cloud voice, Enprive will send only the summary text shown above (with personal details hidden) for this one request. Your apps and phone permissions are never sent.';
+      '为了使用 Deni 的云端生动语音朗读此摘要，Enprive 仅在本次请求中发送上方显示的摘要文本（已隐藏个人信息）。绝不会发送您的应用列表和手机权限。';
 
   @override
-  String get voiceConsentPrimaryAction => 'Use expressive voice once';
+  String get voiceConsentPrimaryAction => '本次使用生动语音';
 
   @override
-  String get voiceConsentSecondaryAction => 'Speak on this phone';
+  String get voiceConsentSecondaryAction => '在此手机上朗读';
 
   @override
-  String get voiceConsentPayloadLabel => 'Exact spoken script';
+  String get voiceConsentPayloadLabel => '精确朗读文本';
 
   @override
-  String get voiceSummaryConsentTitle => 'Summarize findings with Cloud AI';
+  String get voiceSummaryConsentTitle => '用云端 AI 总结发现条目';
 
   @override
   String get voiceSummaryConsentDisclosure =>
-      'To summarize these policy quotes in plain language in the cloud, Enprive will send only the text shown above (with personal details hidden) for this one request. Your apps and phone permissions are never sent.';
+      '为了在云端用通俗语言总结这些政策引用，Enprive 仅在本次请求中发送上方显示的文本（已隐藏个人信息）。绝不会发送您的应用列表和手机权限。';
 
   @override
-  String get voiceFallbackDeviceNotice =>
-      'Expressive cloud voice was unavailable: using this phone\'s offline voice instead.';
+  String get voiceFallbackDeviceNotice => '云端生动语音不可用：已改用此手机的离线语音。';
 
   @override
-  String get voiceUnavailableNotice =>
-      'Voice playback is unavailable for this language on this phone. You can read Deni’s summary above.';
+  String get voiceUnavailableNotice => '此手机暂不支持该语言的语音朗读。您可以直接阅读上方的 Deni 摘要。';
 
   @override
-  String get voiceTooltipReadSummary =>
-      'Listen to Deni’s plain-language summary';
+  String get voiceTooltipReadSummary => '收听 Deni 的通俗摘要';
 
   @override
-  String get voiceTooltipStopReading => 'Stop reading aloud';
+  String get voiceTooltipStopReading => '停止朗读';
 
   @override
   String findingsCountUnit(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'findings',
-      one: 'finding',
+      other: '项发现',
     );
     return '$_temp0';
   }
@@ -837,9 +815,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count findings',
-      one: '1 finding',
-      zero: 'No findings',
+      other: '$count 项发现',
+      zero: '无发现条目',
     );
     return '$_temp0';
   }
@@ -849,8 +826,7 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count quotes verified in policy',
-      one: '1 quote verified in policy',
+      other: '政策中已验证 $count 条引用',
     );
     return '$_temp0';
   }
@@ -860,243 +836,230 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count observed on this phone',
-      one: '1 observed on this phone',
+      other: '在此手机上看到 $count 项',
     );
     return '$_temp0';
   }
 
   @override
-  String get permissionAllowedOnPhone => 'Allowed on this phone';
+  String get permissionAllowedOnPhone => '在此手机上已允许';
 
   @override
-  String get permissionNotAllowedOnPhone => 'Not allowed';
+  String get permissionNotAllowedOnPhone => '未允许';
 
   @override
-  String get permissionAllowedInSample => 'Allowed in sample';
+  String get permissionAllowedInSample => '示例中已允许';
 
   @override
-  String get permissionNotAllowedInSample => 'Not allowed in sample';
+  String get permissionNotAllowedInSample => '示例中未允许';
 
   @override
-  String get permissionMismatchChip => 'Not in policy';
+  String get permissionMismatchChip => '政策未提及';
 
   @override
-  String get howEnpriveCheckedThis => 'How Enprive checked this';
+  String get howEnpriveCheckedThis => 'Enprive 如何检查此内容';
 
   @override
-  String get hideHowEnpriveChecked => 'Hide how Enprive checked this';
+  String get hideHowEnpriveChecked => '隐藏 Enprive 的检查过程';
 
   @override
-  String get consentWhatWouldBeSent => 'What would be sent';
+  String get consentWhatWouldBeSent => '将发送的内容';
 
   @override
-  String get consentSentScope =>
-      'Only the text in the preview leaves this phone, for this one request.';
+  String get consentSentScope => '仅预览中的文本会离开此手机，且仅限这一次请求。';
 
   @override
   String consentMaskedCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count personal details are hidden first.',
-      one: '1 personal detail is hidden first.',
-      zero: 'No personal details were found to hide.',
+      other: '发送前已先隐藏 $count 条个人信息。',
+      zero: '未发现需要隐藏的个人信息。',
     );
     return '$_temp0';
   }
 
   @override
-  String get consentStaysOnPhone =>
-      'Your app list and phone permissions stay on this phone.';
+  String get consentStaysOnPhone => '您的应用列表和手机权限保留在此手机上。';
 
   @override
   String receiptDeletedSnack(String title) {
-    return 'Deleted $title';
+    return '已删除 $title';
   }
 
   @override
-  String get btnUndo => 'Undo';
+  String get btnUndo => '撤销';
 
   @override
-  String get readinessPromiseMaskedTitle => 'Personal details hidden';
+  String get readinessPromiseMaskedTitle => '隐藏个人信息';
 
   @override
-  String get readinessPromiseMaskedLine =>
-      'If you choose cloud, names, emails and numbers are hidden first.';
+  String get readinessPromiseMaskedLine => '如果选择云端，姓名、邮箱和号码会先被隐藏。';
 
   @override
   String findingDetailTitle(int index, int total) {
-    return 'Finding $index of $total';
+    return '第 $index 项，共 $total 项';
   }
 
   @override
-  String get findingReviewChip => 'Review';
+  String get findingReviewChip => '复查';
 
   @override
-  String get askDeniAboutThis => 'Ask Deni about this';
+  String get askDeniAboutThis => '向 Deni 询问此项';
 
   @override
-  String get labelWhatPolicySays => 'What the policy says';
+  String get labelWhatPolicySays => '政策如何表述';
 
   @override
-  String get labelWhatAndroidReports => 'What your phone shows';
+  String get labelWhatAndroidReports => '手机显示的情况';
 
   @override
-  String get sourceButtonTooltip => 'Reviewed source';
+  String get sourceButtonTooltip => '已审查来源';
 
   @override
-  String get linkInstalledAppBtn => 'Link an installed app';
+  String get linkInstalledAppBtn => '关联已安装应用';
 
   @override
-  String get linkInstalledAppCardTitle => 'Compare with an app on this phone';
+  String get linkInstalledAppCardTitle => '与此手机上的应用对比';
 
   @override
   String get linkInstalledAppCardBody =>
-      'Pick an installed app to compare its phone permissions with this policy in the same review. Your app list stays on this phone.';
+      '选择一个已安装应用，在同一次审查中将其手机权限与这份政策对比。您的应用列表留在此手机上。';
 
   @override
-  String get linkAppPickerTitle => 'Link an installed app';
+  String get linkAppPickerTitle => '关联已安装应用';
 
   @override
-  String get changeLinkedAppPickerTitle => 'Change linked app';
+  String get changeLinkedAppPickerTitle => '更改关联应用';
 
   @override
-  String get linkAppPickerSubtitle =>
-      'Pick an app on this phone to compare its permissions with this policy. Your app list never leaves this phone.';
+  String get linkAppPickerSubtitle => '选择此手机上的一个应用，将其权限与这份政策对比。您的应用列表绝不会离开此手机。';
 
   @override
-  String get linkedAppCurrentlySelectedBadge => 'Linked';
+  String get linkedAppCurrentlySelectedBadge => '已关联';
 
   @override
-  String get linkedAppSectionLabel => 'Linked app on this phone';
+  String get linkedAppSectionLabel => '此手机上已关联的应用';
 
   @override
-  String get btnChangeLinkedApp => 'Change app';
+  String get btnChangeLinkedApp => '更换应用';
 
   @override
-  String get btnUnlinkApp => 'Unlink app';
+  String get btnUnlinkApp => '取消关联';
 
   @override
-  String get btnUpdatePrivacyPolicy => 'Attach updated privacy policy';
+  String get btnUpdatePrivacyPolicy => '附加更新后的隐私政策';
 
   @override
   String linkedAppSnack(String appName) {
-    return 'Linked $appName. Permissions compared on this phone.';
+    return '已关联 $appName。已在此手机上对比权限。';
   }
 
   @override
   String linkedAppCheckMatchSnack(String appName) {
-    return 'Linked $appName. Check the app-policy match note below.';
+    return '已关联 $appName。请查看下方的应用与政策匹配提示。';
   }
 
   @override
   String linkedAppUnchangedSnack(String appName) {
-    return '$appName is already linked with the same permissions.';
+    return '$appName 已在相同权限下完成关联。';
   }
 
   @override
   String unlinkedAppSnack(String appName) {
-    return 'Unlinked $appName. Showing the policy review only.';
+    return '已取消关联 $appName。当前仅显示政策审查。';
   }
 
   @override
-  String get associationStatusPackageTitle => 'App ID found in this policy';
+  String get associationStatusPackageTitle => '在此政策中找到了 App ID';
 
   @override
   String associationStatusPackageBody(String packageName, String appName) {
-    return 'This policy mentions $packageName. That suggests it may describe $appName, though text alone does not prove who owns this policy.';
+    return '此政策提到了 $packageName，说明它可能描述的是 $appName，但仅凭文本无法证明谁拥有这份政策。';
   }
 
   @override
-  String get associationStatusNameTitle => 'App name found in this policy';
+  String get associationStatusNameTitle => '在此政策中找到了应用名称';
 
   @override
   String associationStatusNameBody(String appName) {
-    return 'This policy mentions $appName. That suggests it may describe this app, though a name match does not prove who owns this policy.';
+    return '此政策提到了 $appName，说明它可能描述此应用，但名称一致并不能证明谁拥有这份政策。';
   }
 
   @override
-  String get associationStatusUnverifiedTitle => 'Linked by you for comparison';
+  String get associationStatusUnverifiedTitle => '由您手动关联以供对比';
 
   @override
   String associationStatusUnverifiedBody(String appName) {
-    return 'This policy does not name $appName or its App ID. Double-check that it is the right policy: linking it here does not prove ownership.';
+    return '此政策未提及 $appName 或其 App ID。请再次确认这是正确的政策：在此关联并不能证明归属权。';
   }
 
   @override
   String associationStatusUnverifiedUrlHostBody(String appName) {
-    return 'The web address includes words from $appName, but the policy text itself does not name this app. Double-check that it is the right policy: linking it here does not prove ownership.';
+    return '网址中包含来自 $appName 的字样，但政策正文并未提及此应用。请再次确认这是正确的政策：在此关联并不能证明归属权。';
   }
 
   @override
-  String get associationStatusUnmatchedTitle =>
-      'This policy may be for a different app';
+  String get associationStatusUnmatchedTitle => '此政策可能属于其他应用';
 
   @override
   String associationStatusUnmatchedBody(String appName, String otherApps) {
-    return 'This policy does not mention $appName. Instead, it names $otherApps. Check that you linked the right app or opened the right policy.';
+    return '此政策未提及 $appName，而是提到了 $otherApps。请检查是否关联了正确的应用或打开了正确的政策。';
   }
 
   @override
-  String get associationStatusAmbiguousConflictTitle =>
-      'This policy mentions more than one app';
+  String get associationStatusAmbiguousConflictTitle => '此政策提到了多个应用';
 
   @override
   String associationStatusAmbiguousConflictBody(
     String appName,
     String otherApps,
   ) {
-    return 'This policy mentions $appName alongside $otherApps. It may cover several apps or a shared company policy, so check that it applies here.';
+    return '此政策同时提到了 $appName 和 $otherApps。它可能涵盖多个应用或是公司通用政策，请确认是否适用于此处。';
   }
 
   @override
-  String get associationStatusAmbiguousPeerTitle =>
-      'More than one app on this phone has a similar name';
+  String get associationStatusAmbiguousPeerTitle => '此手机上有多个名称相似的应用';
 
   @override
   String associationStatusAmbiguousPeerBody(String appName, String otherApps) {
-    return 'This policy mentions $appName without listing one exact App ID, and other apps on your phone ($otherApps) have a similar name. Make sure you linked the right one.';
+    return '此政策提到了 $appName 但未列出精确的 App ID，而您的手机上还有名称相似的其他应用（$otherApps）。请确认关联无误。';
   }
 
   @override
   String associationStatusAmbiguousGenericBody(String appName) {
-    return 'This policy could refer to more than one app. Double-check that it applies to $appName.';
+    return '此政策可能指向多个应用。请再次确认它适用于 $appName。';
   }
 
   @override
-  String get associationOwnershipLimitation =>
-      'Text and web links never prove who published or owns a policy.';
+  String get associationOwnershipLimitation => '文本和网页链接绝不能证明是谁发布或拥有某份隐私政策。';
 
   @override
   String permissionComparisonMismatchNote(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other:
-          '$count permissions on this phone are not clearly mentioned in this policy. A mismatch is a prompt to look closer, not proof of wrongdoing.',
-      one: '1 permission on this phone is not clearly mentioned in this policy. A mismatch is a prompt to look closer, not proof of wrongdoing.',
+      other: '此手机上有 $count 项权限未在此政策中明确提及。不一致是进一步查看的提示，并非违规证据。',
     );
     return '$_temp0';
   }
 
   @override
   String get permissionComparisonNoMismatchNote =>
-      'None of the checked permissions on this phone contradict this policy. Permissions alone cannot show what an app actually sends.';
+      '此手机上已检查的权限均未与此政策冲突。仅靠权限本身无法说明应用实际发送了什么。';
 
   @override
   String get permissionComparisonLimitationNote =>
-      'Your phone shows permission settings on this phone only. This comparison is a prompt to look closer, never proof of wrongdoing or that data was sent.';
+      '手机仅显示本机上的权限设置。此对比是进一步查看的提示，绝不能作为违规或数据已发送的证据。';
 
   @override
-  String get permissionNotRequestedOnPhone => 'Not requested by app';
+  String get permissionNotRequestedOnPhone => '应用未请求';
 
   @override
-  String get permissionNotRequestedInSample => 'Not requested in sample';
+  String get permissionNotRequestedInSample => '示例中未请求';
 
   @override
-  String get permissionsEmptyComparisonTitle =>
-      'No sensitive permissions matched in this check';
+  String get permissionsEmptyComparisonTitle => '本次检查未匹配到敏感权限';
 
   @override
   String permissionsEmptyComparisonBody(
@@ -1104,437 +1067,401 @@ class AppLocalizationsZh extends AppLocalizations {
     int grantedCount,
     String appName,
   ) {
-    return 'Your phone lists $requestedCount permissions ($grantedCount allowed) for $appName, with none in the sensitive categories checked here (location, camera, microphone, contacts, photos, or ad ID).';
+    return '手机列出 $appName 的 $requestedCount 项权限（已允许 $grantedCount 项），其中不包含本次检查的敏感类别（位置、相机、麦克风、通讯录、照片或广告 ID）。';
   }
 
   @override
-  String get sourceDeviceInspection => 'Checked on this phone';
+  String get sourceDeviceInspection => '已在此手机上检查';
 
   @override
   String get appIdPrefix => 'App ID';
 
   @override
-  String get advancedDetailsTitle => 'Advanced details';
+  String get advancedDetailsTitle => '高级详情';
 
   @override
-  String get advancedDetailsSubtitle =>
-      'Technical details that verify when and where this policy text was checked.';
+  String get advancedDetailsSubtitle => '用于核验这份政策正文检查时间与来源的技术详情。';
 
   @override
-  String get sourceSectionTitle => 'Where this policy came from';
+  String get sourceSectionTitle => '此政策的来源';
 
   @override
-  String get cloudPayloadLabel => 'Exact text to be sent';
+  String get cloudPayloadLabel => '将发送的精确文本';
 
   @override
-  String get cloudPayloadNoPiiLabel => 'No personal details found';
+  String get cloudPayloadNoPiiLabel => '未发现个人信息';
 
   @override
   String cloudPayloadHiddenCount(int count) {
-    return 'Hidden ($count)';
+    return '已隐藏（$count）';
   }
 
   @override
-  String get summarySourceOnDevice => 'Summarized on this phone';
+  String get summarySourceOnDevice => '已在此手机上总结';
 
   @override
-  String get summarySourceInCloud => 'Summarized in the cloud';
+  String get summarySourceInCloud => '已在云端总结';
 
   @override
-  String get summarySourceOffline => 'Summarized offline on this phone';
+  String get summarySourceOffline => '已在此手机上离线总结';
 
   @override
-  String get summarySourceUnknown => 'Summary source unknown';
+  String get summarySourceUnknown => '摘要来源未知';
 
   @override
-  String get notFromPolicySuffix => 'From your phone settings, not the policy';
+  String get notFromPolicySuffix => '来自您的手机设置，而非隐私政策';
 
   @override
-  String get sampleNotFromPolicySuffix => 'Example only, not from the policy';
+  String get sampleNotFromPolicySuffix => '仅为示例，并非来自隐私政策';
 
   @override
-  String get learnHeaderSubtitle => 'Offline privacy guides & diagrams';
+  String get learnHeaderSubtitle => '离线隐私指南与图解';
 
   @override
-  String get learnFilterAll => 'All topics';
+  String get learnFilterAll => '全部主题';
 
   @override
-  String get learnFilterPolicies => 'Policies';
+  String get learnFilterPolicies => '隐私政策';
 
   @override
-  String get learnFilterPermissions => 'Permissions';
+  String get learnFilterPermissions => '手机权限';
 
   @override
-  String get learnFilterSharing => 'Sharing';
+  String get learnFilterSharing => '数据共享';
 
   @override
-  String get learnFilterEvidence => 'Evidence';
+  String get learnFilterEvidence => '证据解读';
 
   @override
   String learnLessonStepCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count steps',
-      one: '1 step',
+      other: '$count 个步骤',
     );
     return '$_temp0';
   }
 
   @override
-  String get learnDeckTitle => 'Practice privacy habits locally';
+  String get learnDeckTitle => '在本地养成隐私好习惯';
 
   @override
-  String get learnDeckBody =>
-      '100% offline lessons with diagrams. Your installed apps and receipts never enter Learn.';
+  String get learnDeckBody => '100% 离线图文课程。您已安装的应用和收据绝不会进入“学习”页面。';
 
   @override
-  String get learnDeckCheckBtn => 'Apply it · Check an app';
+  String get learnDeckCheckBtn => '学以致用 · 检查应用';
 
   @override
-  String get learnCheckAppBridgeBtn => 'Check an app on this phone';
+  String get learnCheckAppBridgeBtn => '检查此手机上的应用';
 
   @override
-  String get learnSectionDiagram => 'How it works';
+  String get learnSectionDiagram => '原理解析';
 
   @override
-  String get learnSectionSteps => 'Key steps';
+  String get learnSectionSteps => '关键步骤';
 
   @override
-  String get learnSectionQuickCheck => 'Quick check';
+  String get learnSectionQuickCheck => '快速自测';
 
   @override
-  String get learnTooltipListenLesson => 'Read this lesson aloud offline';
+  String get learnTooltipListenLesson => '离线朗读本课内容';
 
   @override
-  String get learnTooltipStopLesson => 'Stop reading lesson aloud';
+  String get learnTooltipStopLesson => '停止朗读课程';
 
   @override
-  String get learnVoiceUnavailableNotice =>
-      'Offline voice playback is not available for this language on this phone. You can read the lesson below.';
+  String get learnVoiceUnavailableNotice => '此手机暂不支持该语言的离线语音朗读。您可以直接阅读下方课程内容。';
 
   @override
-  String get learnQuickCheckCorrectBadge => 'Right answer';
+  String get learnQuickCheckCorrectBadge => '回答正确';
 
   @override
-  String get learnQuickCheckTryAgainBadge => 'Try another choice';
+  String get learnQuickCheckTryAgainBadge => '换一个选项试试';
 
   @override
   String learnLessonProgress(int current, int total) {
-    return 'Lesson $current of $total';
+    return '第 $current 课，共 $total 课';
   }
 
   @override
-  String get learnBackTooltip => 'Back to Learn';
+  String get learnBackTooltip => '返回学习';
 
   @override
-  String get learnPreviousLesson => 'Previous';
+  String get learnPreviousLesson => '上一课';
 
   @override
-  String get learnNextLesson => 'Next';
+  String get learnNextLesson => '下一课';
 
   @override
   String learnLessonNavPreviousSemantic(String title) {
-    return 'Previous lesson: $title';
+    return '上一课：$title';
   }
 
   @override
   String learnLessonNavNextSemantic(String title) {
-    return 'Next lesson: $title';
+    return '下一课：$title';
   }
 
   @override
-  String get learnPolicyFolderTitle => 'Privacy policies';
+  String get learnPolicyFolderTitle => '隐私政策';
 
   @override
-  String get learnPolicyTitle =>
-      'What a privacy policy is (and what it can\'t prove)';
+  String get learnPolicyTitle => '什么是隐私政策（以及它不能证明什么）';
 
   @override
-  String get learnPolicySubtitle =>
-      'What developers promise vs. what stays unknown';
+  String get learnPolicySubtitle => '开发者的承诺与仍然未知的部分';
 
   @override
   String get learnPolicyIntro =>
-      'A privacy policy is a developer\'s public statement explaining what data an app says it collects, why it uses it, who may receive it, and what choices families have.';
+      '隐私政策是开发者的公开说明，介绍应用声称收集哪些数据、为何使用、可能共享给谁，以及家长和家庭有哪些选择。';
 
   @override
-  String get learnPolicyStep1 =>
-      'Look for four basics: what data is collected, why the app needs it, who else may get it, and how you can ask for deletion.';
+  String get learnPolicyStep1 => '重点看四项基础信息：收集什么数据、应用为何需要、还有谁会收到，以及如何申请删除。';
 
   @override
   String get learnPolicyStep2 =>
-      'Confusing wording is common. A 2026 study of children\'s learning apps found that very few policies were easy to read, and most apps did not fully match what their policies stated.';
+      '晦涩难懂的表述很常见。2026 年一项针对儿童学习应用的研究发现，真正易读的政策寥寥无几，且大多数应用与政策所述并不完全一致。';
 
   @override
-  String get learnPolicyStep3 =>
-      'A privacy policy only shows what a developer says on paper. Reading it cannot prove what the app actually sends over the internet.';
+  String get learnPolicyStep3 => '隐私政策只体现开发者在纸面上的说法，阅读政策无法证明应用实际通过网络发送了什么。';
 
   @override
-  String get learnPolicyStep4 =>
-      'Comparing a policy with your phone\'s permission settings gives a clearer view, while remembering that Enprive cannot see live internet traffic.';
+  String get learnPolicyStep4 => '把政策与手机权限设置对照查看会更清楚，但也要记住：Enprive 看不到实时的网络流量。';
 
   @override
-  String get learnPolicyQuickQuestion =>
-      'What does reading an app\'s privacy policy prove?';
+  String get learnPolicyQuickQuestion => '阅读一款应用的隐私政策能证明什么？';
 
   @override
-  String get learnPolicyQuickOption1 =>
-      'That the app never sends data to anyone';
+  String get learnPolicyQuickOption1 => '该应用绝不会向任何人发送数据';
 
   @override
-  String get learnPolicyQuickOption2 =>
-      'What the developer says: not what the app actually sends';
+  String get learnPolicyQuickOption2 => '开发者的书面说法，而非应用实际发送的内容';
 
   @override
-  String get learnPolicyQuickOption3 =>
-      'That the phone\'s camera and mic are switched off';
+  String get learnPolicyQuickOption3 => '手机的相机和麦克风已经关闭';
 
   @override
   String get learnPolicyQuickCorrectFeedback =>
-      'That\'s right. A policy is the developer\'s public statement, not proof of what the app actually sends over the internet.';
+      '答对了。隐私政策只是开发者的公开声明，不能证明应用实际在网络上传输了什么。';
 
   @override
   String get learnPolicyQuickTryAgainFeedback =>
-      'Not quite. Reading a policy only tells you what the developer says: it cannot prove internet activity or turn off phone permissions.';
+      '不太对。阅读政策只能了解开发者的说法，既不能证明网络行为，也不能关闭手机权限。';
 
   @override
-  String get learnDiagramPolicySaysTitle => 'Policy says';
+  String get learnDiagramPolicySaysTitle => '政策所述';
 
   @override
-  String get learnDiagramPolicySaysBody => 'Developer\'s written promise';
+  String get learnDiagramPolicySaysBody => '开发者的书面承诺';
 
   @override
-  String get learnDiagramPolicyQuoteSample =>
-      '\"We may share data with partners…\"';
+  String get learnDiagramPolicyQuoteSample => '“我们可能会与合作伙伴共享数据…”';
 
   @override
-  String get learnDiagramPhoneShowsTitle => 'Phone shows';
+  String get learnDiagramPhoneShowsTitle => '手机显示';
 
   @override
-  String get learnDiagramPhoneShowsBody => 'Permissions allowed here';
+  String get learnDiagramPhoneShowsBody => '本机已允许的权限';
 
   @override
-  String get learnDiagramUnknownTitle => 'Still unknown';
+  String get learnDiagramUnknownTitle => '仍然未知';
 
   @override
-  String get learnDiagramUnknownBody =>
-      'Live internet traffic Enprive can\'t see';
+  String get learnDiagramUnknownBody => 'Enprive 看不到的实时网络流量';
 
   @override
-  String get learnDiagramPolicyCaption =>
-      'A policy is a promise, not proof of behavior';
+  String get learnDiagramPolicyCaption => '政策只是承诺，不是实际行为的证明';
 
   @override
   String get learnDiagramPolicySemantic =>
-      'Diagram comparing three parts of app privacy. First, Policy says: the developer\'s written promise. Second, Phone shows: the permissions allowed on this phone. Third, inside a dashed boundary, Still unknown: live internet traffic that Enprive cannot see. A privacy policy is a promise, not proof of behavior.';
+      '对比应用隐私三个部分的图解。第一，政策所述：开发者的书面承诺。第二，手机显示：此手机上已允许的权限。第三，虚线框内为仍然未知：Enprive 看不到的实时网络流量。隐私政策只是承诺，不是实际行为的证明。';
 
   @override
-  String get learnPermissionsFolderTitle => 'Phone permissions';
+  String get learnPermissionsFolderTitle => '手机权限';
 
   @override
-  String get learnPermissionsTitle => 'Android permissions explained';
+  String get learnPermissionsTitle => '读懂 Android 权限';
 
   @override
-  String get learnPermissionsSubtitle =>
-      'The four Android choices & where to review them';
+  String get learnPermissionsSubtitle => 'Android 的四种选项及查看位置';
 
   @override
   String get learnPermissionsIntro =>
-      'Permissions are gates that control whether an app can reach sensors and data on your phone, such as the camera, microphone, location, photos, contacts, or notifications.';
+      '权限就像一道道门，控制应用能否访问手机上的传感器和数据，例如相机、麦克风、位置、照片、通讯录或通知。';
 
   @override
-  String get learnPermissionsStep1 =>
-      'Ask whether the permission fits the feature: a math quiz or reading app rarely needs your location, contacts, or camera.';
+  String get learnPermissionsStep1 => '先问问权限是否符合功能：数学练习或阅读应用很少需要位置、通讯录或相机。';
 
   @override
   String get learnPermissionsStep2 =>
-      'Android offers up to four choices: Don\'t allow, Ask every time, Allow only while using the app, and All the time (for background location).';
+      'Android 最多提供四种选项：不允许、每次询问、仅在使用该应用时允许，以及始终允许（用于后台定位）。';
 
   @override
-  String get learnPermissionsStep3 =>
-      'Start with the narrowest choice that lets the feature work, such as Ask every time or While using the app.';
+  String get learnPermissionsStep3 => '从能让功能正常使用的最小范围开始，例如“每次询问”或“仅在使用时允许”。';
 
   @override
   String get learnPermissionsStep4 =>
-      'Open Android Settings and check Privacy Dashboard to see which apps recently accessed Camera, Microphone, or Location.';
+      '打开 Android 设置中的“隐私信息中心”，即可查看近期哪些应用访问过相机、麦克风或位置。';
 
   @override
   String get learnPermissionsStep5 =>
-      'Turn permissions off anytime in App Settings, or keep Pause app activity if unused on so Android removes old permissions automatically. An allowed permission shows capability, not proof that data was sent.';
+      '您可以随时在应用设置中关闭权限，或开启“暂停未使用的应用活动”，让 Android 自动收回旧权限。允许某项权限代表应用具备能力，并非数据已发送的证明。';
 
   @override
   String get learnPermissionsQuickQuestion =>
-      'A math practice app asks for your camera and you aren\'t sure why. What is the best first step?';
+      '一款数学练习应用请求相机权限，但你不知道原因。最好的第一步是什么？';
 
   @override
-  String get learnPermissionsQuickOption1 =>
-      'Tap Don\'t allow and see if the math exercises still work';
+  String get learnPermissionsQuickOption1 => '点击“不允许”，看看数学练习是否依然能正常使用';
 
   @override
-  String get learnPermissionsQuickOption2 =>
-      'Choose All the time so the popup doesn\'t come back';
+  String get learnPermissionsQuickOption2 => '选择“始终允许”，免得弹窗再出现';
 
   @override
-  String get learnPermissionsQuickOption3 =>
-      'Assume the app has already uploaded photos';
+  String get learnPermissionsQuickOption3 => '断定应用已经上传了照片';
 
   @override
   String get learnPermissionsQuickCorrectFeedback =>
-      'Right. Tapping Don\'t allow lets you check if the app works without the camera, and you can change permissions anytime in Android Settings.';
+      '正确。点击“不允许”可以测试应用在没有相机的情况下能否使用，而且随时可以在 Android 设置里更改。';
 
   @override
   String get learnPermissionsQuickTryAgainFeedback =>
-      'Try a narrower choice first. Tap Don\'t allow to test if the feature still works, and remember an allowed permission shows capability, not proof of an upload.';
+      '先尝试更窄的选项。点击“不允许”测试功能是否正常，同时记住：允许权限只代表具备能力，不能证明已上传数据。';
 
   @override
-  String get learnDiagramPermLadderTitle => 'From narrowest to broadest access';
+  String get learnDiagramPermLadderTitle => '从最窄到最宽的访问范围';
 
   @override
-  String get learnDiagramPermDenyTitle => 'Don\'t allow';
+  String get learnDiagramPermDenyTitle => '不允许';
 
   @override
-  String get learnDiagramPermDenyDetail =>
-      'Blocked: app cannot use this sensor';
+  String get learnDiagramPermDenyDetail => '已阻止：应用无法使用该传感器';
 
   @override
-  String get learnDiagramPermAskTitle => 'Ask every time';
+  String get learnDiagramPermAskTitle => '每次询问';
 
   @override
-  String get learnDiagramPermAskDetail => 'One-time access when you tap allow';
+  String get learnDiagramPermAskDetail => '仅在您点击允许时获得一次访问';
 
   @override
-  String get learnDiagramPermWhileUsingTitle => 'While using the app';
+  String get learnDiagramPermWhileUsingTitle => '使用应用期间';
 
   @override
-  String get learnDiagramPermWhileUsingDetail =>
-      'Only while the app is open on screen';
+  String get learnDiagramPermWhileUsingDetail => '仅在应用打开并显示于屏幕时可用';
 
   @override
-  String get learnDiagramPermAllTimeTitle => 'All the time';
+  String get learnDiagramPermAllTimeTitle => '始终允许';
 
   @override
-  String get learnDiagramPermAllTimeDetail =>
-      'Background access even when closed';
+  String get learnDiagramPermAllTimeDetail => '即使应用已关闭也可在后台访问';
 
   @override
-  String get learnDiagramPermFitNote =>
-      'Does it fit? Math quiz + Camera = ask why';
+  String get learnDiagramPermFitNote => '合理吗？数学练习 + 相机 = 先问为什么';
 
   @override
   String get learnDiagramPermSemantic =>
-      'Four-step Android permission ladder from narrowest to broadest access. Step 1, Don\'t allow: blocked, the app cannot use this sensor. Step 2, Ask every time: one-time access when you tap allow. Step 3, While using the app: access only while the app is open on screen. Step 4, All the time: background access even when closed, marked with a dashed border for extra caution. Bottom tip: Does it fit? A math quiz asking for the camera is a reason to ask why.';
+      '从最窄到最宽的四级 Android 权限阶梯图。第 1 级，不允许：已阻止，应用无法使用该传感器。第 2 级，每次询问：仅在您点击允许时获得一次访问。第 3 级，使用应用期间：仅在应用打开并显示于屏幕时可用。第 4 级，始终允许：即使关闭也可后台访问，以虚线框提醒注意。底部提示：数学练习请求相机时应问清原因。';
 
   @override
-  String get learnSharingFolderTitle => 'Ads & third parties';
+  String get learnSharingFolderTitle => '广告与第三方';
 
   @override
-  String get learnSharingTitle =>
-      'Who else gets data: ads, analytics & third parties';
+  String get learnSharingTitle => '还有谁会拿到数据：广告、统计与第三方';
 
   @override
-  String get learnSharingSubtitle =>
-      'App maker vs. helpers, analytics & ad networks';
+  String get learnSharingSubtitle => '应用开发商与辅助服务、统计工具和广告网络的区别';
 
   @override
   String get learnSharingIntro =>
-      'Many free apps connect to other companies behind the scenes. Knowing who receives information helps families tell the difference between running the app and tracking kids across apps.';
+      '许多免费应用会在后台连接其他公司。了解谁在接收信息，能帮助家长区分维持应用运行的服务与跨应用追踪儿童的行为。';
 
   @override
-  String get learnSharingStep1 =>
-      'First party means the app maker itself: for example, saving homework progress or quiz scores so the app works.';
+  String get learnSharingStep1 => '第一方指应用开发商本身：例如保存作业进度或测验分数，让应用正常运作。';
 
   @override
-  String get learnSharingStep2 =>
-      'Helper companies are third parties that handle behind-the-scenes jobs like cloud storage or crash reports so bugs get fixed.';
+  String get learnSharingStep2 => '辅助公司是处理幕后工作的第三方，例如云存储或崩溃报告，用于修复软件故障。';
 
   @override
   String get learnSharingStep3 =>
-      'Analytics tools measure how screens are used, while ad networks and data brokers may use an advertising ID to show targeted ads or profile activity across apps.';
+      '统计工具衡量页面使用情况，而广告网络和数据经纪商可能使用广告 ID 投放定向广告或跨应用记录行为。';
 
   @override
-  String get learnSharingStep4 =>
-      'Watch for broad phrases like \'trusted partners\' or \'business purposes,\' and check whether a policy explains how to opt out of personalized ads.';
+  String get learnSharingStep4 => '留意“可信赖合作伙伴”“业务目的”等宽泛措辞，并检查政策是否说明如何关闭个性化广告。';
 
   @override
-  String get learnSharingQuickQuestion =>
-      'A policy says the app shares information with \'third-party partners.\' What is the best next question to ask?';
+  String get learnSharingQuickQuestion => '政策写着应用会与“第三方合作伙伴”共享信息。接下来最该问什么？';
 
   @override
-  String get learnSharingQuickOption1 => 'Assume that means the app has no ads';
+  String get learnSharingQuickOption1 => '认为这意味着应用没有广告';
 
   @override
-  String get learnSharingQuickOption2 =>
-      'Assume every partner does the exact same job';
+  String get learnSharingQuickOption2 => '认为每个合作伙伴做的事情完全一样';
 
   @override
-  String get learnSharingQuickOption3 =>
-      'Check whether those partners are helpers (like hosting) or ad networks that track across apps';
+  String get learnSharingQuickOption3 => '查明这些伙伴是托管等辅助服务，还是会跨应用追踪的广告网络';
 
   @override
   String get learnSharingQuickCorrectFeedback =>
-      'Spot on. Helper services keep the app running, while ad networks and data brokers may track activity across apps.';
+      '说得对。辅助服务帮助应用运行，而广告网络和数据经纪商可能会跨应用追踪活动。';
 
   @override
   String get learnSharingQuickTryAgainFeedback =>
-      'Look closer at what each partner does. Not all third parties are the same: some host data or fix crashes, while others run ads or tracking.';
+      '仔细看每个合作伙伴的作用。并非所有第三方都相同：有的负责托管或修复崩溃，有的则做广告或追踪。';
 
   @override
-  String get learnDiagramThirdPartyYou => 'You';
+  String get learnDiagramThirdPartyYou => '你';
 
   @override
-  String get learnDiagramThirdPartyApp => 'Learning app';
+  String get learnDiagramThirdPartyApp => '学习应用';
 
   @override
-  String get learnDiagramThirdPartyHosting => 'Helpers & crashes';
+  String get learnDiagramThirdPartyHosting => '辅助与崩溃修复';
 
   @override
-  String get learnDiagramThirdPartyAnalytics => 'Analytics';
+  String get learnDiagramThirdPartyAnalytics => '统计分析';
 
   @override
-  String get learnDiagramThirdPartyAds => 'Ad networks';
+  String get learnDiagramThirdPartyAds => '广告网络';
 
   @override
-  String get learnDiagramThirdPartyFirstParty => 'First party';
+  String get learnDiagramThirdPartyFirstParty => '第一方';
 
   @override
-  String get learnDiagramThirdPartyThirdParty => 'Third parties';
+  String get learnDiagramThirdPartyThirdParty => '第三方';
 
   @override
   String get learnDiagramThirdPartySemantic =>
-      'Flow diagram showing where data from a child\'s learning app can go. You connect to the learning app, which connects with a solid line to the app maker (first party) and with dashed lines to third parties: helper and crash tools, analytics tools, and ad networks marked for extra attention.';
+      '展示儿童学习应用数据流向的流程图。你连接到学习应用，应用通过实线连接到应用开发商（第一方），并通过虚线连接到第三方：辅助与崩溃工具、统计分析工具，以及重点标注的广告网络。';
 
   @override
-  String get learnEvidenceFolderTitle => 'Reading Enprive';
+  String get learnEvidenceFolderTitle => '读懂 Enprive';
 
   @override
-  String get learnEvidenceTitle => 'How to read Enprive\'s evidence';
+  String get learnEvidenceTitle => '如何读懂 Enprive 的证据';
 
   @override
-  String get learnEvidenceSubtitle =>
-      'Evidence layers, categories & honest limits';
+  String get learnEvidenceSubtitle => '证据层级、主题分类与诚实边界';
 
   @override
   String get learnEvidenceIntro =>
-      'Enprive separates what a privacy policy says, what your phone shows, and what stays unknown, and groups findings by topic, never as a safety grade.';
+      'Enprive 将政策表述、手机显示和未知部分分开呈现，并按主题归类发现条目，从不打“安全分”。';
 
   @override
-  String get learnEvidenceStep1 =>
-      'Five topic categories group every finding with the same icon and color as the Review screen. Color marks the topic, never a safety score.';
+  String get learnEvidenceStep1 => '五个主题分类使用与审查页相同的图标和颜色。颜色只区分主题，绝不是安全评分。';
 
   @override
   String learnEvidenceStep2(String sourceMatched) {
-    return '$sourceMatched means Enprive found an exact quote word for word in the policy text you checked.';
+    return '“$sourceMatched”表示 Enprive 在您检查的政策正文中找到了逐字一致的原文引用。';
   }
 
   @override
   String learnEvidenceStep3(String deviceObserved) {
-    return '$deviceObserved means your phone reported a permission setting on this device: not proof that data was sent.';
+    return '“$deviceObserved”表示手机报告了本机的一项权限设置，并非数据已发送的证据。';
   }
 
   @override
   String learnEvidenceStep4(String interpretation, String unverified) {
-    return '$interpretation is Deni\'s plain-language explanation, while $unverified marks details Enprive could not find. Silence in a policy is never a promise.';
+    return '“$interpretation”是 Deni 的通俗说明，而“$unverified”标出 Enprive 未找到的细节。政策里没写，绝不等于承诺不做。';
   }
 
   @override
@@ -1543,49 +1470,42 @@ class AppLocalizationsZh extends AppLocalizations {
     String noConcern,
     String insufficientEvidence,
   ) {
-    return 'Reviews end with one of three calm outcomes: $reviewRecommended, $noConcern (which is never a safety certification), or $insufficientEvidence.';
+    return '审查会给出三种清晰结论之一：$reviewRecommended、$noConcern（绝不是安全认证）或 $insufficientEvidence。';
   }
 
   @override
   String learnEvidenceQuickQuestion(String deviceObserved) {
-    return 'On a Review screen, what does \'$deviceObserved\' mean?';
+    return '在审查页面上，“$deviceObserved”是什么意思？';
   }
 
   @override
-  String get learnEvidenceQuickOption1 =>
-      'The app is certified safe for children';
+  String get learnEvidenceQuickOption1 => '该应用已通过儿童安全认证';
 
   @override
-  String get learnEvidenceQuickOption2 =>
-      'Your phone shows this permission setting on this device: not proof that data was uploaded';
+  String get learnEvidenceQuickOption2 => '您的手机在本机显示了这项权限设置，并非数据已上传的证据';
 
   @override
-  String get learnEvidenceQuickOption3 =>
-      'The app has definitely uploaded your child\'s data';
+  String get learnEvidenceQuickOption3 => '该应用肯定已经上传了孩子的数据';
 
   @override
   String get learnEvidenceQuickCorrectFeedback =>
-      'That\'s right. That label reflects Android\'s permission state on this device; it cannot prove uploads or certify safety.';
+      '没错。这个标签只反映本机 Android 的权限状态，既不能证明已上传，也不是安全认证。';
 
   @override
   String get learnEvidenceQuickTryAgainFeedback =>
-      'Not quite. That label only shows what your phone reports about a permission setting: it never proves uploads and is never a safety certification.';
+      '不太对。这个标签只反映手机报告的权限状态，从不证明数据上传，也不是安全认证。';
 
   @override
-  String get learnDiagramEvidencePolicyDetail =>
-      'Exact quote matched in the policy text';
+  String get learnDiagramEvidencePolicyDetail => '政策正文中逐字匹配的引用';
 
   @override
-  String get learnDiagramEvidencePhoneDetail =>
-      'Phone permissions on this device';
+  String get learnDiagramEvidencePhoneDetail => '此设备上的手机权限';
 
   @override
-  String get learnDiagramEvidenceDeniDetail =>
-      'Plain-language explanation by Deni';
+  String get learnDiagramEvidenceDeniDetail => 'Deni 的通俗说明';
 
   @override
-  String get learnDiagramEvidenceUnknownDetail =>
-      'Silence in a policy is not a promise';
+  String get learnDiagramEvidenceUnknownDetail => '政策未提及不等于承诺不做';
 
   @override
   String learnDiagramEvidenceSemantic(
@@ -1594,16 +1514,14 @@ class AppLocalizationsZh extends AppLocalizations {
     String interpretation,
     String unverified,
   ) {
-    return 'Four evidence layers used on Enprive\'s Review screen: 1, $sourceMatched, an exact quote matched in the privacy policy; 2, $deviceObserved, phone permissions on this device; 3, $interpretation, Deni\'s plain-language explanation; and 4, separated by a dashed line, $unverified, because silence in a policy is not a promise.';
+    return 'Enprive 审查页使用的四层证据：1，$sourceMatched，政策中逐字匹配的引用；2，$deviceObserved，此设备上的手机权限；3，$interpretation，Deni 的通俗说明；4，虚线分隔的 $unverified，因为政策未提及不等于承诺不做。';
   }
 
   @override
-  String get learnDiagramCategoriesTitle =>
-      'Five topic categories on the Review screen';
+  String get learnDiagramCategoriesTitle => '审查页上的五个主题分类';
 
   @override
-  String get learnDiagramCategoriesNote =>
-      'Color and icon mark the topic, never a safety score.';
+  String get learnDiagramCategoriesNote => '颜色和图标只标示主题，绝非安全评分。';
 
   @override
   String learnDiagramCategoriesSemantic(
@@ -1613,1027 +1531,948 @@ class AppLocalizationsZh extends AppLocalizations {
     String retention,
     String parentalControls,
   ) {
-    return 'Five evidence categories shown on Enprive\'s Review screen, each with its own icon and color: $dataCollection, $sharing, $tracking, $retention, and $parentalControls. Color and icon mark the topic, never a safety score.';
+    return 'Enprive 审查页展示的五个证据分类，各有专属图标和颜色：$dataCollection、$sharing、$tracking、$retention 和 $parentalControls。颜色和图标只标示主题，绝非安全评分。';
   }
 
   @override
-  String get learnDataCollectionFolderTitle => 'Data apps collect';
+  String get learnDataCollectionFolderTitle => '应用收集的数据';
 
   @override
-  String get learnDataCollectionTitle => 'What Data Apps Collect';
+  String get learnDataCollectionTitle => '应用会收集哪些数据';
 
   @override
-  String get learnDataCollectionSubtitle =>
-      'The difference between what you type and what runs quietly';
+  String get learnDataCollectionSubtitle => '你主动输入的信息与后台静默收集的区别';
 
   @override
   String get learnDataCollectionIntro1 =>
-      'Apps gather information in two ways. Some data comes from what you actively enter: your name, email, photos, voice recordings, or homework answers. Other data is collected automatically in the background, like your IP address (the address your phone uses on the internet), device identifiers, advertising ID (a code ads use to recognize your phone), crash logs, and when you open the app.';
+      '应用通过两种方式收集信息。一种是你主动输入的内容，如姓名、邮箱、照片、语音或作业答案；另一种在后台自动收集，如 IP 地址（手机联网所用的地址）、设备标识符、广告 ID（广告用来识别手机的代码）、崩溃日志和打开应用的时间。';
 
   @override
   String get learnDataCollectionStep1 =>
-      'What you type: Your name, school, email, photos, voice clips, and homework answers are data you choose to give.';
+      '你主动输入的：姓名、学校、邮箱、照片、语音片段和作业答案，都是你主动选择提供的信息。';
 
   @override
   String get learnDataCollectionStep2 =>
-      'What runs quietly: The app can collect an advertising ID, device identifiers, IP address, crash reports, and usage timing without you pressing a button. Quiet collection is not automatically bad: these signals help apps run smoothly.';
+      '后台静默运行的：不用你点击按钮，应用也可能收集广告 ID、设备标识符、IP 地址、崩溃报告和使用时长。静默收集不一定就是坏事，这些信号有助于应用稳定运行。';
 
   @override
   String get learnDataCollectionStep3 =>
-      'Sensitive child data: Location, microphone recordings, camera photos, and biometric data like voiceprints (data about your body or voice) carry higher privacy risk for children.';
+      '敏感儿童数据：位置、麦克风录音、相机照片以及声纹等生物识别信息（与身体或声音有关的数据）对儿童的隐私风险更高。';
 
   @override
   String get learnDataCollectionStep4 =>
-      'Play Store note: Google Play\'s Data Safety section is the developer\'s own description. It is a hint, not proof, and does not include data processed only on your device or kept briefly in memory.';
+      'Play Store 提示：Google Play 的“数据安全”栏由开发者自行填写。它只是参考线索而非证明，且不包含仅在本机处理或短暂存在内存中的数据。';
 
   @override
-  String get learnDataCollectionQuizQuestion =>
-      'Which of these is an example of data that runs quietly in the background?';
+  String get learnDataCollectionQuizQuestion => '以下哪一项属于在后台静默收集的数据？';
 
   @override
-  String get learnDataCollectionQuizChoiceA =>
-      'A photo you upload for your profile';
+  String get learnDataCollectionQuizChoiceA => '你为个人资料主动上传的照片';
 
   @override
-  String get learnDataCollectionQuizChoiceB =>
-      'Your advertising ID and device identifiers';
+  String get learnDataCollectionQuizChoiceB => '你的广告 ID 和设备标识符';
 
   @override
-  String get learnDataCollectionQuizChoiceC =>
-      'A homework answer you type in the app';
+  String get learnDataCollectionQuizChoiceC => '你在应用里输入的作业答案';
 
   @override
   String get learnDataCollectionQuizFeedbackRight =>
-      'Correct: advertising IDs and device identifiers are collected automatically without you typing them.';
+      '答对了：广告 ID 和设备标识符无需你手动输入，就会自动收集。';
 
   @override
   String get learnDataCollectionQuizFeedbackWrong =>
-      'Not quite: that is data you actively enter. Data that runs quietly includes advertising IDs, device identifiers, IP address, and usage timing.';
+      '不太对：那是你主动输入的数据。后台静默收集的数据包括广告 ID、设备标识符、IP 地址和使用时长。';
 
   @override
-  String get learnDataCollectionDiagramYouTypeTitle => 'What you type or give';
+  String get learnDataCollectionDiagramYouTypeTitle => '你输入或提供的内容';
 
   @override
-  String get learnDataCollectionDiagramYouTypeItem1 => 'Name, email, school';
+  String get learnDataCollectionDiagramYouTypeItem1 => '姓名、邮箱、学校';
 
   @override
-  String get learnDataCollectionDiagramYouTypeItem2 => 'Photos and videos';
+  String get learnDataCollectionDiagramYouTypeItem2 => '照片与视频';
 
   @override
-  String get learnDataCollectionDiagramYouTypeItem3 => 'Voice recordings';
+  String get learnDataCollectionDiagramYouTypeItem3 => '语音录音';
 
   @override
-  String get learnDataCollectionDiagramYouTypeItem4 => 'Homework answers';
+  String get learnDataCollectionDiagramYouTypeItem4 => '作业答案';
 
   @override
-  String get learnDataCollectionDiagramRunsQuietlyTitle => 'What runs quietly';
+  String get learnDataCollectionDiagramRunsQuietlyTitle => '后台静默运行的内容';
 
   @override
-  String get learnDataCollectionDiagramRunsQuietlyItem1 => 'Advertising ID';
+  String get learnDataCollectionDiagramRunsQuietlyItem1 => '广告 ID';
 
   @override
-  String get learnDataCollectionDiagramRunsQuietlyItem2 => 'Device identifiers';
+  String get learnDataCollectionDiagramRunsQuietlyItem2 => '设备标识符';
 
   @override
-  String get learnDataCollectionDiagramRunsQuietlyItem3 => 'IP address';
+  String get learnDataCollectionDiagramRunsQuietlyItem3 => 'IP 地址';
 
   @override
-  String get learnDataCollectionDiagramRunsQuietlyItem4 =>
-      'Crash logs and usage timing';
+  String get learnDataCollectionDiagramRunsQuietlyItem4 => '崩溃日志与使用时长';
 
   @override
-  String get learnDataCollectionDiagramQuietNote =>
-      'Quiet does not mean bad: these signals help apps run smoothly.';
+  String get learnDataCollectionDiagramQuietNote => '静默并不等于有害：这些信号有助于应用顺畅运行。';
 
   @override
   String get learnDataCollectionDiagramSemanticDescription =>
-      'A split diagram showing two categories of data collection. The top card titled \"What you type or give\" lists four chips: Name email school, Photos and videos, Voice recordings, Homework answers. The bottom card titled \"What runs quietly\" lists four chips: Advertising ID, Device identifiers, IP address, Crash logs and usage timing. A small note reads \"Quiet does not mean bad: these signals help apps run smoothly.\" Deni the mascot sits below in a thinking pose.';
+      '展示两类数据收集的对比图。上方卡片“你输入或提供的内容”列出四项：姓名邮箱学校、照片与视频、语音录音、作业答案。下方卡片“后台静默运行的内容”列出四项：广告 ID、设备标识符、IP 地址、崩溃日志与使用时长。附注写着“静默并不等于有害：这些信号有助于应用顺畅运行。”下方 Deni 呈思考姿态。';
 
   @override
-  String get learnDataCollectionCheckBridge =>
-      'Check an app on this phone to see what data it collects.';
+  String get learnDataCollectionCheckBridge => '检查此手机上的应用，看看它收集哪些数据。';
 
   @override
   String get learnDataCollectionHonestyNote =>
-      'This lesson explains common data types. It does not prove what any specific app collects or sends. Only the app\'s exact policy text and your phone\'s permission settings can show that.';
+      '本课介绍常见的数据类型，不能证明某款特定应用实际收集或发送了什么。只有准确的政策原文和手机权限设置才能体现。';
 
   @override
-  String get learnRetentionFolderTitle => 'Retention and deletion';
+  String get learnRetentionFolderTitle => '数据保留与删除';
 
   @override
-  String get learnRetentionTitle => 'Retention and Deletion';
+  String get learnRetentionTitle => '数据保留与删除';
 
   @override
-  String get learnRetentionSubtitle =>
-      'Uninstalling an app does not erase data already on company servers';
+  String get learnRetentionSubtitle => '卸载应用不会清除已经存在公司服务器上的数据';
 
   @override
   String get learnRetentionIntro1 =>
-      'When you delete an app from your phone, the app\'s files on your device are removed, but any data already uploaded to the company\'s servers stays there. Privacy policies should say how long they keep your data, how to ask for deletion, and what happens to backups, but many policies use vague phrases like \"as long as reasonably necessary.\"';
+      '当你从手机上卸载一款应用时，只会删掉本机文件，已经上传到公司服务器的数据仍会留在那里。隐私政策应当说明数据保存多久、如何申请删除以及备份如何处理，但许多政策只写“在合理必要的时间内”等模糊表述。';
 
   @override
-  String get learnRetentionStep1 =>
-      'Data collected: While you use the app, your information is sent to and stored on the company\'s servers.';
+  String get learnRetentionStep1 => '收集数据：使用应用期间，您的信息会被发送并保存到公司的服务器上。';
 
   @override
-  String get learnRetentionStep2 =>
-      'Stored on servers: Your data can stay on company systems even after you stop using the app.';
+  String get learnRetentionStep2 => '存于服务器：即使您不再使用该应用，数据仍可能留在公司系统中。';
 
   @override
-  String get learnRetentionStep3 =>
-      'Uninstall does not delete server data: Removing the app from your phone only deletes local files, not the copies on company servers.';
+  String get learnRetentionStep3 => '卸载不会删掉服务器数据：从手机移除应用只删除本地文件，不会删除公司服务器上的副本。';
 
   @override
-  String get learnRetentionStep4 =>
-      'Deletion request: You can ask the company to delete your account and data; policies should say how long this takes.';
+  String get learnRetentionStep4 => '申请删除：您可以要求公司删除账号与数据；政策应当说明处理需要多久。';
 
   @override
-  String get learnRetentionStep5 =>
-      'Unknown retention: Policies that say \"as long as needed\" or \"for business purposes\" leave the actual deletion timeline unclear.';
+  String get learnRetentionStep5 => '保留时长不明：只写“按需要保留”或“用于业务目的”的政策，无法明确实际删除时间。';
 
   @override
-  String get learnRetentionQuizQuestion =>
-      'What happens to your data on company servers when you uninstall an app from your phone?';
+  String get learnRetentionQuizQuestion => '当你从手机上卸载一款应用后，公司服务器上的数据会怎样？';
 
   @override
-  String get learnRetentionQuizChoiceA => 'It is deleted automatically';
+  String get learnRetentionQuizChoiceA => '会自动删除';
 
   @override
-  String get learnRetentionQuizChoiceB =>
-      'It may stay on the servers - uninstalling the app does not delete it';
+  String get learnRetentionQuizChoiceB => '可能仍留在服务器上：卸载应用不会删除它们';
 
   @override
-  String get learnRetentionQuizChoiceC => 'It is anonymized immediately';
+  String get learnRetentionQuizChoiceC => '会立刻匿名化';
 
   @override
   String get learnRetentionQuizFeedbackRight =>
-      'Correct: uninstalling only removes the app from your phone. Data on company servers may stay until you request deletion.';
+      '答对了：卸载只移除手机上的应用。在您申请删除前，公司服务器上的数据可能一直保留。';
 
   @override
   String get learnRetentionQuizFeedbackWrong =>
-      'Not quite: uninstalling an app does not delete data already uploaded to company servers. You need to request account deletion.';
+      '不太对：卸载应用不会删除已上传到公司服务器的数据，需要主动申请删除账号。';
 
   @override
-  String get learnRetentionDiagramCollected => 'Data collected during use';
+  String get learnRetentionDiagramCollected => '使用期间收集数据';
 
   @override
-  String get learnRetentionDiagramStored => 'Stored on company servers';
+  String get learnRetentionDiagramStored => '保存在公司服务器上';
 
   @override
-  String get learnRetentionDiagramUninstall =>
-      'You uninstall the app - phone files go, server data stays';
+  String get learnRetentionDiagramUninstall => '卸载应用：手机文件消失，服务器数据仍在';
 
   @override
-  String get learnRetentionDiagramDeleteRequest =>
-      'You request account deletion';
+  String get learnRetentionDiagramDeleteRequest => '您提交账号删除申请';
 
   @override
-  String get learnRetentionDiagramUnknownTail =>
-      'Unknown retention - policy says \"as long as needed\"';
+  String get learnRetentionDiagramUnknownTail => '保留期不明：政策仅写“按需要保留”';
 
   @override
   String get learnRetentionDiagramSemanticDescription =>
-      'A five-step timeline showing the data lifecycle. Step 1: Data collected during use, with a database icon. Step 2: Stored on company servers, with a server icon. Step 3: You uninstall the app - phone files go, server data stays, with a smartphone icon. Step 4: You request account deletion, with a trash icon. Step 5: Unknown retention - policy says \"as long as needed,\" shown with a dashed arrow and a help circle icon. Deni the mascot stands below holding a receipt.';
+      '展示数据生命周期的五步时间轴。第 1 步：使用期间收集数据（数据库图标）。第 2 步：保存在公司服务器上（服务器图标）。第 3 步：卸载应用，手机文件消失但服务器数据仍在（手机图标）。第 4 步：提交账号删除申请（垃圾桶图标）。第 5 步：保留期不明，政策仅写“按需要保留”（虚线箭头与问号图标）。下方 Deni 手持收据站立。';
 
   @override
-  String get learnRetentionCheckBridge =>
-      'Check an app on this phone to see what its policy says about retention.';
+  String get learnRetentionCheckBridge => '检查此手机上的应用，看看其政策对数据保留怎么说。';
 
   @override
   String get learnRetentionHonestyNote =>
-      'This lesson describes common retention patterns. It does not prove what any specific company actually does with your data. Only the exact policy text and a deletion request can show that.';
+      '本课介绍常见的数据保留模式，不能证明某家特定公司实际如何处理您的数据。只有准确的政策原文和删除申请结果才能体现。';
 
   @override
-  String get learnUnclearPoliciesFolderTitle => 'Unclear policies';
+  String get learnUnclearPoliciesFolderTitle => '模糊的隐私政策';
 
   @override
-  String get learnUnclearPoliciesTitle =>
-      'Spotting Unclear Policies & Tricky Buttons';
+  String get learnUnclearPoliciesTitle => '识别模糊政策与诱导按钮';
 
   @override
-  String get learnUnclearPoliciesSubtitle =>
-      'How to recognize vague language and pressured consent screens';
+  String get learnUnclearPoliciesSubtitle => '如何看出含糊措辞与施压式的同意界面';
 
   @override
   String get learnUnclearPoliciesIntro1 =>
-      'Some privacy policies use fuzzy words that make it hard to know what actually happens to your data. Consent screens can also use design tricks, like a big bright \"Accept All\" button next to a tiny \"Manage Settings\" link, to push you into agreeing without reading.';
+      '有些隐私政策使用含糊词句，让人难以判断数据究竟去了哪里。同意弹窗也可能使用设计套路，例如把显眼巨大的“全部接受”按钮放在极小的“管理设置”链接旁，促使您不看就点同意。';
 
   @override
   String get learnUnclearPoliciesStep1 =>
-      'Policy fog signs: Watch for open-ended phrases like \"may share with trusted partners,\" \"for business purposes,\" or \"retain as needed\": they leave the real details unspecified.';
+      '政策迷雾信号：留意“可能与可信伙伴共享”“用于业务目的”“按需保留”等宽泛词句，它们回避了具体细节。';
 
   @override
   String get learnUnclearPoliciesStep2 =>
-      'Silence is not a promise: If a policy never mentions the microphone, ads, or location, it does not guarantee the app avoids them.';
+      '沉默不是承诺：如果政策从未提到麦克风、广告或位置，并不能保证应用不会使用它们。';
 
   @override
   String get learnUnclearPoliciesStep3 =>
-      'Missing basics: A trustworthy policy has a clear effective date, a contact email, and one unified document: not a hidden children\'s addendum.';
+      '缺少基本信息：清晰的政策应有明确的生效日期、联系邮箱和完整统一的文档，而不是藏起来的儿童补充条款。';
 
   @override
   String get learnUnclearPoliciesStep4 =>
-      'Pressured consent (dark patterns): Giant \"Accept All\" buttons, pre-checked marketing boxes, nagging re-prompts, and hard-to-find cancellation paths are designed to override your choice.';
+      '施压式同意（暗黑模式）：巨大的“全部接受”按钮、默认勾选的营销选项、反复弹窗催促和难以找到的取消入口，都是为了影响您的选择。';
 
   @override
   String get learnUnclearPoliciesStep5 =>
-      'Balanced choice: A fair screen shows equal \"Allow\" and \"Don\'t allow\" buttons, with optional toggles unchecked by default.';
+      '平衡的选择：公平的界面会并排提供同等显眼的“允许”和“不允许”按钮，且可选项默认关闭。';
 
   @override
-  String get learnUnclearPoliciesQuizQuestion =>
-      'Which phrase in a privacy policy is a \"foggy\" signal that details are missing?';
+  String get learnUnclearPoliciesQuizQuestion => '隐私政策中的哪句话属于缺少细节的“模糊”信号？';
 
   @override
-  String get learnUnclearPoliciesQuizChoiceA =>
-      'We do not sell your personal information to third parties';
+  String get learnUnclearPoliciesQuizChoiceA => '我们不会向第三方出售您的个人信息';
 
   @override
-  String get learnUnclearPoliciesQuizChoiceB =>
-      'We may share data with trusted partners for business purposes';
+  String get learnUnclearPoliciesQuizChoiceB => '我们可能出于业务目的与可信合作伙伴共享数据';
 
   @override
   String get learnUnclearPoliciesQuizChoiceC =>
-      'You can request deletion by emailing privacy@example.com';
+      '您可发邮件至 privacy@example.com 申请删除';
 
   @override
   String get learnUnclearPoliciesQuizFeedbackRight =>
-      'Correct: \"may share with trusted partners for business purposes\" is vague and does not say who the partners are or what data is shared.';
+      '答对了：“可能出于业务目的与可信合作伙伴共享”非常含糊，没有说明伙伴是谁，也没有说明共享什么数据。';
 
   @override
   String get learnUnclearPoliciesQuizFeedbackWrong =>
-      'Not quite: that phrase is specific and actionable. Foggy phrases use open-ended language like \"may share\" or \"as needed\" without details.';
+      '不太对：那句话具体且可执行。模糊表述会用“可能共享”“按需”等宽泛词句而不给细节。';
 
   @override
-  String get learnUnclearPoliciesDiagramClearTitle => 'Clear policy sentence';
+  String get learnUnclearPoliciesDiagramClearTitle => '清晰的政策表述';
 
   @override
   String get learnUnclearPoliciesDiagramClearExample =>
-      'We collect your name and email to create your account. We do not share this with advertisers.';
+      '我们收集您的姓名和邮箱以创建账号，不会与广告商共享。';
 
   @override
-  String get learnUnclearPoliciesDiagramFoggyTitle => 'Foggy policy sentence';
+  String get learnUnclearPoliciesDiagramFoggyTitle => '模糊的政策表述';
 
   @override
   String get learnUnclearPoliciesDiagramFoggyExample =>
-      'We may share your information with trusted partners for business purposes as needed.';
+      '我们可能根据需要，出于业务目的与可信合作伙伴共享您的信息。';
 
   @override
-  String get learnUnclearPoliciesDiagramTipsTitle => 'How to spot the fog';
+  String get learnUnclearPoliciesDiagramTipsTitle => '如何识破迷雾';
 
   @override
-  String get learnUnclearPoliciesDiagramTip1 =>
-      'Look for \"may,\" \"could,\" or \"as needed\": they leave the door open.';
+  String get learnUnclearPoliciesDiagramTip1 => '留意“可能”“或许”或“按需”：这些词留了很大余地。';
 
   @override
-  String get learnUnclearPoliciesDiagramTip2 =>
-      'Check if the policy names the specific companies data goes to.';
+  String get learnUnclearPoliciesDiagramTip2 => '查看政策是否点名列出接收数据的具体公司。';
 
   @override
-  String get learnUnclearPoliciesDiagramTip3 =>
-      'Silence on a topic like ads or microphone is not a promise the app avoids it.';
+  String get learnUnclearPoliciesDiagramTip3 => '对广告或麦克风只字不提，并不代表应用不会使用。';
 
   @override
-  String get learnUnclearPoliciesDiagramSilenceNote =>
-      'Silence in a policy is not a promise.';
+  String get learnUnclearPoliciesDiagramSilenceNote => '政策未提及不等于承诺不做。';
 
   @override
   String get learnUnclearPoliciesDiagramSemanticDescription =>
-      'A side-by-side comparison of a clear policy sentence and a foggy one. The left card labeled \"Clear\" shows: \"We collect your name and email to create your account. We do not share this with advertisers.\" The right card labeled \"Foggy\" shows: \"We may share your information with trusted partners for business purposes as needed.\" Below, a tips card titled \"How to spot the fog\" lists three tips: Look for \"may,\" \"could,\" or \"as needed\": they leave the door open. Check if the policy names the specific companies data goes to. Silence on a topic like ads or microphone is not a promise the app avoids it. A note on the foggy card reads \"Silence in a policy is not a promise.\" Deni the mascot peeks over the cards.';
+      '清晰政策句与模糊政策句的并排对比图。左侧“清晰”卡片显示：“我们收集您的姓名和邮箱以创建账号，不会与广告商共享。”右侧“模糊”卡片显示：“我们可能根据需要，出于业务目的与可信合作伙伴共享您的信息。”下方“如何识破迷雾”卡片列出三条提示，模糊卡片附注“政策未提及不等于承诺不做。”Deni 从卡片上方探头张望。';
 
   @override
-  String get learnUnclearPoliciesCheckBridge =>
-      'Check an app on this phone to test its consent screen and policy clarity.';
+  String get learnUnclearPoliciesCheckBridge => '检查此手机上的应用，查看它的同意界面与政策清晰度。';
 
   @override
   String get learnUnclearPoliciesHonestyNote =>
-      'This lesson describes common unclear patterns. It does not prove any specific app uses dark patterns or hides data practices. Only reading the exact policy and seeing the real consent screen can show that.';
+      '本课介绍常见的模糊写法，不能证明某款特定应用使用了暗黑模式或隐瞒数据处理方式。只有阅读准确政策并查看真实同意界面才能判断。';
 
   @override
-  String get learnSafeSharingFolderTitle => 'Safe sharing habits';
+  String get learnSafeSharingFolderTitle => '安全分享习惯';
 
   @override
-  String get learnSafeSharingTitle => 'Safe-Sharing Habits for Kids';
+  String get learnSafeSharingTitle => '儿童安全上网分享习惯';
 
   @override
-  String get learnSafeSharingSubtitle =>
-      'Stop, Think, Connect - age-appropriate steps for sharing online';
+  String get learnSafeSharingSubtitle => '停一停、想一想、再分享：分龄线上分享步骤';
 
   @override
   String get learnSafeSharingIntro1 =>
-      'Before you post a photo, video, your name, or your location, pause and use the three steps: Stop, Think, Connect. This lesson is for reading together with a trusted adult. Younger kids (ages 5-7) ask before tapping. Older kids (8-11) use nicknames and strong passwords. Teens (12-17) manage digital footprints (the trail of things you post) and two-factor authentication (a second check, like a code, when you sign in).';
+      '在发布照片、视频、姓名或位置前，先停下来用好三步：停一停、想一想、再分享。本课适合与信任的大人一起阅读。低龄儿童（5-7 岁）点击前先询问；8-11 岁使用昵称和强密码；青少年（12-17 岁）管理好数字足迹（发布内容留下的痕迹）并开启双重验证（登录时输入验证码等二次确认）。';
 
   @override
-  String get learnSafeSharingStep1 =>
-      'Stop: Pause before you post a photo, video, name, school, or location. Ask a trusted adult if you are not sure.';
+  String get learnSafeSharingStep1 => '停一停：发照片、视频、姓名、学校或位置前先暂停片刻。不确定时先问信任的大人。';
 
   @override
   String get learnSafeSharingStep2 =>
-      'Think: Does this reveal my school, home, or where I am right now? Did I ask my friends before sharing their photos or tagging them?';
+      '想一想：这会暴露我的学校、家庭住址或当前位置吗？发朋友照片或标记他们前，征得同意了吗？';
 
   @override
-  String get learnSafeSharingStep3 =>
-      'Connect: Share only with people you trust. Keep personal details like your full name, birthday, address, and phone number private.';
+  String get learnSafeSharingStep3 => '再分享：只与信任的人分享。妥善保护真实姓名、生日、住址和电话号码等个人信息。';
 
   @override
   String get learnSafeSharingStep4 =>
-      'The Cafeteria Test: Would I be okay if everyone at school (or my whole class) saw this photo or message? Even disappearing posts can be screenshotted and stay online permanently.';
+      '学校食堂测试：如果全校师生（或全班同学）都看到这张照片或消息，我会觉得安心吗？即便是阅后即焚的内容也可能被截屏并永久留在网上。';
 
   @override
   String get learnSafeSharingStep5 =>
-      'Age 5-7: Ask a trusted adult before typing your name or tapping popups. Age 8-11: Use a nickname (not real name, birthday, and school), strong passwords, never share SMS or OTP codes (one-time codes sent by text message - never share them). Age 12-17: Review privacy settings, turn on two-factor authentication, know how to report problems.';
+      '5-7 岁：输入名字或点击弹窗前先问信任的大人。8-11 岁：使用昵称（不用真实姓名、生日和学校）和强密码，绝不透露短信或 OTP 验证码（短信发来的一次性验证码，绝不分享）。12-17 岁：检查隐私设置、开启双重验证，并了解如何举报问题。';
 
   @override
-  String get learnSafeSharingQuizQuestion =>
-      'What is the \"Cafeteria Test\" for sharing online?';
+  String get learnSafeSharingQuizQuestion => '线上分享中的“学校食堂测试”是指什么？';
 
   @override
-  String get learnSafeSharingQuizChoiceA =>
-      'Only share things you would eat in the cafeteria';
+  String get learnSafeSharingQuizChoiceA => '只分享你在食堂里吃的东西';
 
   @override
-  String get learnSafeSharingQuizChoiceB =>
-      'Ask: would I be okay if everyone at school saw this photo or message?';
+  String get learnSafeSharingQuizChoiceB => '问自己：如果全校的人都看到这张照片或消息，我会觉得可以吗？';
 
   @override
-  String get learnSafeSharingQuizChoiceC => 'Share only during lunch break';
+  String get learnSafeSharingQuizChoiceC => '只在午休时间分享内容';
 
   @override
   String get learnSafeSharingQuizFeedbackRight =>
-      'Correct: the Cafeteria Test means asking yourself if you would be comfortable with everyone seeing what you post.';
+      '答对了：学校食堂测试就是问问自己，如果大家都看到你发的内容，你是否依然安心。';
 
   @override
   String get learnSafeSharingQuizFeedbackWrong =>
-      'Not quite: the Cafeteria Test is a mental check: would you be okay if someone showed your post to the whole cafeteria?';
+      '不太对：学校食堂测试是一次心理检查：如果有人把你的帖子展示给整个食堂看，你能接受吗？';
 
   @override
-  String get learnSafeSharingDiagramStop => 'Stop - pause before you post';
+  String get learnSafeSharingDiagramStop => '停一停：发布前先暂停';
 
   @override
-  String get learnSafeSharingDiagramThink =>
-      'Think - does this reveal where I am or who I am with?';
+  String get learnSafeSharingDiagramThink => '想一想：会暴露我的位置或同伴吗？';
 
   @override
-  String get learnSafeSharingDiagramConnect =>
-      'Connect - share with people you trust, ask an adult if unsure';
+  String get learnSafeSharingDiagramConnect => '再分享：只发给信任的人，拿不准就问大人';
 
   @override
   String get learnSafeSharingDiagramCafeteriaTest =>
-      'The Cafeteria Test: Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.';
+      '学校食堂测试：全校看到也没关系吗？阅后即焚的内容也可能被截屏并永久留在网上。';
 
   @override
   String get learnSafeSharingDiagramSemanticDescription =>
-      'A four-part diagram teaching safe sharing habits. Step 1: Stop - pause before you post, with a hand icon. Step 2: Think - does this reveal where I am or who I am with, with a brain icon. Step 3: Connect - share with people you trust, ask an adult if unsure, with a users icon. Step 4: The Cafeteria Test callout asks \"Would I be okay if everyone at school saw this? Even disappearing posts can be screenshotted and stay online permanently.\" Deni the mascot stands beside the callout with a raised hand.';
+      '介绍安全分享习惯的四部分图解。第 1 步：停一停：发布前先暂停（手势图标）。第 2 步：想一想：会暴露我的位置或同伴吗？（大脑图标）。第 3 步：再分享：只发给信任的人，拿不准就问大人（人群图标）。第 4 步：学校食堂测试提示框提问“全校看到也没关系吗？阅后即焚的内容也可能被截屏并永久留在网上。”Deni 举手站在提示框旁。';
 
   @override
-  String get learnSafeSharingCheckBridge =>
-      'Check an app together with a parent to see how it handles sharing.';
+  String get learnSafeSharingCheckBridge => '和家长一起检查一款应用，看看它如何处理分享功能。';
 
   @override
   String get learnSafeSharingHonestyNote =>
-      'This lesson shares general safe-sharing habits. It does not guarantee any app will protect what you share. Always read the app\'s policy and use your phone\'s privacy settings.';
+      '本课分享通用的安全分享习惯，不能保证任何应用都会保护你分享的内容。请务必阅读应用政策并使用手机的隐私设置。';
 
   @override
-  String get translationDraftNotice =>
-      'Some translations are AI-generated drafts and may contain mistakes. Native speakers are reviewing them.';
+  String get translationDraftNotice => '部分翻译为 AI 生成的草稿，可能存在误差。母语审校人员正在陆续校对。';
 
   @override
-  String get homeQuickSettingsTitle => 'Quick Settings Companion';
+  String get homeQuickSettingsTitle => '快捷设置助手';
 
   @override
-  String get homeQuickSettingsSubtitle =>
-      'Ask Deni about the app you\'re using anytime';
+  String get homeQuickSettingsSubtitle => '随时就你正在使用的应用询问 Deni';
 
   @override
-  String get appearanceSectionTitle => 'Appearance';
+  String get appearanceSectionTitle => '外观';
 
   @override
-  String get themeModeSystem => 'System';
+  String get themeModeSystem => '跟随系统';
 
   @override
-  String get themeModeLight => 'Light';
+  String get themeModeLight => '浅色';
 
   @override
-  String get themeModeDark => 'Dark';
+  String get themeModeDark => '深色';
 
   @override
-  String get quickSettingsSectionTitle => 'Connect Enprive to Quick Settings';
+  String get quickSettingsSectionTitle => '将 Enprive 连接到快捷设置';
 
   @override
   String get quickSettingsSectionSubtitle =>
-      'Add Enprive Check to your Android Quick Settings panel so you can ask Deni about applications without leaving what you\'re doing.';
+      '将 Enprive Check 添加到 Android 快捷设置面板，这样你无需中断手头的事，就能向 Deni 询问应用的情况。';
 
   @override
-  String get quickSettingsTileTitle => 'Enprive Check tile';
+  String get quickSettingsTileTitle => 'Enprive Check 图块';
 
   @override
   String get quickSettingsTileSubtitle =>
-      'Add Enprive Check to Quick Settings to ask Deni about the app you\'re using without searching for Enprive first.';
+      '将 Enprive Check 添加到快捷设置，无需先找到 Enprive，就能向 Deni 询问你正在使用的应用。';
 
   @override
-  String get quickSettingsStatusAdded => 'Added';
+  String get quickSettingsStatusAdded => '已添加';
 
   @override
-  String get quickSettingsStatusManual => 'Manual';
+  String get quickSettingsStatusManual => '手动';
 
   @override
-  String get quickSettingsStatusNotAdded => 'Not added';
+  String get quickSettingsStatusNotAdded => '未添加';
 
   @override
-  String get usageAccessStatusGranted => 'Granted';
+  String get usageAccessStatusGranted => '已授权';
 
   @override
-  String get usageAccessStatusNotGranted => 'Not granted';
+  String get usageAccessStatusNotGranted => '未授权';
 
   @override
-  String get usageAccessTitle => 'Allow Usage Access (optional)';
+  String get usageAccessTitle => '允许使用情况访问权限（可选）';
 
   @override
   String get usageAccessExplanation =>
-      'Enprive uses Usage Access only when you tap Enprive Check to identify the app you were just using. This helps Deni find the correct app and its privacy information. Enprive does not continuously monitor your screen.';
+      '只有当你点按 Enprive Check 来识别刚才使用的应用时，Enprive 才会使用“使用情况访问权限”。这能帮助 Deni 找到正确的应用及其隐私信息。Enprive 不会持续监视你的屏幕。';
 
   @override
-  String get usageAccessManageLink => 'How to manage / revoke';
+  String get usageAccessManageLink => '如何管理或撤销';
 
   @override
-  String get usageAccessManageTitle => 'Manage or revoke Usage Access';
+  String get usageAccessManageTitle => '管理或撤销使用情况访问权限';
 
   @override
   String get usageAccessManageBody =>
-      'Usage Access is a special Android Settings toggle (not an automatic popup). You can turn it off anytime under Android Settings -> Apps -> Special app access -> Usage access -> enprive. Deni remains usable without it via manual app selection.';
+      '“使用情况访问权限”是 Android 设置中的一个特殊开关（不是自动弹出的窗口）。你可以随时在 Android 设置 → 应用 → 特殊应用权限 → 使用情况访问权限 → enprive 中关闭它。关闭后，手动选择应用，Deni 仍然可用。';
 
   @override
-  String get openDeniCompanionTitle => 'Open Deni Companion';
+  String get openDeniCompanionTitle => '打开 Deni 助手';
 
   @override
-  String get openDeniCompanionSubtitle =>
-      'Check a recent or selected app\'s permissions without Quick Settings.';
+  String get openDeniCompanionSubtitle => '不使用快捷设置，也能查看最近使用或所选应用的权限。';
 
   @override
-  String get btnGotIt => 'Got it';
+  String get btnGotIt => '知道了';
 
   @override
-  String get quickSettingsReadyDialogTitle =>
-      'Enprive Check is ready in Quick Settings';
+  String get quickSettingsReadyDialogTitle => 'Enprive Check 已可在快捷设置中使用';
 
   @override
   String get quickSettingsReadyDialogBody =>
-      'Swipe down twice from the top of your screen and tap \"Enprive Check\" anytime you want Deni to explain an app\'s permissions.';
+      '从屏幕顶部向下滑动两次，想让 Deni 解释某个应用的权限时，点按“Enprive Check”。';
 
   @override
-  String get quickSettingsManualDialogTitle => 'Add Enprive Check manually';
+  String get quickSettingsManualDialogTitle => '手动添加 Enprive Check';
 
   @override
   String get quickSettingsManualDialogBody =>
-      '1. Swipe down twice from the top of your Android screen to open Quick Settings.\n2. Tap the Edit (pencil) button.\n3. Find \"Enprive Check\" and drag it into your active Quick Settings tiles.';
+      '1. 从 Android 屏幕顶部向下滑动两次，打开快捷设置。\n2. 点按“编辑”（铅笔）按钮。\n3. 找到“Enprive Check”，把它拖到正在使用的图块中。';
 
   @override
-  String get quickSettingsSnackAdded =>
-      'Enprive Check added to your Quick Settings tray.';
+  String get quickSettingsSnackAdded => '已将 Enprive Check 添加到快捷设置。';
 
   @override
-  String get quickSettingsSnackAlreadyAdded =>
-      'Enprive Check is already in your Quick Settings tray.';
+  String get quickSettingsSnackAlreadyAdded => 'Enprive Check 已在你的快捷设置中。';
 
   @override
   String get quickSettingsSnackDeclined =>
-      'Request dismissed. Enprive won\'t ask again unless you choose Edit in Quick Settings.';
+      '请求已关闭。除非你在快捷设置中选择“编辑”，否则 Enprive 不会再次询问。';
 
   @override
   String get quickSettingsSnackManual =>
-      'Swipe down Quick Settings, tap Edit, and drag Enprive Check into your tiles.';
+      '向下滑动快捷设置，点按“编辑”，然后把 Enprive Check 拖到你的图块中。';
 
   @override
   String get quickSettingsSnackUnavailable =>
-      'System prompt unavailable here; you can drag Enprive Check manually from Quick Settings Edit.';
+      '此处无法显示系统提示。你可以在快捷设置的“编辑”中手动拖入 Enprive Check。';
 
   @override
-  String get usageAccessOpenFailedSnack =>
-      'Could not open Usage Access Settings on this device.';
+  String get usageAccessOpenFailedSnack => '无法在此设备上打开“使用情况访问权限”设置。';
 
   @override
-  String get companionTitle => 'Deni: Enprive Companion';
+  String get companionTitle => 'Deni：Enprive 助手';
 
   @override
-  String get companionSubtitle =>
-      'Ask Deni about an app\'s permissions and what its privacy policy says.';
+  String get companionSubtitle => '向 Deni 询问应用的权限，以及它的隐私政策是怎么说的。';
 
   @override
-  String get companionTooltipReturnToPrev => 'Return to previous app';
+  String get companionTooltipReturnToPrev => '返回上一个应用';
 
   @override
-  String get companionTooltipBack => 'Back';
+  String get companionTooltipBack => '返回';
 
   @override
-  String get companionLockedBadge => 'LOCK SCREEN PROTECTED';
+  String get companionLockedBadge => '锁屏保护中';
 
   @override
-  String get companionLockedTitle => 'Unlock your phone to continue';
+  String get companionLockedTitle => '请解锁手机以继续';
 
   @override
-  String get companionLockedBody =>
-      'Enprive hides app names, declared permissions, and review evidence while the device is locked.';
+  String get companionLockedBody => '设备锁定期间，Enprive 会隐藏应用名称、应用声明的权限和审查依据。';
 
   @override
-  String get companionCheckUnlockBtn => 'Check unlock state';
+  String get companionCheckUnlockBtn => '检查解锁状态';
 
   @override
-  String get companionCheckingAppHeadline =>
-      'Checking which app you were using…';
+  String get companionCheckingAppHeadline => '正在确认你刚才使用的应用…';
 
   @override
-  String get companionCheckingAppSubtitle =>
-      'Checking once on this phone without watching your screen.';
+  String get companionCheckingAppSubtitle => '在此手机上只确认一次，不会监视你的屏幕。';
 
   @override
-  String get companionGeneralGuideHeadline =>
-      'General Android permission guide';
+  String get companionGeneralGuideHeadline => 'Android 权限通用指南';
 
   @override
   String get companionGeneralGuideSubtitle =>
-      'No app selected. Enprive explains Android permissions using local guidance only.';
+      '未选择应用。Enprive 只使用本地指引来解释 Android 权限。';
 
   @override
   String companionLookingAtHeadline(String appName) {
-    return 'You\'re looking at $appName.';
+    return '你正在查看 $appName。';
   }
 
   @override
   String get companionLookingAtSubtitle =>
-      'Permissions listed below come from the app on your phone: Android still controls whichever popup is on screen.';
+      '下面列出的权限来自你手机上的这个应用。屏幕上弹出的窗口仍由 Android 控制。';
 
   @override
-  String get companionThisAppFallback => 'this app';
+  String get companionThisAppFallback => '这个应用';
 
   @override
   String companionSawAppAgo(String appName, int seconds) {
-    return 'We saw $appName ${seconds}s ago. Is this correct?';
+    return '我们在 $seconds 秒前看到了 $appName。对吗？';
   }
 
   @override
   String companionThinkUsingApp(String appName) {
-    return 'We think you\'re using $appName. Is this correct?';
+    return '我们认为你正在使用 $appName。对吗？';
   }
 
   @override
   String companionAppIdLine(String packageName) {
-    return 'App ID: $packageName';
+    return 'App ID：$packageName';
   }
 
   @override
   String companionConfirmAppBtn(String appName) {
-    return 'Confirm · $appName';
+    return '确认 · $appName';
   }
 
   @override
-  String get companionChooseAnotherAppBtn => 'Choose another app';
+  String get companionChooseAnotherAppBtn => '选择其他应用';
 
   @override
-  String get companionWithoutAppContextBtn => 'Without app context';
+  String get companionWithoutAppContextBtn => '不指定应用';
 
   @override
-  String get companionMultipleAppsTitle => 'Multiple apps were active just now';
+  String get companionMultipleAppsTitle => '刚才有多个应用处于活动状态';
 
   @override
-  String get companionMultipleAppsPrompt =>
-      'Confirm which application you want to inspect:';
+  String get companionMultipleAppsPrompt => '请确认你想查看哪个应用：';
 
   @override
   String companionSecondsAgo(int seconds) {
-    return '${seconds}s ago';
+    return '$seconds 秒前';
   }
 
   @override
-  String get companionSelectAppTitle => 'Select the app you want to check';
+  String get companionSelectAppTitle => '选择你想检查的应用';
 
   @override
-  String get companionSelectAppBody =>
-      'Choose the application manually from installed apps, or continue without app context.';
+  String get companionSelectAppBody => '从已安装的应用中手动选择，或者不指定应用继续。';
 
   @override
-  String get companionChooseAppManuallyBtn => 'Choose app manually';
+  String get companionChooseAppManuallyBtn => '手动选择应用';
 
   @override
-  String get companionOpenUsageAccessBtn => 'Open Usage Access Settings';
+  String get companionOpenUsageAccessBtn => '打开“使用情况访问权限”设置';
 
   @override
-  String get companionContinueWithoutAppBtn => 'Continue without app context';
+  String get companionContinueWithoutAppBtn => '不指定应用继续';
 
   @override
-  String get companionAddTileBtn => 'Add Enprive Check tile';
+  String get companionAddTileBtn => '添加 Enprive Check 图块';
 
   @override
-  String get companionContinuingWithoutApp => 'Continuing without app context';
+  String get companionContinuingWithoutApp => '正在不指定应用的情况下继续';
 
   @override
-  String get companionSwitchAppBtn => 'Switch app';
+  String get companionSwitchAppBtn => '切换应用';
 
   @override
-  String get companionPermissionsReadLocally =>
-      'Permissions shown below are read directly from your phone.';
+  String get companionPermissionsReadLocally => '下面显示的权限是直接从你的手机读取的。';
 
   @override
-  String get companionPickPermissionType => 'Pick a permission type to explore';
+  String get companionPickPermissionType => '选择一种权限来了解';
 
   @override
-  String get companionPickAppBtn => 'Pick an app';
+  String get companionPickAppBtn => '选择应用';
 
   @override
-  String get companionCouldNotReadPermsTitle =>
-      'Couldn\'t read app permissions';
+  String get companionCouldNotReadPermsTitle => '无法读取应用权限';
 
   @override
-  String get companionCouldNotReadPermsBody =>
-      'Android prevented inspecting this app\'s permissions.';
+  String get companionCouldNotReadPermsBody => 'Android 阻止了对此应用权限的查看。';
 
   @override
-  String get companionUnsurePermBtn => 'I\'m not sure which permission';
+  String get companionUnsurePermBtn => '我不确定是哪个权限';
 
   @override
-  String get companionWhichPermissionPrompt =>
-      'Which permission would you like to understand?';
+  String get companionWhichPermissionPrompt => '你想了解哪个权限？';
 
   @override
   String get companionPermissionsListDisclaimer =>
-      'These are permissions the app lists on your phone, not necessarily the popup on your screen right now.';
+      '这些是应用在你手机上列出的权限，不一定是你屏幕上此刻弹出的窗口。';
 
   @override
-  String get companionNoSensitivePermsMsg =>
-      'This app doesn\'t ask for any sensitive permissions on your phone.';
+  String get companionNoSensitivePermsMsg => '这个应用没有在你的手机上申请任何敏感权限。';
 
   @override
-  String get companionGuidedMatchTitle =>
-      'Match what the popup on your screen asked for';
+  String get companionGuidedMatchTitle => '选择屏幕上的弹窗所请求的内容';
 
   @override
   String get companionGuidedMatchSubtitle =>
-      'Enprive cannot read your current Android prompt directly. Choose the wording closest to what appeared on screen:';
+      'Enprive 无法直接读取你当前的 Android 提示。请选择与屏幕上出现的文字最接近的一项：';
 
   @override
-  String get companionSection1Title => '1. What this permission means';
+  String get companionSection1Title => '1. 这个权限是什么意思';
 
   @override
-  String get companionSection2Title => '2. What the app asks for on your phone';
+  String get companionSection2Title => '2. 应用在你手机上申请了什么';
 
   @override
-  String get companionSection3Title => '3. What its privacy policy says';
+  String get companionSection3Title => '3. 它的隐私政策是怎么说的';
 
   @override
-  String get companionSection4Title => '4. Why this might relate to a feature';
+  String get companionSection4Title => '4. 为什么这可能与某个功能有关';
 
   @override
   String get companionSection4Fallback =>
-      'No verified developer feature explanation found. Describe below what feature you were trying to use if you want Deni to check relevance.';
+      '没有找到经过核实的开发者功能说明。如果想让 Deni 检查相关性，请在下面描述你当时想使用的功能。';
 
   @override
-  String get companionSection5Title => '5. What remains unknown';
+  String get companionSection5Title => '5. 还有哪些不清楚';
 
   @override
-  String get companionSection6Title => '6. Questions you can ask Deni';
+  String get companionSection6Title => '6. 你可以问 Deni 的问题';
 
   @override
-  String get companionAddPolicyBtn => 'Add privacy policy';
+  String get companionAddPolicyBtn => '添加隐私政策';
 
   @override
-  String get companionCheckUpdatedPolicyBtn => 'Check updated privacy policy';
+  String get companionCheckUpdatedPolicyBtn => '检查更新后的隐私政策';
 
   @override
   String companionVerifyPolicyTitle(String appName) {
-    return 'Verify policy for $appName';
+    return '核对 $appName 的政策';
   }
 
   @override
-  String get companionFeatureFieldLabel => 'Feature you were using (optional)';
+  String get companionFeatureFieldLabel => '你当时在使用的功能（可选）';
 
   @override
-  String get companionFeatureFieldHint =>
-      'e.g., scanning a QR code, recording voice practice';
+  String get companionFeatureFieldHint => '例如：扫描二维码、录制语音练习';
 
   @override
-  String get companionQuestionFieldLabel => 'Ask Deni a question';
+  String get companionQuestionFieldLabel => '向 Deni 提问';
 
   @override
-  String get companionQuestionFieldHint =>
-      'What happens if I deny this permission?';
+  String get companionQuestionFieldHint => '如果我拒绝这个权限会怎样？';
 
   @override
-  String get companionReceiptSavedTitle => 'Saved in Enprive Receipts';
+  String get companionReceiptSavedTitle => '已保存到 Enprive 收据';
 
   @override
-  String get companionReceiptUnsavedTitle => 'Review not saved to Enprive yet';
+  String get companionReceiptUnsavedTitle => '审查尚未保存到 Enprive';
 
   @override
-  String get companionReceiptSavedBody =>
-      'Stored locally in your Enprive Receipts archive.';
+  String get companionReceiptSavedBody => '仅存储在你 Enprive 收据存档的本地。';
 
   @override
   String get companionReceiptUpdatedUnsavedBody =>
-      'Updated policy review kept in this session only. Leaving Companion discards this draft and keeps your saved receipt unchanged.';
+      '更新后的政策审查只保留在本次会话中。离开助手会丢弃这份草稿，你已保存的收据保持不变。';
 
   @override
-  String get companionReceiptUnsavedBody =>
-      'Kept in this session only. Leaving Companion will discard it unless you save it.';
+  String get companionReceiptUnsavedBody => '仅保留在本次会话中。如果不保存，离开助手时会被丢弃。';
 
   @override
-  String get companionSaveReceiptBtn => 'Save receipt to Enprive';
+  String get companionSaveReceiptBtn => '将收据保存到 Enprive';
 
   @override
-  String get companionSaveReceiptFailed =>
-      'Could not save receipt. Kept in this session: try again.';
+  String get companionSaveReceiptFailed => '无法保存收据。它仍保留在本次会话中，请重试。';
 
   @override
-  String get companionSavedLocalReceiptsSnack => 'Saved to local Receipts.';
+  String get companionSavedLocalReceiptsSnack => '已保存到本地收据。';
 
   @override
   String companionDoneReturnToApp(String appName) {
-    return 'Done · Return to $appName';
+    return '完成 · 返回 $appName';
   }
 
   @override
-  String get companionDoneReturnToPrev => 'Done · Return to previous app';
+  String get companionDoneReturnToPrev => '完成 · 返回上一个应用';
 
   @override
-  String get companionOpenFullAppBtn => 'Open full Enprive app';
+  String get companionOpenFullAppBtn => '打开完整的 Enprive 应用';
 
   @override
-  String get companionCloudTimeoutSnack =>
-      'Cloud analysis took too long and was stopped before completing.';
+  String get companionCloudTimeoutSnack => '云端分析耗时过长，已在完成前停止。';
 
   @override
-  String get companionAnalysisCancelledSnack => 'Analysis cancelled.';
+  String get companionAnalysisCancelledSnack => '分析已取消。';
 
   @override
-  String get companionCloudAnswerTimeoutSnack =>
-      'Cloud answer timed out cleanly.';
+  String get companionCloudAnswerTimeoutSnack => '云端回答已超时，已正常结束。';
 
   @override
-  String get companionQuestionCancelledSnack => 'Question cancelled.';
+  String get companionQuestionCancelledSnack => '提问已取消。';
 
   @override
-  String get companionTileAddedSnack =>
-      'Enprive Check added to Android Quick Settings.';
+  String get companionTileAddedSnack => '已将 Enprive Check 添加到 Android 快捷设置。';
 
   @override
-  String get companionTileAlreadyAddedSnack =>
-      'Enprive Check is already in your Quick Settings.';
+  String get companionTileAlreadyAddedSnack => 'Enprive Check 已在你的快捷设置中。';
 
   @override
-  String get companionTileDeclinedSnack =>
-      'Tile request dismissed. You can add it anytime from Settings or Quick Settings Edit.';
+  String get companionTileDeclinedSnack => '图块请求已关闭。你可以随时在设置或快捷设置的“编辑”中添加。';
 
   @override
   String get companionTileManualSnack =>
-      'Swipe down Quick Settings twice, tap Edit, and drag Enprive Check into your tiles.';
+      '向下滑动快捷设置两次，点按“编辑”，然后把 Enprive Check 拖到你的图块中。';
 
   @override
   String get companionTileUnavailableSnack =>
-      'Android could not show the Quick Settings prompt on this device. You can drag Enprive Check manually from Quick Settings Edit.';
+      'Android 无法在此设备上显示快捷设置提示。你可以在快捷设置的“编辑”中手动拖入 Enprive Check。';
 
   @override
   String get companionUsageOptionalReason =>
-      'Usage Access is optional. You can choose an app manually or allow Usage Access for one-tap identification.';
+      '“使用情况访问权限”是可选的。你可以手动选择应用，也可以允许该权限，一键识别应用。';
 
   @override
-  String get companionPermPreciseLocation => 'Precise location';
+  String get companionPermPreciseLocation => '精确位置';
 
   @override
-  String get companionPermBackgroundLocation => 'Background location';
+  String get companionPermBackgroundLocation => '后台位置';
 
   @override
-  String get companionPermCamera => 'Camera';
+  String get companionPermCamera => '相机';
 
   @override
-  String get companionPermMicrophone => 'Microphone';
+  String get companionPermMicrophone => '麦克风';
 
   @override
-  String get companionPermAdId => 'Google Advertising ID';
+  String get companionPermAdId => 'Google 广告 ID';
 
   @override
   String companionPermDeclaredBy(String permission, String appName) {
-    return 'Android permission ($permission) declared by $appName.';
+    return '$appName 声明的 Android 权限（$permission）。';
   }
 
   @override
-  String get companionPermStatusAdId => 'Listed by app · Ad ID';
+  String get companionPermStatusAdId => '应用已列出 · 广告 ID';
 
   @override
-  String get companionPermStatusAllowed => 'Listed by app · Allowed';
+  String get companionPermStatusAllowed => '应用已列出 · 允许';
 
   @override
-  String get companionPermStatusNotAllowed => 'Listed by app · Not allowed';
+  String get companionPermStatusNotAllowed => '应用已列出 · 不允许';
 
   @override
-  String get guidedCatLocation => 'Location';
+  String get guidedCatLocation => '位置';
 
   @override
-  String get guidedCatContacts => 'Contacts';
+  String get guidedCatContacts => '通讯录';
 
   @override
-  String get guidedCatPhotosMedia => 'Photos and media';
+  String get guidedCatPhotosMedia => '照片和媒体';
 
   @override
-  String get guidedCatNotifications => 'Notifications';
+  String get guidedCatNotifications => '通知';
 
   @override
-  String get guidedCatNearbyDevices => 'Nearby devices';
+  String get guidedCatNearbyDevices => '附近的设备';
 
   @override
-  String get guidedCatCalendar => 'Calendar';
+  String get guidedCatCalendar => '日历';
 
   @override
-  String get guidedCatPhone => 'Phone';
+  String get guidedCatPhone => '电话';
 
   @override
-  String get guidedCatSms => 'SMS';
+  String get guidedCatSms => '短信';
 
   @override
-  String get companionFallbackUsageNotEnabled =>
-      'Usage Access has not been enabled in Android Settings.';
+  String get companionFallbackUsageNotEnabled => '尚未在 Android 设置中开启“使用情况访问权限”。';
 
   @override
   String get companionFallbackUsageUnavailable =>
-      'Android UsageStatsManager is unavailable.';
+      'Android UsageStatsManager 不可用。';
 
   @override
   String get companionFallbackTransientUi =>
-      'Only Android system or permission prompt UI appeared in recent usage events; choose the app manually.';
+      '最近的使用记录中只出现了 Android 系统界面或权限提示，请手动选择应用。';
 
   @override
   String get companionFallbackVisibilityRestricted =>
-      'The most recently active app cannot be inspected under Android package visibility restrictions. Please choose an app from the list or paste its policy.';
+      '受 Android 软件包可见性限制，无法查看最近使用的应用。请从列表中选择应用，或粘贴它的政策。';
 
   @override
-  String get companionFallbackUnlockRequired =>
-      'Unlock your device before viewing app context.';
+  String get companionFallbackUnlockRequired => '请先解锁设备，再查看应用信息。';
 
   @override
-  String get consentReasonPolicyTooDetailed =>
-      'This policy is too detailed for on-device AI processing.';
+  String get consentReasonPolicyTooDetailed => '这份政策过于详细，端侧 AI 无法处理。';
 
   @override
-  String get consentReasonExcerptTooDetailed =>
-      'This finding excerpt is too detailed for on-device AI processing.';
+  String get consentReasonExcerptTooDetailed => '这段摘录过于详细，端侧 AI 无法处理。';
 
   @override
-  String get consentReasonOnDeviceUnavailable =>
-      'On-device AI is unavailable on this phone right now.';
+  String get consentReasonOnDeviceUnavailable => '此手机上的端侧 AI 目前不可用。';
 
   @override
-  String get consentReasonOnDeviceCannotAnswer =>
-      'On-device AI could not answer from this device right now.';
+  String get consentReasonOnDeviceCannotAnswer => '这台设备上的端侧 AI 目前无法回答。';
 
   @override
   String get consentReasonVoiceTooLong =>
-      'These verified findings exceed on-device summary limits. You can use the offline summary now or send the redacted findings to Cloud AI once.';
+      '这些已核实的发现超出了端侧摘要的长度限制。你可以现在使用离线摘要，或将隐去个人信息的发现一次性发送给云端 AI。';
 
   @override
   String get consentReasonVoiceUnavailable =>
-      'On-device AI is unavailable on this phone right now. Showing Enprive\'s offline plain-language summary.';
+      '此手机上的端侧 AI 目前不可用。正在显示 Enprive 的离线通俗摘要。';
 
   @override
-  String get consentReasonVoiceTimedOut =>
-      'On-device summary timed out. Showing Enprive\'s offline plain-language summary.';
+  String get consentReasonVoiceTimedOut => '端侧摘要已超时。正在显示 Enprive 的离线通俗摘要。';
 
   @override
-  String get unsavedExitTitle => 'Save this privacy review?';
+  String get unsavedExitTitle => '要保存这次隐私审查吗？';
 
   @override
   String get unsavedExitModifiedBody =>
-      'Unsaved reviews are discarded when you close this screen, so nothing is stored on your phone without your choice. Your original saved receipt will remain unchanged.';
+      '关闭此屏幕时，未保存的审查会被丢弃，所以没有你的选择，手机上不会存储任何内容。你原先保存的收据保持不变。';
 
   @override
-  String get unsavedExitDraftBody =>
-      'Unsaved reviews are discarded when you close this screen, so nothing is stored on your phone without your choice.';
+  String get unsavedExitDraftBody => '关闭此屏幕时，未保存的审查会被丢弃，所以没有你的选择，手机上不会存储任何内容。';
 
   @override
-  String get unsavedExitDiscardBtn => 'Discard without saving';
+  String get unsavedExitDiscardBtn => '不保存并丢弃';
 
   @override
-  String get unsavedExitContinueBtn => 'Continue reviewing';
+  String get unsavedExitContinueBtn => '继续审查';
 
   @override
   String updatePrivacyPolicyForTitle(String title) {
-    return 'Update privacy policy for $title';
+    return '更新 $title 的隐私政策';
   }
 
   @override
-  String get reviewSaveFailedError =>
-      'Could not save receipt. Your review draft is still open.';
+  String get reviewSaveFailedError => '无法保存收据。你的审查草稿仍然开着。';
 
   @override
-  String get reviewRemovedFromReceiptsSnack => 'Removed from saved receipts.';
+  String get reviewRemovedFromReceiptsSnack => '已从已保存的收据中移除。';
 
   @override
-  String get reviewRemoveFailedSnack => 'Could not remove saved receipt.';
+  String get reviewRemoveFailedSnack => '无法移除已保存的收据。';
 
   @override
-  String get reviewModifiedDraftTitle => 'New draft from saved receipt';
+  String get reviewModifiedDraftTitle => '来自已保存收据的新草稿';
 
   @override
-  String get reviewModifiedDraftBody =>
-      'Save to Receipts to keep this updated review: your original saved receipt remains unchanged.';
+  String get reviewModifiedDraftBody => '保存到收据即可保留这次更新后的审查，你原先保存的收据保持不变。';
 
   @override
-  String get btnRetrySave => 'Retry save';
+  String get btnRetrySave => '重试保存';
 
   @override
   String samplePermissionsHeader(String badge) {
-    return 'Sample permissions ($badge)';
+    return '示例权限（$badge）';
   }
 
   @override
-  String get sourceKindUrl => 'Public web link';
+  String get sourceKindUrl => '公开网页链接';
 
   @override
-  String get sourceKindPdf => 'Local PDF file';
+  String get sourceKindPdf => '本地 PDF 文件';
 
   @override
-  String get sourceKindDocx => 'Local Word (DOCX) file';
+  String get sourceKindDocx => '本地 Word (DOCX) 文件';
 
   @override
-  String get sourceKindTextFile => 'Local text file';
+  String get sourceKindTextFile => '本地文本文件';
 
   @override
-  String get sourceKindSharedText => 'Shared text';
+  String get sourceKindSharedText => '分享的文本';
 
   @override
-  String get sourceKindSelectedText => 'Selected text';
+  String get sourceKindSelectedText => '选中的文本';
 
   @override
-  String get sourceKindSampleApp => 'Sample app';
+  String get sourceKindSampleApp => '示例应用';
 
   @override
-  String get sourceKindPhonePermissions => 'Phone permissions';
+  String get sourceKindPhonePermissions => '手机权限';
 
   @override
-  String get sourceKindPastedText => 'Pasted text';
+  String get sourceKindPastedText => '粘贴的文本';
 
   @override
-  String get extractionStatusExtracted => 'Read on this phone';
+  String get extractionStatusExtracted => '已在此手机上读取';
 
   @override
-  String get extractionStatusNone => 'Provided on this phone';
+  String get extractionStatusNone => '已在此手机上提供';
 
   @override
-  String get extractionStatusUnsupported => 'Unsupported file type';
+  String get extractionStatusUnsupported => '不支持的文件类型';
 
   @override
-  String get extractionStatusTooLarge => 'File too large';
+  String get extractionStatusTooLarge => '文件太大';
 
   @override
-  String get extractionStatusEmpty => 'No readable text';
+  String get extractionStatusEmpty => '没有可读取的文本';
 
   @override
-  String get extractionStatusReadError => 'Could not read file';
+  String get extractionStatusReadError => '无法读取文件';
 
   @override
-  String get extractionStatusPasswordProtected => 'Password-protected';
+  String get extractionStatusPasswordProtected => '受密码保护';
 
   @override
-  String get extractionStatusPermissionDenied => 'Permission denied';
+  String get extractionStatusPermissionDenied => '权限被拒绝';
 
   @override
-  String get extractionStatusCancelled => 'Cancelled';
+  String get extractionStatusCancelled => '已取消';
 
   @override
   String advancedDetailsCheckedAt(String timestamp) {
-    return 'Checked at: $timestamp';
+    return '检查时间：$timestamp';
   }
 
   @override
   String advancedDetailsCanonicalUrl(String url) {
-    return 'Canonical URL: $url';
+    return '规范网址：$url';
   }
 
   @override
   String advancedDetailsRedirectedFrom(String url) {
-    return 'Redirected from: $url';
+    return '重定向自：$url';
   }
 
   @override
   String advancedDetailsFileLine(String filename) {
-    return 'File: $filename';
+    return '文件：$filename';
   }
 
   @override
   String advancedDetailsStatusSuffix(String status) {
-    return 'Status: $status';
+    return '状态：$status';
   }
 
   @override
   String advancedDetailsSha256Hash(String hash) {
-    return 'SHA-256 source hash: $hash';
+    return '来源 SHA-256 哈希：$hash';
   }
 
   @override
-  String get semanticsPrimaryNavigation => 'Primary navigation';
+  String get semanticsPrimaryNavigation => '主导航';
 
   @override
   String semanticsProcessingLocation(String label) {
-    return 'Processing location: $label';
+    return '处理位置：$label';
   }
 
   @override
-  String get semanticsDeniMascot => 'Deni, your privacy guide';
+  String get semanticsDeniMascot => 'Deni，你的隐私向导';
 
   @override
-  String get quoteCollapsibleDefaultHeader => 'Exact Policy Excerpt';
+  String get quoteCollapsibleDefaultHeader => '政策原文摘录';
 }

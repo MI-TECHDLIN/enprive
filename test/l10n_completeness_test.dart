@@ -19,8 +19,11 @@ const List<String> _completedSecondaryLocales = [
   'fr',
   'hi',
   'it',
+  'ja',
+  'ko',
   'pt',
   'ru',
+  'zh',
 ];
 
 const List<String> _allSecondaryLocales = [
