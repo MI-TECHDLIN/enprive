@@ -2114,6 +2114,16 @@
 
 ---
 
+## Iteration 62: Offline checker background-location recall + Arabic Home card check (2026-11-26)
+
+- **Branch / Commit State**: `fm/enprive-fix-recall-l10n` atop `main` `c383a3c`; direct PR into `main`. Model: **Claude Sonnet 5.5**.
+- **Source**: physical-device QA report (Realme RMX5303), bugs 1 and 2.
+- **Bug 1 root cause**: in `DeterministicClauseScanner`, "even when the app is not in use" failed `_backgroundLocationWord`, and the "not ... in use" phrase tripped `_verbNegationPattern` so the clause was treated as a denial. Fix: widened the background pattern and blank app-state qualifiers before negation checks (explicit denials such as "do not collect your location when the app is not in use" stay silent). Evidence validation untouched. The advertising-ID sentence is already reported on current main (as "Uses or shares advertising identifiers", category Third-Party Sharing); regression test `Case 5b` uses the exact pasted text.
+- **Bug 2**: not reproducible on main. `homeQuickSettingsTitle/Subtitle` were externalized and translated (ar, es, fr, hi) in `6b1c239`, which postdates the device build `79fd2e0`. `l10n_status.py --strict` is clean for all 11 locales (729/729), so no other locale has the miss.
+- **Verification**: `flutter analyze` 0 issues, `flutter test` 394/394, `l10n_status.py --strict` clean, arm64 debug build (see PR).
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **D5.3 Core Flow Streamlining (D5.3-B+) & D5.4 Offline Learn MVP**

@@ -67,6 +67,27 @@ void main() {
       expect(findings.first.title.toLowerCase(), contains('advertising'));
     });
 
+    test('Case 5b: device QA paste reports background location, ad ID, and voice retention', () {
+      const policy =
+          'We collect your location even when the app is not in use. We share your email and advertising ID with third party advertisers. We keep voice recordings indefinitely.';
+      final findings = DeterministicClauseScanner.scan(policy);
+      expect(findings.map((f) => f.title), [
+        'Tracks location in the background',
+        'Uses or shares advertising identifiers',
+        'Retains voice, audio, or biometric data',
+      ]);
+      for (final f in findings) {
+        expect(f.status, EvidenceStatus.sourceMatched);
+        expect(policy, contains(f.exactExcerpt));
+      }
+    });
+
+    test('Case 5c: denied background location with "not in use" wording stays silent', () {
+      const policy =
+          'We do not collect your location when the app is not in use. We never track location even when the app is closed.';
+      expect(DeterministicClauseScanner.scan(policy), isEmpty);
+    });
+
     test('Case 6: ambiguous third-party / operational wording never inflates into high-severity accusation', () {
       const policy =
           'We work with trusted third-party service providers solely to provide the service, host accounts, and process payments securely.';

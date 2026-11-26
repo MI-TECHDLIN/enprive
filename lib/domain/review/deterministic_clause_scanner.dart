@@ -48,7 +48,14 @@ class DeterministicClauseScanner {
     caseSensitive: false,
   );
   static final RegExp _backgroundLocationWord = RegExp(
-    r'\b(?:in\s+the\s+background|background\s+location|background\s+gps|even\s+when\s+(?:the\s+)?app\s+(?:is|isn.?t)\s+(?:closed|open|in\s+use)|not\s+actively\s+using\s+the\s+app|when\s+closed)\b',
+    r'\b(?:in\s+the\s+background|background\s+location|background\s+gps|even\s+when\s+(?:the\s+|you\s+are\s+)?(?:app\s+)?(?:is|isn.?t|are|aren.?t)\s+(?:closed|open|in\s+use|not\s+in\s+use|not\s+(?:being\s+)?used|not\s+using\s+(?:the\s+)?app)|not\s+actively\s+using\s+the\s+app|when\s+closed)\b',
+    caseSensitive: false,
+  );
+
+  /// App-state qualifiers ("not in use") contain negation words that are not
+  /// denials of the data practice; they are blanked before negation checks.
+  static final RegExp _appStateQualifier = RegExp(
+    r'\b(?:even\s+)?when\s+(?:the\s+)?app\s+(?:is|isn.?t)\s+(?:not\s+(?:being\s+)?(?:in\s+use|used|open)|closed)\b|\bnot\s+actively\s+using\s+the\s+app\b',
     caseSensitive: false,
   );
   static final RegExp _coarseIpLocationWord = RegExp(
@@ -154,6 +161,7 @@ class DeterministicClauseScanner {
   }
 
   static bool isNegatedClause(String clause) {
+    clause = clause.replaceAll(_appStateQualifier, ' ');
     return _verbNegationPattern.hasMatch(clause) ||
         _passiveNegationPattern.hasMatch(clause) ||
         _nounNegationPattern.hasMatch(clause) ||
