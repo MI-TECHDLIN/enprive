@@ -782,7 +782,7 @@ void main() {
           findsOneWidget,
         );
         expect(
-          find.textContaining('Cloud analysis was unavailable'),
+          find.textContaining('The cloud check could not finish'),
           findsWidgets,
         );
         // Verified D3 accuracy on live extracted HTML too: negated ad claim skipped, AppsFlyer kept
@@ -817,11 +817,25 @@ void main() {
         await tester.tap(find.text('Use cloud for this check'));
         await _pumpAndFlush(tester, steps: 8);
 
-        expect(find.byType(ReviewResultScreen), findsNothing);
+        // Timeout is a failed cloud check, not a cancel: the user lands on the
+        // on-device result with a plain message and a way to retry, unsaved.
+        expect(find.byType(ReviewResultScreen), findsOneWidget);
         expect(
-          find.text('Cloud AI timed out before responding. No automatic retry was sent.'),
+          find.byKey(const ValueKey<String>('cloud_fallback_notice_card')),
           findsOneWidget,
         );
+        expect(find.text('The cloud check could not finish'), findsOneWidget);
+        expect(find.byKey(const Key('cloud_fallback_retry_btn')), findsOneWidget);
+        expect(
+          analyseCalls.where((c) => c['cloudConsent'] == true).toList(),
+          hasLength(2),
+          reason: 'one consented request per attempt, no silent retry',
+        );
+        await tester.tap(find.byTooltip('Close'));
+        await _pumpAndFlush(tester);
+        expect(find.text('Discard without saving'), findsOneWidget);
+        await tester.tap(find.text('Discard without saving'));
+        await _pumpAndFlush(tester);
 
         // 4. Live in-flight user cancellation via ReviewProgressCard Cancel button
         final stalledCloudCompleter = Completer<Map<String, dynamic>>();

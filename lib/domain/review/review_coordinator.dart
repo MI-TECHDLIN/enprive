@@ -267,14 +267,39 @@ class ReviewCoordinator {
         inferenceSource: 'IN_CLOUD',
       );
 
-      final cloudResult = await _bridge.analyseText(
-        requestId: '${reqId}_appcheck',
-        task: 'summarise_concerns',
-        text: textForCloud,
-        cloudConsent: true,
-        requestedMode: 'ONLY_IN_CLOUD',
-        languageCode: languageCode,
-      );
+      final HybridAnalysisResult cloudResult;
+      try {
+        cloudResult = await _bridge.analyseText(
+          requestId: '${reqId}_appcheck',
+          task: 'summarise_concerns',
+          text: textForCloud,
+          cloudConsent: true,
+          requestedMode: 'ONLY_IN_CLOUD',
+          languageCode: languageCode,
+        );
+      } on HybridOperationCancelledException catch (e) {
+        // A user cancel still propagates. A timeout is a failed cloud check:
+        // keep the policy text and return the on-device result, never a
+        // silent cloud retry.
+        if (!e.isTimeout) rethrow;
+        return _completeDeterministicPolicyScan(
+          requestId: reqId,
+          steps: processSteps,
+          stage: 'offline_fallback',
+          label: 'Cloud analysis timed out: running local deterministic scanner',
+          subjectTitle: subjectTitle,
+          sourceLabel: sourceLabel,
+          policyText: trimmed,
+          appPermissions: appPermissions,
+          thoughtSummary: streamedThought,
+          thoughtSignature: streamedSignature,
+          languageCode: languageCode,
+          fallbackDiagnosticKind:
+              ReviewDiagnosticKind.cloudUnavailableLocalFallback,
+          failureDetail: e.message,
+          sourceSnapshot: resolvedSnapshot,
+        );
+      }
 
       if (cloudResult.status == HybridStatus.success) {
         return _completeBridgePolicyReceipt(
@@ -389,6 +414,11 @@ class ReviewCoordinator {
         combined.contains('network') ||
         combined.contains('socket') ||
         combined.contains('timeout') ||
+        combined.contains('timed out') ||
+        combined.contains('serverexception') ||
+        combined.contains('server error') ||
+        combined.contains('high demand') ||
+        combined.contains('overloaded') ||
         combined.contains('handshake') ||
         combined.contains('app check') ||
         combined.contains('appcheck') ||

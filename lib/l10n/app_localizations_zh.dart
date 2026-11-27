@@ -597,11 +597,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloudTimedOutNotice => '云端 AI 响应超时。未发送任何自动重试。';
 
   @override
-  String get cloudFallbackBannerTitle => '云端不可用：已在此手机上检查';
+  String get cloudFallbackBannerTitle => '云端检查未能完成';
 
   @override
   String get cloudFallbackBannerBody =>
-      '云端分析暂时不可用，因此 Enprive 直接在您的手机上检查了这份隐私政策。';
+      '这是在您手机上得到的结果，没有再次发送任何内容。您的政策文本仍然保留。点按“保存”之前，不会保存任何内容。';
+
+  @override
+  String get cloudFallbackRetryAction => '再次尝试云端检查';
 
   @override
   String get appPickerFilterAll => '全部应用';

@@ -636,11 +636,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cloudFallbackBannerTitle =>
-      'Cloud indisponible : vérifié sur ce téléphone';
+      'La vérification cloud n\'a pas pu se terminer';
 
   @override
   String get cloudFallbackBannerBody =>
-      'L\'analyse cloud était indisponible, Enprive a donc vérifié cette politique directement sur votre téléphone.';
+      'Voici le résultat obtenu sur votre téléphone, et rien n\'a été renvoyé. Le texte de la politique est conservé. Rien n\'est enregistré tant que vous n\'appuyez pas sur Enregistrer.';
+
+  @override
+  String get cloudFallbackRetryAction => 'Réessayer la vérification cloud';
 
   @override
   String get appPickerFilterAll => 'Toutes les apps';

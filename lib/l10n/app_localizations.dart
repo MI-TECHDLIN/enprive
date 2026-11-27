@@ -1237,14 +1237,20 @@ abstract class AppLocalizations {
   /// No description provided for @cloudFallbackBannerTitle.
   ///
   /// In en, this message translates to:
-  /// **'Cloud unavailable: checked on this phone'**
+  /// **'The cloud check could not finish'**
   String get cloudFallbackBannerTitle;
 
   /// No description provided for @cloudFallbackBannerBody.
   ///
   /// In en, this message translates to:
-  /// **'Cloud analysis was unavailable, so Enprive checked this policy directly on your phone.'**
+  /// **'This is the on-device result from your phone, and nothing was sent again. Your policy text is kept. Nothing is saved until you tap Save.'**
   String get cloudFallbackBannerBody;
+
+  /// Button on the on-device fallback notice that asks again for consent and retries the cloud check
+  ///
+  /// In en, this message translates to:
+  /// **'Try the cloud check again'**
+  String get cloudFallbackRetryAction;
 
   /// Filter chip showing all launchable installed apps
   ///

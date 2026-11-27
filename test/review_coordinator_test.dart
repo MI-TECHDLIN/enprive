@@ -696,10 +696,10 @@ Our mobile application collects precise GPS location coordinates even when the a
           'expectUnavailableFallback': false,
         },
         {
-          'name': 'Generic model error',
+          'name': 'Server error',
           'errorCode': 'ServerException',
           'message': 'Unexpected model failure',
-          'expectUnavailableFallback': false,
+          'expectUnavailableFallback': true,
         },
       ];
 
@@ -779,7 +779,7 @@ Our mobile application collects precise GPS location coordinates even when the a
         expect(
           reviewOutcome.receipt!.summary.toLowerCase(),
           expectUnavailable
-              ? allOf(contains('cloud'), contains('local'))
+              ? allOf(contains('cloud'), contains('on-device'))
               : allOf(
                   contains('failed'),
                   contains('local deterministic scanner'),
@@ -963,23 +963,26 @@ Our mobile application collects precise GPS location coordinates even when the a
             return null;
           });
 
-      await expectLater(
-        coordinator.runPolicyReview(
-          subjectTitle: 'Timeout Cancel App',
-          sourceLabel: 'Test Policy',
-          policyText:
-              'We collect device identifiers to share telemetry with partners.',
-          cloudConsent: true,
-        ),
-        throwsA(
-          isA<HybridOperationCancelledException>().having(
-            (e) => e.isTimeout,
-            'isTimeout',
-            isTrue,
-          ),
-        ),
+      // A native timeout is a failed cloud check, not a user cancel: the user
+      // keeps the on-device result, labelled honestly, with no silent retry.
+      final timedOut = await coordinator.runPolicyReview(
+        subjectTitle: 'Timeout Cancel App',
+        sourceLabel: 'Test Policy',
+        policyText:
+            'We collect device identifiers to share telemetry with partners.',
+        cloudConsent: true,
       );
-      expect(mapCancelCalls.length, 1);
+      expect(timedOut.needsCloudConsentOrManual, isFalse);
+      expect(
+        timedOut.receipt!.diagnosticKind,
+        ReviewDiagnosticKind.cloudUnavailableLocalFallback,
+      );
+      expect(
+        timedOut.receipt!.inferenceSource,
+        InferenceSource.offlineDeterministic,
+      );
+      expect(timedOut.receipt!.snapshotText, contains('device identifiers'));
+      expect(mapCancelCalls.length, 1, reason: 'no silent cloud retry');
 
       // B2. Status "cancelled" / CANCELLED propagates with isTimeout == false
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -1226,6 +1229,37 @@ Our mobile application collects precise GPS location coordinates even when the a
         failedInferenceResult.receipt!.diagnosticKind,
         ReviewDiagnosticKind.failedModelInference,
       );
+
+      // 6b. Cloud ServerException (high demand) -> on-device result with the
+      // cloud-could-not-finish fallback kind, never a silent drop.
+      var serverCalls = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            if (call.method == 'analyseText') {
+              serverCalls++;
+              return {
+                'schemaVersion': 1,
+                'requestId': (call.arguments as Map)['requestId'],
+                'status': 'failed',
+                'inferenceSource': 'UNKNOWN',
+                'errorCode': 'ServerException',
+                'message': 'The model is overloaded due to high demand.',
+              };
+            }
+            return {'isSupported': true, 'modelStatus': 'AVAILABLE'};
+          });
+      final serverError = await coordinator.runPolicyReview(
+        subjectTitle: 'ServerErrorApp',
+        sourceLabel: 'Paste',
+        policyText:
+            'We collect device identifiers to share telemetry with partners.',
+        cloudConsent: true,
+      );
+      expect(
+        serverError.receipt!.diagnosticKind,
+        ReviewDiagnosticKind.cloudUnavailableLocalFallback,
+      );
+      expect(serverCalls, 1, reason: 'no silent cloud retry');
 
       // 7. Unavailable cloud fallback on clean zero-keyword policy -> insufficientEvidence (cloudUnavailableLocalFallback)
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

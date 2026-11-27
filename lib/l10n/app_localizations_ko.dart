@@ -606,11 +606,14 @@ class AppLocalizationsKo extends AppLocalizations {
       '클라우드 AI 응답 시간이 초과되었습니다. 자동 재시도는 전송되지 않았습니다.';
 
   @override
-  String get cloudFallbackBannerTitle => '클라우드 사용 불가: 이 휴대폰에서 확인함';
+  String get cloudFallbackBannerTitle => '클라우드 확인을 끝내지 못했어요';
 
   @override
   String get cloudFallbackBannerBody =>
-      '클라우드 분석을 사용할 수 없어 Enprive가 이 방침을 휴대폰에서 직접 확인했습니다.';
+      '이 결과는 휴대폰에서 확인한 내용이며, 데이터를 다시 보내지 않았어요. 개인정보 처리방침 텍스트는 그대로 남아 있어요. 저장을 누르기 전에는 아무것도 저장되지 않아요.';
+
+  @override
+  String get cloudFallbackRetryAction => '클라우드 확인 다시 시도';
 
   @override
   String get appPickerFilterAll => '모든 앱';

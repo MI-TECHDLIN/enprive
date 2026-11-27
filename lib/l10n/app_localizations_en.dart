@@ -625,12 +625,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Cloud AI timed out before responding. No automatic retry was sent.';
 
   @override
-  String get cloudFallbackBannerTitle =>
-      'Cloud unavailable: checked on this phone';
+  String get cloudFallbackBannerTitle => 'The cloud check could not finish';
 
   @override
   String get cloudFallbackBannerBody =>
-      'Cloud analysis was unavailable, so Enprive checked this policy directly on your phone.';
+      'This is the on-device result from your phone, and nothing was sent again. Your policy text is kept. Nothing is saved until you tap Save.';
+
+  @override
+  String get cloudFallbackRetryAction => 'Try the cloud check again';
 
   @override
   String get appPickerFilterAll => 'All apps';

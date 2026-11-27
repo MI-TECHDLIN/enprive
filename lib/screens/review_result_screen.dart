@@ -1129,6 +1129,112 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       );
   }
 
+  /// Re-offers the cloud check after a timed-out or failed attempt. Consent is
+  /// asked again every time; the result stays an unsaved draft.
+  Future<void> _retryCloudCheck(
+    BuildContext context,
+    AppLocalizations l10n,
+    PolicyReviewReceipt receipt,
+  ) async {
+    if (_isAttachingPolicy || _isOpeningAttachSheet) return;
+    final policyText = receipt.snapshotText;
+    if (policyText.trim().isEmpty) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final expectedReceiptId = receipt.id;
+    final displayTitle = receipt.subjectTitle.trim();
+    final canonicalPayload = ReviewCoordinator.canonicalCloudPayload(
+      policyText,
+    );
+
+    _isOpeningAttachSheet = true;
+    final CloudConsentDecision decision;
+    try {
+      decision = await CloudConsentSheet.show(
+        context,
+        subjectTitle: displayTitle,
+        policyText: policyText,
+        canonicalRedactedPreview: canonicalPayload,
+      );
+    } finally {
+      _isOpeningAttachSheet = false;
+    }
+    if (decision != CloudConsentDecision.useCloudOnce ||
+        !mounted ||
+        _activeReceipt.id != expectedReceiptId) {
+      return;
+    }
+
+    final seq = ++_attachSequence;
+    final reqId = 'retry_${DateTime.now().microsecondsSinceEpoch}';
+    final lang = receipt.languageCode;
+    setState(() {
+      _isAttachingPolicy = true;
+      _isAttachingCloud = true;
+      _isCancellingAttach = false;
+      _attachRequestId = reqId;
+    });
+    try {
+      final outcome = await widget.coordinator.runPolicyReview(
+        requestId: reqId,
+        subjectTitle: displayTitle,
+        sourceLabel: receipt.sourceLabel,
+        policyText: policyText,
+        appPermissions: _validPermissionSnapshot(receipt),
+        cloudConsent: true,
+        languageCode: lang,
+        sourceSnapshot: receipt.sourceSnapshot,
+        canonicalRedactedPayload: canonicalPayload,
+      );
+      if (!mounted || seq != _attachSequence || outcome.receipt == null) return;
+      final raw = outcome.receipt!;
+      final draftIdentity = _nextSafeDraftIdentity(
+        candidateId: raw.id,
+        candidateCreatedAt: raw.createdAt,
+      );
+      final updated = raw.copyWith(
+        id: draftIdentity.id,
+        createdAt: draftIdentity.createdAt,
+        supersedesReceiptId: draftIdentity.supersedesReceiptId,
+      );
+      // No auto-save: the retried result stays a draft until the user taps Save.
+      _cancelVoiceAndSummarySilently();
+      setState(() {
+        _activeReceipt = updated;
+        _lifecycleState = _persistedBaselineReceipt != null
+            ? ReceiptLifecycleState.modifiedSavedDraft
+            : ReceiptLifecycleState.draft;
+        _saveErrorMessage = null;
+        _voiceSummary = DeniVoiceSummaryBuilder.buildDeterministic(
+          receipt: updated,
+          associationReport: _activeAssociationReport,
+          languageCode: updated.languageCode,
+        );
+      });
+      unawaited(_refreshVoiceSummaryOnDeviceFirst());
+    } on HybridOperationCancelledException catch (e) {
+      if (mounted && seq == _attachSequence && e.isTimeout) {
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(l10n.cloudTimedOutNotice),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+      }
+    } finally {
+      if (mounted && seq == _attachSequence) {
+        setState(() {
+          _isAttachingPolicy = false;
+          _isAttachingCloud = false;
+          _isCancellingAttach = false;
+          _attachRequestId = null;
+        });
+      }
+    }
+  }
+
   Future<void> _openAttachPolicySheet(
     BuildContext context,
     AppLocalizations l10n,
@@ -2129,6 +2235,26 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                                 color: scheme.onSurfaceVariant,
                                                 height: 1.38,
                                               ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        EnpriveTactileButton(
+                                          key: const Key(
+                                            'cloud_fallback_retry_btn',
+                                          ),
+                                          label: l10n.cloudFallbackRetryAction,
+                                          isSecondary: true,
+                                          onPressed:
+                                              (_isAttachingPolicy ||
+                                                  _isOpeningAttachSheet ||
+                                                  receipt.snapshotText
+                                                      .trim()
+                                                      .isEmpty)
+                                              ? null
+                                              : () => _retryCloudCheck(
+                                                  context,
+                                                  l10n,
+                                                  receipt,
+                                                ),
                                         ),
                                       ],
                                     ),

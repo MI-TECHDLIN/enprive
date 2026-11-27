@@ -431,9 +431,9 @@ String formatDeterministicSummary({
   if (fallbackDiagnosticKind ==
       ReviewDiagnosticKind.cloudUnavailableLocalFallback) {
     if (findingCount == 0) {
-      return 'Cloud analysis was unavailable, so this result came from Enprive’s local deterministic scanner. It matched no common risk phrases, though full cloud semantic analysis did not run.';
+      return 'The cloud check could not finish, so this is the on-device result from your phone. It matched no common risk phrases, though the full cloud check did not run.';
     }
-    return 'Cloud analysis was unavailable, so this result came from Enprive’s local deterministic scanner. $findingCount ${findingCount == 1 ? 'part of this policy needs' : 'parts of this policy need'} a closer look before a child uses this app.';
+    return 'The cloud check could not finish, so this is the on-device result from your phone. $findingCount ${findingCount == 1 ? 'part of this policy needs' : 'parts of this policy need'} a closer look before a child uses this app.';
   }
 
   if (fallbackDiagnosticKind == ReviewDiagnosticKind.failedModelInference) {
