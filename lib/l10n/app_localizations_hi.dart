@@ -141,27 +141,6 @@ class AppLocalizationsHi extends AppLocalizations {
       'बच्चों के उपयोग वाले ऐप्स पर\nअधिक स्पष्ट नज़र';
 
   @override
-  String get trySampleCheck => 'एक सैंपल ऐप जांच आज़माएँ';
-
-  @override
-  String get eduTrackSubtitle => 'होमवर्क और उपस्थिति';
-
-  @override
-  String get eduTrackValue => '3 अनुरोध';
-
-  @override
-  String get eduTrackTrend => 'समीक्षा';
-
-  @override
-  String get calmMathSubtitle => 'ऑफ़लाइन गणित अभ्यास';
-
-  @override
-  String get calmMathValue => '0 संवेदनशील';
-
-  @override
-  String get calmMathTrend => 'न्यूनतम';
-
-  @override
   String get whatWeCheckTitle => 'हम क्या जांचते हैं';
 
   @override
@@ -198,9 +177,6 @@ class AppLocalizationsHi extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get trySampleText => 'सैंपल टेक्स्ट आज़माएँ';
 
   @override
   String get modePasteText => 'टेक्स्ट पेस्ट करें';
@@ -564,15 +540,6 @@ class AppLocalizationsHi extends AppLocalizations {
       'आपके फ़ोन पर स्थानीय रूप से जांचा जाता है। ऐप सूची कभी अपलोड नहीं होती।';
 
   @override
-  String get trySampleKidsApp => 'बच्चों के सैंपल ऐप आज़माएँ';
-
-  @override
-  String get sampleEduTrackSubtitle => 'लोकेशन, माइक और कैमरा';
-
-  @override
-  String get sampleCalmMathSubtitle => 'ऑफ़लाइन गणित अभ्यास';
-
-  @override
   String get appsOnThisPhone => 'इस फ़ोन पर मौजूद ऐप्स';
 
   @override
@@ -580,9 +547,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get noMatchingApps => 'इस फ़ोन पर कोई मेल खाने वाला ऐप नहीं मिला।';
-
-  @override
-  String get sampleSyntheticBadge => 'सैंपल ऐप';
 
   @override
   String get permissionInspectionTitle => 'फ़ोन की अनुमतियाँ जाँची गईं';
@@ -897,12 +861,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get permissionNotAllowedOnPhone => 'अनुमत नहीं';
 
   @override
-  String get permissionAllowedInSample => 'सैंपल में अनुमत';
-
-  @override
-  String get permissionNotAllowedInSample => 'सैंपल में अनुमत नहीं';
-
-  @override
   String get permissionMismatchChip => 'नीति में नहीं';
 
   @override
@@ -1117,9 +1075,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get permissionNotRequestedOnPhone => 'ऐप द्वारा नहीं माँगी गई';
 
   @override
-  String get permissionNotRequestedInSample => 'सैंपल में नहीं माँगी गई';
-
-  @override
   String get permissionsEmptyComparisonTitle =>
       'इस जाँच में कोई संवेदनशील अनुमति नहीं मिली';
 
@@ -1173,9 +1128,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notFromPolicySuffix => 'आपके फ़ोन की सेटिंग्स से, नीति से नहीं';
-
-  @override
-  String get sampleNotFromPolicySuffix => 'केवल उदाहरण, नीति से नहीं';
 
   @override
   String get learnHeaderSubtitle => 'ऑफ़लाइन गोपनीयता गाइड और आरेख';
@@ -2570,11 +2522,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get btnRetrySave => 'फिर से सहेजें';
 
   @override
-  String samplePermissionsHeader(String badge) {
-    return 'नमूना अनुमतियाँ ($badge)';
-  }
-
-  @override
   String get sourceKindUrl => 'सार्वजनिक वेब लिंक';
 
   @override
@@ -2591,9 +2538,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get sourceKindSelectedText => 'चुना गया टेक्स्ट';
-
-  @override
-  String get sourceKindSampleApp => 'नमूना ऐप';
 
   @override
   String get sourceKindPhonePermissions => 'फ़ोन की अनुमतियाँ';

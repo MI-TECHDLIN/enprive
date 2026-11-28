@@ -92,7 +92,6 @@ PolicyReviewReceipt _buildStandalonePolicyReceipt({
       'and uses the camera only to scan book barcodes. We never sell personal data '
       'to third-party brokers.',
   String? url,
-  bool isSample = false,
   AppPermissionSnapshot? linkedSnapshot,
 }) {
   final permReport = linkedSnapshot == null
@@ -104,7 +103,7 @@ PolicyReviewReceipt _buildStandalonePolicyReceipt({
   return PolicyReviewReceipt(
     id: id,
     subjectTitle: title,
-    sourceLabel: url ?? (isSample ? 'Synthetic example' : 'Pasted text'),
+    sourceLabel: url ?? 'Pasted text',
     snapshotText: policyText,
     snapshotDigest: EvidenceValidator.computeSnapshotDigest(policyText),
     createdAt: DateTime(2026, 11, 20, 12, 0),
@@ -116,20 +115,16 @@ PolicyReviewReceipt _buildStandalonePolicyReceipt({
     permissionReport: permReport,
     sourceSnapshot: PolicySourceSnapshot(
       snapshotId: 'snap_$id',
-      sourceType: isSample
-          ? PolicySourceType.sample
-          : (url != null ? PolicySourceType.url : PolicySourceType.pastedText),
+      sourceType: url != null ? PolicySourceType.url : PolicySourceType.pastedText,
       requestedUrl: url,
       canonicalUrl: url,
       retrievedAt: DateTime.utc(2026, 11, 20, 12, 0),
       retrievalStatus: url != null
           ? PolicyRetrievalStatus.retrieved
           : PolicyRetrievalStatus.localProvided,
-      appIdentityMatchStatus: isSample
-          ? AppIdentityMatchStatus.sampleFixture
-          : (linkedSnapshot != null
-                ? AppIdentityMatchStatus.unverifiedUserSupplied
-                : AppIdentityMatchStatus.notApplicable),
+      appIdentityMatchStatus: linkedSnapshot != null
+          ? AppIdentityMatchStatus.unverifiedUserSupplied
+          : AppIdentityMatchStatus.notApplicable,
       sourceSha256Hash: EvidenceValidator.computeSha256SourceHash(policyText),
     ),
   );
@@ -646,38 +641,13 @@ void main() {
     );
 
     testWidgets(
-      '5. Synthetic sample receipts and permission-only inspections never show Link/Change/Unlink actions',
+      '5. Permission-only inspections never show Link/Change/Unlink actions',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(430, 932);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
 
         final coordinator = ReviewCoordinator(bridge: HybridAiBridge());
-        final sampleReceipt = _buildStandalonePolicyReceipt(
-          id: 'rcpt_sample_edutrack',
-          title: 'EduTrack Classroom Companion',
-          isSample: true,
-          linkedSnapshot: PermissionComparator.demoEduTrackSnapshot,
-        );
-
-        await tester.pumpWidget(
-          _wrapM3E(
-            home: ReviewResultScreen(
-              receipt: sampleReceipt,
-              coordinator: coordinator,
-            ),
-          ),
-        );
-        await _pumpAndFlush(tester);
-
-        expect(find.byKey(const Key('review_result_link_app_card')), findsNothing);
-        expect(find.byKey(const Key('review_result_linked_app_card')), findsNothing);
-        expect(find.byKey(const Key('review_result_change_app_btn')), findsNothing);
-        expect(find.byKey(const Key('review_result_unlink_app_btn')), findsNothing);
-        expect(
-          find.byKey(const Key('review_result_attach_new_policy_btn')),
-          findsNothing,
-        );
 
         // Permission-only inspection shows Add privacy policy, never Link an installed app
         final permOnly = coordinator.buildDevicePermissionInspectionReceipt(
@@ -701,7 +671,13 @@ void main() {
         await _pumpAndFlush(tester);
 
         expect(find.byKey(const Key('review_result_link_app_card')), findsNothing);
+        expect(find.byKey(const Key('review_result_linked_app_card')), findsNothing);
+        expect(find.byKey(const Key('review_result_change_app_btn')), findsNothing);
         expect(find.byKey(const Key('review_result_unlink_app_btn')), findsNothing);
+        expect(
+          find.byKey(const Key('review_result_attach_new_policy_btn')),
+          findsNothing,
+        );
       },
     );
 

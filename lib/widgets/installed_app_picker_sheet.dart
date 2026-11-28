@@ -3,7 +3,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../core/theme/enprive_theme.dart';
-import '../domain/permissions/permission_comparator.dart';
 import '../domain/review/app_policy_association.dart';
 import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
@@ -32,7 +31,6 @@ class SelectedAppInspectionChoice {
   final AppPermissionSnapshot permissionSnapshot;
   final List<AppIdentityCandidate> peerCandidates;
   final bool hasSuppliedPolicy;
-  final bool isSyntheticSample;
 
   const SelectedAppInspectionChoice({
     required this.subjectTitle,
@@ -41,7 +39,6 @@ class SelectedAppInspectionChoice {
     required this.permissionSnapshot,
     this.peerCandidates = const <AppIdentityCandidate>[],
     this.hasSuppliedPolicy = false,
-    this.isSyntheticSample = false,
   });
 }
 
@@ -49,11 +46,6 @@ class SelectedAppInspectionChoice {
 /// status mapping, and "Recently checked" derivation for [InstalledAppPickerSheet].
 class InstalledAppPickerModel {
   InstalledAppPickerModel._();
-
-  static final Set<String> syntheticSamplePackages = <String>{
-    PermissionComparator.demoEduTrackSnapshot.packageName.toLowerCase(),
-    PermissionComparator.demoCalmMathSnapshot.packageName.toLowerCase(),
-  };
 
   /// Indexes the latest saved receipt per unique Android package identifier
   /// strictly from in-memory persisted [PolicyReviewReceipt] records.
@@ -116,7 +108,7 @@ class InstalledAppPickerModel {
   }
 
   /// Derives up to [maxCount] unique recently checked installed applications
-  /// from [latestByPackage], excluding synthetic samples and uninstalled apps.
+  /// from [latestByPackage], excluding uninstalled apps.
   static List<InstalledAppEntry> recentCheckedApps({
     required List<InstalledAppEntry> installedApps,
     required Map<String, PolicyReviewReceipt> latestByPackage,
@@ -149,7 +141,6 @@ class InstalledAppPickerModel {
     final seenPackages = <String>{};
     for (final entry in sortedEntries) {
       final pkg = entry.key;
-      if (syntheticSamplePackages.contains(pkg)) continue;
       final installedMatch = installedByPkg[pkg];
       if (installedMatch == null) continue;
       if (seenPackages.add(pkg)) {
@@ -209,8 +200,6 @@ class InstalledAppPickerModel {
 /// saved receipt statuses stay local and never leave the phone.
 class InstalledAppPickerSheet extends StatefulWidget {
   final HybridAiBridge bridge;
-  final String eduTrackPolicyText;
-  final String calmMathPolicyText;
   final List<PolicyReviewReceipt> savedReceipts;
   final ReceiptRepository? receiptRepository;
   final ScrollController? scrollController;
@@ -221,8 +210,6 @@ class InstalledAppPickerSheet extends StatefulWidget {
   const InstalledAppPickerSheet({
     super.key,
     required this.bridge,
-    required this.eduTrackPolicyText,
-    required this.calmMathPolicyText,
     this.savedReceipts = const [],
     this.receiptRepository,
     this.scrollController,
@@ -234,8 +221,6 @@ class InstalledAppPickerSheet extends StatefulWidget {
   static Future<SelectedAppInspectionChoice?> show(
     BuildContext context, {
     required HybridAiBridge bridge,
-    required String eduTrackPolicyText,
-    required String calmMathPolicyText,
     List<PolicyReviewReceipt> savedReceipts = const [],
     ReceiptRepository? receiptRepository,
     String? titleOverride,
@@ -255,8 +240,6 @@ class InstalledAppPickerSheet extends StatefulWidget {
         maxChildSize: 0.94,
         builder: (context, scrollController) => InstalledAppPickerSheet(
           bridge: bridge,
-          eduTrackPolicyText: eduTrackPolicyText,
-          calmMathPolicyText: calmMathPolicyText,
           savedReceipts: savedReceipts,
           receiptRepository: receiptRepository,
           scrollController: scrollController,
@@ -370,28 +353,6 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
           _installedApps,
         ),
         hasSuppliedPolicy: false,
-        isSyntheticSample: false,
-      ),
-    );
-  }
-
-  void _selectEmptyStateSampleFixture() {
-    final useEduTrack = widget.eduTrackPolicyText.trim().isNotEmpty;
-    final policyText = useEduTrack
-        ? widget.eduTrackPolicyText
-        : widget.calmMathPolicyText;
-    final snapshot = useEduTrack
-        ? PermissionComparator.demoEduTrackSnapshot
-        : PermissionComparator.demoCalmMathSnapshot;
-    Navigator.pop(
-      context,
-      SelectedAppInspectionChoice(
-        subjectTitle: snapshot.appName,
-        sourceLabel: 'Synthetic Example',
-        policyText: policyText,
-        permissionSnapshot: snapshot,
-        hasSuppliedPolicy: policyText.trim().isNotEmpty,
-        isSyntheticSample: true,
       ),
     );
   }
@@ -417,9 +378,6 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
               _searchQuery.trim().isEmpty &&
               _activeFilter == InstalledAppFilter.all &&
               _recentApps.isNotEmpty;
-          final hasOptionalSampleText =
-              widget.eduTrackPolicyText.trim().isNotEmpty ||
-              widget.calmMathPolicyText.trim().isNotEmpty;
 
           return Material(
             color: scheme.surface,
@@ -594,7 +552,6 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
                               horizontalPadding: horizontalPadding,
                               filteredApps: filteredApps,
                               showRecentSection: showRecentSection,
-                              hasOptionalSampleText: hasOptionalSampleText,
                             ),
                           ),
                         ],
@@ -618,7 +575,6 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
     required double horizontalPadding,
     required List<InstalledAppEntry> filteredApps,
     required bool showRecentSection,
-    required bool hasOptionalSampleText,
   }) {
     if (_isLoadingApps) {
       return CustomScrollView(
@@ -660,15 +616,6 @@ class _InstalledAppPickerSheetState extends State<InstalledAppPickerSheet> {
                     title: l10n.appPickerEmptyInstalledTitle,
                     message: l10n.appPickerEmptyInstalledBody,
                   ),
-                  if (hasOptionalSampleText) ...[
-                    const SizedBox(height: 12),
-                    _CompactEmptySampleAction(
-                      key: const Key('app_picker_empty_sample_action'),
-                      label: l10n.trySampleCheck,
-                      badgeText: l10n.sampleSyntheticBadge,
-                      onTap: _selectEmptyStateSampleFixture,
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -1032,82 +979,6 @@ class _NeutralStatusIndicator extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CompactEmptySampleAction extends StatelessWidget {
-  final String label;
-  final String badgeText;
-  final VoidCallback onTap;
-
-  const _CompactEmptySampleAction({
-    super.key,
-    required this.label,
-    required this.badgeText,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
-
-    return EnpriveMaterialCardSurface(
-      variant: EnpriveCardVariant.outlined,
-      borderRadius: BorderRadius.circular(18),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      semanticLabel: '$label, $badgeText',
-      onPressed: onTap,
-      // Curated parent label covers both lines; avoid duplicate announcement.
-      child: ExcludeSemantics(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minHeight: EnpriveSpacing.minTouchTarget,
-          ),
-          child: Row(
-            children: [
-              Icon(
-                LucideIcons.graduationCap,
-                size: 18,
-                color: scheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: m3e.typography.emphasized.labelLarge.copyWith(
-                        color: scheme.onSurface,
-                      ),
-                    ),
-                    Text(
-                      badgeText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: m3e.typeScale.labelSmall.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                isRtl ? LucideIcons.chevronLeft : LucideIcons.chevronRight,
-                size: 18,
-                color: scheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

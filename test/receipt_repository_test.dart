@@ -4,12 +4,14 @@ import 'package:enprive/services/storage/receipt_repository.dart';
 import 'package:enprive/widgets/enprive_provenance_chip.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'fixtures/synthetic_test_fixtures.dart';
+
 void main() {
   group('ReceiptRepository & JSON serialization', () {
     test('round-trips PolicyReviewReceipt with PermissionComparisonReport cleanly', () {
       const policy = 'EduTrack collects precise GPS location coordinates.';
       final report = PermissionComparator.compare(
-        snapshot: PermissionComparator.demoEduTrackSnapshot,
+        snapshot: syntheticEduTrackSnapshot,
         policyText: policy,
       );
 

@@ -125,9 +125,7 @@ class EnpriveLinkedAppSection extends StatelessWidget {
               ),
               if (associationReport != null &&
                   associationReport!.state !=
-                      AppPolicyAssociationState.unlinked &&
-                  associationReport!.state !=
-                      AppPolicyAssociationState.sampleFixture) ...[
+                      AppPolicyAssociationState.unlinked) ...[
                 const SizedBox(height: 14),
                 _AssociationStatusBlock(
                   report: associationReport!,
@@ -252,7 +250,6 @@ class EnpriveLinkedAppSection extends StatelessWidget {
           EnprivePermissionComparisonList(
             report: report,
             l10n: l10n,
-            isSampleReceipt: false,
           ),
           const SizedBox(height: 12),
           Container(
@@ -471,8 +468,7 @@ class _AssociationStatusBlock extends StatelessWidget {
           LucideIcons.triangleAlert,
         );
       }(),
-      AppPolicyAssociationState.unlinked ||
-      AppPolicyAssociationState.sampleFixture => (
+      AppPolicyAssociationState.unlinked => (
         l10n.associationStatusUnverifiedTitle,
         report.explanation,
         scheme.surfaceContainerHigh,
@@ -540,20 +536,15 @@ class _AssociationStatusBlock extends StatelessWidget {
 }
 
 /// Direction A segmented tonal list of on-device Android permission comparison
-/// rows shared across policy-linked reviews, permission-only inspections, and
-/// synthetic example fixtures.
+/// rows shared across policy-linked reviews and permission-only inspections.
 class EnprivePermissionComparisonList extends StatelessWidget {
   final AppPermissionComparisonReport report;
   final AppLocalizations l10n;
-
-  /// Synthetic sample permissions describe the fixture, not this phone.
-  final bool isSampleReceipt;
 
   const EnprivePermissionComparisonList({
     super.key,
     required this.report,
     required this.l10n,
-    this.isSampleReceipt = false,
   });
 
   @override
@@ -596,16 +587,10 @@ class EnprivePermissionComparisonList extends StatelessWidget {
                   item.alignmentState ==
                   PermissionAlignmentState.undisclosedInPolicy;
               final statusChipLabel = !item.isRequested
-                  ? (isSampleReceipt
-                        ? l10n.permissionNotRequestedInSample
-                        : l10n.permissionNotRequestedOnPhone)
-                  : (isSampleReceipt
-                        ? (item.isGranted
-                              ? l10n.permissionAllowedInSample
-                              : l10n.permissionNotAllowedInSample)
-                        : (item.isGranted
-                              ? l10n.permissionAllowedOnPhone
-                              : l10n.permissionNotAllowedOnPhone));
+                  ? l10n.permissionNotRequestedOnPhone
+                  : (item.isGranted
+                        ? l10n.permissionAllowedOnPhone
+                        : l10n.permissionNotAllowedOnPhone);
 
               return Container(
                 padding: const EdgeInsetsDirectional.fromSTEB(12, 14, 16, 14),

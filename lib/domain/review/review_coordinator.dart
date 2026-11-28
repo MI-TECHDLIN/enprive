@@ -532,7 +532,7 @@ class ReviewCoordinator {
   }
 
   static final RegExp _permissionSummarySuffixPattern = RegExp(
-    r' (?:Local Android inspection also spotted|Synthetic sample comparison also includes) \d+ (?:illustrative )?undisclosed permission requests?\.$',
+    r' Local Android inspection also spotted \d+ undisclosed permission requests?\.$',
   );
 
   static const String _linkedComparisonProcessStep =
@@ -588,10 +588,7 @@ class ReviewCoordinator {
     // from App A -> App B is clean, deterministic, and idempotent.
     final baseUnlinked = _stripLinkedAppFromReceipt(receipt);
     final updatedSnapshot = baseUnlinked.sourceSnapshot?.copyWith(
-      appIdentityMatchStatus:
-          baseUnlinked.sourceSnapshot?.sourceType == PolicySourceType.sample
-          ? AppIdentityMatchStatus.sampleFixture
-          : AppIdentityMatchStatus.unverifiedUserSupplied,
+      appIdentityMatchStatus: AppIdentityMatchStatus.unverifiedUserSupplied,
     );
     final updatedSteps = <String>[
       ...baseUnlinked.processSteps,
@@ -625,10 +622,7 @@ class ReviewCoordinator {
   }) {
     final stripped = _stripLinkedAppFromReceipt(receipt);
     final updatedSnapshot = stripped.sourceSnapshot?.copyWith(
-      appIdentityMatchStatus:
-          stripped.sourceSnapshot?.sourceType == PolicySourceType.sample
-          ? AppIdentityMatchStatus.sampleFixture
-          : AppIdentityMatchStatus.notApplicable,
+      appIdentityMatchStatus: AppIdentityMatchStatus.notApplicable,
     );
     final unlinkedReceipt = stripped.copyWith(
       id: draftId ?? stripped.id,
@@ -711,21 +705,14 @@ class ReviewCoordinator {
   ) {
     if (appPermissions == null) return baseReceipt;
 
-    final isSampleFixture =
-        baseReceipt.sourceSnapshot?.sourceType == PolicySourceType.sample ||
-        baseReceipt.sourceSnapshot?.appIdentityMatchStatus ==
-            AppIdentityMatchStatus.sampleFixture;
-
     final report = PermissionComparator.compare(
       snapshot: appPermissions,
       policyText: baseReceipt.snapshotText,
-      isSampleFixture: isSampleFixture,
     );
     final enrichedFindings =
         PermissionComparator.enrichFindingsWithDeviceReport(
           policyFindings: baseReceipt.findings,
           report: report,
-          isSampleFixture: isSampleFixture,
         );
 
     // Explicit verdict-state precedence:
@@ -750,9 +737,7 @@ class ReviewCoordinator {
     }
 
     final permissionNote = report.mismatchCount > 0
-        ? (isSampleFixture
-              ? ' Synthetic sample comparison also includes ${report.mismatchCount} illustrative undisclosed permission ${report.mismatchCount == 1 ? 'request' : 'requests'}.'
-              : ' Local Android inspection also spotted ${report.mismatchCount} undisclosed permission ${report.mismatchCount == 1 ? 'request' : 'requests'}.')
+        ? ' Local Android inspection also spotted ${report.mismatchCount} undisclosed permission ${report.mismatchCount == 1 ? 'request' : 'requests'}.'
         : '';
 
     return PolicyReviewReceipt(

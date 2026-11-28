@@ -139,27 +139,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeHeroHeadline => '아이들이 쓰는 앱,\n약관과 권한을 한눈에';
 
   @override
-  String get trySampleCheck => '샘플 앱 바로 검토하기';
-
-  @override
-  String get eduTrackSubtitle => '숙제·출결 샘플';
-
-  @override
-  String get eduTrackValue => '권한 3건';
-
-  @override
-  String get eduTrackTrend => '확인 권장';
-
-  @override
-  String get calmMathSubtitle => '오프라인 수학 샘플';
-
-  @override
-  String get calmMathValue => '민감 0건';
-
-  @override
-  String get calmMathTrend => '단순함';
-
-  @override
   String get whatWeCheckTitle => '중점 확인 항목';
 
   @override
@@ -193,9 +172,6 @@ class AppLocalizationsKo extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get trySampleText => '샘플 문장 넣기';
 
   @override
   String get modePasteText => '문장 붙여넣기';
@@ -544,15 +520,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get checkAppSheetSubtitle => '이 휴대폰 안에서만 확인합니다. 앱 목록은 절대 업로드되지 않습니다.';
 
   @override
-  String get trySampleKidsApp => '샘플 어린이 앱 테스트하기';
-
-  @override
-  String get sampleEduTrackSubtitle => '위치, 마이크 및 카메라';
-
-  @override
-  String get sampleCalmMathSubtitle => '오프라인 수학 연습';
-
-  @override
   String get appsOnThisPhone => '이 휴대폰에 설치된 앱';
 
   @override
@@ -560,9 +527,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get noMatchingApps => '일치하는 앱을 찾지 못했습니다.';
-
-  @override
-  String get sampleSyntheticBadge => '샘플 앱';
 
   @override
   String get permissionInspectionTitle => '휴대폰 권한 확인됨';
@@ -866,12 +830,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get permissionNotAllowedOnPhone => '허용 안 됨';
 
   @override
-  String get permissionAllowedInSample => '샘플에서 허용됨';
-
-  @override
-  String get permissionNotAllowedInSample => '샘플에서 허용 안 됨';
-
-  @override
   String get permissionMismatchChip => '방침에 없음';
 
   @override
@@ -1079,9 +1037,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get permissionNotRequestedOnPhone => '앱에서 요청 안 함';
 
   @override
-  String get permissionNotRequestedInSample => '샘플에서 요청 안 함';
-
-  @override
   String get permissionsEmptyComparisonTitle => '이번 확인에 해당하는 민감 권한이 없습니다';
 
   @override
@@ -1134,9 +1089,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get notFromPolicySuffix => '방침이 아닌 휴대폰 설정에서 가져옴';
-
-  @override
-  String get sampleNotFromPolicySuffix => '방침이 아닌 예시 데이터';
 
   @override
   String get learnHeaderSubtitle => '오프라인 개인정보 가이드 및 도표';
@@ -2448,11 +2400,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get btnRetrySave => '저장 다시 시도';
 
   @override
-  String samplePermissionsHeader(String badge) {
-    return '샘플 권한 ($badge)';
-  }
-
-  @override
   String get sourceKindUrl => '공개 웹 링크';
 
   @override
@@ -2469,9 +2416,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get sourceKindSelectedText => '선택한 텍스트';
-
-  @override
-  String get sourceKindSampleApp => '샘플 앱';
 
   @override
   String get sourceKindPhonePermissions => '휴대폰 권한';

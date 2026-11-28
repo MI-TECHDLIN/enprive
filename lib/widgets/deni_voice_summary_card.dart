@@ -520,11 +520,6 @@ class _SummaryPointRow extends StatelessWidget {
             semantics.inCloud.icon,
             '${l10n.observedOnPhoneLabel} · ${l10n.notFromPolicySuffix}',
           ),
-          DeniSummaryPointKind.samplePermissionNote => (
-            LucideIcons.flaskConical,
-            scheme.onSurfaceVariant,
-            '${l10n.sampleSyntheticBadge} · ${l10n.sampleNotFromPolicySuffix}',
-          ),
           DeniSummaryPointKind.associationNote => (
             LucideIcons.link2,
             semantics.reviewRecommended.icon,

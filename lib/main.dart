@@ -1,14 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart' as modern;
 
 import 'core/theme/enprive_theme.dart';
 import 'domain/intake/policy_intake_models.dart';
-import 'domain/permissions/permission_comparator.dart';
 import 'domain/review/app_policy_association.dart';
 import 'domain/review/review_coordinator.dart';
 import 'domain/review/review_models.dart';
@@ -170,19 +168,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
-  static const String _fallbackEduTrackFixture = '''
-EDUTRACK KIDS & CLASSROOM COMPANION — PRIVACY POLICY
-When a student uses EduTrack on a mobile device, we collect device identifiers, operating system telemetry, and session duration logs. In addition, our mobile application collects precise GPS location coordinates even when the application is running in the background to verify school bus zone attendance and regional classroom routing.
-For reading-aloud exercises, EduTrack records student voice audio through the device microphone. Student voice recordings and derived speech-fluency transcripts are retained indefinitely on our cloud servers to train and improve our automated speech recognition models unless a verified school administrator submits a written deletion ticket.
-We may share persistent advertising identifiers and app usage events with third-party advertising partners to measure campaign performance and deliver contextual or behavioral promotions across partner educational services.
-''';
-
-  static const String _fallbackCalmMathFixture = '''
-CALMMATH ABACUS — PRIVACY & DATA HANDLING NOTICE
-CalmMath Abacus is designed for early elementary arithmetic practice. All math problem sets, practice scores, and learning progress are stored exclusively on this device inside local application storage.
-We do not collect personal identifiers, precise location data, microphone audio, or camera input. We do not integrate third-party advertising SDKs, and we never sell, rent, or transmit student usage data to external analytics brokers.
-''';
-
   final HybridAiBridge _bridge = HybridAiBridge();
   final CompanionBridge _companionBridge = CompanionBridge();
   late final PolicyUrlRetriever _urlRetriever =
@@ -677,8 +662,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
           payload: payload,
           provisionalTitle: provisionalTitle,
         );
-      case SampleFixturePolicyLocator():
-        break;
     }
   }
 
@@ -746,12 +729,10 @@ We do not collect personal identifiers, precise location data, microphone audio,
     final choice = await InstalledAppPickerSheet.show(
       sheetContext,
       bridge: _bridge,
-      eduTrackPolicyText: '',
-      calmMathPolicyText: '',
       savedReceipts: List<PolicyReviewReceipt>.unmodifiable(_savedReceipts),
       receiptRepository: _receiptRepo,
     );
-    if (choice == null || choice.isSyntheticSample) return null;
+    if (choice == null) return null;
     final snap = choice.permissionSnapshot;
     if (snap.packageName.trim().isEmpty) return null;
     return SelectedAppReference(
@@ -811,9 +792,7 @@ We do not collect personal identifiers, precise location data, microphone audio,
     final captured = intake.capturedSnapshot;
     var appPermissions = intake.selectedApp?.permissionSnapshot;
 
-    if (intake.selectedApp != null &&
-        appPermissions == null &&
-        intake.selectedApp!.trustedSampleFixture == null) {
+    if (intake.selectedApp != null && appPermissions == null) {
       final hydrateSeq = _activeOperationSequence;
       final hydrated = await _intakeCoordinator.hydrateAppPermissions(
         intake.selectedApp!,
@@ -885,16 +864,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
           ),
         );
     }
-  }
-
-  Future<String> _loadFixtureText(String assetPath, String fallback) async {
-    try {
-      final loaded = await rootBundle.loadString(assetPath);
-      if (loaded.trim().isNotEmpty) return loaded;
-    } catch (_) {
-      // Fallback to embedded string during unit tests if asset bundle unavailable
-    }
-    return fallback;
   }
 
   Future<void> _executePolicyReview({
@@ -1035,41 +1004,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
     await _openReviewResult(receipt, associationReport: associationReport);
   }
 
-  Future<void> _runQuickSampleReview({required bool isEduTrack}) async {
-    if (_isRunningReview || _isConsentSheetOpen || _isOpeningIntakeSheet) {
-      return;
-    }
-    final policyText = isEduTrack
-        ? await _loadFixtureText(
-            'assets/fixtures/synthetic_policy_edutrack.txt',
-            _fallbackEduTrackFixture,
-          )
-        : await _loadFixtureText(
-            'assets/fixtures/synthetic_policy_calmmath.txt',
-            _fallbackCalmMathFixture,
-          );
-    if (!mounted) return;
-    final fixture = isEduTrack
-        ? TrustedSampleFixture.eduTrackDemo
-        : TrustedSampleFixture.calmMathDemo;
-    final permSnapshot = isEduTrack
-        ? PermissionComparator.demoEduTrackSnapshot
-        : PermissionComparator.demoCalmMathSnapshot;
-    final outcome = _intakeCoordinator.captureSampleFixture(
-      locator: SampleFixturePolicyLocator(
-        fixture: fixture,
-        policyText: policyText,
-      ),
-      permissionSnapshot: permSnapshot,
-      sourceLabel:
-          AppLocalizations.of(context)?.sampleSyntheticBadge ??
-          'Synthetic example',
-    );
-    if (outcome is PolicyIntakeSuccess) {
-      await _runReviewForIntakeSuccess(outcome);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -1153,7 +1087,6 @@ We do not collect personal identifiers, precise location data, microphone audio,
   ) {
     final m3e = EnpriveM3ETheme.of(context);
     final scheme = m3e.colorScheme;
-    final semantics = context.enpriveSemantics;
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -1305,99 +1238,9 @@ We do not collect personal identifiers, precise location data, microphone audio,
                     ),
                   ],
 
-                  const SizedBox(height: 28),
-
-                  // 4. Quick Sample App Checks (Sculpted Archival Folder Cards)
-                  SizedBox(
-                    width: double.infinity,
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      alignment: WrapAlignment.spaceBetween,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          l10n.trySampleCheck,
-                          style: m3e.typeScale.titleLarge.copyWith(
-                            color: scheme.onSurface,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: scheme.surfaceContainerHigh,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            l10n.sampleSyntheticBadge,
-                            style: m3e.typography.emphasized.labelSmall
-                                .copyWith(color: scheme.onSurfaceVariant),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final textScale = MediaQuery.textScalerOf(context)
-                          .scale(1.0);
-                      final stackVertically =
-                          constraints.maxWidth < 340 || textScale > 1.35;
-
-                      final eduCard = _SampleAppM3EBentoCard(
-                        title: 'EduTrack Classroom',
-                        value: l10n.eduTrackValue,
-                        subtitle: l10n.eduTrackSubtitle,
-                        trendBadge: l10n.eduTrackTrend,
-                        icon: LucideIcons.graduationCap,
-                        semanticPair: semantics.reviewRecommended,
-                        onTap: _isRunningReview
-                            ? null
-                            : () => _runQuickSampleReview(isEduTrack: true),
-                      );
-
-                      final calmCard = _SampleAppM3EBentoCard(
-                        title: 'CalmMath Kids',
-                        value: l10n.calmMathValue,
-                        subtitle: l10n.calmMathSubtitle,
-                        trendBadge: l10n.calmMathTrend,
-                        icon: LucideIcons.calculator,
-                        semanticPair: semantics.noConcern,
-                        onTap: _isRunningReview
-                            ? null
-                            : () => _runQuickSampleReview(isEduTrack: false),
-                      );
-
-                      if (stackVertically) {
-                        return Column(
-                          children: [
-                            eduCard,
-                            const SizedBox(height: 12),
-                            calmCard,
-                          ],
-                        );
-                      }
-
-                      return IntrinsicHeight(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(child: eduCard),
-                            const SizedBox(width: 12),
-                            Expanded(child: calmCard),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-
                   const SizedBox(height: 24),
 
-                  // 5. What We Check For (M3E Expressive Segmented Containment)
+                  // 4. What We Check For (M3E Expressive Segmented Containment)
                   Align(
                     alignment: AlignmentDirectional.centerStart,
                     child: Text(
@@ -1498,171 +1341,41 @@ We do not collect personal identifiers, precise location data, microphone audio,
     BuildContext context,
     AppLocalizations l10n,
   ) async {
-    final eduText = await _loadFixtureText(
-      'assets/fixtures/synthetic_policy_edutrack.txt',
-      _fallbackEduTrackFixture,
-    );
-    final calmText = await _loadFixtureText(
-      'assets/fixtures/synthetic_policy_calmmath.txt',
-      _fallbackCalmMathFixture,
-    );
-    if (!context.mounted) return;
-
     final selected = await InstalledAppPickerSheet.show(
       context,
       bridge: _bridge,
-      eduTrackPolicyText: eduText,
-      calmMathPolicyText: calmText,
       savedReceipts: List<PolicyReviewReceipt>.unmodifiable(_savedReceipts),
     );
     if (selected == null || !mounted) return;
 
-    if (!selected.hasSuppliedPolicy) {
-      final langCode = widget.currentLocale.languageCode;
-      final permReceipt = _coordinator.buildDevicePermissionInspectionReceipt(
-        subjectTitle: selected.subjectTitle,
-        sourceLabel: selected.sourceLabel,
-        appPermissions: selected.permissionSnapshot,
-        languageCode: langCode,
-      );
-      if (!mounted) return;
-      setState(() {
-        _activePose = DeniPose.idle;
-      });
-      if (!context.mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => ReviewResultScreen(
-            receipt: permReceipt,
-            coordinator: _coordinator,
-            cloudConsentGrantedForSession: false,
-            urlRetriever: _urlRetriever,
-            intakeCoordinator: _intakeCoordinator,
-            companionBridge: _companionBridge,
-            exitGuardController: _reviewExitGuard,
-            onSaveReceipt: _saveReceipt,
-            onDeleteReceipt: _deleteReceipt,
-            receiptRepository: _receiptRepo,
-            isReceiptSaved: _isReceiptPersisted,
-            isInitiallySaved: _isReceiptPersisted(permReceipt.id),
-          ),
+    final langCode = widget.currentLocale.languageCode;
+    final permReceipt = _coordinator.buildDevicePermissionInspectionReceipt(
+      subjectTitle: selected.subjectTitle,
+      sourceLabel: selected.sourceLabel,
+      appPermissions: selected.permissionSnapshot,
+      languageCode: langCode,
+    );
+    if (!mounted) return;
+    setState(() {
+      _activePose = DeniPose.idle;
+    });
+    if (!context.mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ReviewResultScreen(
+          receipt: permReceipt,
+          coordinator: _coordinator,
+          cloudConsentGrantedForSession: false,
+          urlRetriever: _urlRetriever,
+          intakeCoordinator: _intakeCoordinator,
+          companionBridge: _companionBridge,
+          exitGuardController: _reviewExitGuard,
+          onSaveReceipt: _saveReceipt,
+          onDeleteReceipt: _deleteReceipt,
+          receiptRepository: _receiptRepo,
+          isReceiptSaved: _isReceiptPersisted,
+          isInitiallySaved: _isReceiptPersisted(permReceipt.id),
         ),
-      );
-      return;
-    }
-
-    if (selected.isSyntheticSample) {
-      final isEduTrack =
-          selected.permissionSnapshot.packageName.toLowerCase() ==
-          TrustedSampleFixture.eduTrackDemo.packageName.toLowerCase();
-      final fixture = isEduTrack
-          ? TrustedSampleFixture.eduTrackDemo
-          : TrustedSampleFixture.calmMathDemo;
-      final outcome = _intakeCoordinator.captureSampleFixture(
-        locator: SampleFixturePolicyLocator(
-          fixture: fixture,
-          policyText: selected.policyText,
-        ),
-        permissionSnapshot: selected.permissionSnapshot,
-        sourceLabel: l10n.sampleSyntheticBadge,
-      );
-      if (outcome is PolicyIntakeSuccess) {
-        await _runReviewForIntakeSuccess(outcome);
-      }
-      return;
-    }
-  }
-}
-
-/// Sculpted Material 3 Expressive archival folder-tab sample card combining
-/// Enprive's brand-locked HCT semantic fills with a high-contrast icon medallion.
-class _SampleAppM3EBentoCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String subtitle;
-  final String trendBadge;
-  final IconData icon;
-  final SemanticColorPair semanticPair;
-  final VoidCallback? onTap;
-
-  const _SampleAppM3EBentoCard({
-    required this.title,
-    required this.value,
-    required this.subtitle,
-    required this.trendBadge,
-    required this.icon,
-    required this.semanticPair,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final m3e = EnpriveM3ETheme.of(context);
-    final scheme = m3e.colorScheme;
-
-    return EnpriveMaterialCardSurface(
-      borderRadius: BorderRadius.circular(EnpriveRadii.card),
-      padding: const EdgeInsets.all(16),
-      semanticLabel: '$title. $value. $subtitle. $trendBadge.',
-      onPressed: onTap,
-      enabled: onTap != null,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: scheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: scheme.onSecondaryContainer,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: semanticPair.background,
-                  borderRadius: BorderRadius.circular(EnpriveRadii.chip),
-                ),
-                child: Text(
-                  trendBadge,
-                  style: m3e.typeScale.labelMedium.copyWith(
-                    color: semanticPair.foreground,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            value,
-            style: m3e.typography.emphasized.titleLarge.copyWith(
-              color: scheme.onSurface,
-              height: 1.15,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: m3e.typeScale.titleMedium.copyWith(color: scheme.onSurface),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            style: m3e.typeScale.bodyMedium.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-        ],
       ),
     );
   }

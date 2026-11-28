@@ -364,48 +364,6 @@ abstract class AppLocalizations {
   /// **'A clearer look at the\napps children use'**
   String get homeHeroHeadline;
 
-  /// No description provided for @trySampleCheck.
-  ///
-  /// In en, this message translates to:
-  /// **'Try a sample app check'**
-  String get trySampleCheck;
-
-  /// No description provided for @eduTrackSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Homework & attendance'**
-  String get eduTrackSubtitle;
-
-  /// No description provided for @eduTrackValue.
-  ///
-  /// In en, this message translates to:
-  /// **'3 requests'**
-  String get eduTrackValue;
-
-  /// No description provided for @eduTrackTrend.
-  ///
-  /// In en, this message translates to:
-  /// **'Review'**
-  String get eduTrackTrend;
-
-  /// No description provided for @calmMathSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline math practice'**
-  String get calmMathSubtitle;
-
-  /// No description provided for @calmMathValue.
-  ///
-  /// In en, this message translates to:
-  /// **'0 sensitive'**
-  String get calmMathValue;
-
-  /// No description provided for @calmMathTrend.
-  ///
-  /// In en, this message translates to:
-  /// **'Minimal'**
-  String get calmMathTrend;
-
   /// No description provided for @whatWeCheckTitle.
   ///
   /// In en, this message translates to:
@@ -459,12 +417,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 matched quote} other{{count} matched quotes}}'**
   String verifiedClausesCount(int count);
-
-  /// No description provided for @trySampleText.
-  ///
-  /// In en, this message translates to:
-  /// **'Try sample text'**
-  String get trySampleText;
 
   /// No description provided for @modePasteText.
   ///
@@ -1114,24 +1066,6 @@ abstract class AppLocalizations {
   /// **'Checked locally on your phone. Your app list is never uploaded.'**
   String get checkAppSheetSubtitle;
 
-  /// No description provided for @trySampleKidsApp.
-  ///
-  /// In en, this message translates to:
-  /// **'Try a sample kids app'**
-  String get trySampleKidsApp;
-
-  /// No description provided for @sampleEduTrackSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Location, mic & camera'**
-  String get sampleEduTrackSubtitle;
-
-  /// No description provided for @sampleCalmMathSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline math practice'**
-  String get sampleCalmMathSubtitle;
-
   /// No description provided for @appsOnThisPhone.
   ///
   /// In en, this message translates to:
@@ -1149,12 +1083,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No matching apps found on this phone.'**
   String get noMatchingApps;
-
-  /// No description provided for @sampleSyntheticBadge.
-  ///
-  /// In en, this message translates to:
-  /// **'Sample app'**
-  String get sampleSyntheticBadge;
 
   /// No description provided for @permissionInspectionTitle.
   ///
@@ -1672,18 +1600,6 @@ abstract class AppLocalizations {
   /// **'Not allowed'**
   String get permissionNotAllowedOnPhone;
 
-  /// Neutral chip for a synthetic sample permission marked allowed; never claims to describe this phone
-  ///
-  /// In en, this message translates to:
-  /// **'Allowed in sample'**
-  String get permissionAllowedInSample;
-
-  /// Neutral chip for a synthetic sample permission marked not allowed
-  ///
-  /// In en, this message translates to:
-  /// **'Not allowed in sample'**
-  String get permissionNotAllowedInSample;
-
   /// Chip on a permission row whose permission is not mentioned in the reviewed policy
   ///
   /// In en, this message translates to:
@@ -1993,12 +1909,6 @@ abstract class AppLocalizations {
   /// **'Not requested by app'**
   String get permissionNotRequestedOnPhone;
 
-  /// Neutral factual chip when a permission is mentioned in a sample policy but not in the sample fixture
-  ///
-  /// In en, this message translates to:
-  /// **'Not requested in sample'**
-  String get permissionNotRequestedInSample;
-
   /// Heading when a linked installed app has no permissions in the checked sensitive categories
   ///
   /// In en, this message translates to:
@@ -2092,12 +2002,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'From your phone settings, not the policy'**
   String get notFromPolicySuffix;
-
-  /// Plain suffix clarifying that a sample permission comes from a built-in example rather than the privacy policy
-  ///
-  /// In en, this message translates to:
-  /// **'Example only, not from the policy'**
-  String get sampleNotFromPolicySuffix;
 
   /// Subtitle under the Learn tab heading
   ///
@@ -4346,12 +4250,6 @@ abstract class AppLocalizations {
   /// **'Retry save'**
   String get btnRetrySave;
 
-  /// Header for synthetic sample app permissions
-  ///
-  /// In en, this message translates to:
-  /// **'Sample permissions ({badge})'**
-  String samplePermissionsHeader(String badge);
-
   /// Source kind label for a fetched URL
   ///
   /// In en, this message translates to:
@@ -4387,12 +4285,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Selected text'**
   String get sourceKindSelectedText;
-
-  /// Source kind label for a built-in sample app
-  ///
-  /// In en, this message translates to:
-  /// **'Sample app'**
-  String get sourceKindSampleApp;
 
   /// Source kind label for phone permissions inspection
   ///

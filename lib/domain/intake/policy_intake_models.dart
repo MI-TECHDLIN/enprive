@@ -10,14 +10,12 @@ import '../review/review_models.dart';
 /// Privacy & ownership boundary:
 /// - Stays strictly on-device (never serialized into cloud prompts).
 /// - Selecting an app never asserts developer ownership of an attached policy.
-/// - [trustedSampleFixture] can only be attached through [forTrustedSample].
 final class SelectedAppReference {
   final String packageName;
   final String appName;
   final AppPermissionSnapshot? permissionSnapshot;
   final List<AppIdentityCandidate> peerCandidates;
   final bool isLocked;
-  final TrustedSampleFixture? trustedSampleFixture;
 
   const SelectedAppReference._({
     required this.packageName,
@@ -25,7 +23,6 @@ final class SelectedAppReference {
     required this.permissionSnapshot,
     required this.peerCandidates,
     required this.isLocked,
-    required this.trustedSampleFixture,
   });
 
   factory SelectedAppReference({
@@ -60,36 +57,6 @@ final class SelectedAppReference {
       permissionSnapshot: permissionSnapshot,
       peerCandidates: List<AppIdentityCandidate>.unmodifiable(peerCandidates),
       isLocked: isLocked,
-      trustedSampleFixture: null,
-    );
-  }
-
-  /// Creates an explicit trusted demonstration fixture reference.
-  ///
-  /// Non-sample flows cannot construct a [SelectedAppReference] with a
-  /// [trustedSampleFixture], preserving D5.3-B fixture integrity.
-  factory SelectedAppReference.forTrustedSample(
-    TrustedSampleFixture fixture, {
-    AppPermissionSnapshot? permissionSnapshot,
-    bool isLocked = true,
-  }) {
-    if (permissionSnapshot != null &&
-        permissionSnapshot.packageName.trim().isNotEmpty &&
-        permissionSnapshot.packageName.trim().toLowerCase() !=
-            fixture.packageName.toLowerCase()) {
-      throw ArgumentError.value(
-        permissionSnapshot.packageName,
-        'permissionSnapshot',
-        'Sample permission snapshot package does not match fixture.',
-      );
-    }
-    return SelectedAppReference._(
-      packageName: fixture.packageName,
-      appName: fixture.appName,
-      permissionSnapshot: permissionSnapshot,
-      peerCandidates: const <AppIdentityCandidate>[],
-      isLocked: isLocked,
-      trustedSampleFixture: fixture,
     );
   }
 
@@ -112,7 +79,6 @@ final class SelectedAppReference {
       permissionSnapshot: snapshot,
       peerCandidates: peerCandidates,
       isLocked: isLocked,
-      trustedSampleFixture: trustedSampleFixture,
     );
   }
 }
@@ -215,23 +181,6 @@ final class DocumentPolicyLocator extends PolicyLocator {
   @override
   PolicySourceType get sourceType =>
       PolicyIntakeHelper.sourceTypeForDocument(documentType, mime: mimeType);
-}
-
-/// Locator for an explicit built-in Enprive demonstration sample fixture.
-final class SampleFixturePolicyLocator extends PolicyLocator {
-  final TrustedSampleFixture fixture;
-  final String policyText;
-
-  const SampleFixturePolicyLocator({
-    required this.fixture,
-    required this.policyText,
-  });
-
-  @override
-  String get userSubjectTitle => fixture.appName;
-
-  @override
-  PolicySourceType get sourceType => PolicySourceType.sample;
 }
 
 /// Actual retrieved or extracted privacy-policy content plus provenance.
@@ -404,16 +353,6 @@ final class PolicyIntakeSuccess extends PolicyIntakeOutcome {
     required SelectedAppReference? selectedApp,
     required AppPolicyAssociationReport associationReport,
   }) {
-    if (locator is! SampleFixturePolicyLocator &&
-        (associationReport.state == AppPolicyAssociationState.sampleFixture ||
-            capturedSnapshot.sourceSnapshot.appIdentityMatchStatus ==
-                AppIdentityMatchStatus.sampleFixture)) {
-      throw ArgumentError.value(
-        associationReport.state,
-        'associationReport',
-        'Non-fixture locators cannot carry sampleFixture state or snapshot provenance.',
-      );
-    }
     return PolicyIntakeSuccess._(
       locator: locator,
       capturedSnapshot: capturedSnapshot,

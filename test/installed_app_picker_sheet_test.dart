@@ -19,6 +19,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 
+import 'fixtures/synthetic_test_fixtures.dart';
+
 PolicyReviewReceipt _makeSavedReceipt({
   required String id,
   required String subjectTitle,
@@ -83,8 +85,6 @@ Future<void> _flushPickerAsync(WidgetTester tester) async {
 Widget _buildHarness({
   required HybridAiBridge bridge,
   List<PolicyReviewReceipt> savedReceipts = const [],
-  String eduTrackPolicyText = 'EduTrack sample policy text.',
-  String calmMathPolicyText = 'CalmMath sample policy text.',
   ThemeMode themeMode = ThemeMode.light,
   Locale locale = const Locale('en'),
   double textScale = 1.0,
@@ -119,8 +119,6 @@ Widget _buildHarness({
       builder: (context) => Scaffold(
         body: InstalledAppPickerSheet(
           bridge: bridge,
-          eduTrackPolicyText: eduTrackPolicyText,
-          calmMathPolicyText: calmMathPolicyText,
           savedReceipts: savedReceipts,
         ),
       ),
@@ -180,7 +178,7 @@ void main() {
     });
 
     testWidgets(
-      '2. shows empty state and compact optional sample action only when no apps exist',
+      '2. shows clean empty state with no sample app actions when no apps exist',
       (WidgetTester tester) async {
         messenger.setMockMethodCallHandler(hybridChannel, (call) async {
           if (call.method == 'listLaunchableApps') {
@@ -189,7 +187,6 @@ void main() {
           return null;
         });
 
-        SelectedAppInspectionChoice? poppedChoice;
         await tester.pumpWidget(
           M3EMaterialApp(
             data: EnpriveM3ETheme.lightThemeData,
@@ -210,11 +207,9 @@ void main() {
                 body: Center(
                   child: ElevatedButton(
                     onPressed: () async {
-                      poppedChoice = await InstalledAppPickerSheet.show(
+                      await InstalledAppPickerSheet.show(
                         context,
                         bridge: HybridAiBridge(),
-                        eduTrackPolicyText: 'EduTrack sample policy',
-                        calmMathPolicyText: 'CalmMath sample policy',
                       );
                     },
                     child: const Text('Open Picker'),
@@ -233,22 +228,12 @@ void main() {
           findsOneWidget,
         );
         expect(find.text('No installed apps available'), findsOneWidget);
-        final sampleAction = find.byKey(
-          const Key('app_picker_empty_sample_action'),
+        expect(
+          find.byKey(const Key('app_picker_empty_sample_action')),
+          findsNothing,
         );
-        expect(sampleAction, findsOneWidget);
         expect(find.text('EduTrack'), findsNothing);
         expect(find.text('CalmMath'), findsNothing);
-
-        await tester.tap(sampleAction);
-        await _flushPickerAsync(tester);
-
-        expect(poppedChoice, isNotNull);
-        expect(poppedChoice!.isSyntheticSample, isTrue);
-        expect(
-          poppedChoice!.permissionSnapshot.packageName,
-          PermissionComparator.demoEduTrackSnapshot.packageName,
-        );
         expect(tester.takeException(), isNull);
       },
     );
@@ -437,12 +422,12 @@ void main() {
             appName: 'Ghost App',
             createdAt: DateTime.utc(2026, 11, 18, 15),
           ),
-          // Synthetic fixture package should be excluded from Recent
+          // Non-installed package should be excluded from Recent
           _makeSavedReceipt(
             id: 'r_demo',
             subjectTitle: 'EduTrack Classroom Companion',
-            packageName: PermissionComparator.demoEduTrackSnapshot.packageName,
-            appName: PermissionComparator.demoEduTrackSnapshot.appName,
+            packageName: syntheticEduTrackSnapshot.packageName,
+            appName: syntheticEduTrackSnapshot.appName,
             createdAt: DateTime.utc(2026, 11, 18, 16),
           ),
           // Standalone policy (no permissionReport) should be skipped
@@ -693,8 +678,6 @@ void main() {
                       choice = await InstalledAppPickerSheet.show(
                         context,
                         bridge: HybridAiBridge(),
-                        eduTrackPolicyText: '',
-                        calmMathPolicyText: '',
                       );
                     },
                     child: const Text('Pick'),
@@ -1151,8 +1134,6 @@ void main() {
             home: Scaffold(
               body: InstalledAppPickerSheet(
                 bridge: HybridAiBridge(),
-                eduTrackPolicyText: '',
-                calmMathPolicyText: '',
                 receiptRepository: repo,
               ),
             ),
@@ -1166,66 +1147,6 @@ void main() {
             of: find.byKey(const ValueKey('app_picker_row_com.example.repo')),
             matching: find.text('Policy review saved'),
           ),
-          findsOneWidget,
-        );
-        expect(tester.takeException(), isNull);
-      },
-    );
-
-    testWidgets(
-      '27. empty installed list with empty sample policy text hides the sample action',
-      (WidgetTester tester) async {
-        messenger.setMockMethodCallHandler(hybridChannel, (call) async {
-          if (call.method == 'listLaunchableApps') {
-            return const <Map<String, Object?>>[];
-          }
-          return null;
-        });
-        await tester.pumpWidget(
-          _buildHarness(
-            bridge: HybridAiBridge(),
-            eduTrackPolicyText: '',
-            calmMathPolicyText: '  ',
-          ),
-        );
-        await _flushPickerAsync(tester);
-
-        expect(
-          find.byKey(const Key('app_picker_empty_installed_card')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const Key('app_picker_empty_sample_action')),
-          findsNothing,
-        );
-        expect(tester.takeException(), isNull);
-      },
-    );
-
-    testWidgets(
-      '28. empty installed list with valid sample policy text shows the sample action',
-      (WidgetTester tester) async {
-        messenger.setMockMethodCallHandler(hybridChannel, (call) async {
-          if (call.method == 'listLaunchableApps') {
-            return const <Map<String, Object?>>[];
-          }
-          return null;
-        });
-        await tester.pumpWidget(
-          _buildHarness(
-            bridge: HybridAiBridge(),
-            eduTrackPolicyText: '',
-            calmMathPolicyText: 'CalmMath sample policy text.',
-          ),
-        );
-        await _flushPickerAsync(tester);
-
-        expect(
-          find.byKey(const Key('app_picker_empty_installed_card')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const Key('app_picker_empty_sample_action')),
           findsOneWidget,
         );
         expect(tester.takeException(), isNull);
@@ -1298,58 +1219,6 @@ void main() {
           find.byKey(const ValueKey('app_picker_row_com.example.talkback')),
         );
         await tester.pump();
-        expect(tester.takeException(), isNull);
-        handle.dispose();
-      },
-    );
-
-    testWidgets(
-      '17. TalkBack: compact empty sample action is announced once and stays actionable',
-      (WidgetTester tester) async {
-        final handle = tester.ensureSemantics();
-        messenger.setMockMethodCallHandler(hybridChannel, (call) async {
-          if (call.method == 'listLaunchableApps') {
-            return const <Map<String, Object?>>[];
-          }
-          return null;
-        });
-
-        await tester.pumpWidget(_buildHarness(bridge: HybridAiBridge()));
-        await _flushPickerAsync(tester);
-
-        expect(
-          find.byKey(const Key('app_picker_empty_sample_action')),
-          findsOneWidget,
-        );
-
-        final l10n = lookupAppLocalizations(const Locale('en'));
-        final nodes = _collectSemanticsNodes(tester);
-        final labels = nodes
-            .map((n) => n.getSemanticsData().label)
-            .where((l) => l.isNotEmpty)
-            .toList();
-        final badgeCount = labels.fold<int>(
-          0,
-          (sum, label) =>
-              sum + l10n.sampleSyntheticBadge.allMatches(label).length,
-        );
-        expect(
-          badgeCount,
-          1,
-          reason: 'Synthetic badge must be announced once. Labels: $labels',
-        );
-
-        final sampleNode = nodes.singleWhere(
-          (n) => n.getSemanticsData().label.contains(l10n.sampleSyntheticBadge),
-        );
-        final data = sampleNode.getSemanticsData();
-        expect(
-          data.label,
-          '${l10n.trySampleCheck}, ${l10n.sampleSyntheticBadge}',
-        );
-        expect(data.label.contains('\n'), isFalse);
-        expect(data.flagsCollection.isButton, isTrue);
-        expect(data.hasAction(ui.SemanticsAction.tap), isTrue);
         expect(tester.takeException(), isNull);
         handle.dispose();
       },

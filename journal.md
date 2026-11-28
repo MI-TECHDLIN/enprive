@@ -13,6 +13,35 @@
 
 ---
 
+## Iteration 13 — Remove Built-In Sample Apps (EduTrack Classroom & CalmMath Kids) for Release Prep
+
+- **Date**: 2026-11-28
+- **Branch / Commits**: `fm/enprive-remove-samples` (based on `main`)
+- **Models Used**: Gemini 4 Neon
+- **Skills & References Used**: `dart-run-static-analysis`, `flutter-setup-localization`, `flutter-apply-architecture-best-practices`, `mobile-app-ui-design`, `flutter-add-widget-test`, `dart-add-unit-test`
+- **What Was Built / Changed**:
+  - Removed both built-in sample apps (**EduTrack Classroom** and **CalmMath Kids**) and all sample-fixture wiring from the shipped app:
+    - Removed Check tab sample section ("Try a sample app check", "Sample app" pill, `_SampleAppM3EBentoCard`, `_runQuickSampleReview`, `_loadFixtureText`, and embedded fallback strings) in `lib/main.dart`, keeping clean `24dp` spacing between the Quick Settings Companion card and "What we check for" with no empty gap or leftover heading.
+    - Removed `demoEduTrackSnapshot`, `demoCalmMathSnapshot`, `sampleFixtureLimitationNotice`, and `isSampleFixture` branches from `lib/domain/permissions/permission_comparator.dart`.
+    - Removed `TrustedSampleFixture`, `AppPolicyAssociationState.sampleFixture`, and `AssociationMatchSource.sampleFixture` from `lib/domain/review/app_policy_association.dart` (preserving safe fallback deserialization of legacy serialized states to `userLinkedUnverified`).
+    - Removed `PolicySourceType.sample`, `AppIdentityMatchStatus.sampleFixture`, `SelectedAppReference.forTrustedSample`, `SampleFixturePolicyLocator`, `PolicyIntakeCoordinator.captureSampleFixture`, and `DeniSummaryPointKind.samplePermissionNote` across `lib/domain/review/review_models.dart`, `lib/domain/intake/policy_intake_models.dart`, `lib/services/intake/policy_intake_coordinator.dart`, `lib/services/intake/policy_intake_helper.dart`, `lib/domain/review/review_coordinator.dart`, and `lib/domain/voice/deni_voice_summary.dart`.
+    - Removed sample-app wiring, empty-state sample button, and sample-only UI branches from `lib/widgets/installed_app_picker_sheet.dart`, `lib/widgets/intake/unified_policy_intake_sheet.dart`, `lib/screens/companion_screen.dart`, `lib/screens/review_result_screen.dart`, `lib/widgets/review/enprive_linked_app_section.dart`, `lib/widgets/deni_voice_summary_card.dart`, `lib/screens/design_system_preview_screen.dart`, and `lib/widgets/m3e/enprive_bento_choice_card.dart`.
+  - Deleted `assets/fixtures/synthetic_policy_edutrack.txt` and `assets/fixtures/synthetic_policy_calmmath.txt` and removed `- assets/fixtures/` from `pubspec.yaml`.
+  - Removed all 18 unused sample-app localization keys (plus 6 `@` metadata entries in `app_en.arb`) across all 12 `lib/l10n/app_*.arb` files and regenerated `lib/l10n/app_localizations*.dart` via `flutter gen-l10n`.
+  - Preserved unit/widget test coverage by moving synthetic policy text and permission snapshots into test-only fixtures (`test/fixtures/synthetic_test_fixtures.dart`), updating existing flow tests (`test/widget_test.dart`, `test/phase3c_unified_intake_and_intents_test.dart`, `test/receipt_save_state_machine_test.dart`, `test/permission_comparator_test.dart`, `test/receipt_repository_test.dart`, `test/installed_app_picker_sheet_test.dart`, `test/app_policy_association_test.dart`, `test/policy_intake_coordinator_test.dart`, `test/deni_voice_summary_test.dart`, `test/two_way_linking_ui_test.dart`, `test/theme_and_deni_lod_test.dart`) to exercise Paste/URL intake instead of sample cards, and removing sample-UI-only tests.
+- **Challenges & Root-Cause Fixes**:
+  - *Challenge*: Two end-to-end draft/persistence tests (`phase3c_unified_intake_and_intents_test.dart` N1 and `receipt_save_state_machine_test.dart` test 1) originally tapped `CalmMath Kids` on the Check tab as a shortcut to open an unsaved review draft.
+  - *Fix*: Updated both tests to open the fresh review draft through `Paste terms or URL` (`UnifiedPolicyIntakeSheet`), preserving full draft-guard and persistence state-machine coverage.
+- **Verification**:
+  - `flutter analyze`: **0 issues found**.
+  - `flutter test`: **393/393 tests passed**.
+  - `flutter build apk --debug --target-platform android-arm64`: **Success**.
+  - Emulator `emulator-5554` (`Pixel_9`, API 36, `com.mitechdlin.enprive` in-place install): Captured and visually inspected before (`before_check_top.png`, `before_check_scrolled.png`) and after (`after_check_top.png`, `after_check_scrolled.png`, `after_check_app_picker.png`, `after_paste_sheet.png`) screenshots in `/Users/mi-tech/firstmate/data/enprive-remove-samples/`; confirmed zero visual leftovers, zero sample UI, working "Check an app" and "Paste terms or URL" flows, and 0 crashes.
+- **Next Immediate Action**: Open PR against `main` and report out-of-scope non-app references (`README.md`, `docs/`) for follow-up cleanup.
+- **Recommended Model for Next Turn**: Gemini 4 Argon
+
+---
+
 ## Iteration 12 — Learn Lessons 5–8 Diagram Layout Visual Fix & Emulator Verification
 
 - **Date**: 2026-11-23

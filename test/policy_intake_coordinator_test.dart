@@ -884,7 +884,7 @@ void main() {
   });
 
   group('D5.3-D Phase 1: D5.3-B association integration & object invariants', () {
-    test('evaluates unlinked, packageIdentifierMentioned, unmatched, ambiguousIdentity, and sampleFixture strictly', () {
+    test('evaluates unlinked, packageIdentifierMentioned, unmatched, and ambiguousIdentity strictly', () {
       final coordinator = PolicyIntakeCoordinator(clock: () => fixedClock);
 
       // 1) No app selected -> unlinked
@@ -977,43 +977,6 @@ void main() {
         AppPolicyAssociationState.ambiguousIdentity,
       );
       expect(ambiguous.associationReport.provesDeveloperOwnership, isFalse);
-
-      // 5) Trusted sample fixture -> sampleFixture ONLY via explicit locator
-      final sampleOutcome = coordinator.captureSampleFixture(
-        locator: const SampleFixturePolicyLocator(
-          fixture: TrustedSampleFixture.eduTrackDemo,
-          policyText: 'EduTrack Classroom collects background location and shares telemetry with analytics partners.',
-        ),
-        permissionSnapshot: const AppPermissionSnapshot(
-          packageName: 'com.edutrack.classroom.demo',
-          appName: 'EduTrack Classroom Companion',
-          requestedPermissions: ['android.permission.ACCESS_FINE_LOCATION'],
-          grantedPermissions: ['android.permission.ACCESS_FINE_LOCATION'],
-        ),
-      ) as PolicyIntakeSuccess;
-      expect(
-        sampleOutcome.associationReport.state,
-        AppPolicyAssociationState.sampleFixture,
-      );
-      expect(
-        sampleOutcome.associationReport.sampleFixture,
-        TrustedSampleFixture.eduTrackDemo,
-      );
-      expect(sampleOutcome.associationReport.provesDeveloperOwnership, isFalse);
-
-      // 6) Non-fixture text mentioning demo package cannot produce sampleFixture
-      final spoofAttempt = coordinator.capturePastedText(
-        rawText: 'This policy for com.edutrack.classroom.demo explains data collection and retention controls.',
-        selectedApp: SelectedAppReference(
-          packageName: 'com.edutrack.classroom.demo',
-          appName: 'EduTrack Classroom Companion',
-        ),
-      ) as PolicyIntakeSuccess;
-      expect(
-        spoofAttempt.associationReport.state,
-        AppPolicyAssociationState.packageIdentifierMentioned,
-      );
-      expect(spoofAttempt.associationReport.sampleFixture, isNull);
     });
 
     test('enforces strict separation and immutability of domain objects', () {
@@ -1187,52 +1150,6 @@ void main() {
             reason: PolicyInsufficiencyReason.notAPrivacyPolicy,
             explanation: 'Not a policy',
           ),
-        ),
-        throwsArgumentError,
-      );
-
-      // Non-fixture locator cannot claim sampleFixture state or provenance
-      expect(
-        () => PolicyIntakeSuccess(
-          locator: const UrlPolicyLocator(
-            rawUrl: 'https://example.org/privacy',
-          ),
-          capturedSnapshot: success.capturedSnapshot,
-          selectedApp: app,
-          associationReport: AppPolicyAssociationReport(
-            state: AppPolicyAssociationState.sampleFixture,
-            sampleFixture: TrustedSampleFixture.eduTrackDemo,
-            explanation: 'Spoof',
-            ownershipLimitationNotice:
-                AppPolicyAssociationReport.defaultOwnershipLimitationNotice,
-          ),
-        ),
-        throwsArgumentError,
-      );
-      expect(
-        () => PolicyIntakeSuccess(
-          locator: TextPolicyLocator(
-            rawText: sampleValidPolicy,
-            sourceType: PolicySourceType.pastedText,
-          ),
-          capturedSnapshot: CapturedPolicySnapshot(
-            normalizedPolicyText: sampleValidPolicy,
-            subjectTitle: 'Spoofed',
-            sourceLabel: 'Pasted policy text',
-            sourceSnapshot: PolicySourceSnapshot(
-              snapshotId: 'spoof_snap',
-              sourceType: PolicySourceType.sample,
-              retrievedAt: fixedClock,
-              retrievalStatus: PolicyRetrievalStatus.localProvided,
-              appIdentityMatchStatus: AppIdentityMatchStatus.sampleFixture,
-              sourceSha256Hash: EvidenceValidator.computeSha256SourceHash(
-                sampleValidPolicy,
-              ),
-            ),
-            sufficiency: const PolicySufficiencyResult.sufficient(),
-          ),
-          selectedApp: app,
-          associationReport: success.associationReport,
         ),
         throwsArgumentError,
       );

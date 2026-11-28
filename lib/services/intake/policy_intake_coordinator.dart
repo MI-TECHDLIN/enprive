@@ -174,7 +174,6 @@ class PolicyIntakeCoordinator {
       selectedApp: selectedApp,
       policyText: trimmed,
       policyUrl: null,
-      trustedSampleFixture: null,
     );
 
     return PolicyIntakeSuccess(
@@ -267,7 +266,6 @@ class PolicyIntakeCoordinator {
       selectedApp: selectedApp,
       policyText: trimmed,
       policyUrl: canonicalOrRequested,
-      trustedSampleFixture: null,
     );
 
     return PolicyIntakeSuccess(
@@ -324,64 +322,6 @@ class PolicyIntakeCoordinator {
       userSubjectTitle: userSubjectTitle,
       sourceAction: sourceAction,
       isPreExtractedIncomingShare: true,
-    );
-  }
-
-  /// Captures an explicit built-in Enprive sample fixture with
-  /// [AppPolicyAssociationState.sampleFixture] provenance.
-  PolicyIntakeOutcome captureSampleFixture({
-    required SampleFixturePolicyLocator locator,
-    AppPermissionSnapshot? permissionSnapshot,
-    bool isLocked = true,
-    String sourceLabel = 'Synthetic example',
-  }) {
-    final sampleApp = SelectedAppReference.forTrustedSample(
-      locator.fixture,
-      permissionSnapshot: permissionSnapshot,
-      isLocked: isLocked,
-    );
-    final trimmed = locator.policyText.trim();
-    final sufficiency = PolicySufficiencyValidator.assess(trimmed);
-    if (!sufficiency.isSufficient) {
-      final isEmpty = sufficiency.reason == PolicyInsufficiencyReason.empty;
-      return PolicyIntakeFailure(
-        kind: isEmpty
-            ? PolicyIntakeFailureKind.emptyInput
-            : PolicyIntakeFailureKind.insufficientPolicy,
-        locator: locator,
-        selectedApp: sampleApp,
-        userMessage: sufficiency.explanation,
-        recoveryHint: 'Select another sample check or paste policy text.',
-        canRetrySameLocator: false,
-        sufficiencyResult: sufficiency,
-      );
-    }
-
-    final snapshot = PolicyIntakeHelper.snapshotForManualOrSharedText(
-      sourceType: PolicySourceType.sample,
-      text: trimmed,
-      hasAppPermissions: true,
-    );
-    final captured = CapturedPolicySnapshot(
-      normalizedPolicyText: trimmed,
-      subjectTitle: locator.fixture.appName,
-      sourceLabel: sourceLabel,
-      sourceSnapshot: snapshot,
-      sufficiency: sufficiency,
-    );
-
-    final association = _evaluateAssociation(
-      selectedApp: sampleApp,
-      policyText: trimmed,
-      policyUrl: null,
-      trustedSampleFixture: locator.fixture,
-    );
-
-    return PolicyIntakeSuccess(
-      locator: locator,
-      capturedSnapshot: captured,
-      selectedApp: sampleApp,
-      associationReport: association,
     );
   }
 
@@ -492,13 +432,11 @@ class PolicyIntakeCoordinator {
     required SelectedAppReference? selectedApp,
     required String policyText,
     String? policyUrl,
-    TrustedSampleFixture? trustedSampleFixture,
   }) {
     return _evaluateAssociation(
       selectedApp: selectedApp,
       policyText: policyText,
       policyUrl: policyUrl,
-      trustedSampleFixture: trustedSampleFixture,
     );
   }
 
@@ -651,7 +589,6 @@ class PolicyIntakeCoordinator {
       selectedApp: selectedApp,
       policyText: trimmed,
       policyUrl: null,
-      trustedSampleFixture: null,
     );
 
     return PolicyIntakeSuccess(
@@ -666,7 +603,6 @@ class PolicyIntakeCoordinator {
     required SelectedAppReference? selectedApp,
     required String policyText,
     required String? policyUrl,
-    required TrustedSampleFixture? trustedSampleFixture,
   }) {
     return AppPolicyAssociationEvaluator.evaluate(
       AppPolicyAssociationInput(
@@ -674,7 +610,6 @@ class PolicyIntakeCoordinator {
         appName: selectedApp?.appName,
         policyText: policyText,
         policyUrl: policyUrl,
-        sampleFixture: trustedSampleFixture,
         candidateApps:
             selectedApp?.peerCandidates ?? const <AppIdentityCandidate>[],
         evaluatedAt: _clock().toUtc(),

@@ -50,7 +50,6 @@ enum PolicySourceType {
   pdf,
   textDocument,
   docx,
-  sample,
   devicePermissions,
 }
 
@@ -72,7 +71,6 @@ enum PolicyRetrievalStatus {
 enum AppIdentityMatchStatus {
   notApplicable,
   unverifiedUserSupplied,
-  sampleFixture,
 }
 
 enum DocumentExtractionStatus {
