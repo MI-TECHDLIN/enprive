@@ -696,6 +696,12 @@ Our mobile application collects precise GPS location coordinates even when the a
           'expectUnavailableFallback': false,
         },
         {
+          'name': 'Offline network failure',
+          'errorCode': 'UnknownException',
+          'message': 'Request failed',
+          'expectUnavailableFallback': true,
+        },
+        {
           'name': 'Server error',
           'errorCode': 'ServerException',
           'message': 'Unexpected model failure',

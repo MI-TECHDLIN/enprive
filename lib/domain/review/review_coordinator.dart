@@ -416,6 +416,8 @@ class ReviewCoordinator {
         combined.contains('timeout') ||
         combined.contains('timed out') ||
         combined.contains('serverexception') ||
+        combined.contains('unknownexception') ||
+        combined.contains('unknownhost') ||
         combined.contains('server error') ||
         combined.contains('high demand') ||
         combined.contains('overloaded') ||
