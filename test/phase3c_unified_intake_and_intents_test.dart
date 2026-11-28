@@ -41,7 +41,6 @@ Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
 }
 
 class _SpyPolicyIntakeCoordinator extends PolicyIntakeCoordinator {
-  int sampleFixtureCalls = 0;
   int incomingPayloadCalls = 0;
   int urlCaptureCalls = 0;
   int textCaptureCalls = 0;
@@ -94,24 +93,6 @@ class _SpyPolicyIntakeCoordinator extends PolicyIntakeCoordinator {
     final res = await super.captureFromDocumentPicker(
       selectedApp: selectedApp,
       userSubjectTitle: userSubjectTitle,
-    );
-    outcomes.add(res);
-    return res;
-  }
-
-  @override
-  PolicyIntakeOutcome captureSampleFixture({
-    required SampleFixturePolicyLocator locator,
-    AppPermissionSnapshot? permissionSnapshot,
-    bool isLocked = true,
-    String sourceLabel = 'Synthetic example',
-  }) {
-    sampleFixtureCalls++;
-    final res = super.captureSampleFixture(
-      locator: locator,
-      permissionSnapshot: permissionSnapshot,
-      isLocked: isLocked,
-      sourceLabel: sourceLabel,
     );
     outcomes.add(res);
     return res;
@@ -542,119 +523,6 @@ void main() {
     );
   });
 
-  group('D5.3-D Phase 3c — F2 Sample Fixtures (EP-2)', () {
-    testWidgets(
-      'F2: EduTrack Classroom and CalmMath Kids route through captureSampleFixture, keep trusted sample identity, label sample permissions honestly (never DEVICE_OBSERVED), and resist manual spoofing',
-      (WidgetTester tester) async {
-        tester.view.physicalSize = const Size(430, 932);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.reset);
-
-        final spyCoordinator = _SpyPolicyIntakeCoordinator(
-          hybridBridge: HybridAiBridge(),
-        );
-        final repo = ReceiptRepository(useInMemoryOnly: true);
-
-        installMocks(
-          onAnalyseText: (call) async {
-            final args = Map<String, dynamic>.from(call.arguments as Map);
-            return {
-              'schemaVersion': 1,
-              'requestId': args['requestId'],
-              'status': 'unavailable',
-              'inferenceSource': 'UNKNOWN',
-              'message': 'Offline test',
-            };
-          },
-        );
-
-        await tester.pumpWidget(
-          EnpriveApp(
-            showSplashOnLaunch: false,
-            intakeCoordinator: spyCoordinator,
-            receiptRepository: repo,
-          ),
-        );
-        await _pumpAndFlush(tester);
-
-        // Tap EduTrack Classroom sample card -> routes via captureSampleFixture
-        await _tapVisible(tester, find.text('EduTrack Classroom'));
-        await _pumpAndFlush(tester, steps: 8);
-        expect(spyCoordinator.sampleFixtureCalls, 1);
-        final eduOutcome = spyCoordinator.outcomes.last as PolicyIntakeSuccess;
-        expect(
-          eduOutcome.associationReport.state,
-          AppPolicyAssociationState.sampleFixture,
-        );
-        expect(
-          eduOutcome.capturedSnapshot.sourceType,
-          PolicySourceType.sample,
-        );
-        expect(
-          eduOutcome.capturedSnapshot.sourceSnapshot.appIdentityMatchStatus,
-          AppIdentityMatchStatus.sampleFixture,
-        );
-
-        // Choose local deterministic scan so we inspect EduTrack's permission comparison UI
-        expect(find.byType(CloudConsentSheet), findsOneWidget);
-        await _tapVisible(tester, find.text('Review on this phone'));
-        await _pumpAndFlush(tester, steps: 10);
-
-        expect(find.byType(ReviewResultScreen), findsOneWidget);
-        final resultScreen = tester.widget<ReviewResultScreen>(
-          find.byType(ReviewResultScreen),
-        );
-        // Evidence invariant: demo permissions MUST NEVER be classified DEVICE_OBSERVED
-        expect(resultScreen.receipt.deviceObservedCount, 0);
-        expect(
-          resultScreen.receipt.findings
-              .where((f) => f.status == EvidenceStatus.deviceObserved),
-          isEmpty,
-        );
-        expect(find.text('Seen on this phone'), findsNothing);
-        expect(find.text('Permissions on this phone'), findsNothing);
-        await tester.scrollUntilVisible(
-          find.text('Sample permissions (Sample app)'),
-          300,
-          scrollable: find.byType(Scrollable).first,
-        );
-        expect(
-          find.text('Sample permissions (Sample app)'),
-          findsOneWidget,
-        );
-        expect(await repo.loadReceipts(), isEmpty);
-
-        // Exit draft cleanly
-        await tester.tap(find.byTooltip('Close'));
-        await _pumpAndFlush(tester);
-        await _tapVisible(tester, find.text('Discard without saving'));
-        await _pumpAndFlush(tester);
-
-        // Manual paste mentioning com.edutrack.classroom.demo MUST NOT spoof sampleFixture
-        await _tapVisible(tester, find.text('Paste terms or URL'));
-        await _pumpAndFlush(tester);
-        await tester.enterText(
-          find.byKey(const Key('intake_paste_field')),
-          'This privacy policy for com.edutrack.classroom.demo collects email addresses for login and never sells personal data to advertisers.',
-        );
-        await _tapVisible(
-          tester,
-          find.byKey(const Key('intake_primary_submit_btn')),
-        );
-        await _pumpAndFlush(tester);
-        final manualOutcome = spyCoordinator.outcomes.last as PolicyIntakeSuccess;
-        expect(
-          manualOutcome.associationReport.state,
-          isNot(AppPolicyAssociationState.sampleFixture),
-        );
-        expect(
-          manualOutcome.capturedSnapshot.sourceType,
-          PolicySourceType.pastedText,
-        );
-      },
-    );
-  });
-
   group('D5.3-D Phase 3c — F3, F4, F5 Intents (EP-6, EP-7, EP-8)', () {
     testWidgets(
       'F3/EP-6: cold-start ACTION_SEND failed URL opens prefilled sheet (never a capture), recovers on edit, and warm ACTION_SEND text prefills sharedText ("Shared text")',
@@ -969,8 +837,21 @@ void main() {
         );
         await _pumpAndFlush(tester);
 
-        // Open unsaved CalmMath draft
-        await _tapVisible(tester, find.text('CalmMath Kids'));
+        // Open unsaved draft via Paste terms or URL
+        await _tapVisible(tester, find.text('Paste terms or URL'));
+        await _pumpAndFlush(tester);
+        await tester.enterText(
+          find.byKey(const Key('intake_title_field')),
+          'CalmMath Abacus',
+        );
+        await tester.enterText(
+          find.byKey(const Key('intake_paste_field')),
+          validPolicyText,
+        );
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('intake_primary_submit_btn')),
+        );
         await _pumpAndFlush(tester, steps: 10);
         expect(find.byType(ReviewResultScreen), findsOneWidget);
         expect(await repo.loadReceipts(), isEmpty);

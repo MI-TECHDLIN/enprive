@@ -735,8 +735,6 @@ void main() {
             home: Scaffold(
               body: InstalledAppPickerSheet(
                 bridge: HybridAiBridge(),
-                eduTrackPolicyText: 'EduTrack sample policy text',
-                calmMathPolicyText: 'CalmMath sample policy text',
               ),
             ),
           ),

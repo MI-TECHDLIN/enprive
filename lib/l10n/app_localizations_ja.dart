@@ -139,27 +139,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get homeHeroHeadline => '子どもが使うアプリを\n根拠からわかりやすく';
 
   @override
-  String get trySampleCheck => 'サンプルアプリを試す';
-
-  @override
-  String get eduTrackSubtitle => '宿題と出席管理';
-
-  @override
-  String get eduTrackValue => '権限3件';
-
-  @override
-  String get eduTrackTrend => '要確認';
-
-  @override
-  String get calmMathSubtitle => 'オフライン算数練習';
-
-  @override
-  String get calmMathValue => '機密0件';
-
-  @override
-  String get calmMathTrend => '最小限';
-
-  @override
   String get whatWeCheckTitle => '確認するポイント';
 
   @override
@@ -193,9 +172,6 @@ class AppLocalizationsJa extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get trySampleText => 'サンプル文を入力';
 
   @override
   String get modePasteText => 'テキストを貼り付け';
@@ -544,15 +520,6 @@ class AppLocalizationsJa extends AppLocalizations {
       'この端末内でローカル確認します。アプリ一覧がアップロードされることはありません。';
 
   @override
-  String get trySampleKidsApp => '子ども向けサンプルアプリを試す';
-
-  @override
-  String get sampleEduTrackSubtitle => '位置情報・マイク・カメラ';
-
-  @override
-  String get sampleCalmMathSubtitle => 'オフライン算数練習';
-
-  @override
   String get appsOnThisPhone => 'この端末のアプリ';
 
   @override
@@ -560,9 +527,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get noMatchingApps => '一致するアプリがこの端末に見つかりませんでした。';
-
-  @override
-  String get sampleSyntheticBadge => 'サンプルアプリ';
 
   @override
   String get permissionInspectionTitle => '端末の権限を確認済み';
@@ -863,12 +827,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get permissionNotAllowedOnPhone => '未許可';
 
   @override
-  String get permissionAllowedInSample => 'サンプルで許可済み';
-
-  @override
-  String get permissionNotAllowedInSample => 'サンプルで未許可';
-
-  @override
   String get permissionMismatchChip => 'ポリシーに記載なし';
 
   @override
@@ -1075,9 +1033,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get permissionNotRequestedOnPhone => 'アプリから要求なし';
 
   @override
-  String get permissionNotRequestedInSample => 'サンプルで要求なし';
-
-  @override
   String get permissionsEmptyComparisonTitle => '今回の確認で対象となる機密権限はありません';
 
   @override
@@ -1129,9 +1084,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get notFromPolicySuffix => 'ポリシーではなく端末の設定から取得';
-
-  @override
-  String get sampleNotFromPolicySuffix => 'ポリシーではなくサンプルの例';
 
   @override
   String get learnHeaderSubtitle => 'オフラインで学べるプライバシーガイドと図解';
@@ -2435,11 +2387,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get btnRetrySave => '保存を再試行';
 
   @override
-  String samplePermissionsHeader(String badge) {
-    return 'サンプルの権限 ($badge)';
-  }
-
-  @override
   String get sourceKindUrl => '公開Webリンク';
 
   @override
@@ -2456,9 +2403,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sourceKindSelectedText => '選択したテキスト';
-
-  @override
-  String get sourceKindSampleApp => 'サンプルアプリ';
 
   @override
   String get sourceKindPhonePermissions => '端末の権限';

@@ -40,9 +40,6 @@ enum AppPolicyAssociationState {
   /// The supplied policy references both the selected app/package and one or
   /// more other package identifiers, creating conflicting identity signals.
   ambiguousIdentity,
-
-  /// The association comes from an explicit built-in Enprive sample fixture.
-  sampleFixture,
 }
 
 /// Source where an identifier or name mention was observed.
@@ -52,48 +49,6 @@ enum AssociationMatchSource {
 
   /// Observed in the supplied policy URL (host or `?id=` query parameter).
   policyUrl,
-
-  /// Supplied through explicit trusted built-in sample fixture metadata.
-  sampleFixture,
-}
-
-/// Built-in demonstration sample fixtures recognized strictly through explicit
-/// structured metadata rather than policy text heuristics.
-enum TrustedSampleFixture {
-  eduTrackDemo(
-    id: 'edutrack_demo',
-    packageName: 'com.edutrack.classroom.demo',
-    appName: 'EduTrack Classroom Companion',
-  ),
-  calmMathDemo(
-    id: 'calmmath_demo',
-    packageName: 'com.calmmath.abacus.demo',
-    appName: 'CalmMath Abacus',
-  );
-
-  const TrustedSampleFixture({
-    required this.id,
-    required this.packageName,
-    required this.appName,
-  });
-
-  /// Stable serialized identifier for the fixture.
-  final String id;
-
-  /// Canonical demonstration package name paired with this fixture.
-  final String packageName;
-
-  /// Canonical demonstration app display name paired with this fixture.
-  final String appName;
-
-  /// Resolves a fixture from its serialized [id], or `null` if unknown.
-  static TrustedSampleFixture? fromId(String? id) {
-    if (id == null || id.isEmpty) return null;
-    for (final fixture in values) {
-      if (fixture.id == id) return fixture;
-    }
-    return null;
-  }
 }
 
 /// Minimal on-device candidate identity metadata used only to detect when two
@@ -118,7 +73,6 @@ class AppPolicyAssociationInput {
     this.appName,
     this.policyText,
     this.policyUrl,
-    this.sampleFixture,
     this.candidateApps = const <AppIdentityCandidate>[],
     this.evaluatedAt,
   });
@@ -134,9 +88,6 @@ class AppPolicyAssociationInput {
 
   /// Supplied privacy policy URL, if any.
   final String? policyUrl;
-
-  /// Explicit trusted metadata when evaluating a built-in Enprive demo flow.
-  final TrustedSampleFixture? sampleFixture;
 
   /// Optional peer application candidates evaluated locally to detect display-name collisions.
   final List<AppIdentityCandidate> candidateApps;
@@ -160,7 +111,6 @@ class AppPolicyAssociationReport {
     List<String> conflictingPackageIdentifiers = const <String>[],
     List<String> ambiguousCandidatePackages = const <String>[],
     this.urlHostMatched = false,
-    this.sampleFixture,
     this.evaluatedAt,
   }) : matchSources = List<AssociationMatchSource>.unmodifiable(matchSources),
        matchedIdentifiers = List<String>.unmodifiable(matchedIdentifiers),
@@ -178,14 +128,11 @@ class AppPolicyAssociationReport {
 
   /// Deserializes a previously persisted [AppPolicyAssociationReport].
   ///
-  /// Enforces strict sample-fixture integrity: a serialized `sampleFixture`
-  /// state is accepted only when `sampleFixtureId` matches a registered
-  /// [TrustedSampleFixture] whose package identifier matches the serialized
-  /// selected package; invalid, unknown, or mismatched fixture records degrade
-  /// safely to [AppPolicyAssociationState.userLinkedUnverified] without throwing.
+  /// Unknown or legacy states degrade safely to
+  /// [AppPolicyAssociationState.userLinkedUnverified] without throwing.
   factory AppPolicyAssociationReport.fromJson(Map<String, dynamic> json) {
     final rawState = json['state']?.toString();
-    var state = AppPolicyAssociationState.values.firstWhere(
+    final state = AppPolicyAssociationState.values.firstWhere(
       (value) => value.name == rawState,
       orElse: () => AppPolicyAssociationState.userLinkedUnverified,
     );
@@ -205,7 +152,7 @@ class AppPolicyAssociationReport {
     }
 
     final rawMatched = json['matchedIdentifiers'];
-    var matched = rawMatched is List
+    final matched = rawMatched is List
         ? rawMatched
               .where((item) => item != null)
               .map((item) => item.toString())
@@ -239,40 +186,9 @@ class AppPolicyAssociationReport {
     final selectedPackageName = _nullIfBlank(
       json['selectedPackageName']?.toString(),
     );
-    final normalizedSelectedPkg =
-        AppPolicyAssociationEvaluator._normalizePackageName(selectedPackageName);
-    final parsedFixture = TrustedSampleFixture.fromId(
-      json['sampleFixtureId']?.toString(),
-    );
 
-    var explanation = json['explanation']?.toString().trim();
+    final explanation = json['explanation']?.toString().trim();
     final limitation = json['ownershipLimitationNotice']?.toString().trim();
-
-    TrustedSampleFixture? effectiveFixture;
-    if (state == AppPolicyAssociationState.sampleFixture) {
-      final isValidRegisteredFixture =
-          parsedFixture != null &&
-          normalizedSelectedPkg != null &&
-          normalizedSelectedPkg == parsedFixture.packageName.toLowerCase();
-      if (isValidRegisteredFixture) {
-        effectiveFixture = parsedFixture;
-      } else {
-        state = AppPolicyAssociationState.userLinkedUnverified;
-        effectiveFixture = null;
-        sources.removeWhere(
-          (source) => source == AssociationMatchSource.sampleFixture,
-        );
-        matched = const <String>[];
-        explanation =
-            'Serialized sample fixture metadata was missing, unrecognized, or '
-            'mismatched; degraded to an unverified user-linked association.';
-      }
-    } else {
-      effectiveFixture = null;
-      sources.removeWhere(
-        (source) => source == AssociationMatchSource.sampleFixture,
-      );
-    }
 
     return AppPolicyAssociationReport(
       state: state,
@@ -283,7 +199,6 @@ class AppPolicyAssociationReport {
       conflictingPackageIdentifiers: conflicting,
       ambiguousCandidatePackages: ambiguousCandidates,
       urlHostMatched: json['urlHostMatched'] == true,
-      sampleFixture: effectiveFixture,
       evaluatedAt: evaluatedAt,
       explanation: (explanation == null || explanation.isEmpty)
           ? defaultOwnershipLimitationNotice
@@ -320,9 +235,6 @@ class AppPolicyAssociationReport {
   /// name tokens (recorded separately from policy prose mentions).
   final bool urlHostMatched;
 
-  /// Sample fixture identifier if `state == AppPolicyAssociationState.sampleFixture`.
-  final TrustedSampleFixture? sampleFixture;
-
   /// Optional caller-supplied evaluation timestamp (UTC when serialized).
   final DateTime? evaluatedAt;
 
@@ -336,11 +248,10 @@ class AppPolicyAssociationReport {
   /// proves developer or publisher ownership.
   bool get provesDeveloperOwnership => false;
 
-  /// Whether textual/fixture evidence referenced the selected app/package.
+  /// Whether textual/URL evidence referenced the selected app/package.
   bool get hasPositiveReference =>
       state == AppPolicyAssociationState.packageIdentifierMentioned ||
-      state == AppPolicyAssociationState.appNameMentioned ||
-      state == AppPolicyAssociationState.sampleFixture;
+      state == AppPolicyAssociationState.appNameMentioned;
 
   /// Serializes this report cleanly without raw policy prose or permissions.
   Map<String, Object?> toJson() {
@@ -354,7 +265,6 @@ class AppPolicyAssociationReport {
       'conflictingPackageIdentifiers': conflictingPackageIdentifiers,
       'ambiguousCandidatePackages': ambiguousCandidatePackages,
       'urlHostMatched': urlHostMatched,
-      if (sampleFixture != null) 'sampleFixtureId': sampleFixture!.id,
       if (evaluatedAt != null) 'evaluatedAt': evaluatedAt!.toUtc().toIso8601String(),
       'explanation': explanation,
       'ownershipLimitationNotice': ownershipLimitationNotice,
@@ -610,30 +520,6 @@ class AppPolicyAssociationEvaluator {
     final selectedAppName = _nullIfBlank(input.appName);
     final policyText = _nullIfBlank(input.policyText);
     final policyUrl = _nullIfBlank(input.policyUrl);
-
-    // Trusted demo fixtures are strictly anchored on structured metadata,
-    // never inferred from policy prose strings or mismatched/invalid packages.
-    final fixture = input.sampleFixture;
-    if (fixture != null &&
-        (rawPackageInput == null ||
-            normalizedPackage == fixture.packageName.toLowerCase())) {
-      return AppPolicyAssociationReport(
-        state: AppPolicyAssociationState.sampleFixture,
-        selectedPackageName: fixture.packageName,
-        selectedAppName: selectedAppName ?? fixture.appName,
-        matchSources: const <AssociationMatchSource>[
-          AssociationMatchSource.sampleFixture,
-        ],
-        matchedIdentifiers: <String>[fixture.packageName],
-        explanation:
-            'Built-in sample fixture (${fixture.appName}) used for '
-            'demonstration without verifying publisher ownership.',
-        ownershipLimitationNotice:
-            AppPolicyAssociationReport.defaultOwnershipLimitationNotice,
-        sampleFixture: fixture,
-        evaluatedAt: input.evaluatedAt,
-      );
-    }
 
     final hasAppIdentity =
         normalizedPackage != null || selectedAppName != null;

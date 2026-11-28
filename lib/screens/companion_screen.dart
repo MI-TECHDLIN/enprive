@@ -12,7 +12,6 @@ import '../domain/review/review_coordinator.dart';
 import '../domain/review/review_models.dart';
 import '../l10n/app_localizations.dart';
 import '../services/intake/policy_intake_coordinator.dart';
-import '../services/intake/policy_intake_helper.dart';
 import '../services/network/policy_url_retriever.dart';
 import '../services/platform/companion_bridge.dart';
 import '../services/platform/hybrid_ai_bridge.dart';
@@ -81,8 +80,6 @@ class _CompanionScreenState extends State<CompanionScreen>
   String? _confirmedVersionLabel;
   bool _isLoadingPermissions = false;
   AppSensitivePermissionsResult? _permissionsResult;
-  AppPermissionSnapshot? _confirmedSampleSnapshot;
-  final List<DeclaredSensitivePermission> _syntheticPermissions = [];
   int _appContextSequence = 0;
 
   DeclaredSensitivePermission? _selectedPermission;
@@ -236,8 +233,6 @@ class _CompanionScreenState extends State<CompanionScreen>
       _confirmedVersionLabel = null;
       _isLoadingPermissions = true;
       _permissionsResult = null;
-      _confirmedSampleSnapshot = null;
-      _syntheticPermissions.clear();
       _selectedPermission = null;
       _selectedGuidedOption = null;
       _showUnsureGuide = false;
@@ -293,64 +288,12 @@ class _CompanionScreenState extends State<CompanionScreen>
     final choice = await InstalledAppPickerSheet.show(
       context,
       bridge: widget.hybridBridge,
-      eduTrackPolicyText: '',
-      calmMathPolicyText: '',
       savedReceipts: _persistedReceiptsForPicker(),
     );
     if (!mounted || choice == null) return;
 
-    if (choice.isSyntheticSample && choice.policyText.trim().isNotEmpty) {
-      final sampleReceipt = await widget.coordinator.runPolicyReview(
-        subjectTitle: choice.subjectTitle,
-        sourceLabel: choice.sourceLabel,
-        policyText: choice.policyText,
-        appPermissions: choice.permissionSnapshot,
-        sourceSnapshot: PolicyIntakeHelper.snapshotForManualOrSharedText(
-          sourceType: PolicySourceType.sample,
-          text: choice.policyText,
-          hasAppPermissions: true,
-        ),
-        forceLocalManualScan: true,
-        languageCode: widget.languageCode,
-      );
-      if (!mounted) return;
-      if (sampleReceipt.receipt != null) {
-        _sessionReceipts.insert(0, sampleReceipt.receipt!);
-      }
-    }
-
-    final pkg = choice.permissionSnapshot.packageName;
-    if (choice.isSyntheticSample) {
-      _appContextSequence++;
-      _cancelActivePolicyAndAskForContextChange();
-      setState(() {
-        _isAppConfirmed = true;
-        _continuedWithoutAppContext = false;
-        _confirmedPackageName = pkg;
-        _confirmedAppLabel = choice.subjectTitle;
-        _confirmedVersionLabel = null;
-        _isLoadingPermissions = false;
-        _permissionsResult = null;
-        _confirmedSampleSnapshot = choice.permissionSnapshot;
-        _selectedPermission = null;
-        _selectedGuidedOption = null;
-        _showUnsureGuide = false;
-        _deniAnswer = null;
-        _companionSaveError = null;
-        _syntheticPermissions
-          ..clear()
-          ..addAll(
-            _mapSnapshotToDeclaredItems(
-              choice.permissionSnapshot,
-              _l10n(context),
-            ),
-          );
-      });
-      return;
-    }
-
     await _confirmCandidateApp(
-      packageName: pkg,
+      packageName: choice.permissionSnapshot.packageName,
       applicationLabel: choice.subjectTitle,
     );
   }
@@ -400,58 +343,6 @@ class _CompanionScreenState extends State<CompanionScreen>
     };
   }
 
-  List<DeclaredSensitivePermission> _mapSnapshotToDeclaredItems(
-    AppPermissionSnapshot snapshot,
-    AppLocalizations l10n,
-  ) {
-    return snapshot.requestedPermissions
-        .where((p) => !p.endsWith('.INTERNET') && !p.endsWith('.VIBRATE'))
-        .map((perm) {
-          final isGranted = snapshot.isGranted(perm);
-          final isAdId = perm == 'com.google.android.gms.permission.AD_ID';
-          final title = switch (perm) {
-            'android.permission.ACCESS_FINE_LOCATION' =>
-              l10n.companionPermPreciseLocation,
-            'android.permission.ACCESS_BACKGROUND_LOCATION' =>
-              l10n.companionPermBackgroundLocation,
-            'android.permission.CAMERA' => l10n.companionPermCamera,
-            'android.permission.RECORD_AUDIO' => l10n.companionPermMicrophone,
-            'com.google.android.gms.permission.AD_ID' =>
-              l10n.companionPermAdId,
-            _ => perm.split('.').last,
-          };
-          final categoryId = switch (perm) {
-            'android.permission.ACCESS_FINE_LOCATION' ||
-            'android.permission.ACCESS_BACKGROUND_LOCATION' => 'location',
-            'android.permission.CAMERA' => 'camera',
-            'android.permission.RECORD_AUDIO' => 'microphone',
-            'com.google.android.gms.permission.AD_ID' => 'advertising_id',
-            _ => 'other',
-          };
-          return DeclaredSensitivePermission(
-            permission: perm,
-            categoryId: categoryId,
-            title: title,
-            whatPermissionMeans: l10n.companionPermDeclaredBy(
-              perm,
-              snapshot.appName,
-            ),
-            grantStatus: isAdId
-                ? DeclaredPermissionGrantStatus.manifestDeclaredOnly
-                : (isGranted
-                      ? DeclaredPermissionGrantStatus.granted
-                      : DeclaredPermissionGrantStatus.denied),
-            isRuntimePermission: !isAdId,
-            statusNote: isAdId
-                ? l10n.companionPermStatusAdId
-                : (isGranted
-                      ? l10n.companionPermStatusAllowed
-                      : l10n.companionPermStatusNotAllowed),
-          );
-        })
-        .toList(growable: false);
-  }
-
   void _continueWithoutAppContext() {
     _appContextSequence++;
     _cancelActivePolicyAndAskForContextChange();
@@ -462,8 +353,6 @@ class _CompanionScreenState extends State<CompanionScreen>
       _confirmedAppLabel = null;
       _confirmedVersionLabel = null;
       _permissionsResult = null;
-      _confirmedSampleSnapshot = null;
-      _syntheticPermissions.clear();
       _selectedPermission = null;
       _selectedGuidedOption = CompanionPolicyResolver.guidedOptions.first;
       _showUnsureGuide = true;
@@ -603,18 +492,13 @@ class _CompanionScreenState extends State<CompanionScreen>
   }
 
   /// Returns a genuine on-device [AppPermissionSnapshot] for [packageName] when
-  /// Companion already holds a valid observation (`_permissionsResult.isOk` or
-  /// a selected synthetic sample). Returns `null` when metadata is unavailable
-  /// so Enprive never fabricates a false empty permission snapshot.
+  /// Companion already holds a valid observation (`_permissionsResult.isOk`).
+  /// Returns `null` when metadata is unavailable so Enprive never fabricates a
+  /// false empty permission snapshot.
   AppPermissionSnapshot? _existingConfirmedAppSnapshot(
     String packageName,
     String appLabel,
   ) {
-    final sampleSnap = _confirmedSampleSnapshot;
-    if (sampleSnap != null && sampleSnap.packageName == packageName) {
-      return sampleSnap;
-    }
-
     final result = _permissionsResult;
     if (result != null && result.isOk && result.packageName == packageName) {
       final declared = result.permissions;
@@ -1020,8 +904,8 @@ class _CompanionScreenState extends State<CompanionScreen>
   }
 
   List<DeclaredSensitivePermission> _effectiveDeclaredPermissions() {
-    if (_permissionsResult != null) return _permissionsResult!.permissions;
-    return _syntheticPermissions;
+    return _permissionsResult?.permissions ??
+        const <DeclaredSensitivePermission>[];
   }
 
   DeniPose _currentDeniPose() {

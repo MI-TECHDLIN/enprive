@@ -146,7 +146,6 @@ class _UnifiedPolicyIntakeSheetState extends State<UnifiedPolicyIntakeSheet> {
         initialUrl = rawUrl;
         _urlSourceAction = sourceAction;
       case DocumentPolicyLocator():
-      case SampleFixturePolicyLocator():
       case null:
         break;
     }
@@ -200,9 +199,7 @@ class _UnifiedPolicyIntakeSheetState extends State<UnifiedPolicyIntakeSheet> {
     return switch (locator) {
       UrlPolicyLocator() => PolicyIntakeMode.url,
       DocumentPolicyLocator() => PolicyIntakeMode.document,
-      TextPolicyLocator() ||
-      SampleFixturePolicyLocator() ||
-      null => PolicyIntakeMode.paste,
+      TextPolicyLocator() || null => PolicyIntakeMode.paste,
     };
   }
 
@@ -486,7 +483,6 @@ class _UnifiedPolicyIntakeSheetState extends State<UnifiedPolicyIntakeSheet> {
         }
         _handleCoordinatorOutcome(outcome);
       case DocumentPolicyLocator():
-      case SampleFixturePolicyLocator():
         break;
     }
   }

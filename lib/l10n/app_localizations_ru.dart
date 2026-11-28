@@ -141,27 +141,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get homeHeroHeadline => 'Наглядный взгляд на\nприложения для детей';
 
   @override
-  String get trySampleCheck => 'Попробовать пример проверки';
-
-  @override
-  String get eduTrackSubtitle => 'Домашние задания и посещаемость';
-
-  @override
-  String get eduTrackValue => '3 запроса';
-
-  @override
-  String get eduTrackTrend => 'Проверить';
-
-  @override
-  String get calmMathSubtitle => 'Математика без интернета';
-
-  @override
-  String get calmMathValue => '0 чувствительных';
-
-  @override
-  String get calmMathTrend => 'Минимум';
-
-  @override
   String get whatWeCheckTitle => 'Что мы проверяем';
 
   @override
@@ -200,9 +179,6 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get trySampleText => 'Подставить пример текста';
 
   @override
   String get modePasteText => 'Вставить текст';
@@ -573,15 +549,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Проверяется локально на телефоне. Список приложений не загружается на сервер.';
 
   @override
-  String get trySampleKidsApp => 'Попробовать пример детского приложения';
-
-  @override
-  String get sampleEduTrackSubtitle => 'Геолокация, микрофон и камера';
-
-  @override
-  String get sampleCalmMathSubtitle => 'Офлайн-тренажёр по математике';
-
-  @override
   String get appsOnThisPhone => 'Приложения на этом телефоне';
 
   @override
@@ -590,9 +557,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get noMatchingApps =>
       'Подходящие приложения на этом телефоне не найдены.';
-
-  @override
-  String get sampleSyntheticBadge => 'Пример приложения';
 
   @override
   String get permissionInspectionTitle => 'Разрешения телефона проверены';
@@ -923,12 +887,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get permissionNotAllowedOnPhone => 'Не разрешено';
 
   @override
-  String get permissionAllowedInSample => 'Разрешено в примере';
-
-  @override
-  String get permissionNotAllowedInSample => 'Не разрешено в примере';
-
-  @override
   String get permissionMismatchChip => 'Нет в политике';
 
   @override
@@ -1151,9 +1109,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get permissionNotRequestedOnPhone => 'Не запрашивается';
 
   @override
-  String get permissionNotRequestedInSample => 'Не запрашивается в примере';
-
-  @override
   String get permissionsEmptyComparisonTitle =>
       'Чувствительные разрешения не найдены';
 
@@ -1208,9 +1163,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get notFromPolicySuffix =>
       'Из настроек вашего телефона, не из политики';
-
-  @override
-  String get sampleNotFromPolicySuffix => 'Только пример, не из политики';
 
   @override
   String get learnHeaderSubtitle => 'Офлайн-руководства и схемы по приватности';
@@ -2623,11 +2575,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get btnRetrySave => 'Повторить сохранение';
 
   @override
-  String samplePermissionsHeader(String badge) {
-    return 'Примеры разрешений ($badge)';
-  }
-
-  @override
   String get sourceKindUrl => 'Публичная веб-ссылка';
 
   @override
@@ -2644,9 +2591,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sourceKindSelectedText => 'Выделенный текст';
-
-  @override
-  String get sourceKindSampleApp => 'Пример приложения';
 
   @override
   String get sourceKindPhonePermissions => 'Разрешения телефона';

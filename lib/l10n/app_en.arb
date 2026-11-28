@@ -41,13 +41,6 @@
   "chooseLanguage": "Choose language",
   "languageSubtitle": "Applies to app interface, explanations, and voice read-aloud",
   "homeHeroHeadline": "A clearer look at the\napps children use",
-  "trySampleCheck": "Try a sample app check",
-  "eduTrackSubtitle": "Homework & attendance",
-  "eduTrackValue": "3 requests",
-  "eduTrackTrend": "Review",
-  "calmMathSubtitle": "Offline math practice",
-  "calmMathValue": "0 sensitive",
-  "calmMathTrend": "Minimal",
   "whatWeCheckTitle": "What we check for",
   "checkQuoteTitle": "Exact policy quotes",
   "checkQuoteDesc": "Highlights data sharing, voice recording, and how long data is kept using exact quotes.",
@@ -65,7 +58,6 @@
       }
     }
   },
-  "trySampleText": "Try sample text",
   "modePasteText": "Paste text",
   "modePolicyLink": "Policy link",
   "hintAppName": "App name",
@@ -209,13 +201,9 @@
   "cloudNeverSendsAppsNote": "Installed apps and phone permissions are never sent.",
   "tooltipClose": "Close",
   "checkAppSheetSubtitle": "Checked locally on your phone. Your app list is never uploaded.",
-  "trySampleKidsApp": "Try a sample kids app",
-  "sampleEduTrackSubtitle": "Location, mic & camera",
-  "sampleCalmMathSubtitle": "Offline math practice",
   "appsOnThisPhone": "Apps on this phone",
   "hintSearchApps": "Search apps…",
   "noMatchingApps": "No matching apps found on this phone.",
-  "sampleSyntheticBadge": "Sample app",
   "permissionInspectionTitle": "Phone permissions checked",
   "addAppPrivacyPolicyBtn": "Add this app's privacy policy",
   "snapshotDigestLabel": "Document fingerprint",
@@ -535,14 +523,6 @@
   "@permissionNotAllowedOnPhone": {
     "description": "Neutral factual chip for an Android permission that is currently not allowed"
   },
-  "permissionAllowedInSample": "Allowed in sample",
-  "@permissionAllowedInSample": {
-    "description": "Neutral chip for a synthetic sample permission marked allowed; never claims to describe this phone"
-  },
-  "permissionNotAllowedInSample": "Not allowed in sample",
-  "@permissionNotAllowedInSample": {
-    "description": "Neutral chip for a synthetic sample permission marked not allowed"
-  },
   "permissionMismatchChip": "Not in policy",
   "@permissionMismatchChip": {
     "description": "Chip on a permission row whose permission is not mentioned in the reviewed policy"
@@ -842,10 +822,6 @@
   "@permissionNotRequestedOnPhone": {
     "description": "Neutral factual chip when a permission is mentioned in the policy but not requested by the installed app"
   },
-  "permissionNotRequestedInSample": "Not requested in sample",
-  "@permissionNotRequestedInSample": {
-    "description": "Neutral factual chip when a permission is mentioned in a sample policy but not in the sample fixture"
-  },
   "permissionsEmptyComparisonTitle": "No sensitive permissions matched in this check",
   "@permissionsEmptyComparisonTitle": {
     "description": "Heading when a linked installed app has no permissions in the checked sensitive categories"
@@ -921,10 +897,6 @@
   "notFromPolicySuffix": "From your phone settings, not the policy",
   "@notFromPolicySuffix": {
     "description": "Plain suffix clarifying that an observation comes from phone permission settings rather than the privacy policy"
-  },
-  "sampleNotFromPolicySuffix": "Example only, not from the policy",
-  "@sampleNotFromPolicySuffix": {
-    "description": "Plain suffix clarifying that a sample permission comes from a built-in example rather than the privacy policy"
   },
   "learnHeaderSubtitle": "Offline privacy guides & diagrams",
   "@learnHeaderSubtitle": {
@@ -2558,15 +2530,6 @@
   "@btnRetrySave": {
     "description": "Action button to retry saving a receipt"
   },
-  "samplePermissionsHeader": "Sample permissions ({badge})",
-  "@samplePermissionsHeader": {
-    "description": "Header for synthetic sample app permissions",
-    "placeholders": {
-      "badge": {
-        "type": "String"
-      }
-    }
-  },
   "sourceKindUrl": "Public web link",
   "@sourceKindUrl": {
     "description": "Source kind label for a fetched URL"
@@ -2590,10 +2553,6 @@
   "sourceKindSelectedText": "Selected text",
   "@sourceKindSelectedText": {
     "description": "Source kind label for selected text"
-  },
-  "sourceKindSampleApp": "Sample app",
-  "@sourceKindSampleApp": {
-    "description": "Source kind label for a built-in sample app"
   },
   "sourceKindPhonePermissions": "Phone permissions",
   "@sourceKindPhonePermissions": {

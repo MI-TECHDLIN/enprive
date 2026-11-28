@@ -9,7 +9,7 @@ import 'enprive_material_card_surface.dart';
 ///
 /// Inspired by the `colo.jpeg` and `_ (3).jpeg` tactile bento boards and the
 /// Material 3 Expressive dual-cue selection pattern:
-/// - **Bento card** ([EnpriveBentoChoiceCard]): Rich sample app or 2-column
+/// - **Bento card** ([EnpriveBentoChoiceCard]): Rich 2-column feature or
 ///   onboarding choice tile with optical nested icon well (`nested = outer - padding`),
 ///   optional subtle tonal corner watermark, top-trailing directional/check
 ///   affordance, and `3.5dp` tactile press lip.

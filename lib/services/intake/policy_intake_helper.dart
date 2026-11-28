@@ -6,7 +6,7 @@ import '../../l10n/enprive_languages.dart';
 import '../platform/hybrid_ai_bridge.dart';
 
 /// Constructs honest local [PolicySourceSnapshot] records for local document
-/// intake and text/sample snapshots on behalf of [PolicyIntakeCoordinator].
+/// intake and text snapshots on behalf of [PolicyIntakeCoordinator].
 abstract final class PolicyIntakeHelper {
   static String localizedNonCertificationDisclaimer(String languageCode) {
     final normalized = enpriveLanguageByCode(languageCode);
@@ -91,11 +91,9 @@ abstract final class PolicyIntakeHelper {
       sourceType: sourceType,
       retrievedAt: nowUtc,
       retrievalStatus: PolicyRetrievalStatus.localProvided,
-      appIdentityMatchStatus: sourceType == PolicySourceType.sample
-          ? AppIdentityMatchStatus.sampleFixture
-          : (hasAppPermissions
-                ? AppIdentityMatchStatus.unverifiedUserSupplied
-                : AppIdentityMatchStatus.notApplicable),
+      appIdentityMatchStatus: hasAppPermissions
+          ? AppIdentityMatchStatus.unverifiedUserSupplied
+          : AppIdentityMatchStatus.notApplicable,
       sourceSha256Hash: text.trim().isEmpty
           ? ''
           : EvidenceValidator.computeSha256SourceHash(text),

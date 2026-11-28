@@ -15,9 +15,6 @@ enum DeniSummaryPointKind {
   /// Strictly local Android permission observation (never presented as a policy disclosure).
   devicePermissionNote,
 
-  /// Illustrative permission observation from a built-in synthetic sample.
-  samplePermissionNote,
-
   /// Non-ownership association caveat when a policy is linked to an app.
   associationNote,
 }
@@ -236,7 +233,6 @@ class DeniVoiceSummaryBuilder {
     String? consentReason,
     String? redactedCloudPayload,
   }) {
-    final isSample = _isSampleReceipt(receipt);
     final calibrationNotice = _calibrationNoticeFor(languageCode);
 
     // 1. Permission-only inspection (no privacy policy reviewed yet)
@@ -300,13 +296,12 @@ class DeniVoiceSummaryBuilder {
     }
 
     // 3. Strictly local Android permission observations (never presented as disclosures)
-    points.addAll(_buildLocalPermissionPoints(receipt, isSample: isSample));
+    points.addAll(_buildLocalPermissionPoints(receipt));
 
     // 4. Non-ownership association caveat when an app is paired with a policy
     final associationPoint = _buildAssociationNotePoint(
       receipt: receipt,
       associationReport: associationReport,
-      isSample: isSample,
     );
     if (associationPoint != null) {
       points.add(associationPoint);
@@ -315,7 +310,6 @@ class DeniVoiceSummaryBuilder {
     final headline = _buildDeterministicHeadline(
       receipt: receipt,
       matchedCount: matchedFindings.length,
-      isSample: isSample,
     );
     final unknownSummary = _buildDeterministicUnknownSummary(
       receipt: receipt,
@@ -357,15 +351,13 @@ class DeniVoiceSummaryBuilder {
       );
     }
 
-    final isSample = _isSampleReceipt(receipt);
     final updatedPoints = <DeniSummaryPoint>[
       ...current.policyPoints,
-      ..._buildLocalPermissionPoints(receipt, isSample: isSample),
+      ..._buildLocalPermissionPoints(receipt),
     ];
     final associationPoint = _buildAssociationNotePoint(
       receipt: receipt,
       associationReport: associationReport,
-      isSample: isSample,
     );
     if (associationPoint != null) {
       updatedPoints.add(associationPoint);
@@ -478,12 +470,10 @@ class DeniVoiceSummaryBuilder {
       );
     }
 
-    final isSample = _isSampleReceipt(receipt);
-    acceptedPoints.addAll(_buildLocalPermissionPoints(receipt, isSample: isSample));
+    acceptedPoints.addAll(_buildLocalPermissionPoints(receipt));
     final assocPoint = _buildAssociationNotePoint(
       receipt: receipt,
       associationReport: associationReport,
-      isSample: isSample,
     );
     if (assocPoint != null) {
       acceptedPoints.add(assocPoint);
@@ -500,7 +490,6 @@ class DeniVoiceSummaryBuilder {
         : _buildDeterministicHeadline(
             receipt: receipt,
             matchedCount: matchedFindings.length,
-            isSample: isSample,
           );
 
     final rawUnknown =
@@ -528,11 +517,6 @@ class DeniVoiceSummaryBuilder {
     );
   }
 
-  static bool _isSampleReceipt(PolicyReviewReceipt receipt) =>
-      receipt.sourceSnapshot?.sourceType == PolicySourceType.sample ||
-      receipt.sourceSnapshot?.appIdentityMatchStatus ==
-          AppIdentityMatchStatus.sampleFixture;
-
   static String _calibrationNoticeFor(String languageCode) {
     final option = enpriveLanguageByCode(languageCode);
     if (option.code == 'en') {
@@ -544,29 +528,27 @@ class DeniVoiceSummaryBuilder {
   static String _buildDeterministicHeadline({
     required PolicyReviewReceipt receipt,
     required int matchedCount,
-    required bool isSample,
   }) {
     final subject = receipt.subjectTitle.trim().isNotEmpty
         ? receipt.subjectTitle.trim()
         : 'this policy';
-    final samplePrefix = isSample ? 'In this synthetic sample for ' : 'In ';
 
     if (receipt.overallState == ReviewOverallState.insufficientEvidence) {
       return 'There was not enough verified policy text for $subject to draw a clear privacy conclusion.';
     }
     if (receipt.overallState == ReviewOverallState.noConcern &&
         matchedCount == 0) {
-      return '$samplePrefix$subject, no data sharing, tracking, or long-term recording clauses stood out in the text reviewed.';
+      return 'In $subject, no data sharing, tracking, or long-term recording clauses stood out in the text reviewed.';
     }
     if (matchedCount == 1) {
-      return '$samplePrefix$subject, 1 policy clause needs a closer parent or teacher look.';
+      return 'In $subject, 1 policy clause needs a closer parent or teacher look.';
     }
     if (matchedCount > 1) {
       final totalSourceMatched = receipt.sourceMatchedCount;
       final extraNote = totalSourceMatched > matchedCount
           ? ' Here are the top $matchedCount points.'
           : '';
-      return '$samplePrefix$subject, $totalSourceMatched policy clauses need a closer look.$extraNote';
+      return 'In $subject, $totalSourceMatched policy clauses need a closer look.$extraNote';
     }
     return 'Here is what Enprive could verify in the current review for $subject.';
   }
@@ -628,9 +610,8 @@ class DeniVoiceSummaryBuilder {
   }
 
   static List<DeniSummaryPoint> _buildLocalPermissionPoints(
-    PolicyReviewReceipt receipt, {
-    required bool isSample,
-  }) {
+    PolicyReviewReceipt receipt,
+  ) {
     final report = receipt.permissionReport;
     if (report == null) return const [];
 
@@ -642,20 +623,6 @@ class DeniVoiceSummaryBuilder {
     if (undisclosed.isEmpty) return const [];
 
     final names = undisclosed.map((i) => i.friendlyName).join(', ');
-    if (isSample) {
-      return [
-        DeniSummaryPoint(
-          id: 'sample_perm_mismatch',
-          kind: DeniSummaryPointKind.samplePermissionNote,
-          plainText:
-              'Synthetic sample comparison (not a policy disclosure or live phone scan): '
-              'this example includes $names without a matching line in the sample policy.',
-          sourceLabel: 'Synthetic example',
-          evidenceStatus: EvidenceStatus.interpretation,
-        ),
-      ];
-    }
-
     return [
       DeniSummaryPoint(
         id: 'device_perm_mismatch',
@@ -674,9 +641,7 @@ class DeniVoiceSummaryBuilder {
   static DeniSummaryPoint? _buildAssociationNotePoint({
     required PolicyReviewReceipt receipt,
     required AppPolicyAssociationReport? associationReport,
-    required bool isSample,
   }) {
-    if (isSample) return null;
     if (associationReport != null &&
         (associationReport.state == AppPolicyAssociationState.unmatched ||
             associationReport.state ==

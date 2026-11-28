@@ -3,6 +3,8 @@ import 'package:enprive/domain/permissions/permission_comparator.dart';
 import 'package:enprive/domain/review/review_models.dart';
 import 'package:enprive/services/platform/hybrid_ai_bridge.dart';
 
+import 'fixtures/synthetic_test_fixtures.dart';
+
 void main() {
   const sampleEduTrackPolicy = '''
 When a student uses EduTrack on a mobile device, our mobile application collects precise GPS location coordinates even when the application is running in the background.
@@ -19,7 +21,7 @@ We do not integrate third-party advertising SDKs.
   group('PermissionComparator Deterministic Tests', () {
     test('detects undisclosed CAMERA mismatch and disclosed GPS/Mic on EduTrack', () {
       final report = PermissionComparator.compare(
-        snapshot: PermissionComparator.demoEduTrackSnapshot,
+        snapshot: syntheticEduTrackSnapshot,
         policyText: sampleEduTrackPolicy,
       );
 
@@ -51,7 +53,7 @@ We do not integrate third-party advertising SDKs.
 
     test('reports zero sensitive permission mismatches on CalmMath', () {
       final report = PermissionComparator.compare(
-        snapshot: PermissionComparator.demoCalmMathSnapshot,
+        snapshot: syntheticCalmMathSnapshot,
         policyText: sampleCalmMathPolicy,
       );
 

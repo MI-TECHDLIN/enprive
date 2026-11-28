@@ -135,27 +135,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeHeroHeadline => '更清晰地了解\n孩子使用的应用';
 
   @override
-  String get trySampleCheck => '体验示例应用检查';
-
-  @override
-  String get eduTrackSubtitle => '作业与考勤';
-
-  @override
-  String get eduTrackValue => '3 项请求';
-
-  @override
-  String get eduTrackTrend => '建议复查';
-
-  @override
-  String get calmMathSubtitle => '离线数学练习';
-
-  @override
-  String get calmMathValue => '0 项敏感';
-
-  @override
-  String get calmMathTrend => '精简';
-
-  @override
   String get whatWeCheckTitle => '重点检查内容';
 
   @override
@@ -188,9 +167,6 @@ class AppLocalizationsZh extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get trySampleText => '填入示例文本';
 
   @override
   String get modePasteText => '粘贴文本';
@@ -536,15 +512,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get checkAppSheetSubtitle => '仅在此手机本地核查，应用列表绝不会上传。';
 
   @override
-  String get trySampleKidsApp => '试用示例儿童应用';
-
-  @override
-  String get sampleEduTrackSubtitle => '定位、麦克风和相机';
-
-  @override
-  String get sampleCalmMathSubtitle => '离线数学练习';
-
-  @override
   String get appsOnThisPhone => '此手机上的应用';
 
   @override
@@ -552,9 +519,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noMatchingApps => '在此手机上未找到匹配的应用。';
-
-  @override
-  String get sampleSyntheticBadge => '示例应用';
 
   @override
   String get permissionInspectionTitle => '已检查手机权限';
@@ -851,12 +815,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get permissionNotAllowedOnPhone => '未允许';
 
   @override
-  String get permissionAllowedInSample => '示例中已允许';
-
-  @override
-  String get permissionNotAllowedInSample => '示例中未允许';
-
-  @override
   String get permissionMismatchChip => '政策未提及';
 
   @override
@@ -1059,9 +1017,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get permissionNotRequestedOnPhone => '应用未请求';
 
   @override
-  String get permissionNotRequestedInSample => '示例中未请求';
-
-  @override
   String get permissionsEmptyComparisonTitle => '本次检查未匹配到敏感权限';
 
   @override
@@ -1113,9 +1068,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get notFromPolicySuffix => '来自您的手机设置，而非隐私政策';
-
-  @override
-  String get sampleNotFromPolicySuffix => '仅为示例，并非来自隐私政策';
 
   @override
   String get learnHeaderSubtitle => '离线隐私指南与图解';
@@ -2377,11 +2329,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get btnRetrySave => '重试保存';
 
   @override
-  String samplePermissionsHeader(String badge) {
-    return '示例权限（$badge）';
-  }
-
-  @override
   String get sourceKindUrl => '公开网页链接';
 
   @override
@@ -2398,9 +2345,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sourceKindSelectedText => '选中的文本';
-
-  @override
-  String get sourceKindSampleApp => '示例应用';
 
   @override
   String get sourceKindPhonePermissions => '手机权限';

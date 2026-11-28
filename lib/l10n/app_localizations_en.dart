@@ -140,27 +140,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeHeroHeadline => 'A clearer look at the\napps children use';
 
   @override
-  String get trySampleCheck => 'Try a sample app check';
-
-  @override
-  String get eduTrackSubtitle => 'Homework & attendance';
-
-  @override
-  String get eduTrackValue => '3 requests';
-
-  @override
-  String get eduTrackTrend => 'Review';
-
-  @override
-  String get calmMathSubtitle => 'Offline math practice';
-
-  @override
-  String get calmMathValue => '0 sensitive';
-
-  @override
-  String get calmMathTrend => 'Minimal';
-
-  @override
   String get whatWeCheckTitle => 'What we check for';
 
   @override
@@ -197,9 +176,6 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get trySampleText => 'Try sample text';
 
   @override
   String get modePasteText => 'Paste text';
@@ -562,15 +538,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Checked locally on your phone. Your app list is never uploaded.';
 
   @override
-  String get trySampleKidsApp => 'Try a sample kids app';
-
-  @override
-  String get sampleEduTrackSubtitle => 'Location, mic & camera';
-
-  @override
-  String get sampleCalmMathSubtitle => 'Offline math practice';
-
-  @override
   String get appsOnThisPhone => 'Apps on this phone';
 
   @override
@@ -578,9 +545,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noMatchingApps => 'No matching apps found on this phone.';
-
-  @override
-  String get sampleSyntheticBadge => 'Sample app';
 
   @override
   String get permissionInspectionTitle => 'Phone permissions checked';
@@ -893,12 +857,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get permissionNotAllowedOnPhone => 'Not allowed';
 
   @override
-  String get permissionAllowedInSample => 'Allowed in sample';
-
-  @override
-  String get permissionNotAllowedInSample => 'Not allowed in sample';
-
-  @override
   String get permissionMismatchChip => 'Not in policy';
 
   @override
@@ -1112,9 +1070,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get permissionNotRequestedOnPhone => 'Not requested by app';
 
   @override
-  String get permissionNotRequestedInSample => 'Not requested in sample';
-
-  @override
   String get permissionsEmptyComparisonTitle =>
       'No sensitive permissions matched in this check';
 
@@ -1168,9 +1123,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notFromPolicySuffix => 'From your phone settings, not the policy';
-
-  @override
-  String get sampleNotFromPolicySuffix => 'Example only, not from the policy';
 
   @override
   String get learnHeaderSubtitle => 'Offline privacy guides & diagrams';
@@ -2555,11 +2507,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get btnRetrySave => 'Retry save';
 
   @override
-  String samplePermissionsHeader(String badge) {
-    return 'Sample permissions ($badge)';
-  }
-
-  @override
   String get sourceKindUrl => 'Public web link';
 
   @override
@@ -2576,9 +2523,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sourceKindSelectedText => 'Selected text';
-
-  @override
-  String get sourceKindSampleApp => 'Sample app';
 
   @override
   String get sourceKindPhonePermissions => 'Phone permissions';

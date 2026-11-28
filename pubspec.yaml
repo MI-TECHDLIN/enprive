@@ -71,7 +71,6 @@ flutter:
 
   assets:
     - assets/fonts/
-    - assets/fixtures/
     - assets/images/
 
   fonts:

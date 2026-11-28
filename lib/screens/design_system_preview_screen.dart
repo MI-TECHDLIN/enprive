@@ -879,8 +879,8 @@ class _DesignSystemPreviewScreenState extends State<DesignSystemPreviewScreen> {
                   EnpriveReceiptCard(
                     receipt: PolicyReviewReceipt(
                       id: 'preview_rcpt',
-                      subjectTitle: 'EduTrack Classroom',
-                      sourceLabel: 'Sample Profile',
+                      subjectTitle: 'Example Learning App',
+                      sourceLabel: 'Pasted policy text',
                       createdAt: DateTime(2026, 11, 14, 10, 30),
                       overallState: ReviewOverallState.reviewRecommended,
                       inferenceSource: InferenceSource.onDevice,
@@ -888,12 +888,12 @@ class _DesignSystemPreviewScreenState extends State<DesignSystemPreviewScreen> {
                           'Discloses ad telemetry identifier alongside microphone classroom notes.',
                       calibratedDisclaimer:
                           ReviewCoordinator.calibratedDefaultDisclaimer,
-                      snapshotText: 'Sample archival snapshot excerpt.',
+                      snapshotText: 'Archival snapshot excerpt.',
                       snapshotDigest: '8f4b2e9c10a7',
                       findings: const [],
                     ),
                     stateBadgeLabel: 'Review recommended',
-                    metaLine: 'Sample Profile · Nov 14',
+                    metaLine: 'Pasted policy text · Nov 14',
                     openLabel: 'Open receipt',
                     deleteTooltip: 'Delete',
                     onOpen: () {},

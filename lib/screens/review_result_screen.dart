@@ -155,11 +155,6 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         hybridBridge: widget.coordinator.bridge,
       );
 
-  bool _isSampleReceipt(PolicyReviewReceipt receipt) =>
-      receipt.sourceSnapshot?.sourceType == PolicySourceType.sample ||
-      receipt.sourceSnapshot?.appIdentityMatchStatus ==
-          AppIdentityMatchStatus.sampleFixture;
-
   /// Resolves the in-memory [AppPolicyAssociationReport] for [receipt].
   ///
   /// Association reports remain strictly in memory (never persisted to the
@@ -173,7 +168,6 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       return widget.initialAssociationReport;
     }
     if (receipt.isPermissionOnlyInspection ||
-        _isSampleReceipt(receipt) ||
         receipt.snapshotText.trim().isEmpty) {
       return null;
     }
@@ -780,25 +774,19 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
 
   String _proofLabelFor(
     VerifiedFinding finding,
-    AppLocalizations l10n, {
-    required bool isSampleReceipt,
-  }) {
+    AppLocalizations l10n,
+  ) {
     if (finding.isDeviceObserved) {
-      return isSampleReceipt
-          ? l10n.sampleSyntheticBadge
-          : l10n.observedOnPhoneLabel;
+      return l10n.observedOnPhoneLabel;
     }
     if (finding.isSourceMatched) return l10n.quoteVerifiedLabel;
-    return isSampleReceipt && finding.status == EvidenceStatus.interpretation
-        ? l10n.sampleSyntheticBadge
-        : l10n.unverifiedClaimLabel;
+    return l10n.unverifiedClaimLabel;
   }
 
   void _openFindingDetailPage(
     PolicyReviewReceipt receipt,
-    int index, {
-    required bool isSampleReceipt,
-  }) {
+    int index,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     final finding = receipt.findings[index];
     Navigator.of(context).push(
@@ -807,11 +795,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
           finding: finding,
           index: index,
           totalCount: receipt.findings.length,
-          proofLabel: _proofLabelFor(
-            finding,
-            l10n,
-            isSampleReceipt: isSampleReceipt,
-          ),
+          proofLabel: _proofLabelFor(finding, l10n),
           reviewChipLabel: finding.severity == FindingSeverity.high
               ? l10n.findingReviewChip
               : null,
@@ -885,7 +869,6 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         _isOpeningAttachSheet ||
         _isOpeningLinkPicker ||
         receipt.isPermissionOnlyInspection ||
-        _isSampleReceipt(receipt) ||
         receipt.snapshotText.trim().isEmpty) {
       return;
     }
@@ -901,8 +884,6 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
       choice = await InstalledAppPickerSheet.show(
         context,
         bridge: widget.coordinator.bridge,
-        eduTrackPolicyText: '',
-        calmMathPolicyText: '',
         savedReceipts: widget.savedReceipts,
         receiptRepository: widget.receiptRepository,
         titleOverride: isChanging
@@ -916,7 +897,6 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
     }
 
     if (choice == null ||
-        choice.isSyntheticSample ||
         !mounted ||
         openSeq != _linkSequence ||
         _activeReceipt.id != expectedReceiptId) {
@@ -1039,8 +1019,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
         _isAttachingPolicy ||
         _isOpeningAttachSheet ||
         _isOpeningLinkPicker ||
-        receipt.isPermissionOnlyInspection ||
-        _isSampleReceipt(receipt)) {
+        receipt.isPermissionOnlyInspection) {
       return;
     }
 
@@ -1775,10 +1754,8 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
           final l10n = AppLocalizations.of(context)!;
           final receipt = _activeReceipt;
           final validSnapshot = _validPermissionSnapshot(receipt);
-          final isSampleReceipt = _isSampleReceipt(receipt);
           final canTwoWayLink =
               !receipt.isPermissionOnlyInspection &&
-              !isSampleReceipt &&
               receipt.snapshotText.trim().isNotEmpty;
           final m3e = EnpriveM3ETheme.of(context);
           final scheme = m3e.colorScheme;
@@ -1941,9 +1918,7 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                   : '${receipt.unverifiedCount}',
                               secondaryMetricLabel:
                                   receipt.permissionReport != null
-                                  ? (isSampleReceipt
-                                        ? l10n.permissionAllowedInSample
-                                        : l10n.statOsGranted)
+                                  ? l10n.statOsGranted
                                   : l10n.statUnverified,
                               hasPermissionReport:
                                   receipt.permissionReport != null,
@@ -2394,7 +2369,6 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                   proofLabel: _proofLabelFor(
                                     entry.value,
                                     l10n,
-                                    isSampleReceipt: isSampleReceipt,
                                   ),
                                   reviewChipLabel:
                                       entry.value.severity ==
@@ -2404,7 +2378,6 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                                   onTap: () => _openFindingDetailPage(
                                     receipt,
                                     entry.key,
-                                    isSampleReceipt: isSampleReceipt,
                                   ),
                                 ),
                               ),
@@ -2462,16 +2435,12 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               ),
                             ],
                           ] else ...[
-                            // Permission-Only Inspection or Synthetic Sample Permissions
+                            // Permission-Only Inspection
                             if (receipt.permissionReport != null &&
                                 receipt.permissionReport!.items.isNotEmpty) ...[
                               const SizedBox(height: 24),
                               Text(
-                                isSampleReceipt
-                                    ? l10n.samplePermissionsHeader(
-                                        l10n.sampleSyntheticBadge,
-                                      )
-                                    : l10n.permissionsOnPhoneTitle,
+                                l10n.permissionsOnPhoneTitle,
                                 style: m3e.typeScale.titleLarge.copyWith(
                                   color: scheme.onSurface,
                                 ),
@@ -2480,12 +2449,10 @@ class _ReviewResultScreenState extends State<ReviewResultScreen> {
                               EnprivePermissionComparisonList(
                                 report: receipt.permissionReport!,
                                 l10n: l10n,
-                                isSampleReceipt: isSampleReceipt,
                               ),
                             ],
                             if (validSnapshot != null &&
-                                !receipt.isPermissionOnlyInspection &&
-                                !isSampleReceipt) ...[
+                                !receipt.isPermissionOnlyInspection) ...[
                               const SizedBox(height: 16),
                               EnpriveTactileButton(
                                 key: const Key(
@@ -2708,7 +2675,6 @@ class _SourceProvenanceBlockState extends State<_SourceProvenanceBlock> {
       PolicySourceType.textDocument => l10n.sourceKindTextFile,
       PolicySourceType.sharedText => l10n.sourceKindSharedText,
       PolicySourceType.selectedText => l10n.sourceKindSelectedText,
-      PolicySourceType.sample => l10n.sourceKindSampleApp,
       PolicySourceType.devicePermissions => l10n.sourceKindPhonePermissions,
       PolicySourceType.pastedText => l10n.sourceKindPastedText,
     };

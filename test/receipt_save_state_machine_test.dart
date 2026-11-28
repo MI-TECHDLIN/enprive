@@ -250,10 +250,19 @@ void main() {
       );
       await _pumpAndFlush(tester);
 
-      final calmCard = find.text('CalmMath Kids');
-      await tester.ensureVisible(calmCard);
+      final pasteBtn = find.text('Paste terms or URL');
+      await tester.ensureVisible(pasteBtn);
       await tester.pump();
-      await tester.tap(calmCard);
+      await tester.tap(pasteBtn);
+      await _pumpAndFlush(tester);
+      await tester.enterText(
+        find.byKey(const Key('intake_paste_field')),
+        'This learning app stores progress strictly on this device and never sells personal data to advertisers or third parties.',
+      );
+      final submitBtn = find.byKey(const Key('intake_primary_submit_btn'));
+      await tester.ensureVisible(submitBtn);
+      await tester.pump();
+      await tester.tap(submitBtn);
       await _pumpAndFlush(tester, steps: 8);
 
       expect(find.byType(ReviewResultScreen), findsOneWidget);

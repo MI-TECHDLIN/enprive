@@ -25,6 +25,8 @@ import 'package:enprive/widgets/installed_app_picker_sheet.dart';
 import 'package:enprive/widgets/review_progress_sheet.dart';
 import 'package:enprive/widgets/why_this_finding_sheet.dart';
 
+import 'fixtures/synthetic_test_fixtures.dart';
+
 Future<void> _flushBridgeAndPump(WidgetTester tester) async {
   await tester.pump();
   await tester.runAsync(
@@ -77,7 +79,7 @@ void main() {
   });
 
   testWidgets(
-    'EnpriveApp renders brand splash first then clean Home hero, sample app checks, and what-we-check content',
+    'EnpriveApp renders brand splash first then clean Home hero and what-we-check content without built-in sample apps',
     (WidgetTester tester) async {
       await tester.pumpWidget(const EnpriveApp());
       await tester.pump();
@@ -102,9 +104,10 @@ void main() {
       expect(find.text('Learn'), findsOneWidget);
       expect(find.byKey(const Key('nav_settings_btn')), findsOneWidget);
       expect(find.byKey(const Key('check_quick_settings_card')), findsOneWidget);
-      expect(find.text('Try a sample app check'), findsOneWidget);
-      expect(find.text('EduTrack Classroom'), findsOneWidget);
-      expect(find.text('CalmMath Kids'), findsOneWidget);
+      expect(find.text('Try a sample app check'), findsNothing);
+      expect(find.text('EduTrack Classroom'), findsNothing);
+      expect(find.text('CalmMath Kids'), findsNothing);
+      expect(find.text('Sample app'), findsNothing);
       expect(find.text('What we check for'), findsOneWidget);
       expect(find.text('Exact policy quotes'), findsOneWidget);
       expect(find.textContaining('Deni ·'), findsNothing);
@@ -736,16 +739,29 @@ void main() {
         await tester.pump(const Duration(milliseconds: 300));
       }
 
-      // 1. Trigger concise CalmMath Kids sample -> tries ONLY_ON_DEVICE once,
+      Future<void> submitPastedPolicy(String policyText) async {
+        final pasteBtn = find.text('Paste terms or URL');
+        await Scrollable.ensureVisible(
+          tester.element(pasteBtn),
+          alignment: 0.5,
+        );
+        await tester.pump();
+        await tester.tap(pasteBtn);
+        await _flushBridgeAndPump(tester);
+        await tester.enterText(
+          find.byKey(const Key('intake_paste_field')),
+          policyText,
+        );
+        final submitBtn = find.byKey(const Key('intake_primary_submit_btn'));
+        await tester.ensureVisible(submitBtn);
+        await tester.pump();
+        await tester.tap(submitBtn);
+        await _flushBridgeAndPump(tester);
+      }
+
+      // 1. Trigger concise policy via Paste -> tries ONLY_ON_DEVICE once,
       // fails on unavailable Nano, and opens CloudConsentSheet without any cloud call
-      final calmMathFinder = find.text('CalmMath Kids');
-      await Scrollable.ensureVisible(
-        tester.element(calmMathFinder),
-        alignment: 0.5,
-      );
-      await tester.pump();
-      await tester.tap(calmMathFinder);
-      await _flushBridgeAndPump(tester);
+      await submitPastedPolicy(syntheticCalmMathPolicy);
 
       expect(analyseCalls.length, 1);
       expect(analyseCalls.single['cloudConsent'], isFalse);
@@ -767,13 +783,7 @@ void main() {
       expect(analyseCalls.length, 1);
 
       // 3. Re-trigger and pick "Review on this phone" -> Offline local scan (still 0 cloud calls)
-      await Scrollable.ensureVisible(
-        tester.element(calmMathFinder),
-        alignment: 0.5,
-      );
-      await tester.pump();
-      await tester.tap(calmMathFinder);
-      await _flushBridgeAndPump(tester);
+      await submitPastedPolicy(syntheticCalmMathPolicy);
       expect(analyseCalls.length, 2);
       expect(analyseCalls[1]['cloudConsent'], isFalse);
 
@@ -796,13 +806,7 @@ void main() {
       await _flushBridgeAndPump(tester);
 
       // 4. Trigger again and explicitly choose "Use cloud for this check"
-      await Scrollable.ensureVisible(
-        tester.element(calmMathFinder),
-        alignment: 0.5,
-      );
-      await tester.pump();
-      await tester.tap(calmMathFinder);
-      await _flushBridgeAndPump(tester);
+      await submitPastedPolicy(syntheticCalmMathPolicy);
 
       final homePreviewWidget = tester.widget<SelectableText>(
         find.descendant(
@@ -830,20 +834,13 @@ void main() {
       expect(cloudCalls.single['requestedMode'], 'ONLY_IN_CLOUD');
       expect(cloudCalls.single['text'], equals(displayedHomePayload));
 
-      // Navigate back to Home and verify comprehensive EduTrack pauses BEFORE
+      // Navigate back to Home and verify comprehensive policy pauses BEFORE
       // even calling native analyseText (0 calls without consent)
       await tester.tap(find.byTooltip('Close').last);
       await _flushBridgeAndPump(tester);
       await tester.tap(find.text('Discard without saving'));
       await _flushBridgeAndPump(tester);
-      final eduTrackFinder = find.text('EduTrack Classroom');
-      await Scrollable.ensureVisible(
-        tester.element(eduTrackFinder),
-        alignment: 0.5,
-      );
-      await tester.pump();
-      await tester.tap(eduTrackFinder);
-      await _flushBridgeAndPump(tester);
+      await submitPastedPolicy(syntheticEduTrackPolicy);
       expect(find.byType(CloudConsentSheet), findsOneWidget);
       expect(analyseCalls.length, 4);
     },
@@ -1073,8 +1070,8 @@ void main() {
       await tester.pumpWidget(const EnpriveApp(showSplashOnLaunch: false));
       await _flushBridgeAndPump(tester);
 
-      // Synthetic sample badge shown next to Home sample cards
-      expect(find.text('Sample app'), findsAtLeastNWidgets(1));
+      // No built-in sample apps shown on Home
+      expect(find.text('Sample app'), findsNothing);
 
       final checkAppBtn = find.text('Check an app');
       await tester.ensureVisible(checkAppBtn);
@@ -1423,8 +1420,6 @@ void main() {
           home: Scaffold(
             body: InstalledAppPickerSheet(
               bridge: sheetBridge,
-              eduTrackPolicyText: 'EduTrack sample policy',
-              calmMathPolicyText: 'CalmMath sample policy',
             ),
           ),
         ),

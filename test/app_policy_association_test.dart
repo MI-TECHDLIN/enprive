@@ -1,4 +1,3 @@
-import 'package:enprive/domain/permissions/permission_comparator.dart';
 import 'package:enprive/domain/review/app_policy_association.dart';
 import 'package:enprive/services/platform/companion_bridge.dart';
 import 'package:flutter/services.dart';
@@ -362,56 +361,6 @@ void main() {
       expect(report.provesDeveloperOwnership, isFalse);
     });
 
-    test('15. recognizes sample fixtures strictly via trusted metadata and rejects forged text', () {
-      final eduDemoReport = AppPolicyAssociationEvaluator.evaluate(
-        AppPolicyAssociationInput(
-          packageName: PermissionComparator.demoEduTrackSnapshot.packageName,
-          appName: PermissionComparator.demoEduTrackSnapshot.appName,
-          policyText: 'Built-in EduTrack demo text.',
-          sampleFixture: TrustedSampleFixture.eduTrackDemo,
-        ),
-      );
-      expect(eduDemoReport.state, AppPolicyAssociationState.sampleFixture);
-      expect(eduDemoReport.sampleFixture, TrustedSampleFixture.eduTrackDemo);
-      expect(eduDemoReport.matchSources, <AssociationMatchSource>[
-        AssociationMatchSource.sampleFixture,
-      ]);
-      expect(eduDemoReport.provesDeveloperOwnership, isFalse);
-
-      // Untrusted policy text claiming a demo package ID must NOT become sampleFixture.
-      final forgedReport = AppPolicyAssociationEvaluator.evaluate(
-        AppPolicyAssociationInput(
-          packageName: PermissionComparator.demoCalmMathSnapshot.packageName,
-          appName: PermissionComparator.demoCalmMathSnapshot.appName,
-          policyText:
-              'Official sample fixture: ${PermissionComparator.demoCalmMathSnapshot.packageName}',
-        ),
-      );
-      expect(forgedReport.state, isNot(AppPolicyAssociationState.sampleFixture));
-      expect(
-        forgedReport.state,
-        AppPolicyAssociationState.packageIdentifierMentioned,
-      );
-
-      // Mismatched fixture metadata paired with another package does not emit sampleFixture.
-      final mismatchedFixture = AppPolicyAssociationEvaluator.evaluate(
-        const AppPolicyAssociationInput(
-          packageName: 'com.unrelated.realapp',
-          appName: 'Real App',
-          policyText: 'Real App privacy notice.',
-          sampleFixture: TrustedSampleFixture.eduTrackDemo,
-        ),
-      );
-      expect(
-        mismatchedFixture.state,
-        isNot(AppPolicyAssociationState.sampleFixture),
-      );
-      expect(
-        mismatchedFixture.state,
-        AppPolicyAssociationState.appNameMentioned,
-      );
-    });
-
     test('16. enforces non-ownership invariant, omits raw text, and round-trips JSON deterministically', () {
       final inputs = <AppPolicyAssociationInput>[
         const AppPolicyAssociationInput(),
@@ -439,11 +388,6 @@ void main() {
           packageName: 'com.example.a',
           appName: 'Alpha Notes',
           policyText: 'Alpha Notes and com.other.beta.',
-        ),
-        AppPolicyAssociationInput(
-          packageName: PermissionComparator.demoEduTrackSnapshot.packageName,
-          appName: PermissionComparator.demoEduTrackSnapshot.appName,
-          sampleFixture: TrustedSampleFixture.eduTrackDemo,
         ),
       ];
 
@@ -481,7 +425,6 @@ void main() {
           report.conflictingPackageIdentifiers,
         );
         expect(decoded.urlHostMatched, report.urlHostMatched);
-        expect(decoded.sampleFixture, report.sampleFixture);
         expect(decoded.provesDeveloperOwnership, isFalse);
       }
 
@@ -567,95 +510,24 @@ void main() {
     });
   });
 
-  group('P2-1 Trusted fixture deserialization hardening', () {
-    test('18. valid registered fixture round-trips cleanly', () {
-      for (final entry in <(String, String, TrustedSampleFixture)>[
-        (
-          PermissionComparator.demoEduTrackSnapshot.packageName,
-          PermissionComparator.demoEduTrackSnapshot.appName,
-          TrustedSampleFixture.eduTrackDemo,
-        ),
-        (
-          PermissionComparator.demoCalmMathSnapshot.packageName,
-          PermissionComparator.demoCalmMathSnapshot.appName,
-          TrustedSampleFixture.calmMathDemo,
-        ),
-      ]) {
-        final report = AppPolicyAssociationEvaluator.evaluate(
-          AppPolicyAssociationInput(
-            packageName: entry.$1,
-            appName: entry.$2,
-            sampleFixture: entry.$3,
-          ),
-        );
-        final decoded = AppPolicyAssociationReport.fromJson(report.toJson());
-        expect(decoded.state, AppPolicyAssociationState.sampleFixture);
-        expect(decoded.sampleFixture, entry.$3);
-        expect(decoded.selectedPackageName, entry.$1);
-        expect(decoded.matchSources, <AssociationMatchSource>[
-          AssociationMatchSource.sampleFixture,
-        ]);
-        expect(decoded.provesDeveloperOwnership, isFalse);
-      }
-    });
-
-    test('19. missing sampleFixtureId degrades sampleFixture without throwing', () {
+  group('P2-1 Legacy and malformed JSON deserialization hardening', () {
+    test('19. legacy sampleFixture JSON degrades safely to userLinkedUnverified without throwing', () {
       final decoded = AppPolicyAssociationReport.fromJson(<String, dynamic>{
         'state': 'sampleFixture',
+        'sampleFixtureId': 'edutrack_demo',
         'selectedPackageName': 'com.edutrack.classroom.demo',
         'matchSources': <String>['sampleFixture'],
-        'matchedIdentifiers': <String>['com.edutrack.classroom.demo'],
         'provesDeveloperOwnership': true,
       });
 
       expect(decoded.state, AppPolicyAssociationState.userLinkedUnverified);
-      expect(decoded.sampleFixture, isNull);
-      expect(decoded.matchSources, isEmpty);
-      expect(decoded.matchedIdentifiers, isEmpty);
-      expect(decoded.provesDeveloperOwnership, isFalse);
-    });
-
-    test('20. unknown sampleFixtureId degrades sampleFixture to userLinkedUnverified', () {
-      final decoded = AppPolicyAssociationReport.fromJson(<String, dynamic>{
-        'state': 'sampleFixture',
-        'sampleFixtureId': 'forged_external_demo',
-        'selectedPackageName': 'com.edutrack.classroom.demo',
-        'matchSources': <String>['sampleFixture'],
-      });
-
-      expect(decoded.state, AppPolicyAssociationState.userLinkedUnverified);
-      expect(decoded.sampleFixture, isNull);
       expect(decoded.matchSources, isEmpty);
       expect(decoded.provesDeveloperOwnership, isFalse);
     });
 
-    test('21. package mismatch against registered fixture degrades safely', () {
-      final mismatchedPkg = AppPolicyAssociationReport.fromJson(<String, dynamic>{
-        'state': 'sampleFixture',
-        'sampleFixtureId': 'edutrack_demo',
-        'selectedPackageName': 'com.other.unrelated',
-        'matchSources': <String>['sampleFixture'],
-      });
-      expect(
-        mismatchedPkg.state,
-        AppPolicyAssociationState.userLinkedUnverified,
-      );
-      expect(mismatchedPkg.sampleFixture, isNull);
-      expect(mismatchedPkg.provesDeveloperOwnership, isFalse);
-
-      final missingPkg = AppPolicyAssociationReport.fromJson(<String, dynamic>{
-        'state': 'sampleFixture',
-        'sampleFixtureId': 'calmmath_demo',
-      });
-      expect(missingPkg.state, AppPolicyAssociationState.userLinkedUnverified);
-      expect(missingPkg.sampleFixture, isNull);
-      expect(missingPkg.provesDeveloperOwnership, isFalse);
-    });
-
-    test('22. malformed fixture JSON degrades without throwing', () {
+    test('22. malformed JSON degrades without throwing', () {
       final decoded = AppPolicyAssociationReport.fromJson(<String, dynamic>{
         'state': 123,
-        'sampleFixtureId': 42,
         'selectedPackageName': <String>['bad'],
         'matchSources': 'sampleFixture',
         'matchedIdentifiers': <Object?>[null, ''],
@@ -665,15 +537,13 @@ void main() {
       });
 
       expect(decoded.state, AppPolicyAssociationState.userLinkedUnverified);
-      expect(decoded.sampleFixture, isNull);
       expect(decoded.matchSources, isEmpty);
       expect(decoded.matchedIdentifiers, isEmpty);
       expect(decoded.provesDeveloperOwnership, isFalse);
     });
 
-    test('23. non-fixture states preserve serialization and strip stray fixture claims', () {
+    test('23. states preserve serialization and strip unknown legacy matchSources', () {
       for (final state in AppPolicyAssociationState.values) {
-        if (state == AppPolicyAssociationState.sampleFixture) continue;
         final decoded = AppPolicyAssociationReport.fromJson(<String, dynamic>{
           'state': state.name,
           'selectedPackageName': 'com.example.focusreader',
@@ -690,11 +560,6 @@ void main() {
         });
 
         expect(decoded.state, state);
-        expect(decoded.sampleFixture, isNull);
-        expect(
-          decoded.matchSources.contains(AssociationMatchSource.sampleFixture),
-          isFalse,
-        );
         expect(decoded.matchSources, <AssociationMatchSource>[
           AssociationMatchSource.policyText,
         ]);

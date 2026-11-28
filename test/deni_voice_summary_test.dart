@@ -63,7 +63,6 @@ class _FakeVoiceHybridBridge extends HybridAiBridge {
 
 PolicyReviewReceipt _buildSamplePolicyReceipt({
   bool withPermissions = true,
-  bool isSample = false,
   bool includeUnverified = false,
 }) {
   const snapshotText =
@@ -143,14 +142,13 @@ PolicyReviewReceipt _buildSamplePolicyReceipt({
             grantedPermissions: ['android.permission.CAMERA'],
           ),
           policyText: snapshotText,
-          isSampleFixture: isSample,
         )
       : null;
 
   return PolicyReviewReceipt(
     id: 'rcpt_voice_1',
     subjectTitle: 'EduTrack',
-    sourceLabel: isSample ? 'Classroom Sample' : 'Public URL',
+    sourceLabel: 'Public URL',
     snapshotText: snapshotText,
     snapshotDigest: '1234567890abcdef',
     createdAt: DateTime.utc(2026, 11, 21, 18, 0),
@@ -162,12 +160,10 @@ PolicyReviewReceipt _buildSamplePolicyReceipt({
     permissionReport: permReport,
     sourceSnapshot: PolicySourceSnapshot(
       snapshotId: 'snap_1',
-      sourceType: isSample ? PolicySourceType.sample : PolicySourceType.url,
+      sourceType: PolicySourceType.url,
       retrievedAt: DateTime.utc(2026, 11, 21, 18, 0),
       retrievalStatus: PolicyRetrievalStatus.retrieved,
-      appIdentityMatchStatus: isSample
-          ? AppIdentityMatchStatus.sampleFixture
-          : AppIdentityMatchStatus.unverifiedUserSupplied,
+      appIdentityMatchStatus: AppIdentityMatchStatus.unverifiedUserSupplied,
       sourceSha256Hash: 'abc123',
     ),
   );
@@ -250,37 +246,6 @@ void main() {
         expect(
           DeniVoiceSummaryBuilder.containsProhibitedCertificationClaim(
             summary.spokenScript,
-          ),
-          isFalse,
-        );
-      },
-    );
-
-    test(
-      'buildDeterministic handles synthetic sample permissions without claiming live device inspection',
-      () {
-        final receipt = _buildSamplePolicyReceipt(
-          withPermissions: true,
-          isSample: true,
-        );
-        final summary = DeniVoiceSummaryBuilder.buildDeterministic(
-          receipt: receipt,
-        );
-
-        expect(
-          summary.points.any(
-            (p) => p.kind == DeniSummaryPointKind.devicePermissionNote,
-          ),
-          isFalse,
-        );
-        final sampleNotes = summary.points
-            .where((p) => p.kind == DeniSummaryPointKind.samplePermissionNote)
-            .toList();
-        expect(sampleNotes, hasLength(1));
-        expect(sampleNotes.first.plainText, contains('Synthetic sample'));
-        expect(
-          summary.points.any(
-            (p) => p.kind == DeniSummaryPointKind.associationNote,
           ),
           isFalse,
         );
