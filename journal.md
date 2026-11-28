@@ -2122,6 +2122,12 @@
 - **Bug 2**: not reproducible on main. `homeQuickSettingsTitle/Subtitle` were externalized and translated (ar, es, fr, hi) in `6b1c239`, which postdates the device build `79fd2e0`. `l10n_status.py --strict` is clean for all 11 locales (729/729), so no other locale has the miss.
 - **Verification**: `flutter analyze` 0 issues, `flutter test` 394/394, `l10n_status.py --strict` clean, arm64 debug build (see PR).
 
+## Iteration 63: Illustrated blog visuals for Medium publishing (2026/11/28)
+
+* **Branch**: `fm/enprive-blog-illustrated` atop `main` `eb56794`; direct PR into `main`. Model: **Gemini 4 Neon**.
+* **What Was Built**: Added 19 Calm Evidence PNG illustrations and framed sample app showcases (1600x900, each under 330 KB) under `docs/images/blog/` for the five Medium blog posts, using new SVG diagrams plus existing repo screenshots and the unchanged Deni mascot asset.
+* **Verification**: Visually inspected all 19 PNG outputs, verified every image is under 400 KB, confirmed all raw GitHub URLs match `docs/images/blog/`, and confirmed zero dashes across the five updated blog drafts.
+
 ---
 
 ## Iteration 63: Cloud check timeout and server error no longer end silently (2026-11-27)
