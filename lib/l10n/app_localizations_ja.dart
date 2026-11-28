@@ -605,11 +605,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cloudTimedOutNotice => 'クラウド AI の応答がタイムアウトしました。自動再試行は行っていません。';
 
   @override
-  String get cloudFallbackBannerTitle => 'クラウド利用不可：この端末で確認しました';
+  String get cloudFallbackBannerTitle => 'クラウドチェックを完了できませんでした';
 
   @override
   String get cloudFallbackBannerBody =>
-      'クラウド分析が利用できなかったため、Enpriveはこの端末上で直接ポリシーを確認しました。';
+      'これはお使いの端末で行った結果で、データは再送信されていません。ポリシーの文章はそのまま残っています。「保存」をタップするまで、何も保存されません。';
+
+  @override
+  String get cloudFallbackRetryAction => 'クラウドチェックをもう一度試す';
 
   @override
   String get appPickerFilterAll => 'すべてのアプリ';

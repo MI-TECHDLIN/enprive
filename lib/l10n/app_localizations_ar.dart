@@ -637,12 +637,14 @@ class AppLocalizationsAr extends AppLocalizations {
       'انتهت مهلة الذكاء الاصطناعي السحابي قبل الاستجابة. لم يتم إرسال أي محاولة إعادة تلقائية.';
 
   @override
-  String get cloudFallbackBannerTitle =>
-      'السحابة غير متاحة: تم الفحص على هذا الهاتف';
+  String get cloudFallbackBannerTitle => 'تعذّر إكمال الفحص السحابي';
 
   @override
   String get cloudFallbackBannerBody =>
-      'لم يكن التحليل السحابي متاحًا، لذلك فحص Enprive هذه السياسة مباشرة على هاتفك.';
+      'هذه هي النتيجة من فحص هاتفك، ولم يُرسَل أي شيء مرة أخرى. نص السياسة محفوظ لديك. لا يُحفظ شيء حتى تضغط على حفظ.';
+
+  @override
+  String get cloudFallbackRetryAction => 'جرّب الفحص السحابي مرة أخرى';
 
   @override
   String get appPickerFilterAll => 'كل التطبيقات';

@@ -210,10 +210,10 @@ A third party attribution platform called AppsFlyer collects the Android Adverti
         nonEmptyFallback.diagnosticKind,
         ReviewDiagnosticKind.cloudUnavailableLocalFallback,
       );
-      expect(nonEmptyFallback.summary, contains('Cloud analysis was unavailable'));
+      expect(nonEmptyFallback.summary, contains('The cloud check could not finish'));
       expect(
         nonEmptyFallback.summary,
-        contains('local deterministic scanner'),
+        contains('on-device result'),
       );
     });
   });

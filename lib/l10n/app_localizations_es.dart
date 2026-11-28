@@ -638,11 +638,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cloudFallbackBannerTitle =>
-      'Nube no disponible: revisado en este teléfono';
+      'La comprobación en la nube no pudo terminar';
 
   @override
   String get cloudFallbackBannerBody =>
-      'El análisis en la nube no estuvo disponible, así que Enprive revisó esta política directamente en tu teléfono.';
+      'Este es el resultado de tu teléfono y no se volvió a enviar nada. El texto de la política se conserva. No se guarda nada hasta que toques Guardar.';
+
+  @override
+  String get cloudFallbackRetryAction =>
+      'Probar de nuevo la comprobación en la nube';
 
   @override
   String get appPickerFilterAll => 'Todas las apps';

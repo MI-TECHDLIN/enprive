@@ -633,11 +633,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get cloudFallbackBannerTitle =>
-      'Nuvem indisponível: verificado neste telefone';
+      'A verificação na nuvem não pôde ser concluída';
 
   @override
   String get cloudFallbackBannerBody =>
-      'A análise na nuvem não estava disponível, então o Enprive verificou esta política diretamente no seu telefone.';
+      'Este é o resultado obtido no seu telefone, e nada foi enviado de novo. O texto da política foi mantido. Nada é salvo até você tocar em Salvar.';
+
+  @override
+  String get cloudFallbackRetryAction =>
+      'Tentar a verificação na nuvem de novo';
 
   @override
   String get appPickerFilterAll => 'Todos os apps';

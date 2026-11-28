@@ -628,12 +628,14 @@ class AppLocalizationsHi extends AppLocalizations {
       'क्लाउड AI ने उत्तर देने में समय समाप्त कर दिया। कोई स्वचालित पुनः प्रयास नहीं किया गया।';
 
   @override
-  String get cloudFallbackBannerTitle =>
-      'क्लाउड उपलब्ध नहीं: इसी फ़ोन पर जाँचा गया';
+  String get cloudFallbackBannerTitle => 'क्लाउड जाँच पूरी नहीं हो सकी';
 
   @override
   String get cloudFallbackBannerBody =>
-      'क्लाउड विश्लेषण उपलब्ध नहीं था, इसलिए Enprive ने यह नीति सीधे आपके फ़ोन पर जाँची।';
+      'यह आपके फ़ोन पर मिला नतीजा है, और कुछ भी दोबारा नहीं भेजा गया। आपकी गोपनीयता नीति का पाठ सुरक्षित है। जब तक आप सहेजें पर नहीं टैप करते, कुछ भी सहेजा नहीं जाता।';
+
+  @override
+  String get cloudFallbackRetryAction => 'क्लाउड जाँच फिर से आज़माएँ';
 
   @override
   String get appPickerFilterAll => 'सभी ऐप्स';

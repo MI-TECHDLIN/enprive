@@ -640,11 +640,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get cloudFallbackBannerTitle =>
-      'Облако недоступно: проверено на этом телефоне';
+      'Облачную проверку не удалось завершить';
 
   @override
   String get cloudFallbackBannerBody =>
-      'Облачный анализ был недоступен, поэтому Enprive проверил эту политику прямо на вашем телефоне.';
+      'Это результат проверки на вашем телефоне, ничего повторно не отправлялось. Текст политики сохранён. Ничего не сохраняется, пока вы не нажмёте «Сохранить».';
+
+  @override
+  String get cloudFallbackRetryAction => 'Повторить облачную проверку';
 
   @override
   String get appPickerFilterAll => 'Все приложения';

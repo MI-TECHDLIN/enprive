@@ -639,11 +639,14 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get cloudFallbackBannerTitle =>
-      'Cloud non disponibile: verificato su questo telefono';
+      'Il controllo cloud non è riuscito a completarsi';
 
   @override
   String get cloudFallbackBannerBody =>
-      'L\'analisi nel cloud non era disponibile, quindi Enprive ha verificato questa informativa direttamente sul tuo telefono.';
+      'Questo è il risultato ottenuto sul tuo telefono e non è stato inviato nulla di nuovo. Il testo dell\'informativa è conservato. Non viene salvato nulla finché non tocchi Salva.';
+
+  @override
+  String get cloudFallbackRetryAction => 'Riprova il controllo cloud';
 
   @override
   String get appPickerFilterAll => 'Tutte le app';

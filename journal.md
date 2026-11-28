@@ -2124,6 +2124,17 @@
 
 ---
 
+## Iteration 63: Cloud check timeout and server error no longer end silently (2026-11-27)
+
+- **Branch / Commit State**: `fm/enprive-cloud-timeout-ux` atop `main` `eb56794`; direct PR into `main`. Model: **Claude Sonnet 5.5**.
+- **Source**: `enprive-cloud-night` report: seven native `TIMED_OUT` outcomes and one `ServerException`; the app returned home each time with no result and no message.
+- **Root cause**: native `TIMED_OUT` reaches Dart as `HybridOperationCancelledException(isTimeout: true)`. `ReviewCoordinator.runPolicyReview` let it propagate, and every caller treats that exception as a cancel (reset the UI, at most a snackbar), so no result screen opened. A `ServerException` did produce a fallback receipt, but it was labelled `failedModelInference` with developer wording.
+- **Fix**: after consented cloud inference, a timeout (user cancel still rethrows) and any server, overload or high-demand failure now return the deterministic on-device receipt with `cloudUnavailableLocalFallback` and `OFFLINE_DETERMINISTIC` (no cloud badge, one request only, no silent retry). The result screen notice now says "The cloud check could not finish", states that this is the on-device result and that nothing is saved until Save, and has a "Try the cloud check again" button that reopens the consent sheet and produces an unsaved draft. Three ARB keys (`cloudFallbackBannerTitle`, `cloudFallbackBannerBody`, new `cloudFallbackRetryAction`) translated for all 11 secondary locales; the fallback summary text was made plain language.
+- **Verification**: new `test/cloud_check_failure_ux_test.dart` (timeout, server exception, cancel, success, retry with and without consent, nothing auto-saved); existing coordinator and widget tests updated for the new timeout behaviour. `flutter analyze` 0 issues, `flutter test` 402/402, `l10n_status.py --strict` clean, Gradle `:app:testDebugUnitTest` OK, arm64 debug build OK.
+- **Emulator**: on `emulator-5554` with wifi and data off, a consented cloud check failed natively (`UnknownException`; offline gave no native timeout, which is covered by tests). First run showed the old developer wording and no notice, so `UnknownException` and `UnknownHost` were added to the cloud-could-not-finish matcher. After the fix the result screen showed the on-device result, the "The cloud check could not finish" notice and "Try the cloud check again", which reopened the consent sheet. Closing the screen offered Save or Discard, so nothing was saved. Screenshots in `data/enprive-cloud-timeout-ux/`.
+
+---
+
 ## Upcoming Iterations Queue (From Docs & Architecture Review)
 
 1. **D5.3 Core Flow Streamlining (D5.3-B+) & D5.4 Offline Learn MVP**
